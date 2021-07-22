@@ -1,0 +1,35 @@
+[tool.black]
+line-length = 120
+target-version = ['py37']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.poetry]
+name = "sil-machine"
+version = "0.1.0"
+description = ""
+authors = ["Damien Daspit <damien_daspit@sil.org>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+black = "^21.7b0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
