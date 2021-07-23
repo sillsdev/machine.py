@@ -15,5 +15,5 @@ class TextAlignmentCorpus(ABC):
         ...
 
     @abstractmethod
-    def invert() -> "TextAlignmentCorpus":
+    def invert(self) -> "TextAlignmentCorpus":
         ...

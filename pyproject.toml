@@ -17,6 +17,10 @@ exclude = '''
 )/
 '''
 
+[tool.isort]
+# make it compatible with black
+profile = "black" 
+
 [tool.poetry]
 name = "sil-machine"
 version = "0.1.0"

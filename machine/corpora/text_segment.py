@@ -1,31 +1,40 @@
-from typing import Any, List, Optional
 from dataclasses import dataclass
+from typing import Any, Sequence
 
 
 @dataclass(eq=False, frozen=True)
 class TextSegment:
+    @classmethod
+    def create(
+        cls,
+        text_id: str,
+        seg_ref: Any,
+        segment: Sequence[str],
+        sentence_start: bool = True,
+        in_range: bool = False,
+        range_start: bool = False,
+    ) -> "TextSegment":
+        return TextSegment(text_id, seg_ref, segment, sentence_start, in_range, range_start, len(segment) == 0)
+
+    @classmethod
+    def create_no_text(
+        cls,
+        text_id: str,
+        seg_ref: Any,
+        sentence_start: bool = True,
+        in_range: bool = False,
+        range_start: bool = False,
+        is_empty: bool = True,
+    ) -> "TextSegment":
+        return TextSegment(text_id, seg_ref, [], sentence_start, in_range, range_start, is_empty)
+
+    text_id: str
     segment_ref: Any
-    segment: List[str]
+    segment: Sequence[str]
     sentence_start: bool
     is_in_range: bool
     is_range_start: bool
     is_empty: bool
-
-    def __init__(
-        self,
-        segment_ref: Any,
-        segment: List[str] = [],
-        sentence_start: bool = True,
-        in_range: bool = False,
-        range_start: bool = False,
-        is_empty: Optional[bool] = None,
-    ) -> None:
-        object.__setattr__(self, "segment_ref", segment_ref)
-        object.__setattr__(self, "segment", segment)
-        object.__setattr__(self, "sentence_start", sentence_start)
-        object.__setattr__(self, "is_in_range", in_range)
-        object.__setattr__(self, "is_range_start", range_start)
-        object.__setattr__(self, "is_empty", len(segment) == 0 if is_empty is None else is_empty)
 
     def __repr__(self) -> str:
         if self.is_empty:

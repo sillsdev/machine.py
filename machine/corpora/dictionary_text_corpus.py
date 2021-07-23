@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, Optional, overload
+from typing import Any, Iterable, Optional, overload
 
 from .text import Text
 from .text_corpus import TextCorpus
@@ -14,23 +14,18 @@ class DictionaryTextCorpus(TextCorpus):
         ...
 
     def __init__(self, *args: Any) -> None:
-        self._text_dictionary: Dict[str, Text]
-        if len(args) == 0:
-            self._text_dictionary = {}
-        elif isinstance(args[0], Text):
-            self._text_dictionary = {t.id: t for t in args}
-        else:
-            self._text_dictionary = {t.id: t for t in args[0]}
+        texts: Iterable[Text] = args if len(args) == 0 or isinstance(args[0], Text) else args[0]
+        self._texts = {t.id: t for t in texts}
 
     @property
     def texts(self) -> Iterable[Text]:
-        return sorted(self._text_dictionary.values(), key=lambda t: t.sort_key)
+        return sorted(self._texts.values(), key=lambda t: t.sort_key)
 
     def get_text(self, id: str) -> Optional[Text]:
-        return self._text_dictionary.get(id)
+        return self._texts.get(id)
 
     def get_text_sort_key(self, id: str) -> str:
         return id
 
     def _add_text(self, text: Text) -> None:
-        self._text_dictionary[text.id] = text
+        self._texts[text.id] = text

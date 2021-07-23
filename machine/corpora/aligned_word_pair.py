@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Set
 
 
@@ -21,23 +21,14 @@ class AlignedWordPair:
 
     source_index: int
     target_index: int
-    is_sure: bool = True
-    translation_score: float = -1
-    alignment_score: float = -1
+    is_sure: bool = field(default=True, compare=False)
+    translation_score: float = field(default=-1, compare=False)
+    alignment_score: float = field(default=-1, compare=False)
 
     def invert(self) -> "AlignedWordPair":
         return AlignedWordPair(
             self.target_index, self.source_index, self.is_sure, self.translation_score, self.alignment_score
         )
-
-    def __eq__(self, other: "AlignedWordPair") -> bool:
-        return self.source_index == other.source_index and self.target_index == other.target_index
-
-    def __hash__(self) -> int:
-        code = 23
-        code = code * 31 + hash(self.source_index)
-        code = code * 31 + hash(self.target_index)
-        return code
 
     def __repr__(self) -> str:
         def format_score(score: float) -> str:
