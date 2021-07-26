@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Collection, Iterable, List, Optional
+from typing import Collection, Iterable, List, Optional, cast
 
 from .aligned_word_pair import AlignedWordPair
 from .parallel_text_segment import ParallelTextSegment
@@ -30,12 +30,17 @@ class RangeInfo:
         return self.segment_ref is not None
 
     def create_text_segment(self) -> ParallelTextSegment:
-        seg = ParallelTextSegment.create_range(
+        seg = ParallelTextSegment(
             self.text.id,
             self.segment_ref,
             self.source_segment.copy(),
             self.target_segment.copy(),
-            self.is_source_empty or self.is_target_empty,
+            aligned_word_pairs=None,
+            is_source_in_range=False,
+            is_source_range_start=False,
+            is_target_in_range=False,
+            is_target_range_start=False,
+            is_empty=self.is_source_empty or self.is_target_empty,
         )
         self.segment_ref = None
         self.source_segment.clear()
@@ -201,7 +206,18 @@ class ParallelText:
     ) -> Iterable[ParallelTextSegment]:
         if range_info.is_in_range:
             yield range_info.create_text_segment()
-        yield ParallelTextSegment.create(self.id, src_seg, trg_seg, aligned_word_pairs)
+        yield ParallelTextSegment(
+            self.id,
+            cast(TextSegment, trg_seg).segment_ref if src_seg is None else src_seg.segment_ref,
+            [] if src_seg is None else src_seg.segment,
+            [] if trg_seg is None else trg_seg.segment,
+            aligned_word_pairs,
+            src_seg is not None and src_seg.is_in_range,
+            src_seg is not None and src_seg.is_range_start,
+            trg_seg is not None and trg_seg.is_in_range,
+            trg_seg is not None and trg_seg.is_range_start,
+            src_seg is None or src_seg.is_empty or trg_seg is None or trg_seg.is_empty,
+        )
 
     def _create_source_text_segments(
         self,
