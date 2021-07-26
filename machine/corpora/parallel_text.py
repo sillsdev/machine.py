@@ -105,6 +105,8 @@ class ParallelText:
                     range_info, current2, source_same_ref_segments, all_target_segments
                 ):
                     yield seg
+                target_same_ref_segments.append(current2)
+                current2 = next(iterator2, None)
             else:
                 less_than = True
                 while less_than:
@@ -114,7 +116,7 @@ class ParallelText:
                     else:
                         less_than = False
 
-                if (not all_source_segments and current1.is_in_range) or (
+                if (not all_target_segments and current1.is_in_range) or (
                     not all_source_segments and current2.is_in_range
                 ):
                     if range_info.is_in_range and (

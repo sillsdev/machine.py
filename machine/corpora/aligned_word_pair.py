@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import Set
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class AlignedWordPair:
     @classmethod
     def parse(cls, alignments: str, invert: bool = False) -> Set["AlignedWordPair"]:

@@ -5,7 +5,7 @@ from .text_alignment_collection import TextAlignmentCollection
 
 
 class MemoryTextAlignmentCollection(TextAlignmentCollection):
-    def __init__(self, id: str, alignments: Iterable[TextAlignment]) -> None:
+    def __init__(self, id: str, alignments: Iterable[TextAlignment] = []) -> None:
         self._id = id
         self._alignments = list(alignments)
 
@@ -22,4 +22,4 @@ class MemoryTextAlignmentCollection(TextAlignmentCollection):
         return self._alignments
 
     def invert(self) -> TextAlignmentCollection:
-        return MemoryTextAlignmentCollection(self._id, ta.invert() for ta in self._alignments)
+        return MemoryTextAlignmentCollection(self._id, (ta.invert() for ta in self._alignments))

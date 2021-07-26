@@ -1,10 +1,9 @@
+from dataclasses import dataclass
 from functools import reduce
 from typing import Any, Iterable, List, Sequence, overload
 
-from ..utils import dataclass_ex, init_dataclass_ex
 
-
-@dataclass_ex(frozen=True)
+@dataclass(frozen=True)
 class TextSegmentRef:
     keys: Sequence[str]
 
@@ -36,7 +35,7 @@ class TextSegmentRef:
             keys = list(args[0])
         else:
             keys = [str(i) for i in args[0]]
-        init_dataclass_ex(self, keys)
+        object.__setattr__(self, "keys", keys)
 
     def __hash__(self) -> int:
         def reduce_func(code: int, item: str) -> int:

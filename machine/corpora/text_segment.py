@@ -17,16 +17,16 @@ class TextSegment:
         return TextSegment(text_id, seg_ref, segment, sentence_start, in_range, range_start, len(segment) == 0)
 
     @classmethod
-    def create_no_text(
+    def create_empty(
         cls,
         text_id: str,
         seg_ref: Any,
         sentence_start: bool = True,
         in_range: bool = False,
         range_start: bool = False,
-        is_empty: bool = True,
+        empty: bool = True,
     ) -> "TextSegment":
-        return TextSegment(text_id, seg_ref, [], sentence_start, in_range, range_start, is_empty)
+        return TextSegment(text_id, seg_ref, [], sentence_start, in_range, range_start, empty)
 
     text_id: str
     segment_ref: Any
