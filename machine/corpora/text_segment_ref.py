@@ -12,15 +12,15 @@ class TextSegmentRef:
         ...
 
     @overload
-    def __init__(self, key: Iterable[int]) -> None:
+    def __init__(self, keys: Iterable[int]) -> None:
         ...
 
     @overload
-    def __init__(self, *args: str) -> None:
+    def __init__(self, *keys: str) -> None:
         ...
 
     @overload
-    def __init__(self, *args: int) -> None:
+    def __init__(self, *keys: int) -> None:
         ...
 
     def __init__(self, *args: Any) -> None:

@@ -17,3 +17,7 @@ class TextAlignmentCorpus(ABC):
     @abstractmethod
     def invert(self) -> "TextAlignmentCorpus":
         ...
+
+    @abstractmethod
+    def get_text_alignment_collection_sort_key(self, id: str) -> str:
+        ...

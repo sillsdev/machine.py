@@ -1,4 +1,5 @@
-from typing import Iterable
+from machine.corpora.corpora_helpers import gen
+from typing import Generator
 
 from .text import Text
 from .text_segment import TextSegment
@@ -17,5 +18,5 @@ class NullText(Text):
     def sort_key(self) -> str:
         return self._sort_key
 
-    def get_segments(self, include_text: bool) -> Iterable[TextSegment]:
-        return []
+    def get_segments(self, include_text: bool) -> Generator[TextSegment, None, None]:
+        return gen()

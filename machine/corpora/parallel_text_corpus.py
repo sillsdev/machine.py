@@ -1,6 +1,9 @@
-from typing import Iterable, Optional, Set
+from contextlib import closing
+from typing import Generator, Iterable, Optional, Set
 
+from .dictionary_text_alignment_corpus import DictionaryTextAlignmentCorpus
 from .null_text import NullText
+from .null_text_alignment_collection import NullTextAlignmentCollection
 from .parallel_text import ParallelText
 from .parallel_text_segment import ParallelTextSegment
 from .text import Text
@@ -17,6 +20,13 @@ def _get_text(corpus: TextCorpus, id: str) -> Text:
     return text
 
 
+def _get_text_alignment_collection(corpus: TextAlignmentCorpus, id: str) -> TextAlignmentCollection:
+    alignments = corpus.get_text_alignment_collection(id)
+    if alignments is None:
+        alignments = NullTextAlignmentCollection(id, corpus.get_text_alignment_collection_sort_key(id))
+    return alignments
+
+
 class ParallelTextCorpus:
     def __init__(
         self,
@@ -26,7 +36,9 @@ class ParallelTextCorpus:
     ) -> None:
         self._source_corpus = source_corpus
         self._target_corpus = target_corpus
-        self._text_alignment_corpus = text_alignment_corpus
+        self._text_alignment_corpus = (
+            DictionaryTextAlignmentCorpus() if text_alignment_corpus is None else text_alignment_corpus
+        )
 
     @property
     def source_corpus(self) -> TextCorpus:
@@ -37,7 +49,7 @@ class ParallelTextCorpus:
         return self._target_corpus
 
     @property
-    def text_alignment_corpus(self) -> Optional[TextAlignmentCorpus]:
+    def text_alignment_corpus(self) -> TextAlignmentCorpus:
         return self._text_alignment_corpus
 
     @property
@@ -45,16 +57,22 @@ class ParallelTextCorpus:
         return self.get_texts()
 
     @property
-    def segments(self) -> Iterable[ParallelTextSegment]:
+    def segments(self) -> Generator[ParallelTextSegment, None, None]:
         return self.get_segments()
 
     @property
-    def source_segments(self) -> Iterable[TextSegment]:
-        return (s for t in self.texts for s in t.source_text.get_segments())
+    def source_segments(self) -> Generator[TextSegment, None, None]:
+        for text in self.texts:
+            with closing(text.source_text.get_segments()) as segments:
+                for segment in segments:
+                    yield segment
 
     @property
     def target_segments(self) -> Iterable[TextSegment]:
-        return (s for t in self.texts for s in t.target_text.get_segments())
+        for text in self.texts:
+            with closing(text.target_text.get_segments()) as segments:
+                for segment in segments:
+                    yield segment
 
     def invert(self) -> "ParallelTextCorpus":
         return ParallelTextCorpus(
@@ -81,12 +99,11 @@ class ParallelTextCorpus:
 
     def get_segments(
         self, all_source_segments: bool = False, all_target_segments: bool = False, include_text: bool = True
-    ) -> Iterable[ParallelTextSegment]:
-        return (
-            s
-            for t in self.get_texts(all_source_segments, all_target_segments)
-            for s in t.get_segments(all_source_segments, all_target_segments, include_text)
-        )
+    ) -> Generator[ParallelTextSegment, None, None]:
+        for text in self.get_texts(all_source_segments, all_target_segments):
+            with closing(text.get_segments(all_source_segments, all_target_segments, include_text)) as segments:
+                for segment in segments:
+                    yield segment
 
     def get_count(
         self, all_source_segments: bool = False, all_target_segments: bool = False, nonempty_only: bool = False
@@ -99,7 +116,5 @@ class ParallelTextCorpus:
     def _create_parallel_text(self, id: str) -> ParallelText:
         source_text = _get_text(self._source_corpus, id)
         target_text = _get_text(self._target_corpus, id)
-        text_alignment_collection: Optional[TextAlignmentCollection] = None
-        if self._text_alignment_corpus is not None:
-            text_alignment_collection = self._text_alignment_corpus.get_text_alignment_collection(id)
+        text_alignment_collection = _get_text_alignment_collection(self._text_alignment_corpus, id)
         return ParallelText(source_text, target_text, text_alignment_collection)

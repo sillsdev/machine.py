@@ -26,8 +26,11 @@ class DictionaryTextAlignmentCorpus(TextAlignmentCorpus):
     def get_text_alignment_collection(self, id: str) -> Optional[TextAlignmentCollection]:
         return self._text_alignment_collections.get(id)
 
-    def invert(self) -> TextAlignmentCorpus:
+    def invert(self) -> "DictionaryTextAlignmentCorpus":
         return DictionaryTextAlignmentCorpus(tac.invert() for tac in self._text_alignment_collections.values())
+
+    def get_text_alignment_collection_sort_key(self, id: str) -> str:
+        return id
 
     def _add_text_alignment_collection(self, alignments: TextAlignmentCollection) -> None:
         self._text_alignment_collections[alignments.id] = alignments

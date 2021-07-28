@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Iterable
+from typing import Generator
 
 from .text_alignment import TextAlignment
 
@@ -17,7 +17,7 @@ class TextAlignmentCollection(ABC):
 
     @property
     @abstractmethod
-    def alignments(self) -> Iterable[TextAlignment]:
+    def alignments(self) -> Generator[TextAlignment, None, None]:
         ...
 
     @abstractmethod

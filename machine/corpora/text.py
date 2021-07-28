@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Iterable
+from typing import Generator
 
 from .text_segment import TextSegment
 
@@ -16,5 +16,5 @@ class Text(ABC):
         ...
 
     @abstractmethod
-    def get_segments(self, include_text: bool = True) -> Iterable[TextSegment]:
+    def get_segments(self, include_text: bool = True) -> Generator[TextSegment, None, None]:
         ...

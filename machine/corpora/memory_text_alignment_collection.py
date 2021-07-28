@@ -1,5 +1,6 @@
-from typing import Iterable
+from typing import Generator, Iterable
 
+from .corpora_helpers import gen
 from .text_alignment import TextAlignment
 from .text_alignment_collection import TextAlignmentCollection
 
@@ -18,8 +19,8 @@ class MemoryTextAlignmentCollection(TextAlignmentCollection):
         return self._id
 
     @property
-    def alignments(self) -> Iterable[TextAlignment]:
-        return self._alignments
+    def alignments(self) -> Generator[TextAlignment, None, None]:
+        return gen(self._alignments)
 
-    def invert(self) -> TextAlignmentCollection:
+    def invert(self) -> "MemoryTextAlignmentCollection":
         return MemoryTextAlignmentCollection(self._id, (ta.invert() for ta in self._alignments))
