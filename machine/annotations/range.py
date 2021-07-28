@@ -21,6 +21,9 @@ class Range(Generic[Offset], Sized, Iterable[Offset]):
     def __iter__(self) -> Iterator[Offset]:
         return iter(self._factory.iterate(self.start, self.end))
 
+    def __repr__(self) -> str:
+        return f"[{self.start}, {self.end}]"
+
 
 class _RangeFactory(ABC, Generic[Offset]):
     def create(self, start: Offset, end: Optional[Offset]) -> Range[Offset]:

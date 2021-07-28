@@ -18,14 +18,18 @@ SENTENCE_TERMINALS = {
     "\uFF61",
 }
 
-DELAYED_SENTENCE_END = {")", "]", ">", "}"}
+QUOTATION_MARKS = {'"', "“", "”", "„", "‟", "'", "‘", "’", "‚", "‛", "«", "»", "‹", "›"}
+
+DELAYED_SENTENCE_END = QUOTATION_MARKS | {")", "]", ">", "}"}
 
 
 def is_sentence_terminal(s: str) -> bool:
     return len(s) > 0 and all(c in SENTENCE_TERMINALS for c in s)
 
+
 def is_delayed_sentence_end(s: str) -> bool:
     return len(s) > 0 and all(c in DELAYED_SENTENCE_END for c in s)
+
 
 def is_punctuation(c: str) -> bool:
     category = unicodedata.category(c)
