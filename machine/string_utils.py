@@ -1,4 +1,5 @@
 import unicodedata
+from typing import Optional
 
 SENTENCE_TERMINALS = {
     ".",
@@ -44,3 +45,18 @@ def is_symbol(c: str) -> bool:
 def is_control(c: str) -> bool:
     category = unicodedata.category(c)
     return category == "Cc"
+
+
+def is_integer(s: str) -> bool:
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+
+
+def parse_integer(s: str) -> Optional[int]:
+    try:
+        return int(s)
+    except ValueError:
+        return None

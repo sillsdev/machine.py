@@ -5,6 +5,8 @@ from typing import Generator, Iterable, Tuple, TypeVar, cast
 
 import regex
 
+from ..scripture.canon import book_id_to_number
+
 
 def get_files(file_patterns: Iterable[str]) -> Iterable[Tuple[str, str]]:
     file_patterns = list(file_patterns)
@@ -47,3 +49,7 @@ T = TypeVar("T")
 
 def gen(iterable: Iterable[T] = []) -> Generator[T, None, None]:
     return (i for i in iterable)
+
+
+def get_scripture_text_sort_key(id: str) -> str:
+    return str(book_id_to_number(id)).zfill(3)
