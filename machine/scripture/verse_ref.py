@@ -1,8 +1,10 @@
-from typing import Iterable, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
 
 from ..string_utils import is_integer, parse_integer
 from .canon import LAST_BOOK, book_id_to_number, book_number_to_id
-from .versification import Versification, VersificationType, get_versification
+
+if TYPE_CHECKING:
+    from .versification import Versification
 
 _VERSE_RANGE_SEPARATOR = "-"
 _VERSE_SEQUENCE_INDICATOR = ","
@@ -39,7 +41,7 @@ def _get_verse_num(verse: Optional[str]) -> Tuple[bool, int]:
     return True, v_num
 
 
-def _get_bbbcccvvv(book_num: int, chapter_num: int, verse_num: int) -> int:
+def get_bbbcccvvv(book_num: int, chapter_num: int, verse_num: int) -> int:
     return (
         (book_num % _BCV_MAX_VALUE) * _BOOK_DIGIT_SHIFTER
         + ((chapter_num % _BCV_MAX_VALUE) * _CHAPTER_DIGIT_SHIFTER if chapter_num >= 0 else 0)
@@ -53,8 +55,10 @@ class VerseRef:
         book: Union[str, int],
         chapter: Union[str, int],
         verse: Union[str, int],
-        versification: Optional[Versification] = None,
+        versification: Optional["Versification"] = None,
     ) -> None:
+        from .versification import VersificationType, get_builtin_versification
+
         if isinstance(book, str):
             self.book_num = book_id_to_number(book)
         else:
@@ -70,14 +74,15 @@ class VerseRef:
         else:
             self.verse_num = verse
 
-        self.versification = versification
-        if self.versification is None:
-            self.versification = get_versification(VersificationType.ENGLISH)
+        self.versification = (
+            get_builtin_versification(VersificationType.ENGLISH) if versification is None else versification
+        )
 
     @classmethod
-    def from_string(cls, verse_str: str) -> "VerseRef":
+    def from_string(cls, verse_str: str, versification: Optional["Versification"] = None) -> "VerseRef":
+        from .versification import get_builtin_versification
+
         verse_str = verse_str.replace("\u200f", "")
-        versification: Optional[Versification] = None
         if verse_str.find("/") >= 0:
             parts = verse_str.split("/")
             verse_str = parts[0]
@@ -85,7 +90,7 @@ class VerseRef:
                 type = parse_integer(parts[1].strip())
                 if type is None:
                     raise ValueError("The verse reference is invalid.")
-                versification = get_versification(type)
+                versification = get_builtin_versification(type)
 
         b_cv = verse_str.strip().split(" ")
         if len(b_cv) != 2:
@@ -116,11 +121,11 @@ class VerseRef:
         return VerseRef(start.book, start.chapter, f"{start.verse_num}-{end.verse_num}")
 
     @classmethod
-    def from_bbbcccvvv(cls, bbbcccvvv: int) -> "VerseRef":
+    def from_bbbcccvvv(cls, bbbcccvvv: int, versification: Optional["Versification"] = None) -> "VerseRef":
         book = bbbcccvvv // 1000000
         chapter = bbbcccvvv % 1000000 // 1000
         verse = bbbcccvvv % 1000
-        return VerseRef(book, chapter, verse)
+        return VerseRef(book, chapter, verse, versification)
 
     @property
     def book_num(self) -> int:
@@ -187,7 +192,7 @@ class VerseRef:
 
     @property
     def bbbcccvvv(self) -> int:
-        return _get_bbbcccvvv(self._book_num, self._chapter_num, self._verse_num)
+        return get_bbbcccvvv(self._book_num, self._chapter_num, self._verse_num)
 
     @property
     def has_multiple(self) -> bool:
@@ -264,14 +269,14 @@ class VerseRef:
         self._verse = vref._verse
         self.versification = vref.versification
 
-    def change_versification(self, versification: Versification) -> None:
+    def change_versification(self, versification: "Versification") -> None:
         if not self.has_multiple:
             versification.change_versification(self)
         else:
             _, result = versification.change_versification_with_ranges(self)
             self.copy_from(result)
 
-    def change_versification_with_ranges(self, versification: Versification) -> bool:
+    def change_versification_with_ranges(self, versification: "Versification") -> bool:
         result, temp = versification.change_versification_with_ranges(self)
         self.copy_from(temp)
         return result

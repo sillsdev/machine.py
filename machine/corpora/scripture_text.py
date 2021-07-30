@@ -4,7 +4,7 @@ from ..scripture.verse_ref import VerseRef
 from ..scripture.versification import (
     Versification,
     VersificationType,
-    get_versification,
+    get_builtin_versification,
 )
 from ..tokenization import Tokenizer
 from .corpora_helpers import get_scripture_text_sort_key
@@ -17,7 +17,9 @@ class ScriptureText(StreamTextBase):
         self, word_tokenizer: Tokenizer[str, int, str], id: str, versification: Optional[Versification] = None
     ) -> None:
         super().__init__(word_tokenizer, id, get_scripture_text_sort_key(id))
-        self._versification = get_versification(VersificationType.ENGLISH) if versification is None else versification
+        self._versification = (
+            get_builtin_versification(VersificationType.ENGLISH) if versification is None else versification
+        )
 
     @property
     def versification(self) -> Versification:

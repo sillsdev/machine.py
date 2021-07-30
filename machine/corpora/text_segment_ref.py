@@ -1,9 +1,12 @@
 from dataclasses import dataclass
-from functools import reduce
+from functools import reduce, total_ordering
 from typing import Any, Iterable, List, Sequence, overload
+
+from ..string_utils import parse_integer
 
 
 @dataclass(frozen=True)
+@total_ordering
 class TextSegmentRef:
     keys: Sequence[str]
 
@@ -49,27 +52,12 @@ class TextSegmentRef:
             other_key = other.keys[i]
             if key != other_key:
                 # if both keys are numbers, compare numerically
-                if key.isdigit() and other_key.isdigit():
-                    return int(key) < int(other_key)
+                int_key = parse_integer(key)
+                int_other_key = parse_integer(other_key)
+                if int_key is not None and int_other_key is not None:
+                    return int_key < int_other_key
                 return key < other_key
         return len(self.keys) < len(other.keys)
-
-    def __le__(self, other: "TextSegmentRef") -> bool:
-        return not (self > other)
-
-    def __gt__(self, other: "TextSegmentRef") -> bool:
-        for i in range(min(len(self.keys), len(other.keys))):
-            key = self.keys[i]
-            other_key = other.keys[i]
-            if key != other_key:
-                # if both keys are numbers, compare numerically
-                if key.isdigit() and other_key.isdigit():
-                    return int(key) > int(other_key)
-                return key > other_key
-        return len(self.keys) > len(other.keys)
-
-    def __ge__(self, other: "TextSegmentRef") -> bool:
-        return not (self < other)
 
     def __repr__(self) -> str:
         return ".".join(self.keys)
