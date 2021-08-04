@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum, IntEnum, auto
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, TextIO, Tuple, Union
+from typing import Dict, List, Optional, Set, TextIO, Tuple, Union
 
 import regex
 
@@ -10,29 +10,98 @@ from ..typeshed import StrPath
 from .canon import book_id_to_number, is_canonical
 from .verse_ref import VerseRef, get_bbbcccvvv
 
-NON_CANONICAL_LAST_CHAPTER_OR_VERSE = 998
-VERSIFICATION_NAME_REGEX = regex.compile(r"#\s*Versification\s+\"(?<name>[^\"]+)\"\s*")
+
+class VersificationType(IntEnum):
+    UNKNOWN = 0
+    ORIGINAL = 1
+    SEPTUAGINT = 2
+    VULGATE = 3
+    ENGLISH = 4
+    RUSSIAN_PROTESTANT = 5
+    RUSSIAN_ORTHODOX = 6
 
 
 class Versification:
+    _BUILTIN_VERSIFICATIONS: Dict[VersificationType, "Versification"] = {}
+    _BUILTIN_VERSIFICATION_FILENAMES = {
+        VersificationType.ORIGINAL: "org.vrs.txt",
+        VersificationType.ENGLISH: "eng.vrs.txt",
+        VersificationType.SEPTUAGINT: "lxx.vrs.txt",
+        VersificationType.VULGATE: "vul.vrs.txt",
+        VersificationType.RUSSIAN_ORTHODOX: "rso.vrs.txt",
+        VersificationType.RUSSIAN_PROTESTANT: "rsc.vrs.txt",
+    }
+    _BUILTIN_VERSIFICATION_NAMES_TO_TYPES = {
+        "Original": VersificationType.ORIGINAL,
+        "Septuagint": VersificationType.SEPTUAGINT,
+        "Vulgate": VersificationType.VULGATE,
+        "English": VersificationType.ENGLISH,
+        "RussianProtestant": VersificationType.RUSSIAN_PROTESTANT,
+        "RussianOrthodox": VersificationType.RUSSIAN_ORTHODOX,
+    }
+    _NON_CANONICAL_LAST_CHAPTER_OR_VERSE = 998
+
+    @classmethod
+    def create(cls, name: str) -> "Versification":
+        type = cls._BUILTIN_VERSIFICATION_NAMES_TO_TYPES.get(name)
+        if type is not None:
+            return cls.get_builtin(type)
+
+        versification = Versification(name)
+        with open(Path(__file__).parent / "eng.vrs.txt", "r", encoding="utf-8") as file:
+            versification = cls.parse(file, versification=versification)
+        return versification
+
+    @classmethod
+    def get_builtin(cls, type: Union[VersificationType, int, str]) -> "Versification":
+        if isinstance(type, int):
+            type = VersificationType(type)
+        elif isinstance(type, str):
+            if type in cls._BUILTIN_VERSIFICATION_NAMES_TO_TYPES:
+                type = cls._BUILTIN_VERSIFICATION_NAMES_TO_TYPES[type]
+            else:
+                type = VersificationType[type]
+
+        versification = cls._BUILTIN_VERSIFICATIONS.get(type)
+        if versification is not None:
+            return versification
+
+        filename = cls._BUILTIN_VERSIFICATION_FILENAMES.get(type)
+        if filename is None:
+            raise ValueError("The versification type is unknown.")
+
+        path = Path(__file__).parent / filename
+
+        with open(path, "r", encoding="utf-8") as file:
+            versification = cls.parse(file)
+        cls._BUILTIN_VERSIFICATIONS[type] = versification
+        return versification
+
+    @classmethod
+    def load(cls, filename: StrPath, base_versification: "Versification", name: str) -> "Versification":
+        with open(filename, "r", encoding="utf-8") as file:
+            versification = Versification(name, filename, base_versification)
+            return cls.parse(file, filename, versification, name)
+
+    @classmethod
+    def parse(
+        cls,
+        stream: TextIO,
+        filename: Optional[StrPath] = None,
+        versification: Optional["Versification"] = None,
+        fallback_name: Optional[str] = None,
+    ) -> "Versification":
+        return _parse_versification(stream, filename, versification, fallback_name)
+
     def __init__(
         self, name: str, filename: Optional[StrPath] = None, base_versification: Optional["Versification"] = None
     ) -> None:
         self._name = name
         self._type = VersificationType.UNKNOWN
         if base_versification is None:
-            if name == "English":
-                self._type = VersificationType.ENGLISH
-            elif name == "Original":
-                self._type = VersificationType.ORIGINAL
-            elif name == "Septuagint":
-                self._type = VersificationType.SEPTUAGINT
-            elif name == "Vulgate":
-                self._type = VersificationType.VULGATE
-            elif name == "RussianOrthodox":
-                self._type = VersificationType.RUSSIAN_ORTHODOX
-            elif name == "RussianProtestant":
-                self._type = VersificationType.RUSSIAN_PROTESTANT
+            type = Versification._BUILTIN_VERSIFICATION_NAMES_TO_TYPES.get(name)
+            if type is not None:
+                self._type = type
         self._filename = None if filename is None else Path(filename)
         self._base_versification = base_versification
 
@@ -65,7 +134,7 @@ class Versification:
         # Non-scripture books have 998 chapters.
         # Use 998 so the VerseRef.BBBCCCVVV value is computed properly.
         if not is_canonical(book_num):
-            return NON_CANONICAL_LAST_CHAPTER_OR_VERSE
+            return Versification._NON_CANONICAL_LAST_CHAPTER_OR_VERSE
 
         # Anything else not in .vrs file has 1 chapter
         if book_num > len(self._book_list):
@@ -78,7 +147,7 @@ class Versification:
         # Non-scripture books have 998 chapters.
         # Use 998 so the VerseRef.BBBCCCVVV value is computed properly.
         if not is_canonical(book_num):
-            return NON_CANONICAL_LAST_CHAPTER_OR_VERSE
+            return Versification._NON_CANONICAL_LAST_CHAPTER_OR_VERSE
 
         # Anything else not in .vrs file has 1 chapter
         if book_num > len(self._book_list):
@@ -220,14 +289,9 @@ class _VerseMappings:
         )
 
 
-class VersificationType(IntEnum):
-    UNKNOWN = 0
-    ORIGINAL = 1
-    SEPTUAGINT = 2
-    VULGATE = 3
-    ENGLISH = 4
-    RUSSIAN_PROTESTANT = 5
-    RUSSIAN_ORTHODOX = 6
+NULL_VERSIFICATION = Versification("NULL")
+
+_VERSIFICATION_NAME_REGEX = regex.compile(r"#\s*Versification\s+\"(?<name>[^\"]+)\"\s*")
 
 
 class _LineType(Enum):
@@ -241,16 +305,17 @@ class _LineType(Enum):
 
 @dataclass(frozen=True)
 class _VersificationLine:
-    line_type: _LineType
+    type: _LineType
     line: str
     comment: str
+    line_num: int
 
     def __repr__(self) -> str:
-        if self.line_type == _LineType.CHAPTER_VERSE:
+        if self.type == _LineType.CHAPTER_VERSE:
             return self.line
-        elif self.line_type == _LineType.ONE_TO_MANY_MAPPING:
+        elif self.type == _LineType.ONE_TO_MANY_MAPPING:
             return f"#! {self.line}"
-        elif self.line_type == _LineType.COMMENT:
+        elif self.type == _LineType.COMMENT:
             if self.comment != "":
                 return f"# {self.comment}"
             return ""
@@ -260,7 +325,56 @@ class _VersificationLine:
             return f"{self.line} # {self.comment}"
 
 
-def _parse_line(line: str) -> _VersificationLine:
+def _syntax_error(message: str, line_num: int) -> RuntimeError:
+    return RuntimeError(f"Invalid versification syntax: {message}, line: {line_num}.")
+
+
+def _parse_versification(
+    stream: TextIO,
+    filename: Optional[StrPath] = None,
+    versification: Optional["Versification"] = None,
+    fallback_name: Optional[str] = None,
+) -> Versification:
+    line_num = 1
+    for line in stream:
+        line = line.strip()
+        if versification is None:
+            name = ""
+            match = _VERSIFICATION_NAME_REGEX.match(line)
+            if match is not None:
+                name = match.group("name")
+            if name != "":
+                versification = Versification(name, filename)
+
+        parsed_line = _parse_line(line, line_num)
+        if parsed_line.type == _LineType.COMMENT:
+            line_num += 1
+            continue
+
+        if versification is None:
+            if fallback_name is None or fallback_name == "":
+                raise _syntax_error("the versification is missing a name", parsed_line.line_num)
+            versification = Versification(fallback_name, filename)
+
+        if parsed_line.type == _LineType.CHAPTER_VERSE:
+            _parse_chapter_verse_line(versification, parsed_line)
+        elif parsed_line.type == _LineType.STANDARD_MAPPING:
+            _parse_mapping_line(versification, parsed_line)
+        elif parsed_line.type == _LineType.ONE_TO_MANY_MAPPING:
+            _parse_range_to_one_mapping_line(versification, parsed_line)
+        elif parsed_line.type == _LineType.EXCLUDED_VERSE:
+            _parse_excluded_verse(versification, parsed_line)
+        elif parsed_line.type == _LineType.VERSE_SEGMENTS:
+            if parsed_line.line.find("#") != -1:
+                raise _syntax_error("invalid verse segments line", parsed_line.line_num)
+            _parse_verse_segments_line(versification, parsed_line, is_builtin=filename is None)
+        line_num += 1
+
+    assert versification is not None
+    return versification
+
+
+def _parse_line(line: str, line_num: int) -> _VersificationLine:
     is_comment_line = len(line) > 0 and line[0] == "#"
     parts = line.split("#", maxsplit=2)
     line = parts[0].strip()
@@ -284,14 +398,14 @@ def _parse_line(line: str) -> _VersificationLine:
     else:
         line_type = _LineType.CHAPTER_VERSE
 
-    return _VersificationLine(line_type, line, comment)
+    return _VersificationLine(line_type, line, comment, line_num)
 
 
-def _parse_chapter_verse_line(versification: Versification, line: str) -> None:
-    parts = line.split()
+def _parse_chapter_verse_line(versification: Versification, parsed_line: _VersificationLine) -> None:
+    parts = parsed_line.line.split()
     book_num = book_id_to_number(parts[0])
     if book_num == 0:
-        raise RuntimeError("Invalid versification syntax: invalid book.")
+        raise _syntax_error("invalid book", parsed_line.line_num)
 
     while len(versification._book_list) < book_num:
         versification._book_list.append([1])
@@ -309,15 +423,15 @@ def _parse_chapter_verse_line(versification: Versification, line: str) -> None:
         pieces = part.split(":")
         c = parse_integer(pieces[0])
         if c is None or c <= 0:
-            raise RuntimeError("Invalid versification syntax: invalid chapter.")
+            raise _syntax_error("invalid chapter", parsed_line.line_num)
         chapter = c
 
         if len(pieces) != 2:
-            raise RuntimeError("Invalid versification syntax: missing verse.")
+            raise _syntax_error("missing verse", parsed_line.line_num)
 
         verse_count = parse_integer(pieces[1])
         if verse_count is None or verse_count < 0:
-            raise RuntimeError("Invalid versification syntax: invalid verse.")
+            raise _syntax_error("invalid verse", parsed_line.line_num)
 
         if len(verses_in_chapter) < chapter:
             for i in range(len(verses_in_chapter), chapter):
@@ -328,9 +442,9 @@ def _parse_chapter_verse_line(versification: Versification, line: str) -> None:
     versification._book_list[book_num - 1] = verses_in_chapter
 
 
-def _parse_mapping_line(versification: Versification, line: str) -> None:
+def _parse_mapping_line(versification: Versification, parsed_line: _VersificationLine) -> None:
     try:
-        parts = line.split("=")
+        parts = parsed_line.line.split("=")
         left_pieces = parts[0].strip().split("-")
         right_pieces = parts[1].strip().split("-")
 
@@ -348,7 +462,7 @@ def _parse_mapping_line(versification: Versification, line: str) -> None:
             new_verse_ref.verse_num += 1
             standard_verse_ref.verse_num += 1
     except ValueError:
-        raise RuntimeError("Invalid versification syntax: invalid verse reference.")
+        raise _syntax_error("invalid verse reference", parsed_line.line_num)
 
 
 def _get_references(verse_pieces: List[str]) -> List[VerseRef]:
@@ -369,8 +483,8 @@ def _get_references(verse_pieces: List[str]) -> List[VerseRef]:
     return verse_refs
 
 
-def _parse_range_to_one_mapping_line(versification: Versification, line: str) -> None:
-    line = line[1:]
+def _parse_range_to_one_mapping_line(versification: Versification, parsed_line: _VersificationLine) -> None:
+    line = parsed_line.line[1:]
     try:
         parts = line.split("=")
         left_pieces = parts[0].strip().split("-")
@@ -379,19 +493,19 @@ def _parse_range_to_one_mapping_line(versification: Versification, line: str) ->
         versification_refs = _get_references(left_pieces)
         standard_refs = _get_references(right_pieces)
     except ValueError:
-        raise RuntimeError("Invalid versification syntax: invalid verse reference.")
+        raise _syntax_error("invalid verse reference", parsed_line.line_num)
 
     # either versification or standard must have just one verse
     if len(versification_refs) != 1 and len(standard_refs) != 1:
-        raise RuntimeError("Invalid versification syntax: invalid many-to-one mapping.")
+        raise _syntax_error("invalid many-to-one mapping", parsed_line.line_num)
 
     versification._mappings.add_mappings(versification_refs, standard_refs)
 
 
-def _get_verse_reference(parts: List[str]) -> Tuple[str, int, int]:
+def _get_verse_reference(parts: List[str], line_num: int) -> Tuple[str, int, int]:
     book_name = parts[0][1:]
     if book_id_to_number(book_name) == 0:
-        raise RuntimeError("Invalid versification Syntax: invalid book.")
+        raise _syntax_error("invalid book", line_num)
 
     pieces = parts[1].split(":")
     chapter = int(pieces[0])
@@ -399,21 +513,26 @@ def _get_verse_reference(parts: List[str]) -> Tuple[str, int, int]:
     return book_name, chapter, verse
 
 
-def _parse_excluded_verse(versification: Versification, line: str) -> None:
-    if len(line) < 8 or line[0] != "-" or ":" not in line or " " not in line:
-        raise RuntimeError("Invalid versification syntax: excluded verse line.")
+def _parse_excluded_verse(versification: Versification, parsed_line: _VersificationLine) -> None:
+    if (
+        len(parsed_line.line) < 8
+        or parsed_line.line[0] != "-"
+        or ":" not in parsed_line.line
+        or " " not in parsed_line.line
+    ):
+        raise _syntax_error("invalid excluded verse line", parsed_line.line_num)
 
-    parts = line.split()
+    parts = parsed_line.line.split()
     try:
-        book_name, chapter, verse = _get_verse_reference(parts)
+        book_name, chapter, verse = _get_verse_reference(parts, parsed_line.line_num)
 
         verse_ref = VerseRef(book_name, str(chapter), str(verse), versification)
         if verse_ref.bbbcccvvv not in versification._excluded_verses:
             versification._excluded_verses.add(verse_ref.bbbcccvvv)
         else:
-            raise RuntimeError("Invalid versification syntax: duplicate excluded verse.")
+            raise _syntax_error("duplicate excluded verse", parsed_line.line_num)
     except ValueError:
-        raise RuntimeError("Invalid versification syntax: invalid verse reference.")
+        raise _syntax_error("invalid verse reference", parsed_line.line_num)
 
 
 def _remove_spaces(line: str, index: int) -> str:
@@ -430,24 +549,32 @@ def _remove_spaces(line: str, index: int) -> str:
     return result
 
 
-def _parse_verse_segments_line(versification: Versification, line: str, is_builtin: bool) -> None:
-    if len(line) < 8 or line[0] != "*" or ":" not in line or " " not in line or "," not in line:
-        raise RuntimeError("Invalid versification syntax: invalid verse segments line.")
+def _parse_verse_segments_line(versification: Versification, parsed_line: _VersificationLine, is_builtin: bool) -> None:
+    if (
+        len(parsed_line.line) < 8
+        or parsed_line.line[0] != "*"
+        or ":" not in parsed_line.line
+        or " " not in parsed_line.line
+        or "," not in parsed_line.line
+    ):
+        raise _syntax_error("invalid verse segments line", parsed_line.line_num)
 
-    index_of_colon = line.find(":")
-    line = _remove_spaces(line, index_of_colon)
+    index_of_colon = parsed_line.line.find(":")
+    line = _remove_spaces(parsed_line.line, index_of_colon)
 
     parts = line.split()
     try:
         # Get segmenting information
         segment_start = parts[1].find(",")
         if segment_start == -1:
-            raise RuntimeError("Invalid versification syntax: invalid segment.")
+            raise _syntax_error("invalid segment", parsed_line.line_num)
 
         segments = parts[1][segment_start + 1 :]
 
         # Get Scripture reference, throwing an exception if it is not valid.
-        book_name, chapter, verse = _get_verse_reference(parts)
+        parts[1] = parts[1][:segment_start]
+        # Remove segment info from chapter:verse reference
+        book_name, chapter, verse = _get_verse_reference(parts, parsed_line.line_num)
 
         segment_list: List[str] = []
         nonempty_segment_found = False
@@ -455,7 +582,7 @@ def _parse_verse_segments_line(versification: Versification, line: str, is_built
             if seg == "":
                 continue
             if nonempty_segment_found and seg == "-":
-                raise RuntimeError("Invalid versification syntax: unspecified segment location.")
+                raise _syntax_error("unspecified segment location", parsed_line.line_num)
 
             if seg == "-":
                 # '-' indicates no marking for segment
@@ -465,96 +592,13 @@ def _parse_verse_segments_line(versification: Versification, line: str, is_built
                 nonempty_segment_found = True
 
         if len(segment_list) == 1 and segment_list[0] == "":
-            raise RuntimeError("Invalid versification syntax: no segments defined.")
+            raise _syntax_error("no segments defined", parsed_line.line_num)
 
         bbbcccvvv = get_bbbcccvvv(book_id_to_number(book_name), chapter, verse)
         # Don't allow overwrites for built-in versifications
         if is_builtin and bbbcccvvv in versification._verse_segments:
-            raise RuntimeError("Invalid versification syntax: duplicate segment.")
+            raise _syntax_error("duplicate segment", parsed_line.line_num)
 
         versification._verse_segments[bbbcccvvv] = segment_list
-    except ValueError:
-        raise RuntimeError("Invalid versification syntax: invalid verse reference.")
-
-
-def read_versification_file(
-    stream: TextIO,
-    filename: Optional[StrPath] = None,
-    versification: Optional[Versification] = None,
-    fallback_name: Optional[str] = None,
-) -> Versification:
-    for line in stream:
-        line = line.strip()
-        if versification is None:
-            name = ""
-            match = VERSIFICATION_NAME_REGEX.match(line)
-            if match is not None:
-                name = match.group("name")
-            if name != "":
-                versification = Versification(name, filename)
-
-        parsed_line = _parse_line(line)
-        if parsed_line.line_type == _LineType.COMMENT:
-            continue
-
-        if versification is None:
-            if fallback_name is None or fallback_name == "":
-                raise RuntimeError("Invalid versification syntax: the versification is missing a name.")
-            versification = Versification(fallback_name, filename)
-
-        if parsed_line.line_type == _LineType.CHAPTER_VERSE:
-            _parse_chapter_verse_line(versification, parsed_line.line)
-        elif parsed_line.line_type == _LineType.STANDARD_MAPPING:
-            _parse_mapping_line(versification, parsed_line.line)
-        elif parsed_line.line_type == _LineType.ONE_TO_MANY_MAPPING:
-            _parse_range_to_one_mapping_line(versification, parsed_line.line)
-        elif parsed_line.line_type == _LineType.EXCLUDED_VERSE:
-            _parse_excluded_verse(versification, parsed_line.line)
-        elif parsed_line.line_type == _LineType.VERSE_SEGMENTS:
-            if parsed_line.line.find("#") != -1:
-                raise RuntimeError("Invalid versification syntax: invalid verse segments line.")
-            _parse_verse_segments_line(versification, parsed_line.line, is_builtin=filename is None)
-
-    assert versification is not None
-    return versification
-
-
-_BUILTIN_VERSIFICATIONS: Dict[VersificationType, Versification] = {}
-_BUILTIN_VERSIFICATION_FILENAMES = {
-    VersificationType.ORIGINAL: "org.vrs.txt",
-    VersificationType.ENGLISH: "eng.vrs.txt",
-    VersificationType.SEPTUAGINT: "lxx.vrs.txt",
-    VersificationType.VULGATE: "vul.vrs.txt",
-    VersificationType.RUSSIAN_ORTHODOX: "rso.vrs.txt",
-    VersificationType.RUSSIAN_PROTESTANT: "rsc.vrs.txt",
-}
-
-
-def get_builtin_versification(type: Union[VersificationType, int, str]) -> Versification:
-    if isinstance(type, int):
-        type = VersificationType(type)
-    elif isinstance(type, str):
-        type = VersificationType[type]
-    versification = _BUILTIN_VERSIFICATIONS.get(type)
-    if versification is not None:
-        return versification
-
-    filename = _BUILTIN_VERSIFICATION_FILENAMES.get(type)
-    if filename is None:
-        raise ValueError("The versification type is unknown.")
-
-    path = Path(__file__).parent / filename
-
-    with open(path, "r", encoding="utf-8") as file:
-        versification = read_versification_file(file)
-    _BUILTIN_VERSIFICATIONS[type] = versification
-    return versification
-
-
-def load_versification(filename: StrPath, base_versification: Versification, name: str) -> Versification:
-    with open(filename, "r", encoding="utf-8") as file:
-        versification = Versification(name, filename, base_versification)
-        return read_versification_file(file, filename, versification, name)
-
-
-NULL_VERSIFICATION = Versification("NULL")
+    except ValueError as e:
+        raise _syntax_error("invalid verse reference " + str(e), parsed_line.line_num)

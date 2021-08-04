@@ -1,7 +1,8 @@
+from enum import Enum, auto
 from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
 
 from ..string_utils import is_integer, parse_integer
-from .canon import LAST_BOOK, book_id_to_number, book_number_to_id
+from .canon import LAST_BOOK, book_id_to_number, book_number_to_id, is_canonical
 
 if TYPE_CHECKING:
     from .versification import Versification
@@ -31,7 +32,7 @@ def _get_verse_num(verse: Optional[str]) -> Tuple[bool, int]:
         ch = verse[i]
         if not is_integer(ch):
             if i == 0:
-                v_num - 1
+                v_num = -1
             return False, v_num
 
         v_num = (v_num * 10) + int(ch)
@@ -49,38 +50,53 @@ def get_bbbcccvvv(book_num: int, chapter_num: int, verse_num: int) -> int:
     )
 
 
+class ValidStatus(Enum):
+    VALID = auto()
+    UNKNOWN_VERSIFICATION = auto()
+    OUT_OF_RANGE = auto()
+    VERSE_OUT_OF_ORDER = auto()
+    VERSE_REPEATED = auto()
+
+
 class VerseRef:
     def __init__(
         self,
-        book: Union[str, int],
-        chapter: Union[str, int],
-        verse: Union[str, int],
+        book: Union[str, int] = 0,
+        chapter: Union[str, int] = 0,
+        verse: Union[str, int] = 0,
         versification: Optional["Versification"] = None,
     ) -> None:
-        from .versification import VersificationType, get_builtin_versification
+        from .versification import NULL_VERSIFICATION, Versification, VersificationType
 
-        if isinstance(book, str):
-            self.book_num = book_id_to_number(book)
+        if book == 0 and chapter == 0 and verse == 0 and versification is None:
+            self._book_num = 0
+            self._chapter_num = 0
+            self._verse_num = 0
+            self._verse = None
+            self.versification = NULL_VERSIFICATION
         else:
-            self.book_num = book
+            if isinstance(book, str):
+                self.book_num = book_id_to_number(book)
+            else:
+                self.book_num = book
 
-        if isinstance(chapter, str):
-            self.chapter = chapter
-        else:
-            self.chapter_num = chapter
+            if isinstance(chapter, str):
+                self.chapter = chapter
+            else:
+                self.chapter_num = chapter
 
-        if isinstance(verse, str):
-            self.verse = verse
-        else:
-            self.verse_num = verse
+            if isinstance(verse, str):
+                self.verse = verse
+            else:
+                self.verse_num = verse
 
-        self.versification = (
-            get_builtin_versification(VersificationType.ENGLISH) if versification is None else versification
-        )
+            self.versification = (
+                Versification.get_builtin(VersificationType.ENGLISH) if versification is None else versification
+            )
 
     @classmethod
     def from_string(cls, verse_str: str, versification: Optional["Versification"] = None) -> "VerseRef":
-        from .versification import get_builtin_versification
+        from .versification import Versification
 
         verse_str = verse_str.replace("\u200f", "")
         if verse_str.find("/") >= 0:
@@ -90,7 +106,7 @@ class VerseRef:
                 type = parse_integer(parts[1].strip())
                 if type is None:
                     raise ValueError("The verse reference is invalid.")
-                versification = get_builtin_versification(type)
+                versification = Versification.get_builtin(type)
 
         b_cv = verse_str.strip().split(" ")
         if len(b_cv) != 2:
@@ -195,10 +211,41 @@ class VerseRef:
         return get_bbbcccvvv(self._book_num, self._chapter_num, self._verse_num)
 
     @property
+    def bbbcccvvvs(self) -> str:
+        return str(self.bbbcccvvv).zfill(9) + self.segment()
+
+    @property
     def has_multiple(self) -> bool:
         return self._verse is not None and (
             self._verse.find(_VERSE_RANGE_SEPARATOR) != -1 or self._verse.find(_VERSE_SEQUENCE_INDICATOR) != -1
         )
+
+    @property
+    def valid_status(self) -> ValidStatus:
+        if self._verse is None or self._verse == "":
+            return self._validate_single_verse()
+
+        prev_verse = 0
+        for vref in self.all_verses():
+            valid_status = vref._validate_single_verse()
+            if valid_status != ValidStatus.VALID:
+                return valid_status
+
+            bbbcccvvv = vref.bbbcccvvv
+            if prev_verse > bbbcccvvv:
+                return ValidStatus.VERSE_OUT_OF_ORDER
+            if prev_verse == bbbcccvvv:
+                return ValidStatus.VERSE_REPEATED
+            prev_verse = bbbcccvvv
+        return ValidStatus.VALID
+
+    @property
+    def is_valid(self) -> bool:
+        return self.valid_status == ValidStatus.VALID
+
+    @property
+    def is_excluded(self) -> bool:
+        return self.versification.is_excluded(self.bbbcccvvv)
 
     def get_segments(self, default_segments: Optional[List[str]] = None) -> Optional[List[str]]:
         if self.versification is None:
@@ -248,18 +295,26 @@ class VerseRef:
             parts = self._verse.split(_VERSE_SEQUENCE_INDICATOR)
             for part in parts:
                 pieces = part.split(_VERSE_RANGE_SEPARATOR)
-                start_verse = VerseRef(self.book, self.chapter, pieces[0])
+                start_verse = self.copy()
+                start_verse.verse = pieces[0]
                 yield start_verse
 
                 if len(pieces) > 1:
-                    last_verse = VerseRef(self.book, self.chapter, pieces[1])
+                    last_verse = self.copy()
+                    last_verse.verse = pieces[1]
                     for verse_num in range(start_verse.verse_num + 1, last_verse.verse_num):
-                        yield VerseRef(self.book, self.chapter, str(verse_num))
+                        verse_in_range = VerseRef(self.book_num, self.chapter_num, verse_num, self.versification)
+                        if not verse_in_range.is_excluded:
+                            yield verse_in_range
                     yield last_verse
 
     def copy(self) -> "VerseRef":
-        copy = VerseRef(self.book_num, self.chapter_num, self.verse_num, self.versification)
+        copy = VerseRef()
+        copy._book_num = self._book_num
+        copy._chapter_num = self._chapter_num
+        copy._verse_num = self._verse_num
         copy._verse = self._verse
+        copy.versification = self.versification
         return copy
 
     def copy_from(self, vref: "VerseRef") -> None:
@@ -334,3 +389,27 @@ class VerseRef:
         if this_segment > other_segment:
             return 1
         return 0
+
+    def _validate_single_verse(self) -> ValidStatus:
+        # Unknown versification is always invalid
+        if self.versification is None:
+            return ValidStatus.UNKNOWN_VERSIFICATION
+
+        # If invalid book, reference is invalid
+        if self._book_num <= 0 or self._book_num > LAST_BOOK:
+            return ValidStatus.OUT_OF_RANGE
+
+        # If non-biblical book, any chapter/verse is valid
+        if not is_canonical(self._book_num):
+            return ValidStatus.VALID
+
+        if (
+            self._book_num > self.versification.get_last_book()
+            or self._chapter_num <= 0
+            or self._chapter_num > self.versification.get_last_chapter(self._book_num)
+            or self.verse_num < 0
+            or self.verse_num > self.versification.get_last_verse(self._book_num, self._chapter_num)
+        ):
+            return ValidStatus.OUT_OF_RANGE
+
+        return ValidStatus.OUT_OF_RANGE if self.versification.is_excluded(self.bbbcccvvv) else ValidStatus.VALID

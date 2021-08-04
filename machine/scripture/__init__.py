@@ -1,3 +1,5 @@
+from typing import Any
+
 from .canon import *
 from .verse_ref import *
 from .versification import *
@@ -13,5 +15,5 @@ RUSSIAN_PROTESTANT_VERSIFICATION: Versification
 def __getattr__(name: str) -> Any:
     if name.endswith("_VERSIFICATION"):
         index = name.index("_")
-        return get_builtin_versification(name[:index])
+        return Versification.get_builtin(name[:index])
     raise AttributeError

@@ -2,10 +2,10 @@ from io import StringIO
 
 import pytest
 
-from machine.scripture import ORIGINAL_VERSIFICATION, VerseRef, read_versification_file
+from machine.scripture import ORIGINAL_VERSIFICATION, VerseRef, Versification
 
 
-def test_read_versification_file_valid() -> None:
+def test_parse_valid() -> None:
     src = (
         '# Versification  "Test"\n'
         "# Version=1.9\n"
@@ -14,7 +14,7 @@ def test_read_versification_file_valid() -> None:
         "MRK 5:44 = MRK 6:1\n"
     )
     stream = StringIO(src)
-    versification = read_versification_file(stream, "vers.txt")
+    versification = Versification.parse(stream, "vers.txt")
     assert versification.get_last_book() == 41
     assert versification.get_last_chapter(1) == 24
     assert versification.get_last_chapter(41) == 6
@@ -25,15 +25,15 @@ def test_read_versification_file_valid() -> None:
     assert reference.bbbcccvvv == 41006001
 
 
-def test_read_versification_file_without_name() -> None:
+def test_parse_without_name() -> None:
     src = "GEN 1:31\n" "MRK 1:45\n"
     stream = StringIO(src)
     with pytest.raises(RuntimeError):
-        read_versification_file(stream, "vers.txt")
+        Versification.parse(stream, "vers.txt")
 
 
-def test_read_versification_invalid_syntax() -> None:
+def test_parse_invalid_syntax() -> None:
     src = "GEN 1:31 MRK 1:-8MAT 5:44 = FFF6,1\n"
     stream = StringIO(src)
     with pytest.raises(RuntimeError):
-        read_versification_file(stream, "vers.txt", fallback_name="name")
+        Versification.parse(stream, "vers.txt", fallback_name="name")
