@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Iterable, List, Optional, Set, Tuple, Union
 
 from ..string_utils import is_integer, parse_integer
 from .canon import LAST_BOOK, book_id_to_number, book_number_to_id, is_canonical
@@ -247,7 +247,7 @@ class VerseRef:
     def is_excluded(self) -> bool:
         return self.versification.is_excluded(self.bbbcccvvv)
 
-    def get_segments(self, default_segments: Optional[List[str]] = None) -> Optional[List[str]]:
+    def get_segments(self, default_segments: Optional[Set[str]] = None) -> Optional[Set[str]]:
         if self.versification is None:
             return default_segments
 
@@ -256,7 +256,7 @@ class VerseRef:
             segments = default_segments
         return segments
 
-    def validated_segment(self, valid_segments: Optional[List[str]] = None) -> str:
+    def validated_segment(self, valid_segments: Optional[Set[str]] = None) -> str:
         seg = self.segment()
         if len(seg) == 0:
             return ""
@@ -308,6 +308,19 @@ class VerseRef:
                             yield verse_in_range
                     yield last_verse
 
+    def unbridge(self) -> "VerseRef":
+        return next(iter(self.all_verses()))
+
+    def get_ranges(self) -> Iterable["VerseRef"]:
+        if self._verse is None or self.chapter_num <= 0:
+            yield self.copy()
+        else:
+            ranges = self._verse.split(",")
+            for range in ranges:
+                vref = self.copy()
+                vref.verse = range
+                yield vref
+
     def copy(self) -> "VerseRef":
         copy = VerseRef()
         copy._book_num = self._book_num
@@ -318,11 +331,15 @@ class VerseRef:
         return copy
 
     def copy_from(self, vref: "VerseRef") -> None:
-        self.book_num = vref.book_num
-        self.chapter_num = vref.chapter_num
-        self.verse_num = vref.verse_num
+        self._book_num = vref._book_num
+        self._chapter_num = vref._chapter_num
+        self._verse_num = vref._verse_num
         self._verse = vref._verse
         self.versification = vref.versification
+
+    def copy_verse_from(self, vref: "VerseRef") -> None:
+        self._verse_num = vref._verse_num
+        self._verse = vref._verse
 
     def change_versification(self, versification: "Versification") -> None:
         if not self.has_multiple:
@@ -336,30 +353,10 @@ class VerseRef:
         self.copy_from(temp)
         return result
 
-    def __eq__(self, other: "VerseRef") -> bool:
-        return self._compare(other) == 0
+    def str_with_versification(self) -> str:
+        return f"{str(self)}/{int(self.versification.type)}"
 
-    def __lt__(self, other: "VerseRef") -> bool:
-        return self._compare(other) < 0
-
-    def __gt__(self, other: "VerseRef") -> bool:
-        return self._compare(other) > 0
-
-    def __le__(self, other: "VerseRef") -> bool:
-        return self._compare(other) <= 0
-
-    def __ge__(self, other: "VerseRef") -> bool:
-        return self._compare(other) >= 0
-
-    def __hash__(self) -> int:
-        if self._verse is not None:
-            return self.bbbcccvvv ^ hash(self._verse)
-        return self.bbbcccvvv
-
-    def __repr__(self) -> str:
-        return f"{self.book} {self.chapter}:{self.verse}"
-
-    def _compare(self, other: "VerseRef") -> int:
+    def compare_to(self, other: "VerseRef", compare_all_verse: bool = False) -> int:
         if self.versification is not None and self.versification != other.versification:
             other = other.copy()
             if self.has_multiple:
@@ -371,7 +368,11 @@ class VerseRef:
             return self.book_num - other.book_num
         if self.chapter_num != other.chapter_num:
             return self.chapter_num - other.chapter_num
+        if compare_all_verse:
+            # compare all available verses (whether a single verse or a verse bridge)
+            return self._compare_verses(other)
 
+        # compare only the first verse bridge
         if self.verse_num != other.verse_num:
             return self.verse_num - other.verse_num
 
@@ -389,6 +390,75 @@ class VerseRef:
         if this_segment > other_segment:
             return 1
         return 0
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, VerseRef):
+            raise NotImplementedError
+        if self is other:
+            return True
+        return (
+            self._book_num == other._book_num
+            and self._chapter_num == other._chapter_num
+            and self._verse_num == other._verse_num
+            and self._verse == other._verse
+            and self.versification == other.versification
+        )
+
+    def __lt__(self, other: object) -> bool:
+        if not isinstance(other, VerseRef):
+            raise NotImplementedError
+        return self.compare_to(other) < 0
+
+    def __gt__(self, other: object) -> bool:
+        if not isinstance(other, VerseRef):
+            raise NotImplementedError
+        return self.compare_to(other) > 0
+
+    def __le__(self, other: object) -> bool:
+        if not isinstance(other, VerseRef):
+            raise NotImplementedError
+        return self.compare_to(other) <= 0
+
+    def __ge__(self, other: object) -> bool:
+        if not isinstance(other, VerseRef):
+            raise NotImplementedError
+        return self.compare_to(other) >= 0
+
+    def __hash__(self) -> int:
+        if self._verse is not None:
+            return self.bbbcccvvv ^ hash(self._verse)
+        return self.bbbcccvvv
+
+    def __repr__(self) -> str:
+        return f"{self.book} {self.chapter}:{self.verse}"
+
+    def _compare_verses(self, other: "VerseRef") -> int:
+        verse_list = self._get_verses()
+        other_verse_list = other._get_verses()
+
+        for verse_num, other_verse_num in zip(verse_list, other_verse_list):
+            if verse_num != other_verse_num:
+                return verse_num - other_verse_num
+        return len(verse_list) - len(other_verse_list)
+
+    def _get_verses(self) -> List[int]:
+        # Get verses from the verse strings
+        verse_list: List[int] = []
+        if self._verse is None or self._verse == "":
+            verse_list.append(self._verse_num)
+            return verse_list
+
+        verse_str = ""
+        for ch in self._verse:
+            if is_integer(ch):
+                verse_str += ch
+            elif len(verse_str) > 0:
+                verse_list.append(int(verse_str))
+                verse_str = ""
+
+        if len(verse_str) > 0:
+            verse_list.append(int(verse_str))
+        return verse_list
 
     def _validate_single_verse(self) -> ValidStatus:
         # Unknown versification is always invalid

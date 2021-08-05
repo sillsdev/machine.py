@@ -14,6 +14,6 @@ RUSSIAN_PROTESTANT_VERSIFICATION: Versification
 
 def __getattr__(name: str) -> Any:
     if name.endswith("_VERSIFICATION"):
-        index = name.index("_")
+        index = name.rindex("_")
         return Versification.get_builtin(name[:index])
     raise AttributeError

@@ -108,7 +108,7 @@ class Versification:
         self._mappings = _VerseMappings()
         self._excluded_verses: Set[int] = set()
         self._book_list: List[List[int]] = []
-        self._verse_segments: Dict[int, List[str]] = {}
+        self._verse_segments: Dict[int, Set[str]] = {}
         self.description: Optional[str] = None
 
     @property
@@ -176,7 +176,7 @@ class Versification:
     def is_excluded(self, bbbcccvvv: int) -> bool:
         return bbbcccvvv in self._excluded_verses
 
-    def verse_segments(self, bbbcccvvv: int) -> Optional[List[str]]:
+    def verse_segments(self, bbbcccvvv: int) -> Optional[Set[str]]:
         return self._verse_segments.get(bbbcccvvv)
 
     def change_versification(self, vref: VerseRef) -> None:
@@ -222,14 +222,14 @@ class Versification:
         vref.versification = self
 
     def change_versification_with_ranges(self, vref: VerseRef) -> Tuple[bool, VerseRef]:
-        parts: List[str] = regex.split(r"[,\-]", vref.verse)
+        parts: List[str] = regex.split(r"([,\-])", vref.verse)
 
         new_vref = vref.copy()
         new_vref.verse = parts[0]
         self.change_versification(new_vref)
         all_same_chapter = True
 
-        for i in range(2, len(parts)):
+        for i in range(2, len(parts), 2):
             part_vref = vref.copy()
             part_vref.verse = parts[i]
             self.change_versification(part_vref)
@@ -576,7 +576,7 @@ def _parse_verse_segments_line(versification: Versification, parsed_line: _Versi
         # Remove segment info from chapter:verse reference
         book_name, chapter, verse = _get_verse_reference(parts, parsed_line.line_num)
 
-        segment_list: List[str] = []
+        segment_set: Set[str] = set()
         nonempty_segment_found = False
         for seg in segments.split(","):
             if seg == "":
@@ -586,12 +586,12 @@ def _parse_verse_segments_line(versification: Versification, parsed_line: _Versi
 
             if seg == "-":
                 # '-' indicates no marking for segment
-                segment_list.append("")
+                segment_set.add("")
             else:
-                segment_list.append(seg)
+                segment_set.add(seg)
                 nonempty_segment_found = True
 
-        if len(segment_list) == 1 and segment_list[0] == "":
+        if len(segment_set) == 1 and next(iter(segment_set)) == "":
             raise _syntax_error("no segments defined", parsed_line.line_num)
 
         bbbcccvvv = get_bbbcccvvv(book_id_to_number(book_name), chapter, verse)
@@ -599,6 +599,6 @@ def _parse_verse_segments_line(versification: Versification, parsed_line: _Versi
         if is_builtin and bbbcccvvv in versification._verse_segments:
             raise _syntax_error("duplicate segment", parsed_line.line_num)
 
-        versification._verse_segments[bbbcccvvv] = segment_list
+        versification._verse_segments[bbbcccvvv] = segment_set
     except ValueError as e:
         raise _syntax_error("invalid verse reference " + str(e), parsed_line.line_num)
