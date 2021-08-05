@@ -1,5 +1,7 @@
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Iterable, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Iterable, Optional, Set, Tuple, Union
+
+import regex
 
 from ..string_utils import is_integer, parse_integer
 from .canon import LAST_BOOK, book_id_to_number, book_number_to_id, is_canonical
@@ -7,51 +9,11 @@ from .canon import LAST_BOOK, book_id_to_number, book_number_to_id, is_canonical
 if TYPE_CHECKING:
     from .versification import Versification
 
-_VERSE_RANGE_SEPARATOR = "-"
-_VERSE_SEQUENCE_INDICATOR = ","
+VERSE_RANGE_SEPARATOR = "-"
+VERSE_SEQUENCE_INDICATOR = ","
 _CHAPTER_DIGIT_SHIFTER = 1000
 _BOOK_DIGIT_SHIFTER = _CHAPTER_DIGIT_SHIFTER * _CHAPTER_DIGIT_SHIFTER
 _BCV_MAX_VALUE = _CHAPTER_DIGIT_SHIFTER
-
-
-def _is_verse_parseable(verse: str) -> bool:
-    return (
-        len(verse) != 0
-        and is_integer(verse[0])
-        and verse[-1] != _VERSE_RANGE_SEPARATOR
-        and verse[-1] != _VERSE_SEQUENCE_INDICATOR
-    )
-
-
-def _get_verse_num(verse: Optional[str]) -> Tuple[bool, int]:
-    if verse is None or verse == "":
-        return True, -1
-
-    v_num = 0
-    for i in range(len(verse)):
-        ch = verse[i]
-        if not is_integer(ch):
-            if i == 0:
-                v_num = -1
-            return False, v_num
-
-        v_num = (v_num * 10) + int(ch)
-        if v_num > 999:
-            v_num = -1
-            return False, v_num
-    return True, v_num
-
-
-def get_bbbcccvvv(book_num: int, chapter_num: int, verse_num: int) -> int:
-    return (
-        (book_num % _BCV_MAX_VALUE) * _BOOK_DIGIT_SHIFTER
-        + ((chapter_num % _BCV_MAX_VALUE) * _CHAPTER_DIGIT_SHIFTER if chapter_num >= 0 else 0)
-        + (verse_num % _BCV_MAX_VALUE if verse_num >= 0 else 0)
-    )
-
-
-def are_overlapping_verse_ranges(verse1: str, verse2: str) -> bool:
-    pass
 
 
 class ValidStatus(Enum):
@@ -221,7 +183,7 @@ class VerseRef:
     @property
     def has_multiple(self) -> bool:
         return self._verse is not None and (
-            self._verse.find(_VERSE_RANGE_SEPARATOR) != -1 or self._verse.find(_VERSE_SEQUENCE_INDICATOR) != -1
+            self._verse.find(VERSE_RANGE_SEPARATOR) != -1 or self._verse.find(VERSE_SEQUENCE_INDICATOR) != -1
         )
 
     @property
@@ -278,7 +240,7 @@ class VerseRef:
         found_seg_start = False
         seg = ""
         for c in self._verse:
-            if c == _VERSE_RANGE_SEPARATOR or c == _VERSE_SEQUENCE_INDICATOR:
+            if c == VERSE_RANGE_SEPARATOR or c == VERSE_SEQUENCE_INDICATOR:
                 break
 
             if not is_integer(c):
@@ -296,9 +258,9 @@ class VerseRef:
         if self._verse is None or self.chapter_num <= 0:
             yield self.copy()
         else:
-            parts = self._verse.split(_VERSE_SEQUENCE_INDICATOR)
+            parts = self._verse.split(VERSE_SEQUENCE_INDICATOR)
             for part in parts:
-                pieces = part.split(_VERSE_RANGE_SEPARATOR)
+                pieces = part.split(VERSE_RANGE_SEPARATOR)
                 start_verse = self.copy()
                 start_verse.verse = pieces[0]
                 yield start_verse
@@ -361,6 +323,9 @@ class VerseRef:
         return f"{str(self)}/{int(self.versification.type)}"
 
     def compare_to(self, other: "VerseRef", compare_all_verse: bool = False) -> int:
+        if self is other:
+            return 0
+
         if self.versification is not None and self.versification != other.versification:
             other = other.copy()
             if self.has_multiple:
@@ -398,35 +363,27 @@ class VerseRef:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, VerseRef):
             raise NotImplementedError
-        if self is other:
-            return True
-        return (
-            self._book_num == other._book_num
-            and self._chapter_num == other._chapter_num
-            and self._verse_num == other._verse_num
-            and self._verse == other._verse
-            and self.versification == other.versification
-        )
+        return self.compare_to(other, compare_all_verse=True) == 0
 
     def __lt__(self, other: object) -> bool:
         if not isinstance(other, VerseRef):
             raise NotImplementedError
-        return self.compare_to(other) < 0
+        return self.compare_to(other, compare_all_verse=True) < 0
 
     def __gt__(self, other: object) -> bool:
         if not isinstance(other, VerseRef):
             raise NotImplementedError
-        return self.compare_to(other) > 0
+        return self.compare_to(other, compare_all_verse=True) > 0
 
     def __le__(self, other: object) -> bool:
         if not isinstance(other, VerseRef):
             raise NotImplementedError
-        return self.compare_to(other) <= 0
+        return self.compare_to(other, compare_all_verse=True) <= 0
 
     def __ge__(self, other: object) -> bool:
         if not isinstance(other, VerseRef):
             raise NotImplementedError
-        return self.compare_to(other) >= 0
+        return self.compare_to(other, compare_all_verse=True) >= 0
 
     def __hash__(self) -> int:
         if self._verse is not None:
@@ -437,32 +394,14 @@ class VerseRef:
         return f"{self.book} {self.chapter}:{self.verse}"
 
     def _compare_verses(self, other: "VerseRef") -> int:
-        verse_list = self._get_verses()
-        other_verse_list = other._get_verses()
+        verse_list = list(self.all_verses())
+        other_verse_list = list(other.all_verses())
 
-        for verse_num, other_verse_num in zip(verse_list, other_verse_list):
-            if verse_num != other_verse_num:
-                return verse_num - other_verse_num
+        for verse, other_verse in zip(verse_list, other_verse_list):
+            result = verse.compare_to(other_verse)
+            if result != 0:
+                return result
         return len(verse_list) - len(other_verse_list)
-
-    def _get_verses(self) -> List[int]:
-        # Get verses from the verse strings
-        verse_list: List[int] = []
-        if self._verse is None or self._verse == "":
-            verse_list.append(self._verse_num)
-            return verse_list
-
-        verse_str = ""
-        for ch in self._verse:
-            if is_integer(ch):
-                verse_str += ch
-            elif len(verse_str) > 0:
-                verse_list.append(int(verse_str))
-                verse_str = ""
-
-        if len(verse_str) > 0:
-            verse_list.append(int(verse_str))
-        return verse_list
 
     def _validate_single_verse(self) -> ValidStatus:
         # Unknown versification is always invalid
@@ -487,3 +426,114 @@ class VerseRef:
             return ValidStatus.OUT_OF_RANGE
 
         return ValidStatus.OUT_OF_RANGE if self.versification.is_excluded(self.bbbcccvvv) else ValidStatus.VALID
+
+
+def get_bbbcccvvv(book_num: int, chapter_num: int, verse_num: int) -> int:
+    return (
+        (book_num % _BCV_MAX_VALUE) * _BOOK_DIGIT_SHIFTER
+        + ((chapter_num % _BCV_MAX_VALUE) * _CHAPTER_DIGIT_SHIFTER if chapter_num >= 0 else 0)
+        + (verse_num % _BCV_MAX_VALUE if verse_num >= 0 else 0)
+    )
+
+
+def are_overlapping_verse_ranges(verse1: str, verse2: str) -> bool:
+    verse1_parts = verse1.split(VERSE_SEQUENCE_INDICATOR)
+    verse2_parts = verse2.split(VERSE_SEQUENCE_INDICATOR)
+
+    for verse1_part in verse1_parts:
+        for verse2_part in verse2_parts:
+            verse1_num, verse1_seg, verse1_end_num, verse1_end_seg = _parse_verse_number_range(verse1_part)
+            verse2_num, verse2_seg, verse2_end_num, verse2_end_seg = _parse_verse_number_range(verse2_part)
+
+            if (
+                verse1_num == verse1_end_num
+                and verse2_num == verse2_end_num
+                and verse1_seg == verse1_end_seg
+                and verse2_seg == verse1_end_seg
+            ):
+                # no ranges, this is easy
+                if verse1_num == verse2_num and (verse1_seg == "" or verse2_seg == "" or verse1_seg == verse2_seg):
+                    return True
+            elif _in_verse_range(verse1_num, verse1_seg, verse2_num, verse2_seg, verse2_end_num, verse2_end_seg):
+                return True
+            elif _in_verse_range(
+                verse1_end_num, verse1_end_seg, verse2_num, verse2_seg, verse2_end_num, verse2_end_seg
+            ):
+                return True
+            elif _in_verse_range(verse2_num, verse2_seg, verse1_num, verse1_seg, verse1_end_num, verse1_end_seg):
+                return True
+            elif _in_verse_range(
+                verse2_end_num, verse2_end_seg, verse1_num, verse1_seg, verse1_end_num, verse1_end_seg
+            ):
+                return True
+    return False
+
+
+def _in_verse_range(
+    verse1: int, verse1_seg: str, verse2: int, verse2_seg: str, verse2_end: int, verse2_end_seg: str
+) -> bool:
+    if verse1 < verse2:
+        return False
+
+    if verse1 == verse2 and verse1_seg != "" and verse2_seg != "":
+        if verse1_seg < verse2_seg:
+            return False
+
+    if verse1 > verse2_end:
+        return False
+
+    if verse1 == verse2_end and verse1_seg != "" and verse2_end_seg != "":
+        if verse1_seg > verse2_end_seg:
+            return False
+    return True
+
+
+def _parse_verse_number_range(v_num: str) -> Tuple[int, str, int, str]:
+    parts = regex.split(r"[\-\u2013\u2014]", v_num)
+    if len(parts) == 1:
+        number, segment = _parse_verse_number(parts[0])
+        return number, segment, number, segment
+
+    number1, segment1 = _parse_verse_number(parts[0])
+    number2, segment2 = _parse_verse_number(parts[1])
+    return number1, segment1, number2, segment2
+
+
+def _parse_verse_number(v_num: str) -> Tuple[int, str]:
+    j = 0
+    while j < len(v_num) and v_num[j].isdigit():
+        j += 1
+
+    number = 0
+    if j > 0:
+        num = v_num[:j]
+        number = int(num)
+    return number, v_num[j:]
+
+
+def _is_verse_parseable(verse: str) -> bool:
+    return (
+        len(verse) != 0
+        and is_integer(verse[0])
+        and verse[-1] != VERSE_RANGE_SEPARATOR
+        and verse[-1] != VERSE_SEQUENCE_INDICATOR
+    )
+
+
+def _get_verse_num(verse: Optional[str]) -> Tuple[bool, int]:
+    if verse is None or verse == "":
+        return True, -1
+
+    v_num = 0
+    for i in range(len(verse)):
+        ch = verse[i]
+        if not is_integer(ch):
+            if i == 0:
+                v_num = -1
+            return False, v_num
+
+        v_num = (v_num * 10) + int(ch)
+        if v_num > 999:
+            v_num = -1
+            return False, v_num
+    return True, v_num

@@ -1,18 +1,17 @@
 from io import TextIOWrapper
 from typing import Generator, Optional
 
-from machine.corpora.corpora_helpers import merge_verse_ranges
-from machine.corpora.usfm_marker import UsfmMarker
-from machine.corpora.usfm_token import UsfmToken, UsfmTokenType
-from machine.scripture.verse_ref import VerseRef, are_overlapping_verse_ranges
-from machine.string_utils import has_sentence_ending
-
+from ..scripture.verse_ref import VerseRef, are_overlapping_verse_ranges
 from ..scripture.versification import Versification
+from ..string_utils import has_sentence_ending
 from ..tokenization.tokenizer import Tokenizer
+from .corpora_helpers import merge_verse_ranges
 from .scripture_text import ScriptureText
 from .text_segment import TextSegment
+from .usfm_marker import UsfmMarker
 from .usfm_parser import UsfmParser
 from .usfm_stylesheet import UsfmStylesheet
+from .usfm_token import UsfmToken, UsfmTokenType
 
 
 class UsfmTextBase(ScriptureText):

@@ -6,6 +6,7 @@ from typing import Generator, Iterable, Tuple, TypeVar, cast
 import regex
 
 from ..scripture.canon import book_id_to_number
+from ..scripture.verse_ref import VERSE_RANGE_SEPARATOR, VERSE_SEQUENCE_INDICATOR
 
 
 def get_files(file_patterns: Iterable[str]) -> Iterable[Tuple[str, str]]:
@@ -56,4 +57,57 @@ def get_scripture_text_sort_key(id: str) -> str:
 
 
 def merge_verse_ranges(verse1: str, verse2: str) -> str:
-    pass
+    text = ""
+    verse1_nums = set(_get_verse_nums(verse1))
+    verse2_nums = set(_get_verse_nums(verse2))
+    start_verse_str = ""
+    prev_verse_num = -1
+    prev_verse_str = ""
+    for verse_num, verse_str in sorted(verse1_nums | verse2_nums, key=lambda x: x[0]):
+        if prev_verse_num == -1:
+            start_verse_str = verse_str
+        elif prev_verse_num != verse_num - 1:
+            if len(text) > 0:
+                text += VERSE_SEQUENCE_INDICATOR
+            text += _get_verse_range(start_verse_str, prev_verse_str)
+            start_verse_str = verse_str
+        prev_verse_num = verse_num
+        prev_verse_str = verse_str
+    if len(text) > 0:
+        text += VERSE_SEQUENCE_INDICATOR
+    text += _get_verse_range(start_verse_str, prev_verse_str)
+    return text
+
+
+def _get_verse_range(start_verse_num: str, end_verse_num: str) -> str:
+    verse_range = start_verse_num
+    if end_verse_num != start_verse_num:
+        verse_range += VERSE_RANGE_SEPARATOR
+        verse_range += end_verse_num
+    return verse_range
+
+
+def _get_verse_nums(verse: str) -> Iterable[Tuple[int, str]]:
+    parts = verse.split(VERSE_SEQUENCE_INDICATOR)
+    for part in parts:
+        pieces = part.split(VERSE_RANGE_SEPARATOR)
+        start_verse_num = _get_verse_num(pieces[0])
+        yield start_verse_num, pieces[0]
+        if len(pieces) <= 1:
+            continue
+
+        end_verse_num = _get_verse_num(pieces[1])
+        for verse_num in range(start_verse_num + 1, end_verse_num):
+            yield verse_num, str(verse_num)
+
+        yield end_verse_num, pieces[1]
+
+
+def _get_verse_num(verse_str: str) -> int:
+    v_num = 0
+    for ch in verse_str:
+        if not ch.isdigit():
+            break
+
+        v_num = v_num * 10 + int(ch)
+    return v_num
