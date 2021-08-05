@@ -53,3 +53,7 @@ def gen(iterable: Iterable[T] = []) -> Generator[T, None, None]:
 
 def get_scripture_text_sort_key(id: str) -> str:
     return str(book_id_to_number(id)).zfill(3)
+
+
+def merge_verse_ranges(verse1: str, verse2: str) -> str:
+    pass

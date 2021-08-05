@@ -50,6 +50,10 @@ def get_bbbcccvvv(book_num: int, chapter_num: int, verse_num: int) -> int:
     )
 
 
+def are_overlapping_verse_ranges(verse1: str, verse2: str) -> bool:
+    pass
+
+
 class ValidStatus(Enum):
     VALID = auto()
     UNKNOWN_VERSIFICATION = auto()

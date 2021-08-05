@@ -60,3 +60,13 @@ def parse_integer(s: str) -> Optional[int]:
         return int(s)
     except ValueError:
         return None
+
+
+def has_sentence_ending(s: str) -> bool:
+    s = s.strip()
+    for c in reversed(s):
+        if is_sentence_terminal(c):
+            return True
+        if not is_delayed_sentence_end(c):
+            return False
+    return False
