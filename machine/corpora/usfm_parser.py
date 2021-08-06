@@ -14,7 +14,7 @@ class UsfmParser:
 
         index = 0
         while index < len(usfm):
-            next_marker_index = usfm.index("\\", index + 1) if index < len(usfm) - 1 else -1
+            next_marker_index = usfm.find("\\", index + 1) if index < len(usfm) - 1 else -1
             if next_marker_index == -1:
                 next_marker_index = len(usfm)
 

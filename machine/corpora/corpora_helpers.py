@@ -108,6 +108,5 @@ def _get_verse_num(verse_str: str) -> int:
     for ch in verse_str:
         if not ch.isdigit():
             break
-
         v_num = v_num * 10 + int(ch)
     return v_num

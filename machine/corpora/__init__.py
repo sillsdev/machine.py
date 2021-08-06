@@ -11,6 +11,7 @@ from .null_text_alignment_collection import *
 from .parallel_text import *
 from .parallel_text_corpus import *
 from .parallel_text_segment import *
+from .paratext_text_corpus import *
 from .text import *
 from .text_alignment import *
 from .text_alignment_collection import *
@@ -23,3 +24,5 @@ from .text_file_text_corpus import *
 from .text_segment import *
 from .text_segment_ref import *
 from .token_processors import *
+from .usfm_file_text import *
+from .usfm_file_text_corpus import *
