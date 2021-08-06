@@ -40,10 +40,10 @@ class ParatextTextCorpus(ScriptureTextCorpus):
         suffix = ".SFM"
         naming_elem = settings_tree.getroot().find("Naming")
         if naming_elem is not None:
-            pre_part = naming_elem.attrib.get("PrePart", "")
+            pre_part = naming_elem.get("PrePart", "")
             if pre_part != "":
                 prefix = pre_part
-            post_part = naming_elem.attrib.get("PostPart", "")
+            post_part = naming_elem.get("PostPart", "")
             if post_part != "":
                 suffix = post_part
 

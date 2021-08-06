@@ -160,7 +160,7 @@ _NONVERSE_PARA_STYLES = {"ms", "mr", "s", "sr", "r", "d", "sp", "rem", "restore"
 
 
 def _is_numbered_style(style_prefix: str, style: str) -> bool:
-    return style.startswith(style_prefix) and is_integer(style[: len(style_prefix)])
+    return style.startswith(style_prefix) and is_integer(style[len(style_prefix) :])
 
 
 def _is_verse_para(para_token: UsfmToken) -> bool:

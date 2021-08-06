@@ -1,4 +1,6 @@
 from .aligned_word_pair import *
+from .dbl_bundle_text import *
+from .dbl_bundle_text_corpus import *
 from .dictionary_text_alignment_corpus import *
 from .dictionary_text_corpus import *
 from .filtered_text import *
