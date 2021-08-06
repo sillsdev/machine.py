@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from functools import reduce, total_ordering
 from typing import Any, Iterable, List, Sequence, overload
 
-from ..string_utils import parse_integer
+from ..utils.string_utils import parse_integer
 
 
 @dataclass(frozen=True)

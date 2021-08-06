@@ -1,8 +1,7 @@
 from pathlib import PurePath
 from typing import Any, Iterable, overload
 
-from ..tokenization import Tokenizer
-from ..typeshed import StrPath
+from ..utils.typeshed import StrPath
 from .corpora_helpers import get_files
 from .dictionary_text_alignment_corpus import DictionaryTextAlignmentCorpus
 from .text_file_text_alignment_collection import TextFileTextAlignmentCollection

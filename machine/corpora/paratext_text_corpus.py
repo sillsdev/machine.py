@@ -4,7 +4,7 @@ from typing import List
 
 from ..scripture.versification import Versification
 from ..tokenization.tokenizer import Tokenizer
-from ..typeshed import StrPath
+from ..utils.typeshed import StrPath
 from .scripture_text_corpus import ScriptureTextCorpus
 from .usfm_file_text import UsfmFileText
 from .usfm_stylesheet import UsfmStylesheet

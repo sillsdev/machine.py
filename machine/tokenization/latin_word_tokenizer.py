@@ -4,7 +4,7 @@ from typing import Iterable, Optional, Tuple
 import regex
 
 from ..annotations.range import Range, create_range
-from ..string_utils import is_control, is_punctuation, is_symbol
+from ..utils.string_utils import is_control, is_punctuation, is_symbol
 from .whitespace_tokenizer import WhitespaceTokenizer
 
 INNER_WORD_PUNCT_REGEX = regex.compile(

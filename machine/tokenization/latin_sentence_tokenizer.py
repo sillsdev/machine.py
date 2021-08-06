@@ -1,7 +1,7 @@
 from typing import Iterable, Optional
 
 from ..annotations.range import Range, create_range
-from ..string_utils import is_delayed_sentence_end, is_sentence_terminal
+from ..utils.string_utils import is_delayed_sentence_end, is_sentence_terminal
 from .latin_word_tokenizer import LatinWordTokenizer
 from .line_segment_tokenizer import LineSegmentTokenizer
 

@@ -2,7 +2,7 @@ from io import BytesIO
 from typing import BinaryIO
 from zipfile import ZipFile
 
-from ..typeshed import StrPath
+from ..utils.typeshed import StrPath
 from .stream_container import StreamContainer
 
 

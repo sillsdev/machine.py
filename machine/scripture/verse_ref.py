@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Iterable, Optional, Set, Tuple, Union
 
 import regex
 
-from ..string_utils import is_integer, parse_integer
+from ..utils.string_utils import is_integer, parse_integer
 from .canon import LAST_BOOK, book_id_to_number, book_number_to_id, is_canonical
 
 if TYPE_CHECKING:

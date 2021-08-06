@@ -1,7 +1,7 @@
 from typing import Optional, Tuple
 
 from ..annotations.range import Range, create_range
-from ..string_utils import is_punctuation
+from ..utils.string_utils import is_punctuation
 from .latin_word_tokenizer import LatinWordTokenizer, _TokenizeContext
 
 

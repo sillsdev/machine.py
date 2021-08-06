@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Dict, List, Optional, TextIO, Tuple
 
-from ..string_utils import parse_integer
-from ..typeshed import StrPath
+from ..utils.string_utils import parse_integer
+from ..utils.typeshed import StrPath
 from .usfm_marker import (
     UsfmJustification,
     UsfmMarker,

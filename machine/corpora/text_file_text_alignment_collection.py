@@ -3,8 +3,8 @@ from typing import Generator
 from machine.corpora.aligned_word_pair import AlignedWordPair
 from machine.corpora.text_segment_ref import TextSegmentRef
 
-from ..string_utils import is_integer
-from ..typeshed import StrPath
+from ..utils.string_utils import is_integer
+from ..utils.typeshed import StrPath
 from .text_alignment import TextAlignment
 from .text_alignment_collection import TextAlignmentCollection
 

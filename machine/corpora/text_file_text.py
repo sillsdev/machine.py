@@ -1,8 +1,8 @@
 from typing import Generator
 
-from ..string_utils import is_integer
 from ..tokenization.tokenizer import Tokenizer
-from ..typeshed import StrPath
+from ..utils.string_utils import is_integer
+from ..utils.typeshed import StrPath
 from .text_base import TextBase
 from .text_segment import TextSegment
 from .text_segment_ref import TextSegmentRef

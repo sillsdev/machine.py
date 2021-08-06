@@ -5,8 +5,8 @@ from typing import Dict, List, Optional, Set, TextIO, Tuple, Union
 
 import regex
 
-from ..string_utils import parse_integer
-from ..typeshed import StrPath
+from ..utils.string_utils import parse_integer
+from ..utils.typeshed import StrPath
 from .canon import book_id_to_number, is_canonical
 from .verse_ref import VerseRef, get_bbbcccvvv
 

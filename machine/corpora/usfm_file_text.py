@@ -3,7 +3,7 @@ from typing import Optional
 
 from ..scripture.versification import Versification
 from ..tokenization import Tokenizer
-from ..typeshed import StrPath
+from ..utils.typeshed import StrPath
 from .file_stream_container import FileStreamContainer
 from .stream_container import StreamContainer
 from .usfm_stylesheet import UsfmStylesheet

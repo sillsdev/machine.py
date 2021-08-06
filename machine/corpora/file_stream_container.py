@@ -1,7 +1,7 @@
 from io import TextIOWrapper
 from typing import BinaryIO
 
-from ..typeshed import StrPath
+from ..utils.typeshed import StrPath
 from .stream_container import StreamContainer
 
 

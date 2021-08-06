@@ -2,7 +2,7 @@ from pathlib import PurePath
 from typing import Any, Iterable, overload
 
 from ..tokenization.tokenizer import Tokenizer
-from ..typeshed import StrPath
+from ..utils.typeshed import StrPath
 from .corpora_helpers import get_files
 from .dictionary_text_corpus import DictionaryTextCorpus
 from .text_file_text import TextFileText
