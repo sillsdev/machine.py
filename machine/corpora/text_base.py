@@ -1,6 +1,8 @@
-from typing import Any
+from abc import abstractmethod
+from typing import Any, Generator
 
 from ..tokenization import Tokenizer
+from ..utils.context_managed_generator import ContextManagedGenerator
 from .text import Text
 from .text_segment import TextSegment
 from .token_processors import UNESCAPE_SPACES_TOKEN_PROCESSOR
@@ -19,6 +21,13 @@ class TextBase(Text):
     @property
     def sort_key(self) -> str:
         return self._sort_key
+
+    def get_segments(self, include_text: bool = True) -> ContextManagedGenerator[TextSegment, None, None]:
+        return ContextManagedGenerator(self._get_segments(include_text))
+
+    @abstractmethod
+    def _get_segments(self, include_text: bool) -> Generator[TextSegment, None, None]:
+        ...
 
     def _create_text_segment(
         self,

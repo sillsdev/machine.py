@@ -1,6 +1,6 @@
-from contextlib import closing
 from typing import Generator, Iterable, Optional, Set
 
+from ..utils.context_managed_generator import ContextManagedGenerator
 from .dictionary_text_alignment_corpus import DictionaryTextAlignmentCorpus
 from .null_text import NullText
 from .null_text_alignment_collection import NullTextAlignmentCollection
@@ -57,22 +57,16 @@ class ParallelTextCorpus:
         return self.get_texts()
 
     @property
-    def segments(self) -> Generator[ParallelTextSegment, None, None]:
+    def segments(self) -> ContextManagedGenerator[ParallelTextSegment, None, None]:
         return self.get_segments()
 
     @property
-    def source_segments(self) -> Generator[TextSegment, None, None]:
-        for text in self.texts:
-            with closing(text.source_text.get_segments()) as segments:
-                for segment in segments:
-                    yield segment
+    def source_segments(self) -> ContextManagedGenerator[TextSegment, None, None]:
+        return ContextManagedGenerator(self._get_source_segments())
 
     @property
-    def target_segments(self) -> Iterable[TextSegment]:
-        for text in self.texts:
-            with closing(text.target_text.get_segments()) as segments:
-                for segment in segments:
-                    yield segment
+    def target_segments(self) -> ContextManagedGenerator[TextSegment, None, None]:
+        return ContextManagedGenerator(self._get_target_segments())
 
     def invert(self) -> "ParallelTextCorpus":
         return ParallelTextCorpus(
@@ -99,11 +93,8 @@ class ParallelTextCorpus:
 
     def get_segments(
         self, all_source_segments: bool = False, all_target_segments: bool = False, include_text: bool = True
-    ) -> Generator[ParallelTextSegment, None, None]:
-        for text in self.get_texts(all_source_segments, all_target_segments):
-            with closing(text.get_segments(all_source_segments, all_target_segments, include_text)) as segments:
-                for segment in segments:
-                    yield segment
+    ) -> ContextManagedGenerator[ParallelTextSegment, None, None]:
+        return ContextManagedGenerator(self._get_segments(all_source_segments, all_target_segments, include_text))
 
     def get_count(
         self, all_source_segments: bool = False, all_target_segments: bool = False, nonempty_only: bool = False
@@ -112,6 +103,26 @@ class ParallelTextCorpus:
             t.get_count(all_source_segments, all_target_segments, nonempty_only)
             for t in self.get_texts(all_source_segments, all_target_segments)
         )
+
+    def _get_segments(
+        self, all_source_segments: bool, all_target_segments: bool, include_text: bool
+    ) -> Generator[ParallelTextSegment, None, None]:
+        for text in self.get_texts(all_source_segments, all_target_segments):
+            with text.get_segments(all_source_segments, all_target_segments, include_text) as segments:
+                for segment in segments:
+                    yield segment
+
+    def _get_source_segments(self) -> Generator[TextSegment, None, None]:
+        for text in self.texts:
+            with text.source_text.get_segments() as segments:
+                for segment in segments:
+                    yield segment
+
+    def _get_target_segments(self) -> Generator[TextSegment, None, None]:
+        for text in self.texts:
+            with text.target_text.get_segments() as segments:
+                for segment in segments:
+                    yield segment
 
     def _create_parallel_text(self, id: str) -> ParallelText:
         source_text = _get_text(self._source_corpus, id)

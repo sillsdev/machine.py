@@ -13,7 +13,7 @@ class TextFileText(TextBase):
         super().__init__(word_tokenizer, id, id)
         self._filename = filename
 
-    def get_segments(self, include_text: bool) -> Generator[TextSegment, None, None]:
+    def _get_segments(self, include_text: bool) -> Generator[TextSegment, None, None]:
         with open(self._filename, "r", encoding="utf-8") as file:
             section_num = 1
             segment_num = 1

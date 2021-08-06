@@ -30,7 +30,7 @@ class UsfmTextBase(ScriptureText):
         self._encoding = encoding
         self._include_markers = include_markers
 
-    def get_segments(self, include_text: bool = True) -> Generator[TextSegment, None, None]:
+    def _get_segments(self, include_text: bool) -> Generator[TextSegment, None, None]:
         usfm = self._read_usfm()
         cur_embed_marker: Optional[UsfmMarker] = None
         in_wordlist_marker = False

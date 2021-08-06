@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Generator
 
+from ..utils.context_managed_generator import ContextManagedGenerator
 from .text_alignment import TextAlignment
 
 
@@ -17,7 +17,7 @@ class TextAlignmentCollection(ABC):
 
     @property
     @abstractmethod
-    def alignments(self) -> Generator[TextAlignment, None, None]:
+    def alignments(self) -> ContextManagedGenerator[TextAlignment, None, None]:
         ...
 
     @abstractmethod

@@ -1,7 +1,7 @@
-from contextlib import closing
 from dataclasses import dataclass, field
 from typing import Collection, Generator, Iterable, List, Optional, cast
 
+from ..utils.context_managed_generator import ContextManagedGenerator
 from .aligned_word_pair import AlignedWordPair
 from .null_text_alignment_collection import NullTextAlignmentCollection
 from .parallel_text_segment import ParallelTextSegment
@@ -83,15 +83,20 @@ class ParallelText:
         return self._text_alignment_collection
 
     @property
-    def segments(self) -> Generator[ParallelTextSegment, None, None]:
+    def segments(self) -> ContextManagedGenerator[ParallelTextSegment, None, None]:
         return self.get_segments()
 
     def get_segments(
         self, all_source_segments: bool = False, all_target_segments: bool = False, include_text: bool = True
+    ) -> ContextManagedGenerator[ParallelTextSegment, None, None]:
+        return ContextManagedGenerator(self._get_segments(all_source_segments, all_target_segments, include_text))
+
+    def _get_segments(
+        self, all_source_segments: bool, all_target_segments: bool, include_text: bool
     ) -> Generator[ParallelTextSegment, None, None]:
-        with closing(self._source_text.get_segments(include_text)) as iterator1, closing(
-            self._target_text.get_segments(include_text)
-        ) as iterator2, closing(self._text_alignment_collection.alignments) as iterator3:
+        with self._source_text.get_segments(include_text) as iterator1, self._target_text.get_segments(
+            include_text
+        ) as iterator2, self._text_alignment_collection.alignments as iterator3:
             range_info = RangeInfo(self)
             source_same_ref_segments: List[TextSegment] = []
             target_same_ref_segments: List[TextSegment] = []

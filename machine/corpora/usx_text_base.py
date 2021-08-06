@@ -16,7 +16,7 @@ class UsxTextBase(ScriptureText):
 
         self._parser = UsxVerseParser()
 
-    def get_segments(self, include_text: bool = True) -> Generator[TextSegment, None, None]:
+    def _get_segments(self, include_text: bool) -> Generator[TextSegment, None, None]:
         with self._create_stream_container() as stream_container, stream_container.open_stream() as stream:
             prev_verse_ref = VerseRef()
             for verse in self._parser.parse(stream):
