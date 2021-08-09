@@ -28,3 +28,7 @@ from .text_segment_ref import *
 from .token_processors import *
 from .usfm_file_text import *
 from .usfm_file_text_corpus import *
+from .usx_file_text import *
+from .usx_file_text_alignment_collection import *
+from .usx_file_text_alignment_corpus import *
+from .usx_file_text_corpus import *
