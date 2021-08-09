@@ -57,11 +57,13 @@ def gen(iterable: Iterable[T] = []) -> Generator[T, None, None]:
 def get_scripture_text_sort_key(id: str) -> str:
     return str(book_id_to_number(id)).zfill(3)
 
+
 def get_usx_id(filename: Path) -> str:
     name = filename.name
     if len(name) == 3:
         return name
     return name[3:6]
+
 
 def get_usx_versification(project_dir: Path, versification: Optional[Versification]) -> Versification:
     versification_filename = project_dir / "versification.vrs"
