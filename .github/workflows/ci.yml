@@ -18,4 +18,4 @@ jobs:
       - name: Lint with Black
         run: poetry run black . --check --diff
       - name: Test with pytest
-        run: pytest
+        run: poetry run pytest
