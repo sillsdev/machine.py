@@ -16,6 +16,6 @@ jobs:
       - name: Install dependencies
         run: poetry install
       - name: Lint with Black
-        run: black . --check --diff
+        run: poetry run black . --check --diff
       - name: Test with pytest
         run: pytest
