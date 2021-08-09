@@ -25,5 +25,8 @@ class ContextManagedGenerator(AbstractContextManager, Generator[T_co, T_contra, 
     def close(self) -> None:
         self._generator.close()
 
+    def __enter__(self) -> Generator[T_co, T_contra, V_co]:
+        return super().__enter__()
+
     def __exit__(self, type, value, traceback) -> None:
         self.close()

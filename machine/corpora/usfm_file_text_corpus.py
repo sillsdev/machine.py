@@ -15,7 +15,7 @@ class UsfmFileTextCorpus(ScriptureTextCorpus):
         word_tokenizer: Tokenizer[str, int, str],
         stylesheet_filename: StrPath,
         encoding: str,
-        project_path: StrPath,
+        project_dir: StrPath,
         versification: Optional[Versification] = None,
         include_markers: bool = False,
     ) -> None:
@@ -24,7 +24,7 @@ class UsfmFileTextCorpus(ScriptureTextCorpus):
         self._versification = versification
         stylesheet = UsfmStylesheet(stylesheet_filename)
         texts: List[UsfmFileText] = []
-        for sfm_filename in Path(project_path).glob("*.SFM"):
+        for sfm_filename in Path(project_dir).glob("*.SFM"):
             texts.append(
                 UsfmFileText(word_tokenizer, stylesheet, encoding, sfm_filename, versification, include_markers)
             )

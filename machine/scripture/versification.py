@@ -78,10 +78,19 @@ class Versification:
         return versification
 
     @classmethod
-    def load(cls, filename: StrPath, base_versification: "Versification", name: str) -> "Versification":
+    def load(
+        cls,
+        filename: StrPath,
+        base_versification: Optional["Versification"] = None,
+        fallback_name: Optional[str] = None,
+    ) -> "Versification":
         with open(filename, "r", encoding="utf-8") as file:
-            versification = Versification(name, filename, base_versification)
-            return cls.parse(file, filename, versification, name)
+            versification = (
+                None
+                if base_versification is None or fallback_name is None
+                else Versification(fallback_name, filename, base_versification)
+            )
+            return cls.parse(file, filename, versification, fallback_name)
 
     @classmethod
     def parse(

@@ -12,10 +12,10 @@ from .usfm_stylesheet import UsfmStylesheet
 
 class ParatextTextCorpus(ScriptureTextCorpus):
     def __init__(
-        self, word_tokenizer: Tokenizer[str, int, str], project_path: StrPath, include_markers: bool = False
+        self, word_tokenizer: Tokenizer[str, int, str], project_dir: StrPath, include_markers: bool = False
     ) -> None:
-        project_path = Path(project_path)
-        settings_filename = project_path / "Settings.xml"
+        project_dir = Path(project_dir)
+        settings_filename = project_dir / "Settings.xml"
         settings_tree = etree.parse(str(settings_filename))
         code_page = int(settings_tree.getroot().findtext("Encoding", "65001"))
         encoding = _ENCODINGS.get(code_page)
@@ -24,7 +24,7 @@ class ParatextTextCorpus(ScriptureTextCorpus):
 
         versification_type = int(settings_tree.getroot().findtext("Versification", "4"))
         self._versification = Versification.get_builtin(versification_type)
-        custom_versification_filename = project_path / "custom.vrs"
+        custom_versification_filename = project_dir / "custom.vrs"
         if custom_versification_filename.is_file():
             guid = settings_tree.getroot().findtext("Guid", "")
             versification_name = f"{self._versification.name}-{guid}"
@@ -33,7 +33,7 @@ class ParatextTextCorpus(ScriptureTextCorpus):
             )
 
         stylesheet_name = settings_tree.getroot().findtext("StyleSheet", "usfm.sty")
-        stylesheet_filename = project_path / stylesheet_name
+        stylesheet_filename = project_dir / stylesheet_name
         stylesheet = UsfmStylesheet(stylesheet_filename)
 
         prefix = ""
@@ -48,7 +48,7 @@ class ParatextTextCorpus(ScriptureTextCorpus):
                 suffix = post_part
 
         texts: List[UsfmFileText] = []
-        for sfm_filename in project_path.glob(f"{prefix}*{suffix}"):
+        for sfm_filename in project_dir.glob(f"{prefix}*{suffix}"):
             texts.append(
                 UsfmFileText(word_tokenizer, stylesheet, encoding, sfm_filename, self._versification, include_markers)
             )

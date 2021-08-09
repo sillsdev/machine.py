@@ -1,12 +1,14 @@
 import os
 import platform
 from glob import glob
-from typing import Generator, Iterable, Tuple, TypeVar, cast
+from pathlib import Path
+from typing import Generator, Iterable, Optional, Tuple, TypeVar, cast
 
 import regex
 
 from ..scripture.canon import book_id_to_number
 from ..scripture.verse_ref import VERSE_RANGE_SEPARATOR, VERSE_SEQUENCE_INDICATOR
+from ..scripture.versification import Versification, VersificationType
 
 
 def get_files(file_patterns: Iterable[str]) -> Iterable[Tuple[str, str]]:
@@ -54,6 +56,19 @@ def gen(iterable: Iterable[T] = []) -> Generator[T, None, None]:
 
 def get_scripture_text_sort_key(id: str) -> str:
     return str(book_id_to_number(id)).zfill(3)
+
+def get_usx_id(filename: Path) -> str:
+    name = filename.name
+    if len(name) == 3:
+        return name
+    return name[3:6]
+
+def get_usx_versification(project_dir: Path, versification: Optional[Versification]) -> Versification:
+    versification_filename = project_dir / "versification.vrs"
+    if versification is None and versification_filename.is_file():
+        versification_name = project_dir.name
+        versification = Versification.load(versification_filename, fallback_name=versification_name)
+    return Versification.get_builtin(VersificationType.ENGLISH) if versification is None else versification
 
 
 def merge_verse_ranges(verse1: str, verse2: str) -> str:

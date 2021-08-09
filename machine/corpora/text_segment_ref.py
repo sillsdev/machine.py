@@ -46,7 +46,9 @@ class TextSegmentRef:
 
         return reduce(reduce_func, self.keys, 23)
 
-    def __lt__(self, other: "TextSegmentRef") -> bool:
+    def __lt__(self, other: object) -> bool:
+        if not isinstance(other, TextSegmentRef):
+            raise NotImplementedError
         for i in range(min(len(self.keys), len(other.keys))):
             key = self.keys[i]
             other_key = other.keys[i]
