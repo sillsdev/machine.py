@@ -30,7 +30,17 @@ authors = ["SIL International"]
 maintainers = ["Damien Daspit <damien_daspit@sil.org>"]
 readme = "README.md"
 repository = "https://github.com/sillsdev/machine.py"
-keywords = "machine translation natural language processing"
+keywords = ["machine", "translation", "natural", "language", "processing"]
+classifiers = [
+  "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Mathematics",
+  "Topic :: Software Development",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Text Processing",
+  "Topic :: Text Processing :: Linguistic"
+]
 packages = [
   { include = "machine" }
 ]
