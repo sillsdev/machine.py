@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Iterable, Optional, Set, Tuple, Union
 
 import regex
 
+from ..utils.comparable import Comparable
 from ..utils.string_utils import is_integer, parse_integer
 from .canon import LAST_BOOK, book_id_to_number, book_number_to_id, is_canonical
 
@@ -24,7 +25,7 @@ class ValidStatus(Enum):
     VERSE_REPEATED = auto()
 
 
-class VerseRef:
+class VerseRef(Comparable):
     def __init__(
         self,
         book: Union[str, int] = 0,
@@ -307,37 +308,27 @@ class VerseRef:
         self._verse_num = vref._verse_num
         self._verse = vref._verse
 
-    def change_versification(self, versification: "Versification") -> None:
-        if not self.has_multiple:
-            versification.change_versification(self)
-        else:
-            _, result = versification.change_versification_with_ranges(self)
-            self.copy_from(result)
-
-    def change_versification_with_ranges(self, versification: "Versification") -> bool:
-        result, temp = versification.change_versification_with_ranges(self)
-        self.copy_from(temp)
-        return result
+    def change_versification(self, versification: "Versification") -> bool:
+        return versification.change_versification(self)
 
     def str_with_versification(self) -> str:
         return f"{str(self)}/{int(self.versification.type)}"
 
-    def compare_to(self, other: "VerseRef", compare_all_verse: bool = False) -> int:
+    def compare_to(self, other: object, compare_all_verses: bool = True) -> int:
+        if not isinstance(other, VerseRef):
+            raise TypeError("other is not a VerseRef object.")
         if self is other:
             return 0
 
-        if self.versification is not None and self.versification != other.versification:
+        if self.versification != other.versification:
             other = other.copy()
-            if self.has_multiple:
-                other.change_versification_with_ranges(self.versification)
-            else:
-                other.change_versification(self.versification)
+            other.change_versification(self.versification)
 
         if self.book_num != other.book_num:
             return self.book_num - other.book_num
         if self.chapter_num != other.chapter_num:
             return self.chapter_num - other.chapter_num
-        if compare_all_verse:
+        if compare_all_verses:
             # compare all available verses (whether a single verse or a verse bridge)
             return self._compare_verses(other)
 
@@ -360,31 +351,6 @@ class VerseRef:
             return 1
         return 0
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, VerseRef):
-            raise NotImplementedError
-        return self.compare_to(other, compare_all_verse=True) == 0
-
-    def __lt__(self, other: object) -> bool:
-        if not isinstance(other, VerseRef):
-            raise NotImplementedError
-        return self.compare_to(other, compare_all_verse=True) < 0
-
-    def __gt__(self, other: object) -> bool:
-        if not isinstance(other, VerseRef):
-            raise NotImplementedError
-        return self.compare_to(other, compare_all_verse=True) > 0
-
-    def __le__(self, other: object) -> bool:
-        if not isinstance(other, VerseRef):
-            raise NotImplementedError
-        return self.compare_to(other, compare_all_verse=True) <= 0
-
-    def __ge__(self, other: object) -> bool:
-        if not isinstance(other, VerseRef):
-            raise NotImplementedError
-        return self.compare_to(other, compare_all_verse=True) >= 0
-
     def __hash__(self) -> int:
         if self._verse is not None:
             return self.bbbcccvvv ^ hash(self._verse)
@@ -398,7 +364,7 @@ class VerseRef:
         other_verse_list = list(other.all_verses())
 
         for verse, other_verse in zip(verse_list, other_verse_list):
-            result = verse.compare_to(other_verse)
+            result = verse.compare_to(other_verse, compare_all_verses=False)
             if result != 0:
                 return result
         return len(verse_list) - len(other_verse_list)

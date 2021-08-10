@@ -511,8 +511,7 @@ def test_eq() -> None:
     assert VerseRef("GEN", "1", "1a") == VerseRef("GEN", "1", "1a")
     assert VerseRef("GEN", "1", "1a") != VerseRef("GEN", "1", "1b")
     assert VerseRef("GEN", "1", "1a") != VerseRef(1, 1, 1)
-    with pytest.raises(NotImplementedError):
-        VerseRef("GEN", "1", "1a") == 1001001
+    assert VerseRef("GEN", "1", "1a") != 1001001
 
 
 def test_change_versification() -> None:
@@ -543,20 +542,20 @@ def test_change_versification() -> None:
 
 def test_change_versification_with_ranges() -> None:
     vref = VerseRef.from_string("EXO 6:0", ENGLISH_VERSIFICATION)
-    assert vref.change_versification_with_ranges(ORIGINAL_VERSIFICATION)
+    assert vref.change_versification(ORIGINAL_VERSIFICATION)
     assert vref == VerseRef.from_string("EXO 6:0", ORIGINAL_VERSIFICATION)
 
     vref = VerseRef.from_string("GEN 31:55", ENGLISH_VERSIFICATION)
-    assert vref.change_versification_with_ranges(ORIGINAL_VERSIFICATION)
+    assert vref.change_versification(ORIGINAL_VERSIFICATION)
     assert vref == VerseRef.from_string("GEN 32:1", ORIGINAL_VERSIFICATION)
 
     vref = VerseRef.from_string("GEN 32:3-4", ENGLISH_VERSIFICATION)
-    assert vref.change_versification_with_ranges(ORIGINAL_VERSIFICATION)
+    assert vref.change_versification(ORIGINAL_VERSIFICATION)
     assert vref == VerseRef.from_string("GEN 32:4-5", ORIGINAL_VERSIFICATION)
 
     # This is the case where this can't really work properly
     vref = VerseRef.from_string("GEN 31:54-55", ENGLISH_VERSIFICATION)
-    assert not vref.change_versification_with_ranges(ORIGINAL_VERSIFICATION)
+    assert not vref.change_versification(ORIGINAL_VERSIFICATION)
     assert vref == VerseRef.from_string("GEN 31:54-1", ORIGINAL_VERSIFICATION)
 
 
@@ -564,45 +563,45 @@ def test_compare_to_with_without_verse_bridges() -> None:
     vref_without_bridge = VerseRef(1, 1, 2)
     vref_with_bridge = VerseRef.from_string("GEN 1:2-3")
 
-    assert vref_with_bridge.compare_to(vref_without_bridge, compare_all_verse=True) > 0
-    assert vref_without_bridge.compare_to(vref_with_bridge, compare_all_verse=True) < 0
+    assert vref_with_bridge.compare_to(vref_without_bridge) > 0
+    assert vref_without_bridge.compare_to(vref_with_bridge) < 0
 
 
 def test_compare_to_same_verse_bridge() -> None:
     vref1 = VerseRef.from_string("GEN 1:1-2")
     vref2 = VerseRef.from_string("GEN 1:1-2")
 
-    assert vref2.compare_to(vref1, compare_all_verse=True) == 0
+    assert vref2.compare_to(vref1) == 0
 
 
 def test_compare_to_overlapping_verse_bridges() -> None:
     vref1 = VerseRef.from_string("GEN 1:1-2")
     vref2 = VerseRef.from_string("GEN 1:2-3")
 
-    assert vref2.compare_to(vref1, compare_all_verse=True) > 0
-    assert vref1.compare_to(vref2, compare_all_verse=True) < 0
+    assert vref2.compare_to(vref1) > 0
+    assert vref1.compare_to(vref2) < 0
 
 
 def test_compare_to_verse_lists() -> None:
     vref1 = VerseRef.from_string("GEN 1:2,3,21")
     vref2 = VerseRef.from_string("GEN 1:2,21")
 
-    assert vref2.compare_to(vref1, compare_all_verse=True) > 0
-    assert vref1.compare_to(vref2, compare_all_verse=True) < 0
+    assert vref2.compare_to(vref1) > 0
+    assert vref1.compare_to(vref2) < 0
 
     vref1 = VerseRef.from_string("GEN 1:2,3,21")
     vref2 = VerseRef.from_string("GEN 1:2,3")
 
-    assert vref2.compare_to(vref1, compare_all_verse=True) < 0
-    assert vref1.compare_to(vref2, compare_all_verse=True) > 0
+    assert vref2.compare_to(vref1) < 0
+    assert vref1.compare_to(vref2) > 0
 
 
 def test_compare_to_verse_bridge_includes_another() -> None:
     vref1 = VerseRef.from_string("GEN 1:1-2")
     vref2 = VerseRef.from_string("GEN 1:1-5")
 
-    assert vref2.compare_to(vref1, compare_all_verse=True) > 0
-    assert vref1.compare_to(vref2, compare_all_verse=True) < 0
+    assert vref2.compare_to(vref1) > 0
+    assert vref1.compare_to(vref2) < 0
 
 
 def test_compare_to_versification_makes_different_verse_same() -> None:
@@ -611,8 +610,8 @@ def test_compare_to_versification_makes_different_verse_same() -> None:
     # (The Septuagint is the same as original versification for these verses).
     vref2 = VerseRef.from_string("EXO 7:26", SEPTUAGINT_VERSIFICATION)
 
-    assert vref2.compare_to(vref1, compare_all_verse=True) == 0
-    assert vref1.compare_to(vref2, compare_all_verse=True) == 0
+    assert vref2.compare_to(vref1) == 0
+    assert vref1.compare_to(vref2) == 0
 
 
 def test_compare_to_versification_makes_different_verse_range_same() -> None:
@@ -621,8 +620,8 @@ def test_compare_to_versification_makes_different_verse_range_same() -> None:
     # versification.
     vref2 = VerseRef.from_string("EXO 7:27-28", ORIGINAL_VERSIFICATION)
 
-    assert vref2.compare_to(vref1, compare_all_verse=True) == 0
-    assert vref1.compare_to(vref2, compare_all_verse=True) == 0
+    assert vref2.compare_to(vref1) == 0
+    assert vref1.compare_to(vref2) == 0
 
 
 def test_compare_to_versification_makes_same_verse_different() -> None:
@@ -632,10 +631,10 @@ def test_compare_to_versification_makes_same_verse_different() -> None:
 
     # Changing English ref to standard versification (EXO 8:1 => EXO 7:26) so difference (1) is found in chapter number
     # that is evaluated first.
-    assert vref2.compare_to(vref1, compare_all_verse=True) > 0
+    assert vref2.compare_to(vref1) > 0
     # Changing Septuagint ref to English versification EXO 8:1 => EXO 8:5 so difference (-4) is found in verse number
     # since book and chapter numbers are the same.
-    assert vref1.compare_to(vref2, compare_all_verse=True) < 0
+    assert vref1.compare_to(vref2) < 0
 
 
 def test_compare_to_versification_makes_same_verse_range_different() -> None:
@@ -645,10 +644,10 @@ def test_compare_to_versification_makes_same_verse_range_different() -> None:
 
     # Changing English ref to standard versification (EXO 8:2-3 => EXO 7:27-28) so difference (1) is found in chapter
     # number that is evaluated first.
-    assert vref2.compare_to(vref1, compare_all_verse=True) > 0
+    assert vref2.compare_to(vref1) > 0
     # Changing Septuagint ref to English versification (EXO 8:2-3 => EXO 8:6-7) so difference (-4) is found in verse
     # number since book and chapter numbers are the same.
-    assert vref1.compare_to(vref2, compare_all_verse=True) < 0
+    assert vref1.compare_to(vref2) < 0
 
 
 def test_compare_to_segments() -> None:

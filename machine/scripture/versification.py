@@ -188,65 +188,51 @@ class Versification:
     def verse_segments(self, bbbcccvvv: int) -> Optional[Set[str]]:
         return self._verse_segments.get(bbbcccvvv)
 
-    def change_versification(self, vref: VerseRef) -> None:
-        if vref.versification is None:
+    def change_versification(self, vref: VerseRef) -> bool:
+        if vref.has_multiple:
+            return self._change_versification_with_ranges(vref)
+
+        if vref.versification == NULL_VERSIFICATION:
             vref.versification = self
-            return
+            return True
 
         orig_versification = vref.versification
 
         # Map from existing to standard versification
-        orig_verse = vref.copy()
-        orig_verse.versification = NULL_VERSIFICATION
+        orig_vref = vref.copy()
+        orig_vref.versification = NULL_VERSIFICATION
 
-        standard_verse = orig_versification._mappings.get_standard(orig_verse)
-        if standard_verse is None:
-            standard_verse = orig_verse
+        standard_vref = orig_versification._mappings.get_standard(orig_vref)
+        if standard_vref is None:
+            standard_vref = orig_vref
 
         # If both versifications contain this verse and map this verse to the same location then no versification
         # change is needed.
-        standard_verse_this_versification = self._mappings.get_standard(orig_verse)
-        if standard_verse_this_versification is None:
-            standard_verse_this_versification = orig_verse
+        standard_vref_this_versification = self._mappings.get_standard(orig_vref)
+        if standard_vref_this_versification is None:
+            standard_vref_this_versification = orig_vref
 
         # ESG is a special case since we have added mappings from verses to LXX segments in several versifications and
         # want this mapping to work both ways.
         if (
             vref.book != "ESG"
-            and standard_verse == standard_verse_this_versification
+            and standard_vref == standard_vref_this_versification
             and self._book_chapter_verse_exists(vref)
         ):
             vref.versification = self
-            return
+            return True
 
         # Map from standard versification to this versification
-        new_verse = self._mappings.get_versification(standard_verse)
-        if new_verse is None:
-            new_verse = standard_verse
+        new_vref = self._mappings.get_versification(standard_vref)
+        if new_vref is None:
+            new_vref = standard_vref
 
         # If verse has changed, parse new value
-        if orig_verse != new_verse:
-            vref.copy_from(new_verse)
+        if orig_vref != new_vref:
+            vref.copy_from(new_vref)
 
         vref.versification = self
-
-    def change_versification_with_ranges(self, vref: VerseRef) -> Tuple[bool, VerseRef]:
-        parts: List[str] = regex.split(r"([,\-])", vref.verse)
-
-        new_vref = vref.copy()
-        new_vref.verse = parts[0]
-        self.change_versification(new_vref)
-        all_same_chapter = True
-
-        for i in range(2, len(parts), 2):
-            part_vref = vref.copy()
-            part_vref.verse = parts[i]
-            self.change_versification(part_vref)
-            if new_vref.chapter_num != part_vref.chapter_num:
-                all_same_chapter = False
-            new_vref.verse = new_vref.verse + parts[i - 1] + part_vref.verse
-
-        return all_same_chapter, new_vref
+        return True
 
     def __eq__(self, other: "Versification") -> bool:
         if self is other:
@@ -266,6 +252,26 @@ class Versification:
             and vref.chapter_num <= self.get_last_chapter(vref.book_num)
             and vref.verse_num <= self.get_last_verse(vref.book_num, vref.chapter_num)
         )
+
+    def _change_versification_with_ranges(self, vref: VerseRef) -> bool:
+        parts: List[str] = regex.split(r"([,\-])", vref.verse)
+
+        new_vref = vref.copy()
+        new_vref.verse = parts[0]
+        self.change_versification(new_vref)
+        all_same_chapter = True
+
+        for i in range(2, len(parts), 2):
+            part_vref = vref.copy()
+            part_vref.verse = parts[i]
+            self.change_versification(part_vref)
+            if new_vref.chapter_num != part_vref.chapter_num:
+                all_same_chapter = False
+            new_vref.verse = new_vref.verse + parts[i - 1] + part_vref.verse
+
+        vref.copy_from(new_vref)
+
+        return all_same_chapter
 
 
 class _VerseMappings:

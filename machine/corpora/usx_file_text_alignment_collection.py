@@ -65,7 +65,7 @@ class UsxFileTextAlignmentCollection(TextAlignmentCollection):
                 src_verse_ref = VerseRef(self.id, src_verse.chapter, src_verse.verse, self._src_versification)
                 trg_verse_ref = VerseRef(self.id, trg_verse.chapter, trg_verse.verse, self._trg_versification)
 
-                compare = src_verse_ref.compare_to(trg_verse_ref, compare_all_verse=True)
+                compare = src_verse_ref.compare_to(trg_verse_ref)
                 if compare < 0:
                     src_verse = next(src_iterator, None)
                 elif compare > 0:

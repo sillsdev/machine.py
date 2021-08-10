@@ -1,13 +1,13 @@
 from dataclasses import dataclass
-from functools import reduce, total_ordering
+from functools import reduce
 from typing import Any, Iterable, List, Sequence, overload
 
+from ..utils.comparable import Comparable, compare
 from ..utils.string_utils import parse_integer
 
 
 @dataclass(frozen=True)
-@total_ordering
-class TextSegmentRef:
+class TextSegmentRef(Comparable):
     keys: Sequence[str]
 
     @overload
@@ -40,15 +40,11 @@ class TextSegmentRef:
             keys = [str(i) for i in args[0]]
         object.__setattr__(self, "keys", keys)
 
-    def __hash__(self) -> int:
-        def reduce_func(code: int, item: str) -> int:
-            return code * 31 + hash(item)
-
-        return reduce(reduce_func, self.keys, 23)
-
-    def __lt__(self, other: object) -> bool:
+    def compare_to(self, other: object) -> int:
         if not isinstance(other, TextSegmentRef):
-            raise NotImplementedError
+            raise TypeError("other is not a TextSegmentRef object.")
+        if self is other:
+            return 0
         for i in range(min(len(self.keys), len(other.keys))):
             key = self.keys[i]
             other_key = other.keys[i]
@@ -57,9 +53,15 @@ class TextSegmentRef:
                 int_key = parse_integer(key)
                 int_other_key = parse_integer(other_key)
                 if int_key is not None and int_other_key is not None:
-                    return int_key < int_other_key
-                return key < other_key
-        return len(self.keys) < len(other.keys)
+                    return compare(int_key, int_other_key)
+                return compare(key, other_key)
+        return compare(len(self.keys), len(other.keys))
+
+    def __hash__(self) -> int:
+        def reduce_func(code: int, item: str) -> int:
+            return code * 31 + hash(item)
+
+        return reduce(reduce_func, self.keys, 23)
 
     def __repr__(self) -> str:
         return ".".join(self.keys)

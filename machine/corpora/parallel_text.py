@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Collection, Generator, Iterable, List, Optional, cast
 
+from ..utils.comparable import compare
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .aligned_word_pair import AlignedWordPair
 from .null_text_alignment_collection import NullTextAlignmentCollection
@@ -94,104 +95,104 @@ class ParallelText:
     def _get_segments(
         self, all_source_segments: bool, all_target_segments: bool, include_text: bool
     ) -> Generator[ParallelTextSegment, None, None]:
-        with self._source_text.get_segments(include_text) as iterator1, self._target_text.get_segments(
+        with self._source_text.get_segments(include_text) as src_iterator, self._target_text.get_segments(
             include_text
-        ) as iterator2, self._text_alignment_collection.alignments as iterator3:
+        ) as trg_iterator, self._text_alignment_collection.alignments as alignment_iterator:
             range_info = RangeInfo(self)
             source_same_ref_segments: List[TextSegment] = []
             target_same_ref_segments: List[TextSegment] = []
 
-            current1 = next(iterator1, None)
-            current2 = next(iterator2, None)
-            current3: Optional[TextAlignment] = None
-            while current1 is not None and current2 is not None:
-                if current1.segment_ref < current2.segment_ref:
+            src_segment = next(src_iterator, None)
+            trg_segment = next(trg_iterator, None)
+            alignment: Optional[TextAlignment] = None
+            while src_segment is not None and trg_segment is not None:
+                compare1 = compare(src_segment.segment_ref, trg_segment.segment_ref)
+                if compare1 < 0:
                     for seg in self._create_source_text_segments(
-                        range_info, current1, target_same_ref_segments, all_source_segments
+                        range_info, src_segment, target_same_ref_segments, all_source_segments
                     ):
                         yield seg
 
-                    source_same_ref_segments.append(current1)
-                    current1 = next(iterator1, None)
-                elif current1.segment_ref > current2.segment_ref:
+                    source_same_ref_segments.append(src_segment)
+                    src_segment = next(src_iterator, None)
+                elif compare1 > 0:
                     for seg in self._create_target_text_segments(
-                        range_info, current2, source_same_ref_segments, all_target_segments
+                        range_info, trg_segment, source_same_ref_segments, all_target_segments
                     ):
                         yield seg
-                    target_same_ref_segments.append(current2)
-                    current2 = next(iterator2, None)
+                    target_same_ref_segments.append(trg_segment)
+                    trg_segment = next(trg_iterator, None)
                 else:
-                    less_than = True
-                    while less_than:
-                        current3 = next(iterator3, None)
-                        if current3 is not None:
-                            less_than = current1.segment_ref < current3.segment_ref
-                        else:
-                            less_than = False
+                    compare2 = -1
+                    while compare2 < 0:
+                        alignment = next(alignment_iterator, None)
+                        compare2 = 1 if alignment is None else compare(src_segment.segment_ref, alignment.segment_ref)
 
-                    if (not all_target_segments and current1.is_in_range) or (
-                        not all_source_segments and current2.is_in_range
+                    if (not all_target_segments and src_segment.is_in_range) or (
+                        not all_source_segments and trg_segment.is_in_range
                     ):
                         if range_info.is_in_range and (
-                            (current1.is_in_range and not current2.is_in_range and len(current1.segment) > 0)
-                            or (not current1.is_in_range and current2.is_in_range and len(current2.segment) > 0)
+                            (src_segment.is_in_range and not trg_segment.is_in_range and len(src_segment.segment) > 0)
                             or (
-                                current1.is_in_range
-                                and current2.is_in_range
-                                and len(current1.segment) > 0
-                                and len(current2.segment) > 0
+                                not src_segment.is_in_range and trg_segment.is_in_range and len(trg_segment.segment) > 0
+                            )
+                            or (
+                                src_segment.is_in_range
+                                and trg_segment.is_in_range
+                                and len(src_segment.segment) > 0
+                                and len(trg_segment.segment) > 0
                             )
                         ):
                             yield range_info.create_text_segment()
 
                         if not range_info.is_in_range:
-                            range_info.segment_ref = current1.segment_ref
-                        range_info.source_segment.extend(current1.segment)
-                        range_info.target_segment.extend(current2.segment)
+                            range_info.segment_ref = src_segment.segment_ref
+                        range_info.source_segment.extend(src_segment.segment)
+                        range_info.target_segment.extend(trg_segment.segment)
                         if range_info.is_source_empty:
-                            range_info.is_source_empty = current1.is_empty
+                            range_info.is_source_empty = src_segment.is_empty
                         if range_info.is_target_empty:
-                            range_info.is_target_empty = current2.is_empty
+                            range_info.is_target_empty = trg_segment.is_empty
                     else:
-                        if _check_same_ref_segments(source_same_ref_segments, current2):
+                        if _check_same_ref_segments(source_same_ref_segments, trg_segment):
                             for prev_source_segment in source_same_ref_segments:
-                                for seg in self._create_text_segments(range_info, prev_source_segment, current2):
+                                for seg in self._create_text_segments(range_info, prev_source_segment, trg_segment):
                                     yield seg
 
-                        if _check_same_ref_segments(target_same_ref_segments, current1):
+                        if _check_same_ref_segments(target_same_ref_segments, src_segment):
                             for prev_target_segment in target_same_ref_segments:
-                                for seg in self._create_text_segments(range_info, current1, prev_target_segment):
+                                for seg in self._create_text_segments(range_info, src_segment, prev_target_segment):
                                     yield seg
 
                         for seg in self._create_text_segments(
                             range_info,
-                            current1,
-                            current2,
-                            current3.aligned_word_pairs
-                            if current3 is not None and current1.segment_ref == current3.segment_ref
+                            src_segment,
+                            trg_segment,
+                            alignment.aligned_word_pairs
+                            if alignment is not None and src_segment.segment_ref == alignment.segment_ref
                             else None,
                         ):
                             yield seg
 
-                    source_same_ref_segments.append(current1)
-                    current1 = next(iterator1, None)
+                    source_same_ref_segments.append(src_segment)
+                    src_segment = next(src_iterator, None)
 
-                    target_same_ref_segments.append(current2)
-                    current2 = next(iterator2, None)
+                    target_same_ref_segments.append(trg_segment)
+                    trg_segment = next(trg_iterator, None)
 
-            while current1 is not None:
+            while src_segment is not None:
                 for seg in self._create_source_text_segments(
-                    range_info, current1, target_same_ref_segments, all_source_segments
+                    range_info, src_segment, target_same_ref_segments, all_source_segments
                 ):
                     yield seg
-                current1 = next(iterator1, None)
+                src_segment = next(src_iterator, None)
 
-            while current2 is not None:
+            while trg_segment is not None:
                 for seg in self._create_target_text_segments(
-                    range_info, current2, source_same_ref_segments, all_target_segments
+                    range_info, trg_segment, source_same_ref_segments, all_target_segments
                 ):
                     yield seg
-                current2 = next(iterator2, None)
+                trg_segment = next(trg_iterator, None)
 
             if range_info.is_in_range:
                 yield range_info.create_text_segment()

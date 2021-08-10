@@ -2,11 +2,13 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Generic, Iterable, Iterator, Optional, Sized, TypeVar, cast
 
+from ..utils.comparable import Comparable
+
 Offset = TypeVar("Offset")
 
 
 @dataclass(frozen=True)
-class Range(Generic[Offset], Sized, Iterable[Offset]):
+class Range(Generic[Offset], Sized, Iterable[Offset], Comparable):
     _factory: "_RangeFactory[Offset]"
     start: Offset
     end: Offset
@@ -41,31 +43,14 @@ class Range(Generic[Offset], Sized, Iterable[Offset]):
             and self._factory.offset_compare(self.end, other.end) >= 0
         )
 
-    def compare_to(self, other: "Range[Offset]") -> int:
+    def compare_to(self, other: object) -> int:
+        if not isinstance(other, Range) or self._factory != other._factory:
+            raise TypeError("other is not the same type of Range.")
+        other = cast(Range[Offset], other)
         res = self._factory.offset_compare(self.start, other.start)
         if res == 0:
             res = -self._factory.offset_compare(self.end, other.end)
         return res
-
-    def __lt__(self, other: object) -> bool:
-        if not isinstance(other, Range) or self._factory != other._factory:
-            raise NotImplementedError
-        return self.compare_to(other) < 0
-
-    def __gt__(self, other: object) -> bool:
-        if not isinstance(other, Range) or self._factory != other._factory:
-            raise NotImplementedError
-        return self.compare_to(other) > 0
-
-    def __le__(self, other: object) -> bool:
-        if not isinstance(other, Range) or self._factory != other._factory:
-            raise NotImplementedError
-        return self.compare_to(other) <= 0
-
-    def __ge__(self, other: object) -> bool:
-        if not isinstance(other, Range) or self._factory != other._factory:
-            raise NotImplementedError
-        return self.compare_to(other) >= 0
 
     def __len__(self) -> int:
         return self.length
