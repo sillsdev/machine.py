@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import DefaultDict, Generator, List, Optional, Sequence, Set, Tuple
 
-from ..annotations.range import Range, create_range
+from ..annotations.range import Range
 from ..scripture.verse_ref import VerseRef
 from ..scripture.versification import Versification
 from ..tokenization import RangeTokenizer
@@ -153,7 +153,7 @@ def _get_links(word_tokenizer: RangeTokenizer[str, int, str], tokens: Sequence[U
         start = len(text)
         text += str(token)
         if token.element is not None and token.element.tag == "wg":
-            link_strs.append((create_range(start, len(text)), token.element.get("target_links", "")))
+            link_strs.append((Range.create(start, len(text)), token.element.get("target_links", "")))
         prev_para_elem = token.para_element
     text = text.strip()
 

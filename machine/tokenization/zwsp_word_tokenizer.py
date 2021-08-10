@@ -1,6 +1,6 @@
 from typing import Optional, Tuple
 
-from ..annotations.range import Range, create_range
+from ..annotations.range import Range
 from ..utils.string_utils import is_punctuation
 from .latin_word_tokenizer import LatinWordTokenizer, _TokenizeContext
 
@@ -17,7 +17,7 @@ class ZwspWordTokenizer(LatinWordTokenizer):
             # ignore whitespace that is followed by whitespace or punctuation
             if ctxt.index != data_range.end - 1 and (is_punctuation(data[end_index]) or data[end_index].isspace()):
                 if ctxt.word_start != -1:
-                    token_ranges = (create_range(ctxt.word_start, ctxt.index), None)
+                    token_ranges = (Range.create(ctxt.word_start, ctxt.index), None)
                     ctxt.word_start = -1
             # ignore whitespace that is preceded by whitespace or punctuation
             elif ctxt.index != data_range.start and (
@@ -25,20 +25,20 @@ class ZwspWordTokenizer(LatinWordTokenizer):
             ):
                 if ctxt.inner_word_punct != -1:
                     token_ranges = (
-                        create_range(ctxt.word_start, ctxt.inner_word_punct),
-                        create_range(ctxt.inner_word_punct),
+                        Range.create(ctxt.word_start, ctxt.inner_word_punct),
+                        Range.create(ctxt.inner_word_punct),
                     )
                     ctxt.word_start = -1
             elif ctxt.word_start == -1:
-                token_ranges = (create_range(ctxt.index, end_index), None)
+                token_ranges = (Range.create(ctxt.index, end_index), None)
             elif ctxt.inner_word_punct != -1:
                 token_ranges = (
-                    create_range(ctxt.word_start, ctxt.inner_word_punct),
-                    create_range(ctxt.inner_word_punct, ctxt.index),
+                    Range.create(ctxt.word_start, ctxt.inner_word_punct),
+                    Range.create(ctxt.inner_word_punct, ctxt.index),
                 )
                 ctxt.word_start = ctxt.index
             else:
-                token_ranges = (create_range(ctxt.word_start, ctxt.index), create_range(ctxt.index, end_index))
+                token_ranges = (Range.create(ctxt.word_start, ctxt.index), Range.create(ctxt.index, end_index))
                 ctxt.word_start = -1
             ctxt.inner_word_punct = -1
             ctxt.index = end_index

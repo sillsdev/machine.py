@@ -3,7 +3,7 @@ from typing import Iterable, Optional, Tuple
 
 import regex
 
-from ..annotations.range import Range, create_range
+from ..annotations.range import Range
 from ..utils.string_utils import is_control, is_punctuation, is_symbol
 from .whitespace_tokenizer import WhitespaceTokenizer
 
@@ -27,13 +27,13 @@ class LatinWordTokenizer(WhitespaceTokenizer):
 
     def tokenize_as_ranges(self, data: str, data_range: Optional[Range[int]] = None) -> Iterable[Range[int]]:
         if data_range is None:
-            data_range = create_range(0, len(data))
+            data_range = Range.create(0, len(data))
         ctxt = _TokenizeContext()
         for char_range in super().tokenize_as_ranges(data, data_range):
             url_match = URL_REGEX.match(data[char_range.start : char_range.end])
             if url_match is not None:
                 url_len = len(url_match.group())
-                yield create_range(char_range.start, char_range.start + url_len)
+                yield Range.create(char_range.start, char_range.start + url_len)
                 ctxt.index = char_range.start + url_len
             else:
                 ctxt.index = char_range.start
@@ -54,12 +54,12 @@ class LatinWordTokenizer(WhitespaceTokenizer):
                     if (
                         inner_punct_str == "." and self._is_abbreviation(data, ctxt.word_start, ctxt.inner_word_punct)
                     ) or (inner_punct_str == "'" and not self.treat_apostrophe_as_single_quote):
-                        yield create_range(ctxt.word_start, char_range.end)
+                        yield Range.create(ctxt.word_start, char_range.end)
                     else:
-                        yield create_range(ctxt.word_start, ctxt.inner_word_punct)
-                        yield create_range(ctxt.inner_word_punct, char_range.end)
+                        yield Range.create(ctxt.word_start, ctxt.inner_word_punct)
+                        yield Range.create(ctxt.inner_word_punct, char_range.end)
                 else:
-                    yield create_range(ctxt.word_start, char_range.end)
+                    yield Range.create(ctxt.word_start, char_range.end)
 
     def _process_character(
         self, data: str, data_range: Range[int], ctxt: _TokenizeContext
@@ -75,15 +75,15 @@ class LatinWordTokenizer(WhitespaceTokenizer):
                 if c == "'" and not self.treat_apostrophe_as_single_quote:
                     ctxt.word_start = ctxt.index
                 else:
-                    token_ranges = (create_range(ctxt.index, end_index), None)
+                    token_ranges = (Range.create(ctxt.index, end_index), None)
             elif ctxt.inner_word_punct != -1:
                 inner_punct_str = data[ctxt.inner_word_punct : ctxt.index]
                 if inner_punct_str == "'" and not self.treat_apostrophe_as_single_quote:
-                    token_ranges = (create_range(ctxt.word_start, ctxt.index), None)
+                    token_ranges = (Range.create(ctxt.word_start, ctxt.index), None)
                 else:
                     token_ranges = (
-                        create_range(ctxt.word_start, ctxt.inner_word_punct),
-                        create_range(ctxt.inner_word_punct, ctxt.index),
+                        Range.create(ctxt.word_start, ctxt.inner_word_punct),
+                        Range.create(ctxt.inner_word_punct, ctxt.index),
                     )
                 ctxt.word_start = ctxt.index
             else:
@@ -93,7 +93,7 @@ class LatinWordTokenizer(WhitespaceTokenizer):
                     ctxt.index += len(match.group())
                     return token_ranges
 
-                token_ranges = (create_range(ctxt.word_start, ctxt.index), create_range(ctxt.index, end_index))
+                token_ranges = (Range.create(ctxt.word_start, ctxt.index), Range.create(ctxt.index, end_index))
                 ctxt.word_start = -1
         elif ctxt.word_start == -1:
             ctxt.word_start = ctxt.index

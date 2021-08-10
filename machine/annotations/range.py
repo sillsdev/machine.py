@@ -11,6 +11,15 @@ class Range(Generic[Offset], Sized, Iterable[Offset]):
     start: Offset
     end: Offset
 
+    @classmethod
+    def create(cls, start: Offset, end: Optional[Offset] = None) -> "Range[Offset]":
+        if isinstance(start, int):
+            factory = cast(_RangeFactory[Offset], _INT_RANGE_FACTORY)
+        else:
+            raise RuntimeError("Range type not supported.")
+
+        return factory.create(start, end)
+
     @property
     def length(self) -> int:
         return self._factory.get_length(self.start, self.end)
@@ -117,12 +126,3 @@ class _IntRangeFactory(_RangeFactory[int]):
 
 
 _INT_RANGE_FACTORY = _IntRangeFactory()
-
-
-def create_range(start: Offset, end: Optional[Offset] = None) -> Range[Offset]:
-    if isinstance(start, int):
-        factory = cast(_RangeFactory[Offset], _INT_RANGE_FACTORY)
-    else:
-        raise RuntimeError("Range type not supported.")
-
-    return factory.create(start, end)

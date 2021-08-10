@@ -1,6 +1,6 @@
 from typing import Iterable, Optional
 
-from ..annotations.range import Range, create_range
+from ..annotations.range import Range
 from ..utils.string_utils import is_delayed_sentence_end, is_sentence_terminal
 from .latin_word_tokenizer import LatinWordTokenizer
 from .line_segment_tokenizer import LineSegmentTokenizer
@@ -34,11 +34,11 @@ class LatinSentenceTokenizer(LatinWordTokenizer):
                     in_end = False
                     has_end_quote_brackets = False
                 else:
-                    yield create_range(sentence_start, sentence_end)
+                    yield Range.create(sentence_start, sentence_end)
                     sentence_start = word_range.start
                     in_end = False
                     has_end_quote_brackets = False
             sentence_end = word_range.end
 
         if sentence_start != -1 and sentence_end != -1:
-            yield create_range(sentence_start, sentence_end if in_end else line_range.end)
+            yield Range.create(sentence_start, sentence_end if in_end else line_range.end)
