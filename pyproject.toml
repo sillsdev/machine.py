@@ -23,7 +23,7 @@ line_length = 120
 
 [tool.poetry]
 name = "sil-machine"
-version = "0.1.0"
+version = "0.1.1"
 description = "A natural language processing library that is focused on providing tools for resource-poor languages."
 license = "MIT"
 authors = ["SIL International"]
