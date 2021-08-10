@@ -24,7 +24,7 @@ profile = "black"
 [tool.poetry]
 name = "sil-machine"
 version = "0.1.0"
-description = ""
+description = "A natural language processing library that is focused on providing tools for resource-poor languages."
 license = "MIT"
 authors = ["SIL International"]
 maintainers = ["Damien Daspit <damien_daspit@sil.org>"]
