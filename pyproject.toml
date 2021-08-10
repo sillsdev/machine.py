@@ -18,8 +18,8 @@ exclude = '''
 '''
 
 [tool.isort]
-# make it compatible with black
-profile = "black" 
+profile = "black"
+line_length = 120
 
 [tool.poetry]
 name = "sil-machine"

@@ -29,9 +29,9 @@ class NullTokenProcessor(TokenProcessor):
         return tokens
 
 
-LOWERCASE_TOKEN_PROCESSOR = LowercaseTokenProcessor()
-ESCAPE_SPACES_TOKEN_PROCESSOR = EscapeSpacesTokenProcessor()
-UNESCAPE_SPACES_TOKEN_PROCESSOR = UnescapeSpacesTokenProcessor()
+LOWERCASE = LowercaseTokenProcessor()
+ESCAPE_SPACES = EscapeSpacesTokenProcessor()
+UNESCAPE_SPACES = UnescapeSpacesTokenProcessor()
 NULL_TOKEN_PROCESSOR = NullTokenProcessor()
 
 
@@ -41,6 +41,12 @@ class NormalizeTokenProcessor(TokenProcessor):
 
     def process(self, tokens: Sequence[str]) -> Sequence[str]:
         return [unicodedata.normalize(self._normalization_form, t) for t in tokens]
+
+
+NFC_NORMALIZE = NormalizeTokenProcessor("NFC")
+NFD_NORMALIZE = NormalizeTokenProcessor("NFD")
+NFKC_NORMALIZE = NormalizeTokenProcessor("NFKC")
+NFKD_NORMALIZE = NormalizeTokenProcessor("NFKD")
 
 
 class PipelineTokenProcessor(TokenProcessor):

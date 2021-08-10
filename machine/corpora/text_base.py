@@ -5,7 +5,7 @@ from ..tokenization import Tokenizer
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .text import Text
 from .text_segment import TextSegment
-from .token_processors import UNESCAPE_SPACES_TOKEN_PROCESSOR
+from .token_processors import UNESCAPE_SPACES
 
 
 class TextBase(Text):
@@ -44,7 +44,7 @@ class TextBase(Text):
                 self._id, seg_ref, [], is_sentence_start, is_in_range, is_range_start, is_empty=len(text) == 0
             )
         segment = list(self._word_tokenizer.tokenize(text))
-        segment = UNESCAPE_SPACES_TOKEN_PROCESSOR.process(segment)
+        segment = UNESCAPE_SPACES.process(segment)
         return TextSegment(
             self._id, seg_ref, segment, is_sentence_start, is_in_range, is_range_start, is_empty=len(segment) == 0
         )
