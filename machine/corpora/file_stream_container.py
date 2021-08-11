@@ -1,5 +1,4 @@
-from io import TextIOWrapper
-from typing import BinaryIO
+from typing import Any, BinaryIO
 
 from ..utils.typeshed import StrPath
 from .stream_container import StreamContainer
@@ -12,7 +11,7 @@ class FileStreamContainer(StreamContainer):
     def __enter__(self) -> "FileStreamContainer":
         return self
 
-    def __exit__(self, type, value, traceback) -> None:
+    def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
         ...
 
     def open_stream(self) -> BinaryIO:

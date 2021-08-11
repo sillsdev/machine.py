@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Iterable, Optional, TypeVar
 
 from ..annotations.range import Range

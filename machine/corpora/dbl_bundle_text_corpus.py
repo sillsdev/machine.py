@@ -4,7 +4,7 @@ from io import TextIOWrapper
 from typing import List
 from zipfile import ZipFile
 
-from ..scripture.versification import Versification, VersificationType
+from ..scripture.verse_ref import Versification, VersificationType
 from ..tokenization.tokenizer import Tokenizer
 from ..utils.typeshed import StrPath
 from .dbl_bundle_text import DblBundleText

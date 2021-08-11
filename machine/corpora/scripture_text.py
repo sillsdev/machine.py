@@ -1,7 +1,6 @@
-from typing import Iterable, List, Optional, Tuple
+from typing import Iterable, List, Optional
 
-from ..scripture.verse_ref import VerseRef
-from ..scripture.versification import Versification, VersificationType
+from ..scripture.verse_ref import VerseRef, Versification, VersificationType
 from ..tokenization import Tokenizer
 from .corpora_helpers import get_scripture_text_sort_key
 from .stream_text_base import StreamTextBase

@@ -44,9 +44,11 @@ class Range(Generic[Offset], Sized, Iterable[Offset], Comparable):
         )
 
     def compare_to(self, other: object) -> int:
-        if not isinstance(other, Range) or self._factory != other._factory:
+        if not isinstance(other, Range):
             raise TypeError("other is not the same type of Range.")
         other = cast(Range[Offset], other)
+        if self._factory != other._factory:
+            raise TypeError("other is not the same type of Range.")
         res = self._factory.offset_compare(self.start, other.start)
         if res == 0:
             res = -self._factory.offset_compare(self.end, other.end)

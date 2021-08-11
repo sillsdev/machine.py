@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from ..scripture.versification import Versification
+from ..scripture.verse_ref import Versification
 from ..tokenization.range_tokenizer import RangeTokenizer
 from ..utils.typeshed import StrPath
 from .corpora_helpers import get_usx_id, get_usx_versification

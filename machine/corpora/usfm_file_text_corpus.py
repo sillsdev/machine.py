@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List, Optional
 
-from ..scripture.versification import Versification, VersificationType
+from ..scripture.verse_ref import Versification, VersificationType
 from ..tokenization.tokenizer import Tokenizer
 from ..utils.typeshed import StrPath
 from .scripture_text_corpus import ScriptureTextCorpus

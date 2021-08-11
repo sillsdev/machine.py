@@ -1,6 +1,6 @@
 from abc import abstractmethod
 
-from ..scripture.versification import Versification
+from ..scripture.verse_ref import Versification
 from .corpora_helpers import get_scripture_text_sort_key
 from .dictionary_text_corpus import DictionaryTextCorpus
 

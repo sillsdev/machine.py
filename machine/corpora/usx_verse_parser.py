@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as etree
 from dataclasses import dataclass, field
-from typing import IO, Iterable, List, Optional
+from typing import BinaryIO, Iterable, List, Optional
 
 from ..scripture.verse_ref import are_overlapping_verse_ranges
 from ..utils.string_utils import has_sentence_ending, is_integer
@@ -10,7 +10,7 @@ from .usx_verse import UsxVerse
 
 
 class UsxVerseParser:
-    def parse(self, stream: IO) -> Iterable[UsxVerse]:
+    def parse(self, stream: BinaryIO) -> Iterable[UsxVerse]:
         ctxt = _ParseContext()
         tree = etree.parse(stream)
         root_elem = tree.find(".//book/..")

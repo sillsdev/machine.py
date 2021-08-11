@@ -6,5 +6,5 @@ from .text_base import TextBase
 
 class StreamTextBase(TextBase):
     @abstractmethod
-    def _create_stream_container() -> StreamContainer:
+    def _create_stream_container(self) -> StreamContainer:
         ...

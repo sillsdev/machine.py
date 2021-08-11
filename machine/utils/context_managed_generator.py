@@ -1,12 +1,11 @@
-from contextlib import AbstractContextManager
-from typing import Generator, TypeVar
+from typing import Any, ContextManager, Generator, TypeVar
 
 T_co = TypeVar("T_co")
 T_contra = TypeVar("T_contra")
 V_co = TypeVar("V_co")
 
 
-class ContextManagedGenerator(AbstractContextManager, Generator[T_co, T_contra, V_co]):
+class ContextManagedGenerator(ContextManager[Generator[T_co, T_contra, V_co]], Generator[T_co, T_contra, V_co]):
     def __init__(self, generator: Generator[T_co, T_contra, V_co]) -> None:
         self._generator = generator
 
@@ -19,7 +18,7 @@ class ContextManagedGenerator(AbstractContextManager, Generator[T_co, T_contra, 
     def send(self, value: T_contra) -> T_co:
         return self._generator.send(value)
 
-    def throw(self, type, value=None, traceback=None) -> T_co:
+    def throw(self, type: Any, value: Any = None, traceback: Any = None) -> T_co:
         return self._generator.throw(type, value, traceback)
 
     def close(self) -> None:
@@ -28,5 +27,5 @@ class ContextManagedGenerator(AbstractContextManager, Generator[T_co, T_contra, 
     def __enter__(self) -> Generator[T_co, T_contra, V_co]:
         return super().__enter__()
 
-    def __exit__(self, type, value, traceback) -> None:
+    def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
         self.close()

@@ -266,7 +266,7 @@ def test_valid_status_invalid_in_versification() -> None:
 
 def test_valid_status_invalid_excluded_in_versification() -> None:
     versification = Versification.create("Dummy")
-    versification._excluded_verses.add(VerseRef.from_string("GEN 1:30").bbbcccvvv)
+    versification.excluded_verses.add(VerseRef.from_string("GEN 1:30").bbbcccvvv)
 
     # Valid verses (surrounding excluded verse)
     assert VerseRef.from_string("GEN 1:29", versification).is_valid
@@ -285,7 +285,7 @@ def test_valid_status_invalid_excluded_in_versification() -> None:
 
 def test_valid_status_excluded_verse() -> None:
     versification = Versification.create("Dummy")
-    versification._excluded_verses.add(get_bbbcccvvv(1, 2, 2))
+    versification.excluded_verses.add(get_bbbcccvvv(1, 2, 2))
 
     # If an excluded verse is within a verse range, it is valid.
     assert VerseRef.from_string("GEN 2:1-3", versification).is_valid
@@ -674,7 +674,7 @@ def test_validated_segment() -> None:
 
 def test_validated_segment_with_versification_info() -> None:
     versification = Versification.create("Dummy")
-    versification._verse_segments[get_bbbcccvvv(1, 1, 1)] = {"", "@", "$", "%", "abc", "a\u0301"}
+    versification.verse_segments[get_bbbcccvvv(1, 1, 1)] = {"", "@", "$", "%", "abc", "a\u0301"}
 
     assert VerseRef.from_string("GEN 1:1", versification).validated_segment() == ""
     assert VerseRef.from_string("GEN 1:1a", versification).validated_segment() == ""
@@ -703,7 +703,7 @@ def test_validated_segment_with_defined_default_segments() -> None:
 
 def test_validated_segment_with_versification_and_defined_default_segments() -> None:
     versification = Versification.create("Dummy")
-    versification._verse_segments[get_bbbcccvvv(1, 1, 1)] = {"^", "&", "*", "a\u0301"}
+    versification.verse_segments[get_bbbcccvvv(1, 1, 1)] = {"^", "&", "*", "a\u0301"}
     defined_segments = {"@", "$", "%", "o\u0301"}
 
     assert VerseRef.from_string("GEN 1:1*", versification).validated_segment(defined_segments) == "*"

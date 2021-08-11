@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
-from ..scripture.versification import Versification
+from ..scripture.verse_ref import Versification
 from ..tokenization import Tokenizer
 from ..utils.typeshed import StrPath
 from .file_stream_container import FileStreamContainer

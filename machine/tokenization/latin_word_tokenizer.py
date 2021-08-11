@@ -1,23 +1,16 @@
 from dataclasses import dataclass
 from typing import Iterable, Optional, Tuple
 
-import regex
+import regex as re
 
 from ..annotations.range import Range
 from ..utils.string_utils import is_control, is_punctuation, is_symbol
 from .whitespace_tokenizer import WhitespaceTokenizer
 
-INNER_WORD_PUNCT_REGEX = regex.compile(
+INNER_WORD_PUNCT_REGEX = re.compile(
     r"[&\-.:=,?@\xAD\xB7\u2010\u2011\u2019\u2027]|['_]+",
 )
-URL_REGEX = regex.compile(r"(?:[\w-]+://?|www[.])[^\s()<>]+(?:[\w\d]+|(?:[^\p{P}\s]|/))", regex.IGNORECASE)
-
-
-@dataclass
-class _TokenizeContext:
-    index: int = 0
-    word_start: int = 0
-    inner_word_punct: int = 0
+URL_REGEX = re.compile(r"(?:[\w-]+://?|www[.])[^\s()<>]+(?:[\w\d]+|(?:[^\p{P}\s]|/))", re.IGNORECASE)
 
 
 class LatinWordTokenizer(WhitespaceTokenizer):
@@ -28,7 +21,7 @@ class LatinWordTokenizer(WhitespaceTokenizer):
     def tokenize_as_ranges(self, data: str, data_range: Optional[Range[int]] = None) -> Iterable[Range[int]]:
         if data_range is None:
             data_range = Range.create(0, len(data))
-        ctxt = _TokenizeContext()
+        ctxt = LatinWordTokenizer._TokenizeContext()
         for char_range in super().tokenize_as_ranges(data, data_range):
             url_match = URL_REGEX.match(data[char_range.start : char_range.end])
             if url_match is not None:
@@ -62,7 +55,7 @@ class LatinWordTokenizer(WhitespaceTokenizer):
                     yield Range.create(ctxt.word_start, char_range.end)
 
     def _process_character(
-        self, data: str, data_range: Range[int], ctxt: _TokenizeContext
+        self, data: str, data_range: Range[int], ctxt: "LatinWordTokenizer._TokenizeContext"
     ) -> Tuple[Optional[Range[int]], Optional[Range[int]]]:
         token_ranges: Tuple[Optional[Range[int]], Optional[Range[int]]] = (None, None)
         c = data[ctxt.index]
@@ -105,3 +98,9 @@ class LatinWordTokenizer(WhitespaceTokenizer):
     def _is_abbreviation(self, data: str, start: int, end: int) -> bool:
         substr = data[start:end].lower()
         return substr in self._abbreviations
+
+    @dataclass
+    class _TokenizeContext:
+        index: int = 0
+        word_start: int = 0
+        inner_word_punct: int = 0

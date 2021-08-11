@@ -1,5 +1,5 @@
 from io import BytesIO
-from typing import BinaryIO
+from typing import Any, BinaryIO
 from zipfile import ZipFile
 
 from ..utils.typeshed import StrPath
@@ -14,7 +14,7 @@ class ZipEntryStreamContainer(StreamContainer):
     def __enter__(self) -> "ZipEntryStreamContainer":
         return self
 
-    def __exit__(self, type, value, traceback) -> None:
+    def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
         self.close()
 
     def open_stream(self) -> BinaryIO:

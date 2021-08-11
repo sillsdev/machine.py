@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import BinaryIO
+from typing import Any, BinaryIO
 
 
 class StreamContainer(ABC):
@@ -8,7 +8,7 @@ class StreamContainer(ABC):
         ...
 
     @abstractmethod
-    def __exit__(self, type, value, traceback) -> None:
+    def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
         ...
 
     @abstractmethod

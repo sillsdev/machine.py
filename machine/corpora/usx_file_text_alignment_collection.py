@@ -5,8 +5,7 @@ from pathlib import Path
 from typing import DefaultDict, Generator, List, Optional, Sequence, Set, Tuple
 
 from ..annotations.range import Range
-from ..scripture.verse_ref import VerseRef
-from ..scripture.versification import Versification
+from ..scripture.verse_ref import VerseRef, Versification
 from ..tokenization import RangeTokenizer
 from ..utils.context_managed_generator import ContextManagedGenerator
 from ..utils.typeshed import StrPath

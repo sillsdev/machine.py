@@ -1,8 +1,7 @@
 from io import TextIOWrapper
 from typing import Generator, Optional
 
-from ..scripture.verse_ref import VerseRef, are_overlapping_verse_ranges
-from ..scripture.versification import Versification
+from ..scripture.verse_ref import VerseRef, are_overlapping_verse_ranges, Versification
 from ..tokenization.tokenizer import Tokenizer
 from ..utils.string_utils import has_sentence_ending, is_integer
 from .corpora_helpers import merge_verse_ranges

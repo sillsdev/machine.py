@@ -1,7 +1,6 @@
 from typing import Generator, Optional
 
-from ..scripture.verse_ref import VerseRef
-from ..scripture.versification import Versification
+from ..scripture.verse_ref import VerseRef, Versification
 from ..tokenization.tokenizer import Tokenizer
 from .scripture_text import ScriptureText
 from .text_segment import TextSegment

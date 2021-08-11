@@ -2,7 +2,7 @@ import xml.etree.ElementTree as etree
 from pathlib import Path
 from typing import List
 
-from ..scripture.versification import Versification
+from ..scripture.verse_ref import Versification
 from ..tokenization.tokenizer import Tokenizer
 from ..utils.typeshed import StrPath
 from .scripture_text_corpus import ScriptureTextCorpus

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from ..scripture.versification import Versification
+from ..scripture.verse_ref import Versification
 from ..tokenization.tokenizer import Tokenizer
 from ..utils.typeshed import StrPath
 from .stream_container import StreamContainer

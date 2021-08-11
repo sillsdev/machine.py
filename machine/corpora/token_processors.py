@@ -24,7 +24,7 @@ class UnescapeSpacesTokenProcessor(TokenProcessor):
         return [(" " if t == "<space>" else t) for t in tokens]
 
 
-class NullTokenProcessor(TokenProcessor):
+class NoOpTokenProcessor(TokenProcessor):
     def process(self, tokens: Sequence[str]) -> Sequence[str]:
         return tokens
 
@@ -32,7 +32,7 @@ class NullTokenProcessor(TokenProcessor):
 LOWERCASE = LowercaseTokenProcessor()
 ESCAPE_SPACES = EscapeSpacesTokenProcessor()
 UNESCAPE_SPACES = UnescapeSpacesTokenProcessor()
-NULL_TOKEN_PROCESSOR = NullTokenProcessor()
+NO_OP = NoOpTokenProcessor()
 
 
 class NormalizeTokenProcessor(TokenProcessor):
@@ -69,6 +69,20 @@ class PipelineTokenProcessor(TokenProcessor):
     def process(self, tokens: Sequence[str]) -> Sequence[str]:
         for processor in self._processors:
             if processor is None:
-                processor = NULL_TOKEN_PROCESSOR
+                processor = NO_OP
             tokens = processor.process(tokens)
         return tokens
+
+
+@overload
+def pipeline(*processors: TokenProcessor) -> PipelineTokenProcessor:
+    ...
+
+
+@overload
+def pipeline(processors: Iterable[TokenProcessor]) -> PipelineTokenProcessor:
+    ...
+
+
+def pipeline(*args: Any) -> PipelineTokenProcessor:
+    return PipelineTokenProcessor(args)

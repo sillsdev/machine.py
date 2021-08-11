@@ -2,12 +2,12 @@ from typing import Optional, Tuple
 
 from ..annotations.range import Range
 from ..utils.string_utils import is_punctuation
-from .latin_word_tokenizer import LatinWordTokenizer, _TokenizeContext
+from .latin_word_tokenizer import LatinWordTokenizer
 
 
 class ZwspWordTokenizer(LatinWordTokenizer):
     def _process_character(
-        self, data: str, data_range: Range[int], ctxt: _TokenizeContext
+        self, data: str, data_range: Range[int], ctxt: LatinWordTokenizer._TokenizeContext
     ) -> Tuple[Optional[Range[int]], Optional[Range[int]]]:
         if data[ctxt.index].isspace():
             end_index = ctxt.index + 1

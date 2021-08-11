@@ -2,13 +2,12 @@ import os
 import platform
 from glob import glob
 from pathlib import Path
-from typing import Generator, Iterable, Optional, Tuple, TypeVar, cast
+from typing import Generator, Iterable, Optional, Tuple, TypeVar
 
-import regex
+import regex as re
 
 from ..scripture.canon import book_id_to_number
-from ..scripture.verse_ref import VERSE_RANGE_SEPARATOR, VERSE_SEQUENCE_INDICATOR
-from ..scripture.versification import Versification, VersificationType
+from ..scripture.verse_ref import VERSE_RANGE_SEPARATOR, VERSE_SEQUENCE_INDICATOR, Versification, VersificationType
 
 
 def get_files(file_patterns: Iterable[str]) -> Iterable[Tuple[str, str]]:
@@ -27,8 +26,8 @@ def get_files(file_patterns: Iterable[str]) -> Iterable[Tuple[str, str]]:
                 path = "."
 
             base, _ = os.path.splitext(search_pattern)
-            converted_mask = cast(str, regex.escape(base)).replace("\\*", "(.*)").replace("\\?", "(.)")
-            mask_regex = regex.compile(converted_mask, regex.IGNORECASE if platform.system() == "Windows" else 0)
+            converted_mask = re.escape(base).replace("\\*", "(.*)").replace("\\?", "(.)")
+            mask_regex = re.compile(converted_mask, re.IGNORECASE if platform.system() == "Windows" else 0)
 
             for filename in glob(os.path.join(path, search_pattern)):
                 id = os.path.basename(filename)

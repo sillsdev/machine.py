@@ -2,7 +2,6 @@ from typing import Any
 
 from .canon import *
 from .verse_ref import *
-from .versification import *
 
 ORIGINAL_VERSIFICATION: Versification
 ENGLISH_VERSIFICATION: Versification
