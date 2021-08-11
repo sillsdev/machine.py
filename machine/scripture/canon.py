@@ -146,7 +146,7 @@ NON_CANONICAL_IDS = {
 
 BOOK_NUMBERS = dict((id, i + 1) for i, id in enumerate(ALL_BOOK_IDS))
 
-FIRST_BOOk = 1
+FIRST_BOOK = 1
 LAST_BOOK = len(ALL_BOOK_IDS)
 
 

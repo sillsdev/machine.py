@@ -1,6 +1,6 @@
-from contextlib import AbstractContextManager
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Any
 
 from machine.corpora import DblBundleTextCorpus
 from machine.tokenization import NullTokenizer
@@ -21,5 +21,5 @@ class DblBundleTestEnvironment:
     def __enter__(self) -> "DblBundleTestEnvironment":
         return self
 
-    def __exit__(self, type, value, traceback) -> None:
+    def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
         self._temp_dir.cleanup()

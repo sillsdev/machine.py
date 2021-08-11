@@ -33,6 +33,10 @@ jobs:
         run: poetry install --no-interaction
       - name: Lint with Black
         run: poetry run black . --check --diff
+      - name: Lint with Flake8
+        run: poetry run flake8 . --statistics --show-source
+      - name: Lint with isort
+        run: poetry run isort . --check-only
       - name: Test with pytest
         run: poetry run pytest
       - name: Publish

@@ -3,13 +3,7 @@ from typing import Dict, List, Optional, TextIO, Tuple
 
 from ..utils.string_utils import parse_integer
 from ..utils.typeshed import StrPath
-from .usfm_marker import (
-    UsfmJustification,
-    UsfmMarker,
-    UsfmStyleType,
-    UsfmTextProperties,
-    UsfmTextType,
-)
+from .usfm_marker import UsfmJustification, UsfmMarker, UsfmStyleType, UsfmTextProperties, UsfmTextType
 
 
 class UsfmStylesheet:

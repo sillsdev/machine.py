@@ -7,7 +7,7 @@ from .dictionary_text_alignment_corpus import DictionaryTextAlignmentCorpus
 from .text_file_text_alignment_collection import TextFileTextAlignmentCollection
 
 
-class TextFileTextCorpus(DictionaryTextAlignmentCorpus):
+class TextFileTextAlignmentCorpus(DictionaryTextAlignmentCorpus):
     @overload
     def __init__(self, file_patterns: Iterable[StrPath]) -> None:
         ...
