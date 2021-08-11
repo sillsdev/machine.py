@@ -24,6 +24,9 @@ line_length = 120
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
+[tool.pyright]
+typeCheckingMode = "strict"
+
 [tool.poetry]
 name = "sil-machine"
 version = "0.1.1"
