@@ -1,6 +1,6 @@
 from io import StringIO
 
-import pytest
+from pytest import raises
 
 from machine.scripture import ORIGINAL_VERSIFICATION, VerseRef, Versification
 
@@ -29,12 +29,12 @@ def test_parse_valid() -> None:
 def test_parse_without_name() -> None:
     src = "GEN 1:31\n" "MRK 1:45\n"
     stream = StringIO(src)
-    with pytest.raises(RuntimeError):
+    with raises(RuntimeError):
         Versification.parse(stream, "vers.txt")
 
 
 def test_parse_invalid_syntax() -> None:
     src = "GEN 1:31 MRK 1:-8MAT 5:44 = FFF6,1\n"
     stream = StringIO(src)
-    with pytest.raises(RuntimeError):
+    with raises(RuntimeError):
         Versification.parse(stream, "vers.txt", fallback_name="name")

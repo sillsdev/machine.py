@@ -1,8 +1,8 @@
+from corpora_test_helpers import USFM_STYLESHEET_PATH, USFM_TEST_PROJECT_PATH
+
 from machine.corpora import UsfmFileTextCorpus
 from machine.scripture.verse_ref import VerseRef
 from machine.tokenization import NullTokenizer
-
-from .corpora_test_helpers import USFM_STYLESHEET_PATH, USFM_TEST_PROJECT_PATH
 
 
 def test_get_segments_nonempty_text() -> None:

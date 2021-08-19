@@ -1,4 +1,4 @@
-import pytest
+from pytest import raises
 
 from machine.scripture import (
     ENGLISH_VERSIFICATION,
@@ -183,21 +183,21 @@ def test_build_verse_ref_by_props() -> None:
 
 
 def test_invalid() -> None:
-    with pytest.raises(ValueError):
+    with raises(ValueError):
         VerseRef(-1, 1, 1)
-    with pytest.raises(ValueError):
+    with raises(ValueError):
         VerseRef(0, 1, 1)
-    with pytest.raises(ValueError):
+    with raises(ValueError):
         VerseRef(LAST_BOOK + 1, 1, 1)
-    with pytest.raises(ValueError):
+    with raises(ValueError):
         VerseRef(2, -42, 1)
-    with pytest.raises(ValueError):
+    with raises(ValueError):
         VerseRef(2, 1, -4)
-    with pytest.raises(ValueError):
+    with raises(ValueError):
         VerseRef.from_string("MAT 1:")
-    with pytest.raises(ValueError):
+    with raises(ValueError):
         VerseRef.from_string("MAT 1:2-")
-    with pytest.raises(ValueError):
+    with raises(ValueError):
         VerseRef.from_string("MAT 1:2,")
 
     vref = VerseRef(1, 1023, 5051, ENGLISH_VERSIFICATION)
@@ -360,23 +360,23 @@ def test_from_string_weird() -> None:
 
 
 def test_parse_ref_invalid_book() -> None:
-    with pytest.raises(ValueError):
+    with raises(ValueError):
         VerseRef.from_string("BLA 1:1")
-    with pytest.raises(ValueError):
+    with raises(ValueError):
         VerseRef("BLA", "1", "1")
 
 
 def test_from_string_invalid_numbers() -> None:
-    with pytest.raises(ValueError):
+    with raises(ValueError):
         VerseRef.from_string("EXO 6:-18")
-    with pytest.raises(ValueError):
+    with raises(ValueError):
         VerseRef.from_string("EXO -1:18")
 
 
 def test_from_string_letters() -> None:
-    with pytest.raises(ValueError):
+    with raises(ValueError):
         VerseRef.from_string("EXO F:18")
-    with pytest.raises(ValueError):
+    with raises(ValueError):
         VerseRef.from_string("EXO 1:F")
 
 

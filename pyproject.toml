@@ -25,7 +25,7 @@ line_length = 120
 testpaths = ["tests"]
 
 [tool.pyright]
-typeCheckingMode = "strict"
+typeCheckingMode = "basic"
 
 [tool.poetry]
 name = "sil-machine"
@@ -52,14 +52,20 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = ">=3.7,<3.11"
 regex = "^2021.7.6"
+numpy = "^1.21.2"
+sil-thot = "^3.3.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
 black = "^21.7b0"
 flake8 = "^3.9.2"
 isort = "^5.9.3"
+pytest-mockito = "^0.0.4"
+
+[tool.poetry.extras]
+thot = ["sil-thot"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

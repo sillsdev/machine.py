@@ -1,6 +1,6 @@
-from machine.scripture import VerseRef
+from dbl_bundle_test_environment import DblBundleTestEnvironment
 
-from .dbl_bundle_test_environment import DblBundleTestEnvironment
+from machine.scripture import VerseRef
 
 
 def test_get_segments_nonempty_text() -> None:
