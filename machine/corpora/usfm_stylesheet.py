@@ -28,7 +28,7 @@ class UsfmStylesheet:
             else:
                 raise FileNotFoundError("The stylesheet does not exist.")
 
-        with open(filename, "r", encoding="utf-8") as stream:
+        with open(filename, "r", encoding="utf-8-sig") as stream:
             entries = _split_stylesheet(stream)
 
         for i in range(len(entries)):

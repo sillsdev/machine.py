@@ -538,7 +538,7 @@ class Versification:
             return cls.get_builtin(type)
 
         versification = Versification(name)
-        with open(Path(__file__).parent / "eng.vrs.txt", "r", encoding="utf-8") as file:
+        with open(Path(__file__).parent / "eng.vrs.txt", "r", encoding="utf-8-sig") as file:
             versification = cls.parse(file, versification=versification)
         return versification
 
@@ -562,7 +562,7 @@ class Versification:
 
         path = Path(__file__).parent / filename
 
-        with open(path, "r", encoding="utf-8") as file:
+        with open(path, "r", encoding="utf-8-sig") as file:
             versification = cls.parse(file)
         cls._BUILTIN_VERSIFICATIONS[type] = versification
         return versification
@@ -574,7 +574,7 @@ class Versification:
         base_versification: Optional["Versification"] = None,
         fallback_name: Optional[str] = None,
     ) -> "Versification":
-        with open(filename, "r", encoding="utf-8") as file:
+        with open(filename, "r", encoding="utf-8-sig") as file:
             versification = (
                 None
                 if base_versification is None or fallback_name is None

@@ -7,7 +7,7 @@ from .corpora_test_helpers import USFM_STYLESHEET_PATH, USFM_TEST_PROJECT_PATH
 
 def test_get_segments_nonempty_text() -> None:
     tokenizer = NullTokenizer()
-    corpus = UsfmFileTextCorpus(tokenizer, USFM_STYLESHEET_PATH, "utf-8", USFM_TEST_PROJECT_PATH)
+    corpus = UsfmFileTextCorpus(tokenizer, USFM_STYLESHEET_PATH, "utf-8-sig", USFM_TEST_PROJECT_PATH)
 
     text = corpus.get_text("MAT")
     assert text is not None
@@ -51,7 +51,7 @@ def test_get_segments_nonempty_text() -> None:
 
 def test_get_segments_sentence_start() -> None:
     tokenizer = NullTokenizer()
-    corpus = UsfmFileTextCorpus(tokenizer, USFM_STYLESHEET_PATH, "utf-8", USFM_TEST_PROJECT_PATH)
+    corpus = UsfmFileTextCorpus(tokenizer, USFM_STYLESHEET_PATH, "utf-8-sig", USFM_TEST_PROJECT_PATH)
 
     text = corpus.get_text("MAT")
     assert text is not None
@@ -70,7 +70,7 @@ def test_get_segments_sentence_start() -> None:
 
 def test_get_segments_empty_text() -> None:
     tokenizer = NullTokenizer()
-    corpus = UsfmFileTextCorpus(tokenizer, USFM_STYLESHEET_PATH, "utf-8", USFM_TEST_PROJECT_PATH)
+    corpus = UsfmFileTextCorpus(tokenizer, USFM_STYLESHEET_PATH, "utf-8-sig", USFM_TEST_PROJECT_PATH)
 
     text = corpus.get_text("MRK")
     assert text is not None
@@ -81,7 +81,9 @@ def test_get_segments_empty_text() -> None:
 
 def test_get_segments_include_markers() -> None:
     tokenizer = NullTokenizer()
-    corpus = UsfmFileTextCorpus(tokenizer, USFM_STYLESHEET_PATH, "utf-8", USFM_TEST_PROJECT_PATH, include_markers=True)
+    corpus = UsfmFileTextCorpus(
+        tokenizer, USFM_STYLESHEET_PATH, "utf-8-sig", USFM_TEST_PROJECT_PATH, include_markers=True
+    )
 
     text = corpus.get_text("MAT")
     assert text is not None

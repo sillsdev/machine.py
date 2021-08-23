@@ -28,7 +28,7 @@ class DblBundleTextCorpus(ScriptureTextCorpus):
                 with archive.open(versification_entry, "r") as stream:
                     abbr = doc.getroot().findtext("./identification/abbreviation", "")
                     self._versification = Versification.parse(
-                        TextIOWrapper(stream, encoding="utf-8"), "versification.vrs", fallback_name=abbr
+                        TextIOWrapper(stream, encoding="utf-8-sig"), "versification.vrs", fallback_name=abbr
                     )
             else:
                 self._versification = Versification.get_builtin(VersificationType.ENGLISH)

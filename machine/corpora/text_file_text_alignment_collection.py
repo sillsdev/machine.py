@@ -31,7 +31,7 @@ class TextFileTextAlignmentCollection(TextAlignmentCollection):
         return TextFileTextAlignmentCollection(self._id, self._filename, not self._invert)
 
     def _get_alignments(self) -> Generator[TextAlignment, None, None]:
-        with open(self._filename, "r", encoding="utf-8") as file:
+        with open(self._filename, "r", encoding="utf-8-sig") as file:
             section_num = 1
             segment_num = 1
             for line in file:
