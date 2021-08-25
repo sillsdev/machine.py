@@ -1,7 +1,7 @@
+from corpora_test_helpers import USFM_STYLESHEET_PATH, USFM_TEST_PROJECT_PATH
+
 from machine.corpora import UsfmFileTextCorpus
 from machine.tokenization import LatinWordTokenizer
-
-from corpora_test_helpers import USFM_STYLESHEET_PATH, USFM_TEST_PROJECT_PATH
 
 
 def test_texts() -> None:
