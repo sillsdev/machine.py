@@ -325,7 +325,7 @@ thot = ["sil-thot"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.11"
-content-hash = "47aa6ef7c730fc9fab250a17929a1cc30ac3f273cf1ca0b65f11730c029dd62a"
+content-hash = "f430880ecc17cb18da57afbca2df3bd33701da6c47ae118a3055cafde409ddd5"
 
 [metadata.files]
 appdirs = [

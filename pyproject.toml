@@ -54,8 +54,8 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.7,<3.11"
 regex = "^2021.7.6"
-numpy = "^1.21.2"
 sil-thot = "^3.3.0"
+numpy = "^1.19.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
