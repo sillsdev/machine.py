@@ -2,10 +2,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
-from corpora_test_helpers import create_test_dbl_bundle
-
 from machine.corpora import DblBundleTextCorpus
 from machine.tokenization import NullTokenizer
+from tests.corpora.corpora_test_helpers import create_test_dbl_bundle
 
 
 class DblBundleTestEnvironment:

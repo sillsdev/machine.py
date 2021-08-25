@@ -1,7 +1,7 @@
 from mockito import ANY, when
-from test_utils import make_concrete
 
 from machine.translation import WordAligner, WordAlignmentMatrix
+from tests.test_utils import make_concrete
 
 
 def test_get_best_alignment_from_known() -> None:
