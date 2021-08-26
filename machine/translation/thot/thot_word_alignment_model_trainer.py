@@ -19,7 +19,6 @@ class ThotWordAlignmentModelTrainer(Trainer):
         corpus: ParallelTextCorpus,
         max_corpus_count: int = sys.maxsize,
     ) -> None:
-
         self._model = create_alignment_model(model_type)
         self._prefix_filename = None if prefix_filename is None else Path(prefix_filename)
         self._source_preprocessor = source_preprocessor
@@ -58,6 +57,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
         progress: Optional[Callable[[ProgressStatus], None]] = None,
         check_canceled: Optional[Callable[[], None]] = None,
     ) -> None:
+        self._model.clear()
         corpus_count = 0
         index = 0
         trained_segment_count = 0
@@ -73,7 +73,6 @@ class ThotWordAlignmentModelTrainer(Trainer):
             if corpus_count == self._max_corpus_count:
                 break
 
-        self._model.clear()
         if progress is not None:
             progress(ProgressStatus.from_step(0, self.training_iteration_count + 1))
         if check_canceled is not None:
