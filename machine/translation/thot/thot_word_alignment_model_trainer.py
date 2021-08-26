@@ -54,7 +54,9 @@ class ThotWordAlignmentModelTrainer(Trainer):
         return self._stats
 
     def train(
-        self, progress: Optional[Callable[[ProgressStatus], None]], check_canceled: Optional[Callable[[], None]]
+        self,
+        progress: Optional[Callable[[ProgressStatus], None]] = None,
+        check_canceled: Optional[Callable[[], None]] = None,
     ) -> None:
         corpus_count = 0
         index = 0
@@ -74,10 +76,14 @@ class ThotWordAlignmentModelTrainer(Trainer):
         self._model.clear()
         if progress is not None:
             progress(ProgressStatus.from_step(0, self.training_iteration_count + 1))
+        if check_canceled is not None:
+            check_canceled()
         self._model.start_training()
         for i in range(self.training_iteration_count):
             if progress is not None:
                 progress(ProgressStatus.from_step(i + 1, self.training_iteration_count + 1))
+            if check_canceled is not None:
+                check_canceled()
             self._model.train()
         if progress is not None:
             progress(ProgressStatus(1.0))
