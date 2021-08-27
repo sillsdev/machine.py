@@ -1,4 +1,4 @@
-from typing import Callable, Collection, Iterable, Optional, Sequence, Set, Tuple
+from typing import Callable, Collection, Iterable, List, Optional, Sequence, Set, Tuple
 
 import numpy as np
 
@@ -13,15 +13,22 @@ class WordAlignmentMatrix:
         if segment.aligned_word_pairs is None:
             return None
 
-        matrix = WordAlignmentMatrix(len(segment.source_segment), len(segment.target_segment))
+        matrix = cls.from_word_pairs(len(segment.source_segment), len(segment.target_segment))
         for word_pair in segment.aligned_word_pairs:
             matrix[word_pair.source_index, word_pair.target_index] = True
         return matrix
 
-    def __init__(self, row_count: int, column_count: int, set_values: Set[Tuple[int, int]] = set()) -> None:
-        self._matrix = np.full((row_count, column_count), False)
+    @classmethod
+    def from_word_pairs(
+        cls, row_count: int, column_count: int, set_values: Set[Tuple[int, int]] = set()
+    ) -> "WordAlignmentMatrix":
+        matrix = np.full((row_count, column_count), False)
         for i, j in set_values:
-            self[i, j] = True
+            matrix[i, j] = True
+        return WordAlignmentMatrix(matrix)
+
+    def __init__(self, matrix: np.ndarray) -> None:
+        self._matrix = matrix
 
     @property
     def row_count(self) -> int:
@@ -207,7 +214,7 @@ class WordAlignmentMatrix:
     def get_asymmetric_alignments(self) -> Tuple[Collection[AlignedWordPair], Sequence[int], Sequence[int]]:
         source = [0] * self.column_count
         target = [-2] * self.row_count
-        word_pairs: Set[AlignedWordPair] = set()
+        word_pairs: List[AlignedWordPair] = []
         prev = -1
         for j in range(self.column_count):
             found = False
@@ -217,7 +224,7 @@ class WordAlignmentMatrix:
                         source[j] = i
                     if target[i] == -2:
                         target[i] = j
-                    word_pairs.add(AlignedWordPair(i, j))
+                    word_pairs.append(AlignedWordPair(i, j))
                     prev = i
                     found = True
 
@@ -260,9 +267,7 @@ class WordAlignmentMatrix:
         return text
 
     def copy(self) -> "WordAlignmentMatrix":
-        copy = WordAlignmentMatrix(self.row_count, self.column_count)
-        np.copyto(copy._matrix, self._matrix)
-        return copy
+        return WordAlignmentMatrix(np.copy(self._matrix))
 
     def resize(self, row_count: int, column_count: int) -> None:
         if row_count == self.row_count and column_count == self.column_count:

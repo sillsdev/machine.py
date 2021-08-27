@@ -8,17 +8,18 @@ from ..corpora.token_processors import NO_OP, TokenProcessor
 from .trainer import Trainer
 from .word_aligner import WordAligner
 from .word_alignment_matrix import WordAlignmentMatrix
+from .word_vocabulary import WordVocabulary
 
 
 class WordAlignmentModel(WordAligner):
     @property
     @abstractmethod
-    def source_words(self) -> Sequence[str]:
+    def source_words(self) -> WordVocabulary:
         ...
 
     @property
     @abstractmethod
-    def target_words(self) -> Sequence[str]:
+    def target_words(self) -> WordVocabulary:
         ...
 
     @property

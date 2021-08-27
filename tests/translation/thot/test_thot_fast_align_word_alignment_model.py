@@ -1,7 +1,7 @@
 from pytest import approx
 
-from machine.translation import SymmetrizedWordAlignmentModel, WordAlignmentMatrix
-from machine.translation.thot import ThotFastAlignWordAlignmentModel
+from machine.translation import WordAlignmentMatrix
+from machine.translation.thot import ThotFastAlignWordAlignmentModel, ThotSymmetrizedWordAlignmentModel
 from tests.translation.thot.thot_test_helpers import TOY_CORPUS_FAST_ALIGN_PATH
 
 DIRECT_MODEL_PATH = TOY_CORPUS_FAST_ALIGN_PATH / "tm" / "src_trg_invswm"
@@ -13,7 +13,7 @@ def test_get_best_alignment() -> None:
     source_segment = "por favor , ¿ podríamos ver otra habitación ?".split()
     target_segment = "could we see another room , please ?".split()
     matrix = model.get_best_alignment(source_segment, target_segment)
-    assert matrix == WordAlignmentMatrix(9, 8, {(0, 0), (4, 1), (5, 2), (6, 3), (7, 4), (8, 6), (8, 7)})
+    assert matrix == WordAlignmentMatrix.from_word_pairs(9, 8, {(0, 0), (4, 1), (5, 2), (6, 3), (7, 4), (8, 6), (8, 7)})
 
 
 def test_get_best_alignments() -> None:
@@ -22,8 +22,8 @@ def test_get_best_alignments() -> None:
     target_segments = ["i am leaving today in the afternoon .".split(), "i am staying until five o ' clock .".split()]
     matrices = model.get_best_alignments(source_segments, target_segments)
     assert matrices == [
-        WordAlignmentMatrix(8, 8, {(0, 0), (0, 1), (2, 2), (3, 3), (6, 4), (5, 5), (6, 6), (7, 7)}),
-        WordAlignmentMatrix(6, 9, {(3, 1), (1, 3), (2, 4), (4, 5), (4, 6), (4, 7), (5, 8)}),
+        WordAlignmentMatrix.from_word_pairs(8, 8, {(0, 0), (0, 1), (2, 2), (3, 3), (6, 4), (5, 5), (6, 6), (7, 7)}),
+        WordAlignmentMatrix.from_word_pairs(6, 9, {(3, 1), (1, 3), (2, 4), (4, 5), (4, 6), (4, 7), (5, 8)}),
     ]
 
 
@@ -68,7 +68,7 @@ def test_target_words_index_len() -> None:
 
 
 def test_get_translation_table_symmetrized_no_threshold() -> None:
-    model = SymmetrizedWordAlignmentModel(
+    model = ThotSymmetrizedWordAlignmentModel(
         ThotFastAlignWordAlignmentModel(DIRECT_MODEL_PATH), ThotFastAlignWordAlignmentModel(INVERSE_MODEL_PATH)
     )
 
@@ -78,7 +78,7 @@ def test_get_translation_table_symmetrized_no_threshold() -> None:
 
 
 def test_get_translation_table_symmetrized_threshold() -> None:
-    model = SymmetrizedWordAlignmentModel(
+    model = ThotSymmetrizedWordAlignmentModel(
         ThotFastAlignWordAlignmentModel(DIRECT_MODEL_PATH), ThotFastAlignWordAlignmentModel(INVERSE_MODEL_PATH)
     )
 

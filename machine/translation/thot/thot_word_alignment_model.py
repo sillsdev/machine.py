@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from pathlib import Path
-from typing import Collection, Iterable, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import Collection, Iterable, Iterator, Optional, Sequence, Tuple, Union
 
 import thot.alignment as ta
 
@@ -9,6 +9,7 @@ from ...utils.typeshed import StrPath
 from ..ibm1_word_alignment_model import Ibm1WordAlignmentModel
 from ..trainer import Trainer
 from ..word_alignment_matrix import WordAlignmentMatrix
+from ..word_vocabulary import WordVocabulary
 from .thot_word_alignment_model_trainer import ThotWordAlignmentModelTrainer
 from .thot_word_alignment_model_type import ThotWordAlignmentModelType, create_alignment_model
 
@@ -29,11 +30,11 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
         self.training_iteration_count = 5
 
     @property
-    def source_words(self) -> Sequence[str]:
+    def source_words(self) -> WordVocabulary:
         return self._source_words
 
     @property
-    def target_words(self) -> Sequence[str]:
+    def target_words(self) -> WordVocabulary:
         return self._target_words
 
     @property
@@ -47,6 +48,10 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
     @variational_bayes.setter
     def variational_bayes(self, value: bool) -> None:
         self._model.variational_bayes = value
+
+    @property
+    def thot_model(self) -> ta.AlignmentModel:
+        return self._model
 
     @property
     @abstractmethod
@@ -84,21 +89,18 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
         return trainer
 
     def get_best_alignment(self, source_segment: Sequence[str], target_segment: Sequence[str]) -> WordAlignmentMatrix:
-        _, best_alignment = self._model.get_best_alignment(source_segment, target_segment)
-        return _to_word_alignment_matrix(best_alignment, len(source_segment))
+        _, matrix = self._model.get_best_alignment(source_segment, target_segment)
+        return WordAlignmentMatrix(matrix.to_numpy())
 
     def get_best_alignments(
         self, source_segments: Sequence[Sequence[str]], target_segments: Sequence[Sequence[str]]
     ) -> Sequence[WordAlignmentMatrix]:
         if len(source_segments) != len(target_segments):
             raise ValueError("The number of source and target segments must be equal.")
-        results = self._model.get_best_alignments(source_segments, target_segments)
-        matrices: List[WordAlignmentMatrix] = []
-        for i in range(len(results)):
-            _, best_alignment = results[i]
-            src_segment = source_segments[i]
-            matrices.append(_to_word_alignment_matrix(best_alignment, len(src_segment)))
-        return matrices
+        return [
+            WordAlignmentMatrix(matrix.to_numpy())
+            for _, matrix in self._model.get_best_alignments(source_segments, target_segments)
+        ]
 
     def get_translation_score(
         self, source_word: Optional[Union[str, int]], target_word: Optional[Union[str, int]]
@@ -136,10 +138,13 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
         self._target_words = _ThotWordVocabulary(self._model, is_src=False)
 
 
-class _ThotWordVocabulary(Sequence[str]):
+class _ThotWordVocabulary(WordVocabulary):
     def __init__(self, model: ta.AlignmentModel, is_src: bool) -> None:
         self._model = model
         self._is_src = is_src
+
+    def get_index(self, word: str) -> int:
+        return self._model.get_src_word_index(word) if self._is_src else self._model.get_trg_word_index(word)
 
     def __getitem__(self, word_index: int) -> str:
         if word_index >= len(self):
@@ -157,14 +162,6 @@ class _ThotWordVocabulary(Sequence[str]):
 
     def __reversed__(self) -> Iterator[str]:
         return (self[i] for i in reversed(range(len(self))))
-
-
-def _to_word_alignment_matrix(alignment: Sequence[int], src_length: int) -> WordAlignmentMatrix:
-    matrix = WordAlignmentMatrix(src_length, len(alignment))
-    for j in range(len(alignment)):
-        if alignment[j] > 0:
-            matrix[alignment[j] - 1, j] = True
-    return matrix
 
 
 class _Trainer(ThotWordAlignmentModelTrainer):
