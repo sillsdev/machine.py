@@ -58,6 +58,8 @@ class ThotWordAlignmentModelTrainer(Trainer):
         check_canceled: Optional[Callable[[], None]] = None,
     ) -> None:
         self._model.clear()
+        if progress is not None:
+            progress(ProgressStatus.from_step(0, self.training_iteration_count + 1))
         corpus_count = 0
         index = 0
         trained_segment_count = 0
@@ -72,9 +74,6 @@ class ThotWordAlignmentModelTrainer(Trainer):
             index += 1
             if corpus_count == self._max_corpus_count:
                 break
-
-        if progress is not None:
-            progress(ProgressStatus.from_step(0, self.training_iteration_count + 1))
         if check_canceled is not None:
             check_canceled()
         self._model.start_training()
@@ -84,6 +83,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
             if check_canceled is not None:
                 check_canceled()
             self._model.train()
+        self._model.end_training()
         if progress is not None:
             progress(ProgressStatus(1.0))
         self._stats.trained_segment_count = trained_segment_count

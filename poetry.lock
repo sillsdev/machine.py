@@ -276,6 +276,14 @@ python-versions = ">=3.6, <4.0"
 test = ["pytest", "numpy"]
 
 [[package]]
+name = "sortedcontainers"
+version = "2.4.0"
+description = "Sorted Containers -- Sorted List, Sorted Dict, Sorted Set"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "toml"
 version = "0.10.2"
 description = "Python Library for Tom's Obvious, Minimal Language"
@@ -325,7 +333,7 @@ thot = ["sil-thot"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.11"
-content-hash = "1fb69509dfbff2679044e6ef02de391f6a806d3799412958966dec87e826d976"
+content-hash = "0fa922492d7b710da1660d9011765c145e9ed000f401e96d911f0a35d2f099f2"
 
 [metadata.files]
 appdirs = [
@@ -507,6 +515,10 @@ sil-thot = [
     {file = "sil_thot-3.3.2-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:f720d64146af8186611157d98227293a4d1eb5fe095c419661ceb9952abbe000"},
     {file = "sil_thot-3.3.2-cp39-cp39-win32.whl", hash = "sha256:97366a4c7772c7a2a685b5414f40b4499471f582a1188ca0189cd8ef9768488f"},
     {file = "sil_thot-3.3.2-cp39-cp39-win_amd64.whl", hash = "sha256:837e5d2cd2952c41f525d9683eff2f78c435ab69f19ff5b5c0d6f1afd1160d6a"},
+]
+sortedcontainers = [
+    {file = "sortedcontainers-2.4.0-py2.py3-none-any.whl", hash = "sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0"},
+    {file = "sortedcontainers-2.4.0.tar.gz", hash = "sha256:25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88"},
 ]
 toml = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
