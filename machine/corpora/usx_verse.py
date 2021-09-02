@@ -14,7 +14,10 @@ class UsxVerse:
         prev_para_elem: Optional[etree.Element] = None
         text = ""
         for token in self._tokens:
-            if token.para_element != prev_para_elem and len(text) > 0:
+            if len(token.text) == 0 or token.text.isspace():
+                continue
+
+            if token.para_element != prev_para_elem and len(text) > 0 and not text.endswith(" "):
                 text += " "
 
             text += str(token)

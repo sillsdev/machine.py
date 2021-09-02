@@ -21,6 +21,7 @@ class UsxFileTextCorpus(ScriptureTextCorpus):
         texts: List[UsxFileText] = []
         for filename in project_dir.glob("*.usx"):
             texts.append(UsxFileText(word_tokenizer, filename, self._versification))
+        super().__init__(texts)
 
     @property
     def versification(self) -> Versification:

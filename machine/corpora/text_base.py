@@ -22,6 +22,10 @@ class TextBase(Text):
     def sort_key(self) -> str:
         return self._sort_key
 
+    @property
+    def word_tokenizer(self) -> Tokenizer[str, int, str]:
+        return self._word_tokenizer
+
     def get_segments(self, include_text: bool = True) -> ContextManagedGenerator[TextSegment, None, None]:
         return ContextManagedGenerator(self._get_segments(include_text))
 
