@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Callable, Dict, Optional
 
-from .progress_status import ProgressStatus
+from ..utils.progress_status import ProgressStatus
 
 
 class TrainStats:

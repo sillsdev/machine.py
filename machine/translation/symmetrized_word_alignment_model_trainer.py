@@ -1,7 +1,7 @@
 from typing import Callable, Optional
 
-from .phased_progress_reporter import Phase, PhasedProgressReporter
-from .progress_status import ProgressStatus
+from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
+from ..utils.progress_status import ProgressStatus
 from .trainer import Trainer, TrainStats
 
 
