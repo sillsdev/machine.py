@@ -2,7 +2,7 @@ from pytest import approx
 
 from machine.translation import WordAlignmentMatrix
 from machine.translation.thot import ThotHmmWordAlignmentModel, ThotSymmetrizedWordAlignmentModel
-from tests.translation.thot.thot_test_helpers import TOY_CORPUS_HMM_PATH
+from tests.translation.thot.thot_test_helpers import TOY_CORPUS_HMM_PATH, create_test_parallel_corpus
 
 DIRECT_MODEL_PATH = TOY_CORPUS_HMM_PATH / "tm" / "src_trg_invswm"
 INVERSE_MODEL_PATH = TOY_CORPUS_HMM_PATH / "tm" / "src_trg_swm"
@@ -87,3 +87,22 @@ def test_get_translation_table_symmetrized_threshold() -> None:
     table = model.get_translation_table(0.2)
     assert len(table) == 513
     assert len(table["es"]) == 9
+
+
+def test_create_trainer() -> None:
+    model = ThotHmmWordAlignmentModel()
+    model.parameters.ibm1_iteration_count = 2
+    model.parameters.hmm_iteration_count = 2
+    model.parameters.hmm_p0 = 0.1
+    trainer = model.create_trainer(create_test_parallel_corpus())
+    trainer.train()
+    trainer.save()
+
+    matrix = model.get_best_alignment("isthay isyay ayay esttay-N .".split(), "this is a test N .".split())
+    assert matrix == WordAlignmentMatrix.from_word_pairs(5, 6, {(0, 0), (1, 1), (2, 2), (3, 3), (3, 4), (4, 5)})
+
+    matrix = model.get_best_alignment("isthay isyay otnay ayay esttay-N .".split(), "this is not a test N .".split())
+    assert matrix == WordAlignmentMatrix.from_word_pairs(6, 7, {(0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (4, 5), (5, 6)})
+
+    matrix = model.get_best_alignment("isthay isyay ayay esttay-N ardhay .".split(), "this is a hard test N .".split())
+    assert matrix == WordAlignmentMatrix.from_word_pairs(6, 7, {(0, 0), (1, 1), (2, 2), (4, 3), (3, 4), (3, 5), (3, 6)})

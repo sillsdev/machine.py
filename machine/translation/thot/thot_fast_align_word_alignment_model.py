@@ -32,7 +32,7 @@ class ThotFastAlignWordAlignmentModel(ThotWordAlignmentModel, Ibm2WordAlignmentM
         self, source_length: int, source_index: int, target_length: int, target_index: int
     ) -> float:
         # add 1 to convert the specified indices to Thot position indices, which are 1-based
-        return self._fa_model.get_alignment_prob(target_index + 1, source_length, target_length, source_index + 1)
+        return self._fa_model.alignment_prob(target_index + 1, source_length, target_length, source_index + 1)
 
     @property
     def _fa_model(self) -> ta.FastAlignModel:

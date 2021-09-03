@@ -1,17 +1,20 @@
+import sys
 from abc import abstractmethod
 from pathlib import Path
 from typing import Collection, Iterable, Iterator, Optional, Sequence, Tuple, Union
 
 import thot.alignment as ta
 
-from ...corpora import ParallelTextCorpus, TokenProcessor
+from ...corpora.parallel_text_corpus import ParallelTextCorpus
+from ...corpora.token_processors import NO_OP, TokenProcessor
 from ...utils.typeshed import StrPath
 from ..ibm1_word_alignment_model import Ibm1WordAlignmentModel
 from ..trainer import Trainer
 from ..word_alignment_matrix import WordAlignmentMatrix
 from ..word_vocabulary import WordVocabulary
+from .thot_word_alignment_model_parameters import ThotWordAlignmentModelParameters
 from .thot_word_alignment_model_trainer import ThotWordAlignmentModelTrainer
-from .thot_word_alignment_model_type import ThotWordAlignmentModelType, create_alignment_model
+from .thot_word_alignment_model_type import ThotWordAlignmentModelType
 
 _SPECIAL_SYMBOL_INDICES = {0, 1, 2}
 
@@ -27,7 +30,7 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
                 self.load(prefix_filename)
         else:
             self._prefix_filename = None
-        self.training_iteration_count = 5
+        self.parameters = ThotWordAlignmentModelParameters()
 
     @property
     def source_words(self) -> WordVocabulary:
@@ -40,14 +43,6 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
     @property
     def special_symbol_indices(self) -> Collection[int]:
         return _SPECIAL_SYMBOL_INDICES
-
-    @property
-    def variational_bayes(self) -> bool:
-        return self._model.variational_bayes
-
-    @variational_bayes.setter
-    def variational_bayes(self, value: bool) -> None:
-        self._model.variational_bayes = value
 
     @property
     def thot_model(self) -> ta.AlignmentModel:
@@ -76,17 +71,12 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
 
     def create_trainer(
         self,
-        source_preprocessor: TokenProcessor,
-        target_preprocessor: TokenProcessor,
         corpus: ParallelTextCorpus,
-        max_corpus_count: int,
+        source_preprocessor: TokenProcessor = NO_OP,
+        target_preprocessor: TokenProcessor = NO_OP,
+        max_corpus_count: int = sys.maxsize,
     ) -> Trainer:
-        trainer = _Trainer(
-            self, self._prefix_filename, source_preprocessor, target_preprocessor, corpus, max_corpus_count
-        )
-        trainer.training_iteration_count = self.training_iteration_count
-        trainer.variational_bayes = self.variational_bayes
-        return trainer
+        return _Trainer(self, corpus, self._prefix_filename, source_preprocessor, target_preprocessor, max_corpus_count)
 
     def get_best_alignment(self, source_segment: Sequence[str], target_segment: Sequence[str]) -> WordAlignmentMatrix:
         _, matrix = self._model.get_best_alignment(source_segment, target_segment)
@@ -118,7 +108,7 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
             target_word = 0
         elif isinstance(target_word, str):
             target_word = self._model.get_trg_word_index(target_word)
-        return self._model.get_translation_prob(source_word, target_word)
+        return self._model.translation_prob(source_word, target_word)
 
     def get_translations(
         self, source_word: Optional[Union[str, int]], threshold: float = 0
@@ -130,7 +120,20 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
         return self._model.get_translations(source_word, threshold)
 
     def _create_model(self) -> ta.AlignmentModel:
-        return create_alignment_model(self.type)
+        if self.type is ThotWordAlignmentModelType.IBM1:
+            return ta.Ibm1AlignmentModel()
+        elif self.type is ThotWordAlignmentModelType.IBM2:
+            return ta.Ibm2AlignmentModel()
+        elif self.type is ThotWordAlignmentModelType.IBM3:
+            return ta.Ibm3AlignmentModel()
+        elif self.type is ThotWordAlignmentModelType.IBM4:
+            return ta.Ibm4AlignmentModel()
+        elif self.type is ThotWordAlignmentModelType.HMM:
+            return ta.HmmAlignmentModel()
+        elif self.type is ThotWordAlignmentModelType.FAST_ALIGN:
+            return ta.FastAlignModel()
+        else:
+            raise ValueError("The model type is invalid.")
 
     def _set_model(self, model: ta.AlignmentModel) -> None:
         self._model = model
@@ -143,7 +146,9 @@ class _ThotWordVocabulary(WordVocabulary):
         self._model = model
         self._is_src = is_src
 
-    def get_index(self, word: str) -> int:
+    def index(self, word: Optional[str]) -> int:
+        if word is None:
+            return 0
         return self._model.get_src_word_index(word) if self._is_src else self._model.get_trg_word_index(word)
 
     def __getitem__(self, word_index: int) -> str:
@@ -168,18 +173,19 @@ class _Trainer(ThotWordAlignmentModelTrainer):
     def __init__(
         self,
         model: ThotWordAlignmentModel,
+        corpus: ParallelTextCorpus,
         prefix_filename: Optional[StrPath],
         source_preprocessor: TokenProcessor,
         target_preprocessor: TokenProcessor,
-        corpus: ParallelTextCorpus,
         max_corpus_count: int,
     ) -> None:
         super().__init__(
             model.type,
+            corpus,
             prefix_filename,
+            model.parameters,
             source_preprocessor,
             target_preprocessor,
-            corpus,
             max_corpus_count,
         )
         self._machine_model = model

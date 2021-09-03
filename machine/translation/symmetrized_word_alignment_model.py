@@ -1,7 +1,8 @@
+import sys
 from typing import Collection, Iterable, Optional, Sequence, Tuple, Union
 
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
-from ..corpora.token_processors import TokenProcessor
+from ..corpora.token_processors import NO_OP, TokenProcessor
 from .symmetrized_word_aligner import SymmetrizedWordAligner
 from .symmetrized_word_alignment_model_trainer import SymmetrizedWordAlignmentModelTrainer
 from .trainer import Trainer
@@ -71,16 +72,16 @@ class SymmetrizedWordAlignmentModel(SymmetrizedWordAligner, WordAlignmentModel):
 
     def create_trainer(
         self,
-        source_preprocessor: TokenProcessor,
-        target_preprocessor: TokenProcessor,
         corpus: ParallelTextCorpus,
-        max_corpus_count: int,
+        source_preprocessor: TokenProcessor = NO_OP,
+        target_preprocessor: TokenProcessor = NO_OP,
+        max_corpus_count: int = sys.maxsize,
     ) -> Trainer:
         direct_trainer = self._direct_word_alignment_model.create_trainer(
-            source_preprocessor, target_preprocessor, corpus, max_corpus_count
+            corpus, source_preprocessor, target_preprocessor, max_corpus_count
         )
         inverse_trainer = self._inverse_word_alignment_model.create_trainer(
-            target_preprocessor, source_preprocessor, corpus.invert(), max_corpus_count
+            corpus.invert(), target_preprocessor, source_preprocessor, max_corpus_count
         )
 
         return SymmetrizedWordAlignmentModelTrainer(direct_trainer, inverse_trainer)

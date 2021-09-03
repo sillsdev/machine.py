@@ -16,4 +16,4 @@ class ThotIbm1WordAlignmentModel(ThotWordAlignmentModel):
         prev_target_index: int,
         target_index: int,
     ) -> float:
-        return -1
+        return 1.0 / (source_length + 1)

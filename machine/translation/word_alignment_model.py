@@ -30,9 +30,9 @@ class WordAlignmentModel(WordAligner):
     @abstractmethod
     def create_trainer(
         self,
-        source_preprocessor: TokenProcessor,
-        target_preprocessor: TokenProcessor,
         corpus: ParallelTextCorpus,
+        source_preprocessor: TokenProcessor = NO_OP,
+        target_preprocessor: TokenProcessor = NO_OP,
         max_corpus_count: int = sys.maxsize,
     ) -> Trainer:
         ...

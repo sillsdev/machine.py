@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Sequence
+from typing import Optional, Sequence
 
 
 class WordVocabulary(ABC, Sequence[str]):
     @abstractmethod
-    def get_index(self, word: str) -> int:
+    def index(self, word: Optional[str]) -> int:
         ...
