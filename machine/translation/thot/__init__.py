@@ -11,9 +11,9 @@ from .thot_ibm3_word_alignment_model import ThotIbm3WordAlignmentModel
 from .thot_ibm4_word_alignment_model import ThotIbm4WordAlignmentModel
 from .thot_symmetrized_word_alignment_model import ThotSymmetrizedWordAlignmentModel
 from .thot_word_alignment_model import ThotWordAlignmentModel
-from .thot_word_alignment_model_parameters import ThotWordAlignmentModelParameters
 from .thot_word_alignment_model_trainer import ThotWordAlignmentModelTrainer
 from .thot_word_alignment_model_type import ThotWordAlignmentModelType
+from .thot_word_alignment_parameters import ThotWordAlignmentParameters
 
 __all__ = [
     "ThotFastAlignWordAlignmentModel",
@@ -24,7 +24,7 @@ __all__ = [
     "ThotIbm4WordAlignmentModel",
     "ThotSymmetrizedWordAlignmentModel",
     "ThotWordAlignmentModel",
-    "ThotWordAlignmentModelParameters",
+    "ThotWordAlignmentParameters",
     "ThotWordAlignmentModelTrainer",
     "ThotWordAlignmentModelType",
 ]

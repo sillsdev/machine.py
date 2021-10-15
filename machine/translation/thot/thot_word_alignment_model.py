@@ -12,9 +12,9 @@ from ..ibm1_word_alignment_model import Ibm1WordAlignmentModel
 from ..trainer import Trainer
 from ..word_alignment_matrix import WordAlignmentMatrix
 from ..word_vocabulary import WordVocabulary
-from .thot_word_alignment_model_parameters import ThotWordAlignmentModelParameters
 from .thot_word_alignment_model_trainer import ThotWordAlignmentModelTrainer
 from .thot_word_alignment_model_type import ThotWordAlignmentModelType
+from .thot_word_alignment_parameters import ThotWordAlignmentParameters
 
 _SPECIAL_SYMBOL_INDICES = {0, 1, 2}
 
@@ -30,7 +30,7 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
                 self.load(prefix_filename)
         else:
             self._prefix_filename = None
-        self.parameters = ThotWordAlignmentModelParameters()
+        self.parameters = ThotWordAlignmentParameters()
 
     @property
     def source_words(self) -> WordVocabulary:

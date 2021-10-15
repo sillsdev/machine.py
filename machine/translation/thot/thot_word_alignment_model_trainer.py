@@ -10,8 +10,8 @@ from ...corpora.token_processors import NO_OP, TokenProcessor
 from ...utils.progress_status import ProgressStatus
 from ...utils.typeshed import StrPath
 from ..trainer import Trainer, TrainStats
-from .thot_word_alignment_model_parameters import ThotWordAlignmentModelParameters
 from .thot_word_alignment_model_type import ThotWordAlignmentModelType
+from .thot_word_alignment_parameters import ThotWordAlignmentParameters
 
 
 class ThotWordAlignmentModelTrainer(Trainer):
@@ -21,7 +21,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
         model_type: ThotWordAlignmentModelType,
         corpus: ParallelTextCorpus,
         prefix_filename: Optional[StrPath],
-        parameters: ThotWordAlignmentModelParameters = ThotWordAlignmentModelParameters(),
+        parameters: ThotWordAlignmentParameters = ThotWordAlignmentParameters(),
         source_preprocessor: TokenProcessor = NO_OP,
         target_preprocessor: TokenProcessor = NO_OP,
         max_corpus_count: int = sys.maxsize,
@@ -34,7 +34,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
         model_type: ThotWordAlignmentModelType,
         corpus: Tuple[StrPath, StrPath],
         prefix_filename: Optional[StrPath],
-        parameters: ThotWordAlignmentModelParameters = ThotWordAlignmentModelParameters(),
+        parameters: ThotWordAlignmentParameters = ThotWordAlignmentParameters(),
         source_preprocessor: TokenProcessor = NO_OP,
         target_preprocessor: TokenProcessor = NO_OP,
     ) -> None:
@@ -45,7 +45,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
         model_type: ThotWordAlignmentModelType,
         corpus: Union[ParallelTextCorpus, Tuple[StrPath, StrPath]],
         prefix_filename: Optional[StrPath],
-        parameters: ThotWordAlignmentModelParameters = ThotWordAlignmentModelParameters(),
+        parameters: ThotWordAlignmentParameters = ThotWordAlignmentParameters(),
         source_preprocessor: TokenProcessor = NO_OP,
         target_preprocessor: TokenProcessor = NO_OP,
         max_corpus_count: int = sys.maxsize,
