@@ -4,12 +4,15 @@ from typing import BinaryIO, Iterable, List, Optional
 
 from ..scripture.verse_ref import are_overlapping_verse_ranges
 from ..utils.string_utils import has_sentence_ending, is_integer
-from .corpora_helpers import merge_verse_ranges
+from .corpora_helpers import merge_verse_ranges, strip_segments
 from .usx_token import UsxToken
 from .usx_verse import UsxVerse
 
 
 class UsxVerseParser:
+    def __init__(self, merge_segments: bool = False) -> None:
+        self._merge_segments = merge_segments
+
     def parse(self, stream: BinaryIO) -> Iterable[UsxVerse]:
         ctxt = _ParseContext()
         tree = etree.parse(stream)
@@ -17,20 +20,8 @@ class UsxVerseParser:
         if root_elem is None:
             raise RuntimeError("USX does not contain a book element.")
         assert root_elem is not None
-        for elem in root_elem:
-            if elem.tag == "chapter":
-                if ctxt.chapter is not None and ctxt.verse is not None:
-                    yield ctxt.create_verse()
-                ctxt.chapter = elem.get("number")
-                ctxt.verse = None
-                ctxt.is_sentence_start = True
-            elif elem.tag == "para":
-                if not _is_verse_para(elem):
-                    ctxt.is_sentence_start = True
-                    continue
-                ctxt.para_element = elem
-                for evt in self._parse_element(elem, ctxt):
-                    yield evt
+        for verse in self._parse_element(root_elem, ctxt):
+            yield verse
 
         if ctxt.chapter is not None and ctxt.verse is not None:
             yield ctxt.create_verse()
@@ -39,7 +30,20 @@ class UsxVerseParser:
         if elem.text is not None and ctxt.chapter is not None and ctxt.verse is not None:
             ctxt.add_token(elem.text)
         for e in elem:
-            if e.tag == "verse":
+            if e.tag == "chapter":
+                if ctxt.chapter is not None and ctxt.verse is not None:
+                    yield ctxt.create_verse()
+                ctxt.chapter = e.get("number")
+                ctxt.verse = None
+                ctxt.is_sentence_start = True
+            elif e.tag == "para":
+                if not _is_verse_para(e):
+                    ctxt.is_sentence_start = True
+                    continue
+                ctxt.para_element = e
+                for evt in self._parse_element(e, ctxt):
+                    yield evt
+            elif e.tag == "verse":
                 verse = e.get("number")
                 if verse is None:
                     verse = e.get("pubnumber")
@@ -51,25 +55,34 @@ class UsxVerseParser:
                         # ignore duplicate verse
                         ctxt.verse = None
                     elif are_overlapping_verse_ranges(verse, ctxt.verse):
+                        if self._merge_segments:
+                            verse = strip_segments(verse)
                         # merge overlapping verse ranges in to one range
                         ctxt.verse = merge_verse_ranges(verse, ctxt.verse)
                     else:
                         yield ctxt.create_verse()
                         ctxt.verse = verse
+                        if self._merge_segments:
+                            ctxt.verse = strip_segments(ctxt.verse)
                 else:
                     ctxt.verse = verse
+                    if self._merge_segments:
+                        ctxt.verse = strip_segments(ctxt.verse)
             elif e.tag == "char":
                 for evt in self._parse_element(e, ctxt):
                     yield evt
             elif e.tag == "wg":
                 if e.text is not None and ctxt.chapter is not None and ctxt.verse is not None:
                     ctxt.add_token(e.text, e)
+            elif e.tag == "figure":
+                if ctxt.chapter is not None and ctxt.verse is not None:
+                    ctxt.add_token("", e)
 
             if e.tail is not None and ctxt.chapter is not None and ctxt.verse is not None:
                 ctxt.add_token(e.tail)
 
 
-_NONVERSE_PARA_STYLES = {"ms", "mr", "s", "sr", "r", "d", "sp", "rem"}
+_NONVERSE_PARA_STYLES = {"ms", "mr", "s", "sr", "r", "d", "sp", "rem", "restore"}
 
 
 def _is_numbered_style(style_prefix: str, style: str) -> bool:

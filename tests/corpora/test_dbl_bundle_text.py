@@ -8,56 +8,40 @@ def test_get_segments_nonempty_text() -> None:
         assert text is not None
         segments = list(text.get_segments())
 
-        assert len(segments) == 48
+        assert len(segments) == 14
 
         assert segments[0].segment_ref == VerseRef.from_string("MAT 1:1", env.corpus.versification)
-        assert (
-            segments[0].segment[0]
-            == "This is the record of the ancestors of Jesus the Messiah, the descendant of King David and of Abraham, "
-            "from whom all we Jews have descended."
-        )
+        assert segments[0].segment[0] == "Chapter one, verse one."
 
         assert segments[1].segment_ref == VerseRef.from_string("MAT 1:2", env.corpus.versification)
-        assert (
-            segments[1].segment[0]
-            == "Abraham was the father of Isaac. Isaac was the father of Jacob. Jacob was the father of Judah and "
-            "Judah's older and younger brothers."
-        )
+        assert segments[1].segment[0] == "Chapter one, verse two."
 
-        assert segments[25].segment_ref == VerseRef.from_string("MAT 2:1", env.corpus.versification)
-        assert (
-            segments[25].segment[0]
-            == "Jesus was born in Bethlehem town in Judea province during the time [MTY] that King Herod the Great "
-            "ruled there. Some time after Jesus was born, some men who studied the stars and who lived in a country "
-            "east of Judea came to Jerusalem city."
-        )
+        assert segments[4].segment_ref == VerseRef.from_string("MAT 1:5", env.corpus.versification)
+        assert segments[4].segment[0] == "Chapter one, verse five."
 
-        assert segments[36].segment_ref == VerseRef.from_string("MAT 2:12", env.corpus.versification)
-        assert (
-            segments[36].segment[0]
-            == "Because God knew that King Herod planned to kill Jesus, in a dream the men who studied the stars were "
-            "warned {he warned the men who studied the stars} that they should not return to King Herod. So they "
-            "returned to their country, but instead of traveling back on the same road, they went on a different road."
-        )
+        assert segments[5].segment_ref == VerseRef.from_string("MAT 2:1", env.corpus.versification)
+        assert segments[5].segment[0] == "Chapter two, verse one."
 
-        assert segments[39].segment_ref == VerseRef.from_string("MAT 2:15", env.corpus.versification)
-        assert (
-            segments[39].segment[0]
-            == "They stayed there until King Herod died, and then they left Egypt. By doing that, it was {they} "
-            "fulfilled what the prophet Hosea wrote, which had been said by the Lord {which the Lord had said}, I have "
-            "told my son to come out of Egypt."
-        )
+        assert segments[6].segment_ref == VerseRef.from_string("MAT 2:2", env.corpus.versification)
+        assert segments[6].segment[0] == "Chapter two, verse two. Chapter two, verse three."
+        assert segments[6].is_in_range
 
-        assert segments[45].segment_ref == VerseRef.from_string("MAT 2:21", env.corpus.versification)
-        assert segments[45].segment[0] == "So Joseph took the child and his mother, and they went back to Israel."
+        assert segments[7].segment_ref == VerseRef.from_string("MAT 2:3", env.corpus.versification)
+        assert len(segments[7].segment) == 0
+        assert segments[7].is_in_range
 
-        assert segments[46].segment_ref == VerseRef.from_string("MAT 2:22", env.corpus.versification)
-        assert (
-            segments[46].segment[0]
-            == "When Joseph heard that Archaelaus now ruled in Judea district instead of his father, King Herod the "
-            "Great, he was afraid to go there. Because he was warned {God warned Joseph} in a dream that it was still "
-            "dangerous for them to live in Judea, he and Mary and Jesus went to Galilee District"
-        )
+        assert segments[8].segment_ref == VerseRef.from_string("MAT 2:4a", env.corpus.versification)
+        assert len(segments[8].segment) == 0
+        assert segments[8].is_in_range
+
+        assert segments[9].segment_ref == VerseRef.from_string("MAT 2:4b", env.corpus.versification)
+        assert segments[9].segment[0] == "Chapter two, verse four."
+
+        assert segments[10].segment_ref == VerseRef.from_string("MAT 2:5", env.corpus.versification)
+        assert segments[10].segment[0] == "Chapter two, verse five."
+
+        assert segments[11].segment_ref == VerseRef.from_string("MAT 2:6", env.corpus.versification)
+        assert segments[11].segment[0] == "Chapter two, verse six."
 
 
 def test_get_segments_sentence_start() -> None:
@@ -66,32 +50,15 @@ def test_get_segments_sentence_start() -> None:
         assert text is not None
         segments = list(text.get_segments())
 
-        assert len(segments) == 48
+        assert len(segments) == 14
 
-        assert segments[38].segment_ref == VerseRef.from_string("MAT 2:14", env.corpus.versification)
-        assert (
-            segments[38].segment[0]
-            == "So Joseph got up, he took the child and his mother that night, and they fled to Egypt."
-        )
-        assert segments[38].is_sentence_start
+        assert segments[3].segment_ref == VerseRef.from_string("MAT 1:4", env.corpus.versification)
+        assert segments[3].segment[0] == "Chapter one, verse four,"
+        assert segments[3].is_sentence_start
 
-        assert segments[46].segment_ref == VerseRef.from_string("MAT 2:22", env.corpus.versification)
-        assert (
-            segments[46].segment[0]
-            == "When Joseph heard that Archaelaus now ruled in Judea district instead of his father, King Herod the "
-            "Great, he was afraid to go there. Because he was warned {God warned Joseph} in a dream that it was still "
-            "dangerous for them to live in Judea, he and Mary and Jesus went to Galilee District"
-        )
-        assert segments[46].is_sentence_start
-
-        assert segments[47].segment_ref == VerseRef.from_string("MAT 2:23", env.corpus.versification)
-        assert (
-            segments[47].segment[0]
-            == "to the town called Nazareth to live there. The result was that what had been said by the ancient "
-            "prophets {what the ancient prophets had said} about the Messiah, that he would be called {people would "
-            "call him} a Nazareth-man, was fulfilled {came true}."
-        )
-        assert not segments[47].is_sentence_start
+        assert segments[4].segment_ref == VerseRef.from_string("MAT 1:5", env.corpus.versification)
+        assert segments[4].segment[0] == "Chapter one, verse five."
+        assert not segments[4].is_sentence_start
 
 
 def test_get_segments_empty_text() -> None:
@@ -101,3 +68,45 @@ def test_get_segments_empty_text() -> None:
         segments = list(text.get_segments())
 
         assert len(segments) == 0
+
+
+def test_get_segments_merge_segments() -> None:
+    with DblBundleTestEnvironment(merge_segments=True) as env:
+        text = env.corpus.get_text("MAT")
+        assert text is not None
+        segments = list(text.get_segments())
+
+        assert len(segments) == 12
+
+        assert segments[0].segment_ref == VerseRef.from_string("MAT 1:1", env.corpus.versification)
+        assert segments[0].segment[0] == "Chapter one, verse one."
+
+        assert segments[1].segment_ref == VerseRef.from_string("MAT 1:2", env.corpus.versification)
+        assert segments[1].segment[0] == "Chapter one, verse two."
+
+        assert segments[4].segment_ref == VerseRef.from_string("MAT 1:5", env.corpus.versification)
+        assert segments[4].segment[0] == "Chapter one, verse five."
+
+        assert segments[5].segment_ref == VerseRef.from_string("MAT 2:1", env.corpus.versification)
+        assert segments[5].segment[0] == "Chapter two, verse one."
+
+        assert segments[6].segment_ref == VerseRef.from_string("MAT 2:2", env.corpus.versification)
+        assert segments[6].segment[0] == "Chapter two, verse two. Chapter two, verse three. Chapter two, verse four."
+        assert segments[6].is_in_range
+
+        assert segments[7].segment_ref == VerseRef.from_string("MAT 2:3", env.corpus.versification)
+        assert len(segments[7].segment) == 0
+        assert segments[7].is_in_range
+
+        assert segments[8].segment_ref == VerseRef.from_string("MAT 2:4", env.corpus.versification)
+        assert len(segments[8].segment) == 0
+        assert segments[8].is_in_range
+
+        assert segments[9].segment_ref == VerseRef.from_string("MAT 2:5", env.corpus.versification)
+        assert segments[9].segment[0] == "Chapter two, verse five."
+
+        assert segments[10].segment_ref == VerseRef.from_string("MAT 2:6", env.corpus.versification)
+        assert segments[10].segment[0] == "Chapter two, verse six."
+
+        assert segments[11].segment_ref == VerseRef.from_string("MAT 2:7", env.corpus.versification)
+        assert segments[11].segment[0] == "Chapter two, verse seven A, verse seven B."

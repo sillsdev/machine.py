@@ -19,9 +19,16 @@ class UsfmFileText(UsfmTextBase):
         filename: StrPath,
         versification: Optional[Versification] = None,
         include_markers: bool = False,
+        merge_segments: bool = False,
     ) -> None:
         super().__init__(
-            word_tokenizer, _get_id(filename, encoding), stylesheet, encoding, versification, include_markers
+            word_tokenizer,
+            _get_id(filename, encoding),
+            stylesheet,
+            encoding,
+            versification,
+            include_markers,
+            merge_segments,
         )
 
         self._filename = Path(filename)

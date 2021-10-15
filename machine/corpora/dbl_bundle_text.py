@@ -16,8 +16,9 @@ class DblBundleText(UsxTextBase):
         bundle_filename: StrPath,
         path: str,
         versification: Optional[Versification] = None,
+        merge_segments: bool = False,
     ) -> None:
-        super().__init__(word_tokenizer, id, versification)
+        super().__init__(word_tokenizer, id, versification, merge_segments)
 
         self._bundle_filename = bundle_filename
         self._path = path

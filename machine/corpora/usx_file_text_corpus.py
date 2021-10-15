@@ -15,12 +15,13 @@ class UsxFileTextCorpus(ScriptureTextCorpus):
         word_tokenizer: Tokenizer[str, int, str],
         project_dir: StrPath,
         versification: Optional[Versification] = None,
+        merge_segments: bool = False,
     ) -> None:
         project_dir = Path(project_dir)
         self._versification = get_usx_versification(project_dir, versification)
         texts: List[UsxFileText] = []
         for filename in project_dir.glob("*.usx"):
-            texts.append(UsxFileText(word_tokenizer, filename, self._versification))
+            texts.append(UsxFileText(word_tokenizer, filename, self._versification, merge_segments))
         super().__init__(texts)
 
     @property

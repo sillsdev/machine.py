@@ -4,7 +4,7 @@ from typing import Generator, Optional
 from ..scripture.verse_ref import VerseRef, Versification, are_overlapping_verse_ranges
 from ..tokenization.tokenizer import Tokenizer
 from ..utils.string_utils import has_sentence_ending, is_integer
-from .corpora_helpers import merge_verse_ranges
+from .corpora_helpers import merge_verse_ranges, strip_segments
 from .scripture_text import ScriptureText
 from .text_segment import TextSegment
 from .usfm_marker import UsfmMarker
@@ -22,12 +22,14 @@ class UsfmTextBase(ScriptureText):
         encoding: str,
         versification: Optional[Versification],
         include_markers: bool,
+        merge_segments: bool,
     ) -> None:
         super().__init__(word_tokenizer, id, versification)
 
         self._parser = UsfmParser(stylesheet)
         self._encoding = encoding
         self._include_markers = include_markers
+        self._merge_segments = merge_segments
 
     def _get_segments(self, include_text: bool) -> Generator[TextSegment, None, None]:
         usfm = self._read_usfm()
@@ -39,7 +41,7 @@ class UsfmTextBase(ScriptureText):
         sentence_start = True
         prev_token: Optional[UsfmToken] = None
         prev_verse_ref = VerseRef()
-
+        is_verse_para = False
         for token in self._parser.parse(usfm):
             if token.type == UsfmTokenType.CHAPTER:
                 if chapter is not None and verse is not None:
@@ -65,7 +67,10 @@ class UsfmTextBase(ScriptureText):
                         # ignore duplicate verse
                         verse = None
                     elif are_overlapping_verse_ranges(token.text, verse):
-                        verse = merge_verse_ranges(token.text, verse)
+                        this_verse = token.text
+                        if self._merge_segments:
+                            this_verse = strip_segments(this_verse)
+                        verse = merge_verse_ranges(this_verse, verse)
                     else:
                         for seg in self._create_text_segments(
                             include_text, prev_verse_ref, chapter, verse, text, sentence_start
@@ -74,17 +79,15 @@ class UsfmTextBase(ScriptureText):
                         sentence_start = has_sentence_ending(text)
                         text = ""
                         verse = token.text
+                        if self._merge_segments:
+                            verse = strip_segments(verse)
                 else:
                     verse = token.text
+                    if self._merge_segments:
+                        verse = strip_segments(verse)
+                is_verse_para = True
             elif token.type == UsfmTokenType.PARAGRAPH:
-                if chapter is not None and verse is not None and not _is_verse_para(token):
-                    for seg in self._create_text_segments(
-                        include_text, prev_verse_ref, chapter, verse, text, sentence_start
-                    ):
-                        yield seg
-                    sentence_start = True
-                    text = ""
-                    verse = None
+                is_verse_para = _is_verse_para(token)
             elif token.type == UsfmTokenType.NOTE:
                 cur_embed_marker = token.marker
                 if chapter is not None and verse is not None and self._include_markers:
@@ -101,7 +104,7 @@ class UsfmTextBase(ScriptureText):
                     cur_embed_marker = None
                 if in_wordlist_marker and token.marker.marker == "w*":
                     in_wordlist_marker = False
-                if chapter is not None and verse is not None and self._include_markers:
+                if is_verse_para and chapter is not None and verse is not None and self._include_markers:
                     text += str(token)
             elif token.type == UsfmTokenType.CHARACTER:
                 assert token.marker is not None
@@ -109,7 +112,7 @@ class UsfmTextBase(ScriptureText):
                     cur_embed_marker = token.marker
                 elif token.marker.marker == "w":
                     in_wordlist_marker = True
-                if chapter is not None and verse is not None and self._include_markers:
+                if is_verse_para and chapter is not None and verse is not None and self._include_markers:
                     if (
                         prev_token is not None
                         and prev_token.type == UsfmTokenType.PARAGRAPH
@@ -118,7 +121,13 @@ class UsfmTextBase(ScriptureText):
                         text += str(prev_token) + " "
                     text += str(token) + " "
             elif token.type == UsfmTokenType.TEXT:
-                if chapter is not None and verse is not None and token.text is not None and token.text != "":
+                if (
+                    is_verse_para
+                    and chapter is not None
+                    and verse is not None
+                    and token.text is not None
+                    and token.text != ""
+                ):
                     if self._include_markers:
                         if (
                             prev_token is not None

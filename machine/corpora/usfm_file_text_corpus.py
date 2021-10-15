@@ -18,6 +18,7 @@ class UsfmFileTextCorpus(ScriptureTextCorpus):
         project_dir: StrPath,
         versification: Optional[Versification] = None,
         include_markers: bool = False,
+        merge_segments: bool = False,
     ) -> None:
         if versification is None:
             versification = Versification.get_builtin(VersificationType.ENGLISH)
@@ -26,7 +27,9 @@ class UsfmFileTextCorpus(ScriptureTextCorpus):
         texts: List[UsfmFileText] = []
         for sfm_filename in Path(project_dir).glob("*.SFM"):
             texts.append(
-                UsfmFileText(word_tokenizer, stylesheet, encoding, sfm_filename, versification, include_markers)
+                UsfmFileText(
+                    word_tokenizer, stylesheet, encoding, sfm_filename, versification, include_markers, merge_segments
+                )
             )
         super().__init__(texts)
 

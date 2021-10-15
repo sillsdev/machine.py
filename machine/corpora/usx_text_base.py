@@ -9,11 +9,14 @@ from .usx_verse_parser import UsxVerseParser
 
 class UsxTextBase(ScriptureText):
     def __init__(
-        self, word_tokenizer: Tokenizer[str, int, str], id: str, versification: Optional[Versification]
+        self,
+        word_tokenizer: Tokenizer[str, int, str],
+        id: str,
+        versification: Optional[Versification],
+        merge_segments: bool,
     ) -> None:
         super().__init__(word_tokenizer, id, versification)
-
-        self._parser = UsxVerseParser()
+        self._parser = UsxVerseParser(merge_segments)
 
     def _get_segments(self, include_text: bool) -> Generator[TextSegment, None, None]:
         with self._create_stream_container() as stream_container, stream_container.open_stream() as stream:

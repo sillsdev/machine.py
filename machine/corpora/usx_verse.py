@@ -1,4 +1,3 @@
-import xml.etree.ElementTree as etree
 from typing import Iterable, Optional, Sequence
 
 from .usx_token import UsxToken
@@ -11,17 +10,27 @@ class UsxVerse:
         self._is_sentence_start = is_sentence_start
         self._tokens = list(tokens)
 
-        prev_para_elem: Optional[etree.Element] = None
+        prev_token: Optional[UsxToken] = None
         text = ""
+        ends_with_space = False
         for token in self._tokens:
+            if token.element is not None and token.element.tag == "figure" and not ends_with_space:
+                text += " "
+
             if len(token.text) == 0 or token.text.isspace():
                 continue
 
-            if token.para_element != prev_para_elem and len(text) > 0 and not text.endswith(" "):
+            if (
+                prev_token is not None
+                and token.para_element != prev_token.para_element
+                and len(text) > 0
+                and not ends_with_space
+            ):
                 text += " "
 
             text += str(token)
-            prev_para_elem = token.para_element
+            ends_with_space = str(token).endswith(" ")
+            prev_token = token
         self._text = text.strip()
 
     @property

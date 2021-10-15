@@ -52,3 +52,10 @@ class ScriptureText(StreamTextBase):
         prev_verse_ref.copy_from(verse_ref)
 
         return segments
+
+    def _strip_segments(self, verse: str) -> str:
+        result = ""
+        for c in verse:
+            if not c.isalpha():
+                result += c
+        return result

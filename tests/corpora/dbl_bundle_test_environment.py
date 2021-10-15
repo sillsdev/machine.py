@@ -8,10 +8,10 @@ from tests.corpora.corpora_test_helpers import create_test_dbl_bundle
 
 
 class DblBundleTestEnvironment:
-    def __init__(self) -> None:
+    def __init__(self, merge_segments: bool = False) -> None:
         self._temp_dir = TemporaryDirectory()
         bundle_filename = create_test_dbl_bundle(Path(self._temp_dir.name))
-        self._corpus = DblBundleTextCorpus(NullTokenizer(), bundle_filename)
+        self._corpus = DblBundleTextCorpus(NullTokenizer(), bundle_filename, merge_segments)
 
     @property
     def corpus(self) -> DblBundleTextCorpus:
