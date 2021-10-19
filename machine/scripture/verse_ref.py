@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Set, TextIO, Tuple, Union
 
 import regex as re
+from chardet import UniversalDetector
 
 from ..utils.comparable import Comparable
 from ..utils.string_utils import is_integer, parse_integer
@@ -310,7 +311,7 @@ class VerseRef(Comparable):
     def str_with_versification(self) -> str:
         return f"{str(self)}/{int(self.versification.type)}"
 
-    def compare_to(self, other: object, compare_all_verses: bool = True) -> int:
+    def compare_to(self, other: object, compare_all_verses: bool = True, compare_segments: bool = True) -> int:
         if not isinstance(other, VerseRef):
             raise TypeError("other is not a VerseRef object.")
         if self is other:
@@ -326,11 +327,14 @@ class VerseRef(Comparable):
             return self.chapter_num - other.chapter_num
         if compare_all_verses:
             # compare all available verses (whether a single verse or a verse bridge)
-            return self._compare_verses(other)
+            return self._compare_verses(other, compare_segments)
 
         # compare only the first verse bridge
         if self.verse_num != other.verse_num:
             return self.verse_num - other.verse_num
+
+        if not compare_segments:
+            return 0
 
         this_segment = self.validated_segment()
         other_segment = other.validated_segment()
@@ -355,12 +359,12 @@ class VerseRef(Comparable):
     def __repr__(self) -> str:
         return f"{self.book} {self.chapter}:{self.verse}"
 
-    def _compare_verses(self, other: "VerseRef") -> int:
+    def _compare_verses(self, other: "VerseRef", compare_segments: bool) -> int:
         verse_list = list(self.all_verses())
         other_verse_list = list(other.all_verses())
 
         for verse, other_verse in zip(verse_list, other_verse_list):
-            result = verse.compare_to(other_verse, compare_all_verses=False)
+            result = verse.compare_to(other_verse, compare_all_verses=False, compare_segments=compare_segments)
             if result != 0:
                 return result
         return len(verse_list) - len(other_verse_list)
@@ -574,7 +578,21 @@ class Versification:
         base_versification: Optional["Versification"] = None,
         fallback_name: Optional[str] = None,
     ) -> "Versification":
-        with open(filename, "r", encoding="utf-8-sig") as file:
+        try:
+            return cls._load(filename, base_versification, fallback_name, "utf-8-sig")
+        except UnicodeDecodeError:
+            encoding = _detect_encoding(filename)
+            return cls._load(filename, base_versification, fallback_name, encoding)
+
+    @classmethod
+    def _load(
+        cls,
+        filename: StrPath,
+        base_versification: Optional["Versification"],
+        fallback_name: Optional[str],
+        encoding: str,
+    ) -> "Versification":
+        with open(filename, "r", encoding=encoding) as file:
             versification = (
                 None
                 if base_versification is None or fallback_name is None
@@ -1104,3 +1122,13 @@ def _parse_verse_segments_line(versification: Versification, parsed_line: _Versi
         versification.verse_segments[bbbcccvvv] = segment_set
     except ValueError as e:
         raise _syntax_error("invalid verse reference " + str(e), parsed_line.line_num)
+
+
+def _detect_encoding(filename: StrPath) -> str:
+    detector = UniversalDetector()
+    with open(filename, "rb") as file:
+        for line in file:
+            detector.feed(line)
+            if detector.done:
+                break
+    return detector.close()["encoding"]

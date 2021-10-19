@@ -13,20 +13,6 @@ from .text_corpus import TextCorpus
 from .text_segment import TextSegment
 
 
-def _get_text(corpus: TextCorpus, id: str) -> Text:
-    text = corpus.get_text(id)
-    if text is None:
-        text = NullText(id, corpus.get_text_sort_key(id))
-    return text
-
-
-def _get_text_alignment_collection(corpus: TextAlignmentCorpus, id: str) -> TextAlignmentCollection:
-    alignments = corpus.get_text_alignment_collection(id)
-    if alignments is None:
-        alignments = NullTextAlignmentCollection(id, corpus.get_text_alignment_collection_sort_key(id))
-    return alignments
-
-
 class ParallelTextCorpus:
     def __init__(
         self,
@@ -129,3 +115,17 @@ class ParallelTextCorpus:
         target_text = _get_text(self._target_corpus, id)
         text_alignment_collection = _get_text_alignment_collection(self._text_alignment_corpus, id)
         return ParallelText(source_text, target_text, text_alignment_collection)
+
+
+def _get_text(corpus: TextCorpus, id: str) -> Text:
+    text = corpus.get_text(id)
+    if text is None:
+        text = NullText(id, corpus.get_text_sort_key(id))
+    return text
+
+
+def _get_text_alignment_collection(corpus: TextAlignmentCorpus, id: str) -> TextAlignmentCollection:
+    alignments = corpus.get_text_alignment_collection(id)
+    if alignments is None:
+        alignments = NullTextAlignmentCollection(id, corpus.get_text_alignment_collection_sort_key(id))
+    return alignments

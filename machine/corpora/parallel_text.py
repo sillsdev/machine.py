@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
-from typing import Collection, Generator, Iterable, List, Optional, cast
+from typing import Any, Collection, Generator, Iterable, List, Optional, cast
 
+from ..scripture.verse_ref import VerseRef
 from ..utils.comparable import compare
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .aligned_word_pair import AlignedWordPair
@@ -10,13 +11,6 @@ from .text import Text
 from .text_alignment import TextAlignment
 from .text_alignment_collection import TextAlignmentCollection
 from .text_segment import TextSegment
-
-
-def _check_same_ref_segments(same_ref_segments: List[TextSegment], other_segment: TextSegment) -> bool:
-    if len(same_ref_segments) > 0 and same_ref_segments[0].segment_ref != other_segment.segment_ref:
-        same_ref_segments.clear()
-
-    return len(same_ref_segments) > 0
 
 
 @dataclass
@@ -106,7 +100,7 @@ class ParallelText:
             trg_segment = next(trg_iterator, None)
             alignment: Optional[TextAlignment] = None
             while src_segment is not None and trg_segment is not None:
-                compare1 = compare(src_segment.segment_ref, trg_segment.segment_ref)
+                compare1 = _compare_seg_refs(src_segment.segment_ref, trg_segment.segment_ref)
                 if compare1 < 0:
                     for seg in self._create_source_text_segments(
                         range_info, src_segment, target_same_ref_segments, all_source_segments
@@ -126,7 +120,11 @@ class ParallelText:
                     compare2 = -1
                     while compare2 < 0:
                         alignment = next(alignment_iterator, None)
-                        compare2 = 1 if alignment is None else compare(src_segment.segment_ref, alignment.segment_ref)
+                        compare2 = (
+                            1
+                            if alignment is None
+                            else _compare_seg_refs(src_segment.segment_ref, alignment.segment_ref)
+                        )
 
                     if (not all_target_segments and src_segment.is_in_range) or (
                         not all_source_segments and trg_segment.is_in_range
@@ -257,3 +255,19 @@ class ParallelText:
         elif all_target_segments:
             for seg in self._create_text_segments(range_info, None, target_segment):
                 yield seg
+
+
+def _check_same_ref_segments(same_ref_segments: List[TextSegment], other_segment: TextSegment) -> bool:
+    if (
+        len(same_ref_segments) > 0
+        and _compare_seg_refs(same_ref_segments[0].segment_ref, other_segment.segment_ref) != 0
+    ):
+        same_ref_segments.clear()
+
+    return len(same_ref_segments) > 0
+
+
+def _compare_seg_refs(source_seg_ref: Any, target_seg_ref: Any) -> int:
+    if isinstance(source_seg_ref, VerseRef) and isinstance(target_seg_ref, VerseRef):
+        return source_seg_ref.compare_to(target_seg_ref, compare_segments=False)
+    return compare(source_seg_ref, target_seg_ref)

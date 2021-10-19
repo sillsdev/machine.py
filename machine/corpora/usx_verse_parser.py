@@ -82,7 +82,7 @@ class UsxVerseParser:
                 ctxt.add_token(e.tail)
 
 
-_NONVERSE_PARA_STYLES = {"ms", "mr", "s", "sr", "r", "d", "sp", "rem", "restore"}
+_NONVERSE_PARA_STYLES = {"ms", "mr", "s", "sr", "r", "d", "sp", "rem", "restore", "cl"}
 
 
 def _is_numbered_style(style_prefix: str, style: str) -> bool:

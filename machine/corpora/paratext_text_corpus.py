@@ -16,7 +16,13 @@ class ParatextTextCorpus(ScriptureTextCorpus):
     ) -> None:
         project_dir = Path(project_dir)
         settings_filename = project_dir / "Settings.xml"
+        if not settings_filename.is_file():
+            settings_filename = next(project_dir.glob("*.ssf"), Path())
+        if not settings_filename.is_file():
+            raise RuntimeError("The project directory does not contain a settings file.")
+
         settings_tree = etree.parse(str(settings_filename))
+
         code_page = int(settings_tree.getroot().findtext("Encoding", "65001"))
         encoding = _ENCODINGS.get(code_page)
         if encoding is None:

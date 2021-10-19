@@ -164,7 +164,7 @@ class UsfmTextBase(ScriptureText):
             return reader.read()
 
 
-_NONVERSE_PARA_STYLES = {"ms", "mr", "s", "sr", "r", "d", "sp", "rem", "restore"}
+_NONVERSE_PARA_STYLES = {"ms", "mr", "s", "sr", "r", "d", "sp", "rem", "restore", "cl", "cp"}
 
 
 def _is_numbered_style(style_prefix: str, style: str) -> bool:
