@@ -4,6 +4,7 @@ from typing import List
 
 from ..scripture.verse_ref import Versification
 from ..tokenization.tokenizer import Tokenizer
+from ..utils.string_utils import parse_integer
 from ..utils.typeshed import StrPath
 from .scripture_text_corpus import ScriptureTextCorpus
 from .usfm_file_text import UsfmFileText
@@ -23,7 +24,12 @@ class ParatextTextCorpus(ScriptureTextCorpus):
 
         settings_tree = etree.parse(str(settings_filename))
 
-        code_page = int(settings_tree.getroot().findtext("Encoding", "65001"))
+        encoding_str = settings_tree.getroot().findtext("Encoding", "65001")
+        code_page = parse_integer(encoding_str)
+        if code_page is None:
+            raise NotImplementedError(
+                f"The project uses a legacy encoding that requires TECKit, map file: {encoding_str}."
+            )
         encoding = _ENCODINGS.get(code_page)
         if encoding is None:
             raise RuntimeError(f"Code page {code_page} not supported.")
@@ -40,6 +46,8 @@ class ParatextTextCorpus(ScriptureTextCorpus):
 
         stylesheet_name = settings_tree.getroot().findtext("StyleSheet", "usfm.sty")
         stylesheet_filename = project_dir / stylesheet_name
+        if not stylesheet_filename.is_file():
+            stylesheet_filename = project_dir / "usfm.sty"
         stylesheet = UsfmStylesheet(stylesheet_filename)
 
         prefix = ""
