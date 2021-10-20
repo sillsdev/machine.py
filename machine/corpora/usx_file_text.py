@@ -12,14 +12,10 @@ from .usx_text_base import UsxTextBase
 
 class UsxFileText(UsxTextBase):
     def __init__(
-        self,
-        word_tokenizer: Tokenizer[str, int, str],
-        filename: StrPath,
-        versification: Optional[Versification] = None,
-        merge_segments: bool = False,
+        self, word_tokenizer: Tokenizer[str, int, str], filename: StrPath, versification: Optional[Versification] = None
     ) -> None:
         self._filename = Path(filename)
-        super().__init__(word_tokenizer, get_usx_id(self._filename), versification, merge_segments)
+        super().__init__(word_tokenizer, get_usx_id(self._filename), versification)
 
     def _create_stream_container(self) -> StreamContainer:
         return FileStreamContainer(self._filename)

@@ -4,7 +4,7 @@ from typing import Generator, Optional
 from ..scripture.verse_ref import VerseRef, Versification, are_overlapping_verse_ranges
 from ..tokenization.tokenizer import Tokenizer
 from ..utils.string_utils import has_sentence_ending, is_integer
-from .corpora_helpers import merge_verse_ranges, strip_segments
+from .corpora_helpers import merge_verse_ranges
 from .scripture_text import ScriptureText
 from .text_segment import TextSegment
 from .usfm_marker import UsfmMarker
@@ -22,14 +22,12 @@ class UsfmTextBase(ScriptureText):
         encoding: str,
         versification: Optional[Versification],
         include_markers: bool,
-        merge_segments: bool,
     ) -> None:
         super().__init__(word_tokenizer, id, versification)
 
         self._parser = UsfmParser(stylesheet)
         self._encoding = encoding
         self._include_markers = include_markers
-        self._merge_segments = merge_segments
 
     def _get_segments(self, include_text: bool) -> Generator[TextSegment, None, None]:
         usfm = self._read_usfm()
@@ -67,10 +65,7 @@ class UsfmTextBase(ScriptureText):
                         # ignore duplicate verse
                         verse = None
                     elif are_overlapping_verse_ranges(token.text, verse):
-                        this_verse = token.text
-                        if self._merge_segments:
-                            this_verse = strip_segments(this_verse)
-                        verse = merge_verse_ranges(this_verse, verse)
+                        verse = merge_verse_ranges(token.text, verse)
                     else:
                         for seg in self._create_text_segments(
                             include_text, prev_verse_ref, chapter, verse, text, sentence_start
@@ -79,12 +74,8 @@ class UsfmTextBase(ScriptureText):
                         sentence_start = has_sentence_ending(text)
                         text = ""
                         verse = token.text
-                        if self._merge_segments:
-                            verse = strip_segments(verse)
                 else:
                     verse = token.text
-                    if self._merge_segments:
-                        verse = strip_segments(verse)
                 is_verse_para = True
             elif token.type == UsfmTokenType.PARAGRAPH:
                 is_verse_para = _is_verse_para(token)

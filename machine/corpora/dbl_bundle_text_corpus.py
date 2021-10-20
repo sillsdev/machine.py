@@ -14,9 +14,7 @@ from .scripture_text_corpus import ScriptureTextCorpus
 class DblBundleTextCorpus(ScriptureTextCorpus):
     _SUPPORTED_VERSIONS = {"2.0", "2.1"}
 
-    def __init__(
-        self, word_tokenizer: Tokenizer[str, int, str], filename: StrPath, merge_segments: bool = False
-    ) -> None:
+    def __init__(self, word_tokenizer: Tokenizer[str, int, str], filename: StrPath) -> None:
         with ZipFile(filename, "r") as archive:
             with archive.open("metadata.xml", "r") as stream:
                 doc = etree.parse(stream)
@@ -44,7 +42,6 @@ class DblBundleTextCorpus(ScriptureTextCorpus):
                     filename,
                     content_elem.get("src", ""),
                     self._versification,
-                    merge_segments,
                 )
             )
         super().__init__(texts)

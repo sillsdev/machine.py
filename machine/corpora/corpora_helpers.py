@@ -95,14 +95,6 @@ def merge_verse_ranges(verse1: str, verse2: str) -> str:
     return text
 
 
-def strip_segments(verse: str) -> str:
-    result = ""
-    for c in verse:
-        if not c.isalpha():
-            result += c
-    return result
-
-
 def _get_verse_range(start_verse_num: str, end_verse_num: str) -> str:
     verse_range = start_verse_num
     if end_verse_num != start_verse_num:

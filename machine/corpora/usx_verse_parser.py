@@ -4,7 +4,7 @@ from typing import BinaryIO, Iterable, List, Optional
 
 from ..scripture.verse_ref import are_overlapping_verse_ranges
 from ..utils.string_utils import has_sentence_ending, is_integer
-from .corpora_helpers import merge_verse_ranges, strip_segments
+from .corpora_helpers import merge_verse_ranges
 from .usx_token import UsxToken
 from .usx_verse import UsxVerse
 
@@ -55,19 +55,13 @@ class UsxVerseParser:
                         # ignore duplicate verse
                         ctxt.verse = None
                     elif are_overlapping_verse_ranges(verse, ctxt.verse):
-                        if self._merge_segments:
-                            verse = strip_segments(verse)
                         # merge overlapping verse ranges in to one range
                         ctxt.verse = merge_verse_ranges(verse, ctxt.verse)
                     else:
                         yield ctxt.create_verse()
                         ctxt.verse = verse
-                        if self._merge_segments:
-                            ctxt.verse = strip_segments(ctxt.verse)
                 else:
                     ctxt.verse = verse
-                    if self._merge_segments:
-                        ctxt.verse = strip_segments(ctxt.verse)
             elif e.tag == "char":
                 for evt in self._parse_element(e, ctxt):
                     yield evt
