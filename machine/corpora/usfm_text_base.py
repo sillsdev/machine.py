@@ -150,7 +150,7 @@ class UsfmTextBase(ScriptureText):
 
     def _read_usfm(self) -> str:
         with self._create_stream_container() as stream_container, TextIOWrapper(
-            stream_container.open_stream(), encoding=self._encoding
+            stream_container.open_stream(), encoding=self._encoding, errors="replace"
         ) as reader:
             return reader.read()
 

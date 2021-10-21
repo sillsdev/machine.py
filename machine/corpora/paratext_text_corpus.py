@@ -46,7 +46,7 @@ class ParatextTextCorpus(ScriptureTextCorpus):
 
         stylesheet_name = settings_tree.getroot().findtext("StyleSheet", "usfm.sty")
         stylesheet_filename = project_dir / stylesheet_name
-        if not stylesheet_filename.is_file():
+        if not stylesheet_filename.is_file() and stylesheet_name != "usfm_sb.sty":
             stylesheet_filename = project_dir / "usfm.sty"
         stylesheet = UsfmStylesheet(stylesheet_filename)
 
