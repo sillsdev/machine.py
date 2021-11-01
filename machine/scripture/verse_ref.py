@@ -622,11 +622,18 @@ class Versification:
         self._filename = None if filename is None else Path(filename)
         self._base_versification = base_versification
 
-        self.mappings = VerseMappings()
-        self.excluded_verses: Set[int] = set()
-        self.book_list: List[List[int]] = []
-        self.verse_segments: Dict[int, Set[str]] = {}
-        self.description: Optional[str] = None
+        if self._base_versification is None:
+            self.mappings = VerseMappings()
+            self.excluded_verses: Set[int] = set()
+            self.book_list: List[List[int]] = []
+            self.verse_segments: Dict[int, Set[str]] = {}
+            self.description: Optional[str] = None
+        else:
+            self.mappings = self._base_versification.mappings.copy()
+            self.excluded_verses = self._base_versification.excluded_verses.copy()
+            self.book_list = self._base_versification.book_list.copy()
+            self.verse_segments = self._base_versification.verse_segments.copy()
+            self.description = self._base_versification.description
 
     @property
     def name(self) -> str:
@@ -801,6 +808,12 @@ class VerseMappings:
 
     def get_standard(self, versification_ref: VerseRef) -> Optional[VerseRef]:
         return self._versification_to_standard.get(versification_ref)
+
+    def copy(self) -> "VerseMappings":
+        copy = VerseMappings()
+        copy._versification_to_standard = self._versification_to_standard.copy()
+        copy._standard_to_versification = self._standard_to_versification.copy()
+        return copy
 
     def __eq__(self, other: "VerseMappings") -> bool:
         return (
