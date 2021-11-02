@@ -2,12 +2,8 @@ from typing import Generator, Iterable, Optional, Set
 
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .dictionary_text_alignment_corpus import DictionaryTextAlignmentCorpus
-from .null_text import NullText
-from .null_text_alignment_collection import NullTextAlignmentCollection
 from .parallel_text import ParallelText
 from .parallel_text_segment import ParallelTextSegment
-from .text import Text
-from .text_alignment_collection import TextAlignmentCollection
 from .text_alignment_corpus import TextAlignmentCorpus
 from .text_corpus import TextCorpus
 from .text_segment import TextSegment
@@ -111,21 +107,7 @@ class ParallelTextCorpus:
                     yield segment
 
     def _create_parallel_text(self, id: str) -> ParallelText:
-        source_text = _get_text(self._source_corpus, id)
-        target_text = _get_text(self._target_corpus, id)
-        text_alignment_collection = _get_text_alignment_collection(self._text_alignment_corpus, id)
+        source_text = self._source_corpus[id]
+        target_text = self._target_corpus[id]
+        text_alignment_collection = self._text_alignment_corpus[id]
         return ParallelText(source_text, target_text, text_alignment_collection)
-
-
-def _get_text(corpus: TextCorpus, id: str) -> Text:
-    text = corpus.get_text(id)
-    if text is None:
-        text = NullText(id, corpus.get_text_sort_key(id))
-    return text
-
-
-def _get_text_alignment_collection(corpus: TextAlignmentCorpus, id: str) -> TextAlignmentCollection:
-    alignments = corpus.get_text_alignment_collection(id)
-    if alignments is None:
-        alignments = NullTextAlignmentCollection(id, corpus.get_text_alignment_collection_sort_key(id))
-    return alignments

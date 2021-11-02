@@ -1,13 +1,15 @@
-from typing import Iterable, List, Optional
+from typing import Iterable, List, Optional, cast
 
 from ..scripture.verse_ref import VerseRef, Versification, VersificationType
 from ..tokenization import Tokenizer
-from .corpora_helpers import get_scripture_text_sort_key
-from .stream_text_base import StreamTextBase
+from ..utils.context_managed_generator import ContextManagedGenerator
+from .corpora_helpers import gen, get_scripture_text_sort_key
+from .text import Text
+from .text_base import TextBase
 from .text_segment import TextSegment
 
 
-class ScriptureText(StreamTextBase):
+class ScriptureText(TextBase):
     def __init__(
         self, word_tokenizer: Tokenizer[str, int, str], id: str, versification: Optional[Versification] = None
     ) -> None:
@@ -19,6 +21,21 @@ class ScriptureText(StreamTextBase):
     @property
     def versification(self) -> Versification:
         return self._versification
+
+    def get_segments_based_on(
+        self, text: Text, include_text: bool = True
+    ) -> ContextManagedGenerator[TextSegment, None, None]:
+        if not isinstance(text, ScriptureText) or self.versification == text.versification:
+            return super().get_segments_based_on(text, include_text)
+
+        segments: List[TextSegment] = []
+        with self.get_segments(include_text) as segs:
+            for seg in segs:
+                cast(VerseRef, seg.segment_ref).change_versification(text.versification)
+                segments.append(seg)
+
+        segments.sort(key=lambda s: s.segment_ref)
+        return ContextManagedGenerator(gen(segments))
 
     def _create_text_segments(
         self,

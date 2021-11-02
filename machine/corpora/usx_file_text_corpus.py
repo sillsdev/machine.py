@@ -17,12 +17,8 @@ class UsxFileTextCorpus(ScriptureTextCorpus):
         versification: Optional[Versification] = None,
     ) -> None:
         project_dir = Path(project_dir)
-        self._versification = get_usx_versification(project_dir, versification)
+        versification = get_usx_versification(project_dir, versification)
         texts: List[UsxFileText] = []
         for filename in project_dir.glob("*.usx"):
-            texts.append(UsxFileText(word_tokenizer, filename, self._versification))
-        super().__init__(texts)
-
-    @property
-    def versification(self) -> Versification:
-        return self._versification
+            texts.append(UsxFileText(word_tokenizer, filename, versification))
+        super().__init__(word_tokenizer, versification, texts)

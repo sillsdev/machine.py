@@ -18,3 +18,9 @@ class Text(ABC):
     @abstractmethod
     def get_segments(self, include_text: bool = True) -> ContextManagedGenerator[TextSegment, None, None]:
         ...
+
+    @abstractmethod
+    def get_segments_based_on(
+        self, text: "Text", include_text: bool = True
+    ) -> ContextManagedGenerator[TextSegment, None, None]:
+        ...

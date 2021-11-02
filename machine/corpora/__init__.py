@@ -8,6 +8,7 @@ from .filtered_text_alignment_corpus import FilteredTextAlignmentCorpus
 from .filtered_text_corpus import FilteredTextCorpus
 from .memory_text import MemoryText
 from .memory_text_alignment_collection import MemoryTextAlignmentCollection
+from .null_scripture_text import NullScriptureText
 from .null_text import NullText
 from .null_text_alignment_collection import NullTextAlignmentCollection
 from .parallel_text import ParallelText
@@ -74,6 +75,7 @@ __all__ = [
     "NO_OP",
     "NoOpTokenProcessor",
     "NormalizeTokenProcessor",
+    "NullScriptureText",
     "NullText",
     "NullTextAlignmentCollection",
     "ParallelText",

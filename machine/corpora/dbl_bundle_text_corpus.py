@@ -27,25 +27,17 @@ class DblBundleTextCorpus(ScriptureTextCorpus):
             if versification_entry is not None:
                 with archive.open(versification_entry, "r") as stream:
                     abbr = doc.getroot().findtext("./identification/abbreviation", "")
-                    self._versification = Versification.parse(
+                    versification = Versification.parse(
                         TextIOWrapper(stream, encoding="utf-8-sig"), "versification.vrs", fallback_name=abbr
                     )
             else:
-                self._versification = Versification.get_builtin(VersificationType.ENGLISH)
+                versification = Versification.get_builtin(VersificationType.ENGLISH)
 
         texts: List[DblBundleText] = []
         for content_elem in doc.getroot().findall("./publications/publication[@default='true']/structure/content"):
             texts.append(
                 DblBundleText(
-                    word_tokenizer,
-                    content_elem.get("role", ""),
-                    filename,
-                    content_elem.get("src", ""),
-                    self._versification,
+                    word_tokenizer, content_elem.get("role", ""), filename, content_elem.get("src", ""), versification
                 )
             )
-        super().__init__(texts)
-
-    @property
-    def versification(self) -> Versification:
-        return self._versification
+        super().__init__(word_tokenizer, versification, texts)

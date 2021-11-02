@@ -21,15 +21,10 @@ class UsfmFileTextCorpus(ScriptureTextCorpus):
     ) -> None:
         if versification is None:
             versification = Versification.get_builtin(VersificationType.ENGLISH)
-        self._versification = versification
         stylesheet = UsfmStylesheet(stylesheet_filename)
         texts: List[UsfmFileText] = []
         for sfm_filename in Path(project_dir).glob("*.SFM"):
             texts.append(
                 UsfmFileText(word_tokenizer, stylesheet, encoding, sfm_filename, versification, include_markers)
             )
-        super().__init__(texts)
-
-    @property
-    def versification(self) -> Versification:
-        return self._versification
+        super().__init__(word_tokenizer, versification, texts)

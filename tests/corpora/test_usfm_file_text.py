@@ -1,5 +1,7 @@
-from machine.corpora import UsfmFileTextCorpus
-from machine.scripture.verse_ref import VerseRef
+from io import StringIO
+
+from machine.corpora import NullScriptureText, UsfmFileTextCorpus
+from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, VerseRef, Versification
 from machine.tokenization import NullTokenizer
 from tests.corpora.corpora_test_helpers import USFM_STYLESHEET_PATH, USFM_TEST_PROJECT_PATH
 
@@ -125,3 +127,58 @@ def test_get_segments_include_markers() -> None:
 
     assert segments[11].segment_ref == VerseRef.from_string("MAT 2:6", corpus.versification)
     assert segments[11].segment[0] == 'Chapter two, verse \\w six|strong="12345" \\w*.'
+
+
+def test_get_segments_based_on() -> None:
+    tokenizer = NullTokenizer()
+
+    src = "MAT 1:2 = MAT 1:3\nMAT 1:3 = MAT 1:2\n"
+    stream = StringIO(src)
+    versification = Versification("custom", "vers.txt", ENGLISH_VERSIFICATION)
+    versification = Versification.parse(stream, "vers.txt", versification, "custom")
+
+    corpus = UsfmFileTextCorpus(tokenizer, USFM_STYLESHEET_PATH, "utf-8-sig", USFM_TEST_PROJECT_PATH, versification)
+
+    based_on_text = NullScriptureText(tokenizer, "MAT", ORIGINAL_VERSIFICATION)
+
+    text = corpus.get_text("MAT")
+    assert text is not None
+    segments = list(text.get_segments_based_on(based_on_text))
+
+    assert len(segments) == 14
+
+    assert segments[0].segment_ref == VerseRef.from_string("MAT 1:1", ORIGINAL_VERSIFICATION)
+    assert segments[0].segment[0] == "Chapter one, verse one."
+
+    assert segments[1].segment_ref == VerseRef.from_string("MAT 1:2", ORIGINAL_VERSIFICATION)
+    assert segments[1].segment[0] == "Chapter one, verse three."
+
+    assert segments[2].segment_ref == VerseRef.from_string("MAT 1:3", ORIGINAL_VERSIFICATION)
+    assert segments[2].segment[0] == "Chapter one, verse two."
+
+    assert segments[4].segment_ref == VerseRef.from_string("MAT 1:5", ORIGINAL_VERSIFICATION)
+    assert segments[4].segment[0] == "Chapter one, verse five."
+
+    assert segments[5].segment_ref == VerseRef.from_string("MAT 2:1", ORIGINAL_VERSIFICATION)
+    assert segments[5].segment[0] == "Chapter two, verse one."
+
+    assert segments[6].segment_ref == VerseRef.from_string("MAT 2:2", ORIGINAL_VERSIFICATION)
+    assert segments[6].segment[0] == "Chapter two, verse two. Chapter two, verse three."
+    assert segments[6].is_in_range
+
+    assert segments[7].segment_ref == VerseRef.from_string("MAT 2:3", ORIGINAL_VERSIFICATION)
+    assert len(segments[7].segment) == 0
+    assert segments[7].is_in_range
+
+    assert segments[8].segment_ref == VerseRef.from_string("MAT 2:4a", ORIGINAL_VERSIFICATION)
+    assert len(segments[8].segment) == 0
+    assert segments[8].is_in_range
+
+    assert segments[9].segment_ref == VerseRef.from_string("MAT 2:4b", ORIGINAL_VERSIFICATION)
+    assert segments[9].segment[0] == "Chapter two, verse four."
+
+    assert segments[10].segment_ref == VerseRef.from_string("MAT 2:5", ORIGINAL_VERSIFICATION)
+    assert segments[10].segment[0] == "Chapter two, verse five."
+
+    assert segments[11].segment_ref == VerseRef.from_string("MAT 2:6", ORIGINAL_VERSIFICATION)
+    assert segments[11].segment[0] == "Chapter two, verse six."

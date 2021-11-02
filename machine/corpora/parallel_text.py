@@ -89,8 +89,8 @@ class ParallelText:
     def _get_segments(
         self, all_source_segments: bool, all_target_segments: bool, include_text: bool
     ) -> Generator[ParallelTextSegment, None, None]:
-        with self._source_text.get_segments(include_text) as src_iterator, self._target_text.get_segments(
-            include_text
+        with self._source_text.get_segments(include_text) as src_iterator, self._target_text.get_segments_based_on(
+            self._source_text, include_text
         ) as trg_iterator, self._text_alignment_collection.alignments as alignment_iterator:
             range_info = RangeInfo(self)
             source_same_ref_segments: List[TextSegment] = []

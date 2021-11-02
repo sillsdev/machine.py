@@ -19,3 +19,8 @@ class NullText(Text):
 
     def get_segments(self, include_text: bool = True) -> ContextManagedGenerator[TextSegment, None, None]:
         return ContextManagedGenerator(gen())
+
+    def get_segments_based_on(
+        self, text: Text, include_text: bool = True
+    ) -> ContextManagedGenerator[TextSegment, None, None]:
+        return self.get_segments(include_text)

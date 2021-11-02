@@ -21,8 +21,19 @@ class FilteredText(Text):
     def get_segments(self, include_text: bool = True) -> ContextManagedGenerator[TextSegment, None, None]:
         return ContextManagedGenerator(self._get_segments(include_text))
 
+    def get_segments_based_on(
+        self, text: Text, include_text: bool = True
+    ) -> ContextManagedGenerator[TextSegment, None, None]:
+        return ContextManagedGenerator(self._get_segments_based_on(text, include_text))
+
     def _get_segments(self, include_text: bool) -> Generator[TextSegment, None, None]:
         with self._text.get_segments(include_text) as segments:
+            for segment in segments:
+                if self._filter(segment):
+                    yield segment
+
+    def _get_segments_based_on(self, text: Text, include_text: bool) -> Generator[TextSegment, None, None]:
+        with self._text.get_segments_based_on(text, include_text) as segments:
             for segment in segments:
                 if self._filter(segment):
                     yield segment

@@ -1,5 +1,6 @@
 from typing import Any, Iterable, Optional, overload
 
+from .null_text_alignment_collection import NullTextAlignmentCollection
 from .text_alignment_collection import TextAlignmentCollection
 from .text_alignment_corpus import TextAlignmentCorpus
 
@@ -26,11 +27,17 @@ class DictionaryTextAlignmentCorpus(TextAlignmentCorpus):
     def get_text_alignment_collection(self, id: str) -> Optional[TextAlignmentCollection]:
         return self._text_alignment_collections.get(id)
 
+    def __getitem__(self, id: str) -> TextAlignmentCollection:
+        collection = self._text_alignment_collections.get(id)
+        if collection is None:
+            collection = self.create_null_text_alignment_collection(id)
+        return collection
+
+    def create_null_text_alignment_collection(self, id: str) -> TextAlignmentCollection:
+        return NullTextAlignmentCollection(id, id)
+
     def invert(self) -> "DictionaryTextAlignmentCorpus":
         return DictionaryTextAlignmentCorpus(tac.invert() for tac in self._text_alignment_collections.values())
-
-    def get_text_alignment_collection_sort_key(self, id: str) -> str:
-        return id
 
     def _add_text_alignment_collection(self, alignments: TextAlignmentCollection) -> None:
         self._text_alignment_collections[alignments.id] = alignments

@@ -35,14 +35,12 @@ class ParatextTextCorpus(ScriptureTextCorpus):
             raise RuntimeError(f"Code page {code_page} not supported.")
 
         versification_type = int(settings_tree.getroot().findtext("Versification", "4"))
-        self._versification = Versification.get_builtin(versification_type)
+        versification = Versification.get_builtin(versification_type)
         custom_versification_filename = project_dir / "custom.vrs"
         if custom_versification_filename.is_file():
             guid = settings_tree.getroot().findtext("Guid", "")
-            versification_name = f"{self._versification.name}-{guid}"
-            self._versification = Versification.load(
-                custom_versification_filename, self._versification, versification_name
-            )
+            versification_name = f"{versification.name}-{guid}"
+            versification = Versification.load(custom_versification_filename, versification, versification_name)
 
         stylesheet_name = settings_tree.getroot().findtext("StyleSheet", "usfm.sty")
         stylesheet_filename = project_dir / stylesheet_name
@@ -64,13 +62,9 @@ class ParatextTextCorpus(ScriptureTextCorpus):
         texts: List[UsfmFileText] = []
         for sfm_filename in project_dir.glob(f"{prefix}*{suffix}"):
             texts.append(
-                UsfmFileText(word_tokenizer, stylesheet, encoding, sfm_filename, self._versification, include_markers)
+                UsfmFileText(word_tokenizer, stylesheet, encoding, sfm_filename, versification, include_markers)
             )
-        super().__init__(texts)
-
-    @property
-    def versification(self) -> Versification:
-        return self._versification
+        super().__init__(word_tokenizer, versification, texts)
 
 
 _ENCODINGS = {

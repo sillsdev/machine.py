@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from io import TextIOWrapper
 from typing import Generator, Optional
 
@@ -6,6 +7,7 @@ from ..tokenization.tokenizer import Tokenizer
 from ..utils.string_utils import has_sentence_ending, is_integer
 from .corpora_helpers import merge_verse_ranges
 from .scripture_text import ScriptureText
+from .stream_container import StreamContainer
 from .text_segment import TextSegment
 from .usfm_marker import UsfmMarker
 from .usfm_parser import UsfmParser
@@ -28,6 +30,10 @@ class UsfmTextBase(ScriptureText):
         self._parser = UsfmParser(stylesheet)
         self._encoding = encoding
         self._include_markers = include_markers
+
+    @abstractmethod
+    def _create_stream_container(self) -> StreamContainer:
+        ...
 
     def _get_segments(self, include_text: bool) -> Generator[TextSegment, None, None]:
         usfm = self._read_usfm()

@@ -19,5 +19,11 @@ class FilteredTextCorpus(TextCorpus):
             return text
         return None
 
-    def get_text_sort_key(self, id: str) -> str:
-        return self._corpus.get_text_sort_key(id)
+    def __getitem__(self, id: str) -> Text:
+        text = self._corpus[id]
+        if self._filter(text):
+            return text
+        return self.create_null_text(id)
+
+    def create_null_text(self, id: str) -> Text:
+        return self._corpus.create_null_text(id)

@@ -17,7 +17,11 @@ class TextCorpus(ABC):
         ...
 
     @abstractmethod
-    def get_text_sort_key(self, id: str) -> str:
+    def __getitem__(self, id: str) -> Text:
+        ...
+
+    @abstractmethod
+    def create_null_text(self, id: str) -> Text:
         ...
 
     def get_segments(self, include_text: bool = True) -> ContextManagedGenerator[TextSegment, None, None]:

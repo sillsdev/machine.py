@@ -19,8 +19,14 @@ class FilteredTextAlignmentCorpus(TextAlignmentCorpus):
             return collection
         return None
 
+    def __getitem__(self, id: str) -> TextAlignmentCollection:
+        collection = self._corpus[id]
+        if self._filter(collection):
+            return collection
+        return self.create_null_text_alignment_collection(id)
+
+    def create_null_text_alignment_collection(self, id: str) -> TextAlignmentCollection:
+        return self._corpus.create_null_text_alignment_collection(id)
+
     def invert(self) -> "FilteredTextAlignmentCorpus":
         return FilteredTextAlignmentCorpus(self._corpus.invert(), self._filter)
-
-    def get_text_alignment_collection_sort_key(self, id: str) -> str:
-        return self._corpus.get_text_alignment_collection_sort_key(id)

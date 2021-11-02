@@ -29,6 +29,11 @@ class TextBase(Text):
     def get_segments(self, include_text: bool = True) -> ContextManagedGenerator[TextSegment, None, None]:
         return ContextManagedGenerator(self._get_segments(include_text))
 
+    def get_segments_based_on(
+        self, text: Text, include_text: bool = True
+    ) -> ContextManagedGenerator[TextSegment, None, None]:
+        return self.get_segments(include_text)
+
     @abstractmethod
     def _get_segments(self, include_text: bool) -> Generator[TextSegment, None, None]:
         ...

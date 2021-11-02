@@ -4,8 +4,10 @@ from typing import Dict, List, Optional
 from ..scripture.verse_ref import Versification
 from ..tokenization.range_tokenizer import RangeTokenizer
 from ..utils.typeshed import StrPath
-from .corpora_helpers import get_usx_id, get_usx_versification
+from .corpora_helpers import get_scripture_text_sort_key, get_usx_id, get_usx_versification
 from .dictionary_text_alignment_corpus import DictionaryTextAlignmentCorpus
+from .null_text_alignment_collection import NullTextAlignmentCollection
+from .text_alignment_collection import TextAlignmentCollection
 from .usx_file_text_alignment_collection import UsxFileTextAlignmentCollection
 
 
@@ -42,6 +44,9 @@ class UsxFileTextAlignmentCorpus(DictionaryTextAlignmentCorpus):
                 )
             )
         super().__init__(alignments)
+
+    def create_null_text_alignment_collection(self, id: str) -> TextAlignmentCollection:
+        return NullTextAlignmentCollection(id, get_scripture_text_sort_key(id))
 
 
 def _get_filenames(project_dir: Path) -> Dict[str, Path]:
