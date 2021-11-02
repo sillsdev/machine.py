@@ -22,7 +22,8 @@ class ParatextTextCorpus(ScriptureTextCorpus):
         if not settings_filename.is_file():
             raise RuntimeError("The project directory does not contain a settings file.")
 
-        settings_tree = etree.parse(str(settings_filename))
+        with settings_filename.open("rb") as stream:
+            settings_tree = etree.parse(stream)
 
         encoding_str = settings_tree.getroot().findtext("Encoding", "65001")
         code_page = parse_integer(encoding_str)
