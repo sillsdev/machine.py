@@ -1,4 +1,4 @@
-from typing import Callable, Iterable, Optional
+from typing import Callable, Iterable
 
 from .text_alignment_collection import TextAlignmentCollection
 from .text_alignment_corpus import TextAlignmentCorpus
@@ -12,12 +12,6 @@ class FilteredTextAlignmentCorpus(TextAlignmentCorpus):
     @property
     def text_alignment_collections(self) -> Iterable[TextAlignmentCollection]:
         return (c for c in self._corpus.text_alignment_collections if self._filter(c))
-
-    def get_text_alignment_collection(self, id: str) -> Optional[TextAlignmentCollection]:
-        collection = self._corpus.get_text_alignment_collection(id)
-        if collection is not None and self._filter(collection):
-            return collection
-        return None
 
     def __getitem__(self, id: str) -> TextAlignmentCollection:
         collection = self._corpus[id]

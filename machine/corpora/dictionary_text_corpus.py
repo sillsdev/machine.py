@@ -1,4 +1,4 @@
-from typing import Any, Iterable, Optional, overload
+from typing import Any, Iterable, overload
 
 from .null_text import NullText
 from .text import Text
@@ -21,9 +21,6 @@ class DictionaryTextCorpus(TextCorpus):
     @property
     def texts(self) -> Iterable[Text]:
         return sorted(self._texts.values(), key=lambda t: t.sort_key)
-
-    def get_text(self, id: str) -> Optional[Text]:
-        return self._texts.get(id)
 
     def __getitem__(self, id: str) -> Text:
         text = self._texts.get(id)

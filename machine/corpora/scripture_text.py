@@ -28,14 +28,15 @@ class ScriptureText(TextBase):
         if not isinstance(text, ScriptureText) or self.versification == text.versification:
             return super().get_segments_based_on(text, include_text)
 
-        segments: List[TextSegment] = []
+        return ContextManagedGenerator(
+            gen(sorted(self._get_segments_based_on(text, include_text), key=lambda s: s.segment_ref))
+        )
+
+    def _get_segments_based_on(self, text: "ScriptureText", include_text: bool) -> Iterable[TextSegment]:
         with self.get_segments(include_text) as segs:
             for seg in segs:
                 cast(VerseRef, seg.segment_ref).change_versification(text.versification)
-                segments.append(seg)
-
-        segments.sort(key=lambda s: s.segment_ref)
-        return ContextManagedGenerator(gen(segments))
+                yield seg
 
     def _create_text_segments(
         self,

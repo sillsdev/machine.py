@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Iterable, Optional
+from typing import Iterable
 
 from .text_alignment_collection import TextAlignmentCollection
 
@@ -8,10 +8,6 @@ class TextAlignmentCorpus(ABC):
     @property
     @abstractmethod
     def text_alignment_collections(self) -> Iterable[TextAlignmentCollection]:
-        ...
-
-    @abstractmethod
-    def get_text_alignment_collection(self, id: str) -> Optional[TextAlignmentCollection]:
         ...
 
     @abstractmethod
@@ -25,3 +21,6 @@ class TextAlignmentCorpus(ABC):
     @abstractmethod
     def invert(self) -> "TextAlignmentCorpus":
         ...
+
+    def get_text_alignment_collection(self, id: str) -> TextAlignmentCollection:
+        return self[id]

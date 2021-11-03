@@ -3,7 +3,6 @@ from .dbl_bundle_text import DblBundleText
 from .dbl_bundle_text_corpus import DblBundleTextCorpus
 from .dictionary_text_alignment_corpus import DictionaryTextAlignmentCorpus
 from .dictionary_text_corpus import DictionaryTextCorpus
-from .filtered_text import FilteredText
 from .filtered_text_alignment_corpus import FilteredTextAlignmentCorpus
 from .filtered_text_corpus import FilteredTextCorpus
 from .memory_text import MemoryText
@@ -61,7 +60,6 @@ __all__ = [
     "DictionaryTextCorpus",
     "ESCAPE_SPACES",
     "EscapeSpacesTokenProcessor",
-    "FilteredText",
     "FilteredTextAlignmentCorpus",
     "FilteredTextCorpus",
     "LOWERCASE",

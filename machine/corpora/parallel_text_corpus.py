@@ -51,11 +51,7 @@ class ParallelTextCorpus:
         return ContextManagedGenerator(self._get_target_segments())
 
     def invert(self) -> "ParallelTextCorpus":
-        return ParallelTextCorpus(
-            self._target_corpus,
-            self._source_corpus,
-            None if self._text_alignment_corpus is None else self._text_alignment_corpus.invert(),
-        )
+        return ParallelTextCorpus(self._target_corpus, self._source_corpus, self._text_alignment_corpus.invert())
 
     def get_texts(self, all_source_segments: bool = False, all_target_segments: bool = False) -> Iterable[ParallelText]:
         source_text_ids = {t.id for t in self._source_corpus.texts}

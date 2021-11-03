@@ -1,4 +1,4 @@
-from typing import Callable, Iterable, Optional
+from typing import Callable, Iterable
 
 from .text import Text
 from .text_corpus import TextCorpus
@@ -13,17 +13,8 @@ class FilteredTextCorpus(TextCorpus):
     def texts(self) -> Iterable[Text]:
         return (t for t in self._corpus.texts if self._filter(t))
 
-    def get_text(self, id: str) -> Optional[Text]:
-        text = self._corpus.get_text(id)
-        if text is not None and self._filter(text):
-            return text
-        return None
-
     def __getitem__(self, id: str) -> Text:
         text = self._corpus[id]
         if self._filter(text):
             return text
         return self.create_null_text(id)
-
-    def create_null_text(self, id: str) -> Text:
-        return self._corpus.create_null_text(id)

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generator, Iterable, Optional
+from typing import Generator, Iterable
 
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .text import Text
@@ -13,16 +13,15 @@ class TextCorpus(ABC):
         ...
 
     @abstractmethod
-    def get_text(self, id: str) -> Optional[Text]:
-        ...
-
-    @abstractmethod
     def __getitem__(self, id: str) -> Text:
         ...
 
     @abstractmethod
     def create_null_text(self, id: str) -> Text:
         ...
+
+    def get_text(self, id: str) -> Text:
+        return self[id]
 
     def get_segments(self, include_text: bool = True) -> ContextManagedGenerator[TextSegment, None, None]:
         return ContextManagedGenerator(self._get_segments(include_text))

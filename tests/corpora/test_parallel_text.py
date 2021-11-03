@@ -12,7 +12,7 @@ from machine.corpora import (
 def test_segments_no_segments() -> None:
     source_text = MemoryText("text1")
     target_text = MemoryText("text1")
-    parallel_text = ParallelText(source_text, target_text)
+    parallel_text = ParallelText(source_text, target_text, MemoryTextAlignmentCollection("text1"))
     assert not any(parallel_text.segments)
 
 
@@ -283,7 +283,7 @@ def test_segments_range() -> None:
         ],
     )
 
-    parallel_text = ParallelText(source_text, target_text)
+    parallel_text = ParallelText(source_text, target_text, MemoryTextAlignmentCollection("text1"))
     segments = list(parallel_text.segments)
     assert len(segments) == 3
     assert segments[1].source_segment == "source segment 2 . source segment 3 .".split()
@@ -308,7 +308,7 @@ def test_segments_overlapping_ranges() -> None:
         ],
     )
 
-    parallel_text = ParallelText(source_text, target_text)
+    parallel_text = ParallelText(source_text, target_text, MemoryTextAlignmentCollection("text1"))
     segments = list(parallel_text.segments)
     assert len(segments) == 1
     assert segments[0].source_segment == "source segment 1 . source segment 2 . source segment 3 .".split()
@@ -335,7 +335,7 @@ def test_segments_adjacent_ranges_same_text() -> None:
         ],
     )
 
-    parallel_text = ParallelText(source_text, target_text)
+    parallel_text = ParallelText(source_text, target_text, MemoryTextAlignmentCollection("text1"))
     segments = list(parallel_text.segments)
     assert len(segments) == 2
     assert segments[0].source_segment == "source segment 1 . source segment 2 .".split()
@@ -364,7 +364,7 @@ def test_segments_adjacent_ranges_different_texts() -> None:
         ],
     )
 
-    parallel_text = ParallelText(source_text, target_text)
+    parallel_text = ParallelText(source_text, target_text, MemoryTextAlignmentCollection("text1"))
     segments = list(parallel_text.segments)
     assert len(segments) == 2
     assert segments[0].source_segment == "source segment 1 . source segment 2 .".split()
@@ -393,7 +393,7 @@ def test_get_segments_range_all_target_segments() -> None:
         ],
     )
 
-    parallel_text = ParallelText(source_text, target_text)
+    parallel_text = ParallelText(source_text, target_text, MemoryTextAlignmentCollection("text1"))
     segments = list(parallel_text.get_segments(all_target_segments=True))
     assert len(segments) == 4
     assert segments[1].source_segment == "source segment 2 . source segment 3 .".split()
@@ -426,7 +426,7 @@ def test_segments_same_ref_middle_many_to_many() -> None:
         ],
     )
 
-    parallel_text = ParallelText(source_text, target_text)
+    parallel_text = ParallelText(source_text, target_text, MemoryTextAlignmentCollection("text1"))
     segments = list(parallel_text.segments)
     assert len(segments) == 6
     assert segments[1].source_segment == "source segment 2-1 .".split()
@@ -458,7 +458,7 @@ def test_get_segments_same_ref_middle_one_to_many() -> None:
         ],
     )
 
-    parallel_text = ParallelText(source_text, target_text)
+    parallel_text = ParallelText(source_text, target_text, MemoryTextAlignmentCollection("text1"))
     segments = list(parallel_text.get_segments(all_target_segments=True))
     assert len(segments) == 4
     assert segments[1].source_segment == "source segment 2 .".split()
@@ -486,7 +486,7 @@ def test_get_segments_same_ref_middle_many_to_one() -> None:
         ],
     )
 
-    parallel_text = ParallelText(source_text, target_text)
+    parallel_text = ParallelText(source_text, target_text, MemoryTextAlignmentCollection("text1"))
     segments = list(parallel_text.get_segments(all_source_segments=True))
     assert len(segments) == 4
     assert segments[1].source_segment == "source segment 2-1 .".split()
@@ -513,7 +513,7 @@ def test_get_segments_same_ref_last_one_to_many() -> None:
         ],
     )
 
-    parallel_text = ParallelText(source_text, target_text)
+    parallel_text = ParallelText(source_text, target_text, MemoryTextAlignmentCollection("text1"))
     segments = list(parallel_text.get_segments(all_target_segments=True))
     assert len(segments) == 4
     assert segments[1].source_segment == "source segment 2 .".split()
@@ -540,7 +540,7 @@ def test_get_segments_same_ref_last_many_to_one() -> None:
         ],
     )
 
-    parallel_text = ParallelText(source_text, target_text)
+    parallel_text = ParallelText(source_text, target_text, MemoryTextAlignmentCollection("text1"))
     segments = list(parallel_text.get_segments(all_source_segments=True))
     assert len(segments) == 4
     assert segments[1].source_segment == "source segment 2-1 .".split()

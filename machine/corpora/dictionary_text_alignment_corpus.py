@@ -1,4 +1,4 @@
-from typing import Any, Iterable, Optional, overload
+from typing import Any, Iterable, overload
 
 from .null_text_alignment_collection import NullTextAlignmentCollection
 from .text_alignment_collection import TextAlignmentCollection
@@ -23,9 +23,6 @@ class DictionaryTextAlignmentCorpus(TextAlignmentCorpus):
     @property
     def text_alignment_collections(self) -> Iterable[TextAlignmentCollection]:
         return sorted(self._text_alignment_collections.values(), key=lambda tac: tac.sort_key)
-
-    def get_text_alignment_collection(self, id: str) -> Optional[TextAlignmentCollection]:
-        return self._text_alignment_collections.get(id)
 
     def __getitem__(self, id: str) -> TextAlignmentCollection:
         collection = self._text_alignment_collections.get(id)

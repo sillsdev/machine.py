@@ -5,7 +5,6 @@ from ..scripture.verse_ref import VerseRef
 from ..utils.comparable import compare
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .aligned_word_pair import AlignedWordPair
-from .null_text_alignment_collection import NullTextAlignmentCollection
 from .parallel_text_segment import ParallelTextSegment
 from .text import Text
 from .text_alignment import TextAlignment
@@ -47,15 +46,11 @@ class RangeInfo:
 
 class ParallelText:
     def __init__(
-        self, source_text: Text, target_text: Text, text_alignment_collection: Optional[TextAlignmentCollection] = None
+        self, source_text: Text, target_text: Text, text_alignment_collection: TextAlignmentCollection
     ) -> None:
         self._source_text = source_text
         self._target_text = target_text
-        self._text_alignment_collection = (
-            NullTextAlignmentCollection(source_text.id, source_text.sort_key)
-            if text_alignment_collection is None
-            else text_alignment_collection
-        )
+        self._text_alignment_collection = text_alignment_collection
 
     @property
     def id(self) -> str:

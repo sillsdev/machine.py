@@ -5,7 +5,6 @@ from tests.corpora.dbl_bundle_test_environment import DblBundleTestEnvironment
 def test_get_segments_nonempty_text() -> None:
     with DblBundleTestEnvironment() as env:
         text = env.corpus.get_text("MAT")
-        assert text is not None
         segments = list(text.get_segments())
 
         assert len(segments) == 14
@@ -47,7 +46,6 @@ def test_get_segments_nonempty_text() -> None:
 def test_get_segments_sentence_start() -> None:
     with DblBundleTestEnvironment() as env:
         text = env.corpus.get_text("MAT")
-        assert text is not None
         segments = list(text.get_segments())
 
         assert len(segments) == 14
@@ -64,7 +62,6 @@ def test_get_segments_sentence_start() -> None:
 def test_get_segments_empty_text() -> None:
     with DblBundleTestEnvironment() as env:
         text = env.corpus.get_text("MRK")
-        assert text is not None
         segments = list(text.get_segments())
 
         assert len(segments) == 0
