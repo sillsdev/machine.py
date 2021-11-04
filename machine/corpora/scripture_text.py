@@ -1,4 +1,5 @@
-from typing import Iterable, List, Optional, cast
+from abc import abstractmethod
+from typing import Generator, List, Optional, cast
 
 from ..scripture.verse_ref import VerseRef, Versification, VersificationType
 from ..tokenization import Tokenizer
@@ -22,51 +23,42 @@ class ScriptureText(TextBase):
     def versification(self) -> Versification:
         return self._versification
 
-    def get_segments_based_on(
-        self, text: Text, include_text: bool = True
-    ) -> ContextManagedGenerator[TextSegment, None, None]:
-        if not isinstance(text, ScriptureText) or self.versification == text.versification:
-            return super().get_segments_based_on(text, include_text)
-
-        return ContextManagedGenerator(
-            gen(sorted(self._get_segments_based_on(text, include_text), key=lambda s: s.segment_ref))
-        )
-
-    def _get_segments_based_on(self, text: "ScriptureText", include_text: bool) -> Iterable[TextSegment]:
-        with self.get_segments(include_text) as segs:
+    def _get_segments(self, include_text: bool, based_on: Optional[Text]) -> Generator[TextSegment, None, None]:
+        based_on_versification: Optional[Versification] = None
+        if isinstance(based_on, ScriptureText) and self.versification != based_on.versification:
+            based_on_versification = based_on.versification
+        seg_list: List[TextSegment] = []
+        out_of_order = False
+        with ContextManagedGenerator(self._get_segments_in_doc_order(include_text)) as segs:
+            prev_verse_ref = VerseRef()
             for seg in segs:
-                cast(VerseRef, seg.segment_ref).change_versification(text.versification)
-                yield seg
+                if based_on_versification is not None:
+                    cast(VerseRef, seg.segment_ref).change_versification(based_on_versification)
+                seg_list.append(seg)
+                if seg.segment_ref < prev_verse_ref:
+                    out_of_order = True
+                prev_verse_ref = seg.segment_ref
+        if out_of_order:
+            seg_list.sort(key=lambda s: s.segment_ref)
+        return ContextManagedGenerator(gen(seg_list))
+
+    @abstractmethod
+    def _get_segments_in_doc_order(self, include_text: bool) -> Generator[TextSegment, None, None]:
+        ...
 
     def _create_text_segments(
-        self,
-        include_text: bool,
-        prev_verse_ref: VerseRef,
-        chapter: str,
-        verse: str,
-        text: str,
-        is_sentence_start: bool = True,
-    ) -> Iterable[TextSegment]:
+        self, include_text: bool, chapter: str, verse: str, text: str, is_sentence_start: bool = True
+    ) -> Generator[TextSegment, None, None]:
         verse_ref = VerseRef(self.id, chapter, verse, self._versification)
-        if verse_ref <= prev_verse_ref:
-            return []
-
-        segments: List[TextSegment] = []
         if verse_ref.has_multiple:
             first_verse = True
             for vref in verse_ref.all_verses():
                 if first_verse:
-                    segments.append(
-                        self._create_text_segment(
-                            include_text, text, vref, is_sentence_start, is_in_range=True, is_range_start=True
-                        )
+                    yield self._create_text_segment(
+                        include_text, text, vref, is_sentence_start, is_in_range=True, is_range_start=True
                     )
                     first_verse = False
                 else:
-                    segments.append(self._create_empty_text_segment(vref, is_in_range=True))
+                    yield self._create_empty_text_segment(vref, is_in_range=True)
         else:
-            segments.append(self._create_text_segment(include_text, text, verse_ref, is_sentence_start))
-
-        prev_verse_ref.copy_from(verse_ref)
-
-        return segments
+            yield self._create_text_segment(include_text, text, verse_ref, is_sentence_start)

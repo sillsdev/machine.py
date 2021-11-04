@@ -1,9 +1,10 @@
 from pathlib import Path
-from typing import Generator
+from typing import Generator, Optional
 
 from ..tokenization.tokenizer import Tokenizer
 from ..utils.string_utils import is_integer
 from ..utils.typeshed import StrPath
+from .text import Text
 from .text_base import TextBase
 from .text_segment import TextSegment
 from .text_segment_ref import TextSegmentRef
@@ -18,7 +19,7 @@ class TextFileText(TextBase):
     def filename(self) -> Path:
         return self._filename
 
-    def _get_segments(self, include_text: bool) -> Generator[TextSegment, None, None]:
+    def _get_segments(self, include_text: bool, based_on: Optional[Text]) -> Generator[TextSegment, None, None]:
         with open(self._filename, "r", encoding="utf-8-sig") as file:
             section_num = 1
             segment_num = 1

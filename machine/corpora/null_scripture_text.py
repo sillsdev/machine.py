@@ -6,5 +6,5 @@ from .text_segment import TextSegment
 
 
 class NullScriptureText(ScriptureText):
-    def _get_segments(self, include_text: bool) -> Generator[TextSegment, None, None]:
+    def _get_segments_in_doc_order(self, include_text: bool) -> Generator[TextSegment, None, None]:
         return gen()

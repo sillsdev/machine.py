@@ -138,7 +138,7 @@ def test_get_segments_based_on() -> None:
     based_on_text = NullScriptureText(tokenizer, "MAT", ORIGINAL_VERSIFICATION)
 
     text = corpus.get_text("MAT")
-    segments = list(text.get_segments_based_on(based_on_text))
+    segments = list(text.get_segments(based_on=based_on_text))
 
     assert len(segments) == 14
 

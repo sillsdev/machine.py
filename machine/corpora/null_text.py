@@ -1,3 +1,5 @@
+from typing import Optional
+
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .corpora_helpers import gen
 from .text import Text
@@ -17,10 +19,7 @@ class NullText(Text):
     def sort_key(self) -> str:
         return self._sort_key
 
-    def get_segments(self, include_text: bool = True) -> ContextManagedGenerator[TextSegment, None, None]:
-        return ContextManagedGenerator(gen())
-
-    def get_segments_based_on(
-        self, text: Text, include_text: bool = True
+    def get_segments(
+        self, include_text: bool = True, based_on: Optional[Text] = None
     ) -> ContextManagedGenerator[TextSegment, None, None]:
-        return self.get_segments(include_text)
+        return ContextManagedGenerator(gen())

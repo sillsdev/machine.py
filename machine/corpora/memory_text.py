@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Iterable, Optional
 
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .corpora_helpers import gen
@@ -19,10 +19,7 @@ class MemoryText(Text):
     def sort_key(self) -> str:
         return self._id
 
-    def get_segments(self, include_text: bool = True) -> ContextManagedGenerator[TextSegment, None, None]:
-        return ContextManagedGenerator(gen(self._segments))
-
-    def get_segments_based_on(
-        self, text: Text, include_text: bool = True
+    def get_segments(
+        self, include_text: bool = True, based_on: Optional[Text] = None
     ) -> ContextManagedGenerator[TextSegment, None, None]:
-        return self.get_segments(include_text)
+        return ContextManagedGenerator(gen(self._segments))
