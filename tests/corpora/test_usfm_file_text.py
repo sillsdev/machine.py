@@ -3,12 +3,12 @@ from io import StringIO
 from machine.corpora import NullScriptureText, UsfmFileTextCorpus
 from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, VerseRef, Versification
 from machine.tokenization import NullTokenizer
-from tests.corpora.corpora_test_helpers import USFM_STYLESHEET_PATH, USFM_TEST_PROJECT_PATH
+from tests.corpora.corpora_test_helpers import USFM_TEST_PROJECT_PATH
 
 
 def test_get_segments_nonempty_text() -> None:
     tokenizer = NullTokenizer()
-    corpus = UsfmFileTextCorpus(tokenizer, USFM_STYLESHEET_PATH, "utf-8-sig", USFM_TEST_PROJECT_PATH)
+    corpus = UsfmFileTextCorpus(tokenizer, "usfm.sty", "utf-8-sig", USFM_TEST_PROJECT_PATH)
 
     text = corpus.get_text("MAT")
     segments = list(text.get_segments())
@@ -51,7 +51,7 @@ def test_get_segments_nonempty_text() -> None:
 
 def test_get_segments_sentence_start() -> None:
     tokenizer = NullTokenizer()
-    corpus = UsfmFileTextCorpus(tokenizer, USFM_STYLESHEET_PATH, "utf-8-sig", USFM_TEST_PROJECT_PATH)
+    corpus = UsfmFileTextCorpus(tokenizer, "usfm.sty", "utf-8-sig", USFM_TEST_PROJECT_PATH)
 
     text = corpus.get_text("MAT")
     segments = list(text.get_segments())
@@ -69,7 +69,7 @@ def test_get_segments_sentence_start() -> None:
 
 def test_get_segments_empty_text() -> None:
     tokenizer = NullTokenizer()
-    corpus = UsfmFileTextCorpus(tokenizer, USFM_STYLESHEET_PATH, "utf-8-sig", USFM_TEST_PROJECT_PATH)
+    corpus = UsfmFileTextCorpus(tokenizer, "usfm.sty", "utf-8-sig", USFM_TEST_PROJECT_PATH)
 
     text = corpus.get_text("MRK")
     segments = list(text.get_segments())
@@ -79,9 +79,7 @@ def test_get_segments_empty_text() -> None:
 
 def test_get_segments_include_markers() -> None:
     tokenizer = NullTokenizer()
-    corpus = UsfmFileTextCorpus(
-        tokenizer, USFM_STYLESHEET_PATH, "utf-8-sig", USFM_TEST_PROJECT_PATH, include_markers=True
-    )
+    corpus = UsfmFileTextCorpus(tokenizer, "usfm.sty", "utf-8-sig", USFM_TEST_PROJECT_PATH, include_markers=True)
 
     text = corpus.get_text("MAT")
     segments = list(text.get_segments())
@@ -119,7 +117,7 @@ def test_get_segments_include_markers() -> None:
     assert segments[9].segment[0] == "Chapter two, verse four."
 
     assert segments[10].segment_ref == VerseRef.from_string("MAT 2:5", corpus.versification)
-    assert segments[10].segment[0] == "Chapter two, verse five."
+    assert segments[10].segment[0] == "Chapter two, verse five \\rq (MAT 3:1)\\rq*."
 
     assert segments[11].segment_ref == VerseRef.from_string("MAT 2:6", corpus.versification)
     assert segments[11].segment[0] == 'Chapter two, verse \\w six|strong="12345" \\w*.'
@@ -133,7 +131,7 @@ def test_get_segments_based_on() -> None:
     versification = Versification("custom", "vers.txt", ENGLISH_VERSIFICATION)
     versification = Versification.parse(stream, "vers.txt", versification, "custom")
 
-    corpus = UsfmFileTextCorpus(tokenizer, USFM_STYLESHEET_PATH, "utf-8-sig", USFM_TEST_PROJECT_PATH, versification)
+    corpus = UsfmFileTextCorpus(tokenizer, "usfm.sty", "utf-8-sig", USFM_TEST_PROJECT_PATH, versification)
 
     based_on_text = NullScriptureText(tokenizer, "MAT", ORIGINAL_VERSIFICATION)
 

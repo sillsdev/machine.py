@@ -63,8 +63,12 @@ class UsxVerseParser:
                 else:
                     ctxt.verse = verse
             elif e.tag == "char":
-                for evt in self._parse_element(e, ctxt):
-                    yield evt
+                if e.get("style", "") == "rq":
+                    if ctxt.chapter is not None and ctxt.verse is not None:
+                        ctxt.add_token("", e)
+                else:
+                    for evt in self._parse_element(e, ctxt):
+                        yield evt
             elif e.tag == "wg":
                 if e.text is not None and ctxt.chapter is not None and ctxt.verse is not None:
                     ctxt.add_token(e.text, e)

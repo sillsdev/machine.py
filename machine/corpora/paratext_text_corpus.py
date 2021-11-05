@@ -46,7 +46,10 @@ class ParatextTextCorpus(ScriptureTextCorpus):
         stylesheet_filename = project_dir / stylesheet_name
         if not stylesheet_filename.is_file() and stylesheet_name != "usfm_sb.sty":
             stylesheet_filename = project_dir / "usfm.sty"
-        stylesheet = UsfmStylesheet(stylesheet_filename)
+        custom_stylesheet_filename = project_dir / "custom.sty"
+        stylesheet = UsfmStylesheet(
+            stylesheet_filename, custom_stylesheet_filename if custom_stylesheet_filename.is_file() else None
+        )
 
         prefix = ""
         suffix = ".SFM"

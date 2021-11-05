@@ -14,8 +14,11 @@ class UsxVerse:
         text = ""
         ends_with_space = False
         for token in self._tokens:
-            if token.element is not None and token.element.tag == "figure" and not ends_with_space:
-                text += " "
+            if token.element is not None:
+                if token.element.tag == "figure" and not ends_with_space:
+                    text += " "
+                if token.element.get("style", "") == "rq":
+                    text = text.rstrip()
 
             if len(token.text) == 0 or token.text.isspace():
                 continue

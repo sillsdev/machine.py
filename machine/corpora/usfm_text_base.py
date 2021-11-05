@@ -9,7 +9,7 @@ from .corpora_helpers import merge_verse_ranges
 from .scripture_text import ScriptureText
 from .stream_container import StreamContainer
 from .text_segment import TextSegment
-from .usfm_marker import UsfmMarker
+from .usfm_marker import UsfmMarker, UsfmTextType
 from .usfm_parser import UsfmParser
 from .usfm_stylesheet import UsfmStylesheet
 from .usfm_token import UsfmToken, UsfmTokenType
@@ -38,7 +38,7 @@ class UsfmTextBase(ScriptureText):
     def _get_segments_in_doc_order(self, include_text: bool) -> Generator[TextSegment, None, None]:
         usfm = self._read_usfm()
         cur_embed_marker: Optional[UsfmMarker] = None
-        in_wordlist_marker = False
+        cur_span_marker: Optional[UsfmMarker] = None
         text = ""
         chapter: Optional[str] = None
         verse: Optional[str] = None
@@ -89,16 +89,18 @@ class UsfmTextBase(ScriptureText):
                 assert token.marker is not None
                 if cur_embed_marker is not None and token.marker.marker == cur_embed_marker.end_marker:
                     cur_embed_marker = None
-                if in_wordlist_marker and token.marker.marker == "w*":
-                    in_wordlist_marker = False
+                if cur_span_marker is not None and token.marker.marker == cur_span_marker.end_marker:
+                    cur_span_marker = None
                 if is_verse_para and chapter is not None and verse is not None and self._include_markers:
                     text += str(token)
             elif token.type == UsfmTokenType.CHARACTER:
                 assert token.marker is not None
-                if token.marker.marker == "fig" or token.marker.marker == "va" or token.marker.marker == "vp":
+                if token.marker.marker in {"w", "jmp"}:
+                    cur_span_marker = token.marker
+                elif token.marker.marker != "qac" and token.marker.text_type == UsfmTextType.OTHER:
                     cur_embed_marker = token.marker
-                elif token.marker.marker == "w":
-                    in_wordlist_marker = True
+                    if not self._include_markers:
+                        text = text.rstrip()
                 if is_verse_para and chapter is not None and verse is not None and self._include_markers:
                     if (
                         prev_token is not None
@@ -126,17 +128,10 @@ class UsfmTextBase(ScriptureText):
                         text += str(token)
                     elif cur_embed_marker is None:
                         token_text = token.text
-                        if in_wordlist_marker:
+                        if cur_span_marker is not None:
                             index = token_text.find("|")
                             if index >= 0:
                                 token_text = token_text[:index]
-
-                        if (
-                            prev_token is not None
-                            and prev_token.type == UsfmTokenType.END
-                            and (text == "" or text[-1].isspace())
-                        ):
-                            token_text = token_text.lstrip()
                         text += token_text
             prev_token = token
 
