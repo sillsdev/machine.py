@@ -99,7 +99,7 @@ class UsfmTextBase(ScriptureText):
                     cur_span_marker = token.marker
                 elif token.marker.marker != "qac" and token.marker.text_type == UsfmTextType.OTHER:
                     cur_embed_marker = token.marker
-                    if not self._include_markers:
+                    if not self._include_markers and token.marker.marker == "rq":
                         text = text.rstrip()
                 if is_verse_para and chapter is not None and verse is not None and self._include_markers:
                     if (
@@ -132,6 +132,13 @@ class UsfmTextBase(ScriptureText):
                             index = token_text.find("|")
                             if index >= 0:
                                 token_text = token_text[:index]
+
+                        if (
+                            prev_token is not None
+                            and prev_token.type == UsfmTokenType.END
+                            and (text == "" or text[-1].isspace())
+                        ):
+                            token_text = token_text.lstrip()
                         text += token_text
             prev_token = token
 

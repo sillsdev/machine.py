@@ -90,7 +90,7 @@ def test_get_segments_include_markers() -> None:
     assert segments[0].segment[0] == "Chapter one, verse one.\\f + \\fr 1:1: \\ft This is a footnote.\\f*"
 
     assert segments[1].segment_ref == VerseRef.from_string("MAT 1:2", corpus.versification)
-    assert segments[1].segment[0] == "Chapter one, \\li2 verse two."
+    assert segments[1].segment[0] == "Chapter one, \\li2 verse\\f + \\fr 1:2: \\ft This is a footnote.\\f* two."
 
     assert segments[4].segment_ref == VerseRef.from_string("MAT 1:5", corpus.versification)
     assert (
@@ -99,10 +99,10 @@ def test_get_segments_include_markers() -> None:
     )
 
     assert segments[5].segment_ref == VerseRef.from_string("MAT 2:1", corpus.versification)
-    assert segments[5].segment[0] == "Chapter \\add two\\add*, verse\\f + \\fr 2:1: \\ft This is a footnote.\\f* one."
+    assert segments[5].segment[0] == "Chapter \\add two\\add*, verse \\f + \\fr 2:1: \\ft This is a footnote.\\f*one."
 
     assert segments[6].segment_ref == VerseRef.from_string("MAT 2:2", corpus.versification)
-    assert segments[6].segment[0] == "Chapter two, verse two. Chapter two, verse three."
+    assert segments[6].segment[0] == "Chapter two, verse \\fm ∆\\fm*two. Chapter two, verse three."
     assert segments[6].is_in_range
 
     assert segments[7].segment_ref == VerseRef.from_string("MAT 2:3", corpus.versification)
