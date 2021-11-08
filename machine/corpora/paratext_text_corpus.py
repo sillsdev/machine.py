@@ -15,14 +15,16 @@ class ParatextTextCorpus(ScriptureTextCorpus):
     def __init__(
         self, word_tokenizer: Tokenizer[str, int, str], project_dir: StrPath, include_markers: bool = False
     ) -> None:
-        project_dir = Path(project_dir)
+        if not isinstance(project_dir, Path):
+            project_dir = Path(project_dir)
         settings_filename = project_dir / "Settings.xml"
         if not settings_filename.is_file():
             settings_filename = next(project_dir.glob("*.ssf"), Path())
         if not settings_filename.is_file():
             raise RuntimeError("The project directory does not contain a settings file.")
 
-        settings_tree = etree.parse(str(settings_filename))
+        with settings_filename.open("rb") as settings_file:
+            settings_tree = etree.parse(settings_file)
 
         encoding_str = settings_tree.getroot().findtext("Encoding", "65001")
         code_page = parse_integer(encoding_str)
