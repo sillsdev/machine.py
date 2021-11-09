@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Dict, List, Optional, TextIO, Tuple
 
+from ..utils.file_utils import detect_encoding
 from ..utils.string_utils import parse_integer
 from ..utils.typeshed import StrPath
 from .usfm_marker import UsfmJustification, UsfmMarker, UsfmStyleType, UsfmTextProperties, UsfmTextType
@@ -9,9 +10,13 @@ from .usfm_marker import UsfmJustification, UsfmMarker, UsfmStyleType, UsfmTextP
 class UsfmStylesheet:
     def __init__(self, filename: StrPath, alternate_filename: Optional[StrPath] = None) -> None:
         self._markers: Dict[str, UsfmMarker] = {}
-        self._parse(Path(filename))
+        self._parse(filename)
         if alternate_filename is not None:
-            self._parse(Path(alternate_filename))
+            try:
+                self._parse(alternate_filename)
+            except UnicodeDecodeError:
+                encoding = detect_encoding(alternate_filename)
+                self._parse(alternate_filename, encoding)
 
     def get_marker(self, marker_str: str) -> UsfmMarker:
         marker = self._markers.get(marker_str)
@@ -20,7 +25,9 @@ class UsfmStylesheet:
             marker.style_type = UsfmStyleType.UNKNOWN
         return marker
 
-    def _parse(self, filename: Path) -> None:
+    def _parse(self, filename: StrPath, encoding: str = "utf-8-sig") -> None:
+        if not isinstance(filename, Path):
+            filename = Path(filename)
         if not filename.is_file():
             name = filename.name
             if name == "usfm.sty" or name == "usfm_sb.sty":
@@ -28,7 +35,7 @@ class UsfmStylesheet:
             else:
                 raise FileNotFoundError("The stylesheet does not exist.")
 
-        with open(filename, "r", encoding="utf-8-sig") as stream:
+        with filename.open("r", encoding=encoding) as stream:
             entries = _split_stylesheet(stream)
 
         for i in range(len(entries)):

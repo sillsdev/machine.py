@@ -4,9 +4,9 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Set, TextIO, Tuple, Union
 
 import regex as re
-from chardet import UniversalDetector
 
 from ..utils.comparable import Comparable
+from ..utils.file_utils import detect_encoding
 from ..utils.string_utils import is_integer, parse_integer
 from ..utils.typeshed import StrPath
 from .canon import LAST_BOOK, book_id_to_number, book_number_to_id, is_canonical
@@ -581,7 +581,7 @@ class Versification:
         try:
             return cls._load(filename, base_versification, fallback_name, "utf-8-sig")
         except UnicodeDecodeError:
-            encoding = _detect_encoding(filename)
+            encoding = detect_encoding(filename)
             return cls._load(filename, base_versification, fallback_name, encoding)
 
     @classmethod
@@ -1135,13 +1135,3 @@ def _parse_verse_segments_line(versification: Versification, parsed_line: _Versi
         versification.verse_segments[bbbcccvvv] = segment_set
     except ValueError as e:
         raise _syntax_error("invalid verse reference " + str(e), parsed_line.line_num)
-
-
-def _detect_encoding(filename: StrPath) -> str:
-    detector = UniversalDetector()
-    with open(filename, "rb") as file:
-        for line in file:
-            detector.feed(line)
-            if detector.done:
-                break
-    return detector.close()["encoding"]
