@@ -97,7 +97,9 @@ class UsfmTextBase(ScriptureText):
                 assert token.marker is not None
                 if token.marker.marker in {"w", "jmp"}:
                     cur_span_marker = token.marker
-                elif token.marker.marker != "qac" and token.marker.text_type == UsfmTextType.OTHER:
+                elif token.marker.marker != "qac" and (
+                    token.marker.text_type == UsfmTextType.OTHER or token.marker.marker in {"fig", "va", "vp"}
+                ):
                     cur_embed_marker = token.marker
                     if not self._include_markers and token.marker.marker == "rq":
                         text = text.rstrip()
