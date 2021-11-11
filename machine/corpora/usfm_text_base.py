@@ -95,10 +95,10 @@ class UsfmTextBase(ScriptureText):
                     text += str(token)
             elif token.type == UsfmTokenType.CHARACTER:
                 assert token.marker is not None
-                if token.marker.marker in {"w", "jmp"}:
+                if token.marker.marker in _SPAN_MARKERS:
                     cur_span_marker = token.marker
                 elif token.marker.marker != "qac" and (
-                    token.marker.text_type == UsfmTextType.OTHER or token.marker.marker in {"fig", "va", "vp"}
+                    token.marker.text_type == UsfmTextType.OTHER or token.marker.marker in _EMBED_MARKERS
                 ):
                     cur_embed_marker = token.marker
                     if not self._include_markers and token.marker.marker == "rq":
@@ -155,6 +155,10 @@ class UsfmTextBase(ScriptureText):
 
 
 _NONVERSE_PARA_STYLES = {"ms", "mr", "s", "sr", "r", "d", "sp", "rem", "restore", "cl", "cp"}
+
+_SPAN_MARKERS = {"w", "jmp"}
+
+_EMBED_MARKERS = {"fig", "va", "vp", "pro", "rq", "fm"}
 
 
 def _is_numbered_style(style_prefix: str, style: str) -> bool:

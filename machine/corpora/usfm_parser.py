@@ -59,11 +59,12 @@ class UsfmParser:
                 while index < len(usfm) and _is_nonsemantic_whitespace(usfm[index]):
                     index += 1
 
+            is_nested = marker_str.startswith("+")
             # Lookup marker
             marker = self._stylesheet.get_marker(marker_str.lstrip("+"))
 
             # If starts with a plus and is not a character style, it is an unknown marker
-            if marker_str.startswith("+") and marker.style_type != UsfmStyleType.CHARACTER:
+            if is_nested and marker.style_type != UsfmStyleType.CHARACTER and marker.style_type != UsfmStyleType.END:
                 marker = self._stylesheet.get_marker(marker_str)
 
             if marker.style_type == UsfmStyleType.CHARACTER:
@@ -71,7 +72,7 @@ class UsfmParser:
                     index, text = _get_next_word(usfm, index, preserve_whitespace)
                     tokens.append(UsfmToken(UsfmTokenType.VERSE, marker, text))
                 else:
-                    tokens.append(UsfmToken(UsfmTokenType.CHARACTER, marker, None))
+                    tokens.append(UsfmToken(UsfmTokenType.CHARACTER, marker, None, is_nested))
             elif marker.style_type == UsfmStyleType.PARAGRAPH:
                 # Handle chapter special case
                 if (marker.text_properties & UsfmTextProperties.CHAPTER) == UsfmTextProperties.CHAPTER:
@@ -86,11 +87,11 @@ class UsfmParser:
                 index, text = _get_next_word(usfm, index, preserve_whitespace)
                 tokens.append(UsfmToken(UsfmTokenType.NOTE, marker, text))
             elif marker.style_type == UsfmStyleType.END:
-                tokens.append(UsfmToken(UsfmTokenType.END, marker, None))
+                tokens.append(UsfmToken(UsfmTokenType.END, marker, None, is_nested))
             elif marker.style_type == UsfmStyleType.UNKNOWN:
                 # End tokens are always end tokens, even if unknown
                 if marker_str.endswith("*"):
-                    tokens.append(UsfmToken(UsfmTokenType.END, marker, None))
+                    tokens.append(UsfmToken(UsfmTokenType.END, marker, None, is_nested))
                 # Handle special case of esb and esbe which might not be in basic stylesheet but are always sidebars
                 # and so should be tokenized as paragraphs
                 elif marker_str == "esb" or marker_str == "esbe":

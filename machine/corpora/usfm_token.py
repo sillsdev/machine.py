@@ -22,11 +22,12 @@ class UsfmToken:
     type: UsfmTokenType
     marker: Optional[UsfmMarker]
     text: Optional[str]
+    is_nested: bool = False
 
     def __repr__(self) -> str:
         string = ""
         if self.marker is not None:
-            string += str(self.marker)
+            string += f"\\+{self.marker.marker}" if self.is_nested else str(self.marker)
         if self.text is not None and self.text != "":
             if len(string) > 0:
                 string += " "

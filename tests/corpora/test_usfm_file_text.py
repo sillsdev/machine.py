@@ -87,7 +87,10 @@ def test_get_segments_include_markers() -> None:
     assert len(segments) == 14
 
     assert segments[0].segment_ref == VerseRef.from_string("MAT 1:1", corpus.versification)
-    assert segments[0].segment[0] == "Chapter one, verse one.\\f + \\fr 1:1: \\ft This is a footnote.\\f*"
+    assert (
+        segments[0].segment[0]
+        == "Chapter \\pn one\\+pro WON\\+pro*\\pn*, verse one.\\f + \\fr 1:1: \\ft This is a footnote.\\f*"
+    )
 
     assert segments[1].segment_ref == VerseRef.from_string("MAT 1:2", corpus.versification)
     assert segments[1].segment[0] == "Chapter one, \\li2 verse\\f + \\fr 1:2: \\ft This is a footnote.\\f* two."
