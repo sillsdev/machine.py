@@ -58,6 +58,7 @@ numpy = "^1.19.0"
 sortedcontainers = "^2.4.0"
 sil-thot = "^3.3.5"
 chardet = "^4.0.0"
+networkx = "^2.6.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
