@@ -20,7 +20,7 @@ def test_segments_no_missing_segments() -> None:
     source_text = MemoryText(
         "text1",
         [
-            segment(1, "source segment 1 ."),
+            segment(1, "source segment 1 .", is_sentence_start=False),
             segment(2, "source segment 2 ."),
             segment(3, "source segment 3 ."),
         ],
@@ -30,7 +30,7 @@ def test_segments_no_missing_segments() -> None:
         [
             segment(1, "target segment 1 ."),
             segment(2, "target segment 2 ."),
-            segment(3, "target segment 3 ."),
+            segment(3, "target segment 3 .", is_sentence_start=False),
         ],
     )
     alignments = MemoryTextAlignmentCollection(
@@ -47,9 +47,13 @@ def test_segments_no_missing_segments() -> None:
     assert len(segments) == 3
     assert segments[0].source_segment == "source segment 1 .".split()
     assert segments[0].target_segment == "target segment 1 .".split()
+    assert not segments[0].is_source_sentence_start
+    assert segments[0].is_target_sentence_start
     assert segments[0].aligned_word_pairs == {AlignedWordPair(0, 0)}
     assert segments[2].source_segment == "source segment 3 .".split()
     assert segments[2].target_segment == "target segment 3 .".split()
+    assert segments[2].is_source_sentence_start
+    assert not segments[2].is_target_sentence_start
     assert segments[2].aligned_word_pairs == {AlignedWordPair(2, 2)}
 
 
@@ -268,7 +272,13 @@ def test_segments_range() -> None:
         "text1",
         [
             segment(1, "source segment 1 ."),
-            segment(2, "source segment 2 . source segment 3 .", is_in_range=True, is_range_start=True),
+            segment(
+                2,
+                "source segment 2 . source segment 3 .",
+                is_sentence_start=False,
+                is_in_range=True,
+                is_range_start=True,
+            ),
             segment(3, is_in_range=True),
             segment(4, "source segment 4 ."),
         ],
@@ -288,6 +298,8 @@ def test_segments_range() -> None:
     assert len(segments) == 3
     assert segments[1].source_segment == "source segment 2 . source segment 3 .".split()
     assert segments[1].target_segment == "target segment 2 . target segment 3 .".split()
+    assert not segments[1].is_source_sentence_start
+    assert segments[1].is_target_sentence_start
 
 
 def test_segments_overlapping_ranges() -> None:
@@ -313,13 +325,21 @@ def test_segments_overlapping_ranges() -> None:
     assert len(segments) == 1
     assert segments[0].source_segment == "source segment 1 . source segment 2 . source segment 3 .".split()
     assert segments[0].target_segment == "target segment 1 . target segment 2 . target segment 3 .".split()
+    assert segments[0].is_source_sentence_start
+    assert segments[0].is_target_sentence_start
 
 
 def test_segments_adjacent_ranges_same_text() -> None:
     source_text = MemoryText(
         "text1",
         [
-            segment(1, "source segment 1 . source segment 2 .", is_in_range=True, is_range_start=True),
+            segment(
+                1,
+                "source segment 1 . source segment 2 .",
+                is_sentence_start=False,
+                is_in_range=True,
+                is_range_start=True,
+            ),
             segment(2, is_in_range=True),
             segment(3, "source segment 3 . source segment 4 .", is_in_range=True, is_range_start=True),
             segment(4, is_in_range=True),
@@ -328,7 +348,7 @@ def test_segments_adjacent_ranges_same_text() -> None:
     target_text = MemoryText(
         "text1",
         [
-            segment(1, "target segment 1 ."),
+            segment(1, "target segment 1 .", is_sentence_start=False),
             segment(2, "target segment 2 ."),
             segment(3, "target segment 3 ."),
             segment(4, "target segment 4 ."),
@@ -340,8 +360,12 @@ def test_segments_adjacent_ranges_same_text() -> None:
     assert len(segments) == 2
     assert segments[0].source_segment == "source segment 1 . source segment 2 .".split()
     assert segments[0].target_segment == "target segment 1 . target segment 2 .".split()
+    assert not segments[0].is_source_sentence_start
+    assert not segments[0].is_target_sentence_start
     assert segments[1].source_segment == "source segment 3 . source segment 4 .".split()
     assert segments[1].target_segment == "target segment 3 . target segment 4 .".split()
+    assert segments[1].is_source_sentence_start
+    assert segments[1].is_target_sentence_start
 
 
 def test_segments_adjacent_ranges_different_texts() -> None:
@@ -549,12 +573,14 @@ def test_get_segments_same_ref_last_many_to_one() -> None:
     assert segments[2].target_segment == "target segment 2 .".split()
 
 
-def segment(key: int, text: str = "", is_in_range: bool = False, is_range_start: bool = False) -> TextSegment:
+def segment(
+    key: int, text: str = "", is_sentence_start: bool = True, is_in_range: bool = False, is_range_start: bool = False
+) -> TextSegment:
     return TextSegment(
         "text1",
         TextSegmentRef(key),
         [] if len(text) == 0 else text.split(),
-        is_sentence_start=True,
+        is_sentence_start=is_sentence_start,
         is_in_range=is_in_range,
         is_range_start=is_range_start,
         is_empty=len(text) == 0,

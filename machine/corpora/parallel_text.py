@@ -18,6 +18,8 @@ class RangeInfo:
     segment_ref: Optional[object] = field(default=None, init=False)
     source_segment: List[str] = field(default_factory=list, init=False)
     target_segment: List[str] = field(default_factory=list, init=False)
+    is_source_sentence_start: bool = field(default=False, init=False)
+    is_target_sentence_start: bool = field(default=False, init=False)
     is_source_empty: bool = field(default=True, init=False)
     is_target_empty: bool = field(default=True, init=False)
 
@@ -32,8 +34,10 @@ class RangeInfo:
             self.source_segment.copy(),
             self.target_segment.copy(),
             aligned_word_pairs=None,
+            is_source_sentence_start=self.is_source_sentence_start,
             is_source_in_range=False,
             is_source_range_start=False,
+            is_target_sentence_start=self.is_target_sentence_start,
             is_target_in_range=False,
             is_target_range_start=False,
             is_empty=self.is_source_empty or self.is_target_empty,
@@ -41,6 +45,10 @@ class RangeInfo:
         self.segment_ref = None
         self.source_segment.clear()
         self.target_segment.clear()
+        self.is_source_sentence_start = False
+        self.is_target_sentence_start = False
+        self.is_source_empty = True
+        self.is_target_empty = True
         return seg
 
 
@@ -144,8 +152,10 @@ class ParallelText:
                         range_info.target_segment.extend(trg_segment.segment)
                         if range_info.is_source_empty:
                             range_info.is_source_empty = src_segment.is_empty
+                            range_info.is_source_sentence_start = src_segment.is_sentence_start
                         if range_info.is_target_empty:
                             range_info.is_target_empty = trg_segment.is_empty
+                            range_info.is_target_sentence_start = trg_segment.is_sentence_start
                     else:
                         if _check_same_ref_segments(source_same_ref_segments, trg_segment):
                             for prev_source_segment in source_same_ref_segments:
@@ -214,8 +224,10 @@ class ParallelText:
             [] if src_seg is None else src_seg.segment,
             [] if trg_seg is None else trg_seg.segment,
             aligned_word_pairs,
+            src_seg is not None and src_seg.is_sentence_start,
             src_seg is not None and src_seg.is_in_range,
             src_seg is not None and src_seg.is_range_start,
+            trg_seg is not None and trg_seg.is_sentence_start,
             trg_seg is not None and trg_seg.is_in_range,
             trg_seg is not None and trg_seg.is_range_start,
             src_seg is None or src_seg.is_empty or trg_seg is None or trg_seg.is_empty,
