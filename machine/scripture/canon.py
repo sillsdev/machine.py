@@ -164,6 +164,7 @@ def book_id_to_number(id: str) -> int:
 def get_books(books: Union[str, List[str]]) -> Set[int]:
     if isinstance(books, str):
         books = books.split(",")
+    books = [book.strip("*") for book in books]
     book_set: Set[int] = set()
     for book_id in books:
         book_id = book_id.strip().upper()
