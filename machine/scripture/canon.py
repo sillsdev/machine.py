@@ -166,7 +166,7 @@ def get_books(books: Union[str, List[str]]) -> Set[int]:
         books = books.split(",")
     book_set: Set[int] = set()
     for book_id in books:
-        book_id = book_id.strip().upper()
+        book_id = book_id.strip().strip("*").upper()
         if book_id == "NT":
             book_set.update(range(40, 67))
         elif book_id == "OT":
