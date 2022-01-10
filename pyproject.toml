@@ -59,6 +59,7 @@ sortedcontainers = "^2.4.0"
 sil-thot = "^3.3.5"
 chardet = "^4.0.0"
 networkx = "^2.6.3"
+sentencepiece = "^0.1.95"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
@@ -68,6 +69,7 @@ isort = "^5.9.3"
 pytest-mockito = "^0.0.4"
 
 [tool.poetry.extras]
+sentencepiece = ["sentencepiece"]
 thot = ["sil-thot"]
 
 [build-system]

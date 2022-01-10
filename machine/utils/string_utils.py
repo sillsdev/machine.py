@@ -47,6 +47,11 @@ def is_control(c: str) -> bool:
     return category == "Cc"
 
 
+def is_currency_symbol(c: str) -> bool:
+    category = unicodedata.category(c)
+    return category == "Sc"
+
+
 def is_integer(s: str) -> bool:
     try:
         int(s)

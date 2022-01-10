@@ -1,7 +1,9 @@
 try:
     import thot  # noqa: F401
 except ImportError:
-    raise RuntimeError('sil-machine must be installed with the "thot" extra in order to use Thot classes.')
+    raise RuntimeError(
+        'sil-machine must be installed with the "thot" extra in order to use the machine.translation.thot package.'
+    )
 
 from .thot_fast_align_word_alignment_model import ThotFastAlignWordAlignmentModel
 from .thot_hmm_word_alignment_model import ThotHmmWordAlignmentModel
