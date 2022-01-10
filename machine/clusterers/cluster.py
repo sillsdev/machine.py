@@ -9,7 +9,7 @@ class Cluster(Generic[T]):
         ...
 
     @overload
-    def __init__(self, data_objects: Iterable[T] = [], noise: bool = False, description: Optional[str] = None) -> None:
+    def __init__(self, data_objects: Iterable[T], noise: bool = False, description: Optional[str] = None) -> None:
         ...
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
