@@ -1,8 +1,8 @@
 from pytest import approx
+from translation.thot.thot_test_helpers import TOY_CORPUS_FAST_ALIGN_PATH
 
 from machine.translation import WordAlignmentMatrix
 from machine.translation.thot import ThotFastAlignWordAlignmentModel, ThotSymmetrizedWordAlignmentModel
-from tests.translation.thot.thot_test_helpers import TOY_CORPUS_FAST_ALIGN_PATH
 
 DIRECT_MODEL_PATH = TOY_CORPUS_FAST_ALIGN_PATH / "tm" / "src_trg_invswm"
 INVERSE_MODEL_PATH = TOY_CORPUS_FAST_ALIGN_PATH / "tm" / "src_trg_swm"

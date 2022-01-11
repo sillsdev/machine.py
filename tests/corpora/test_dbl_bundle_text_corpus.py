@@ -1,4 +1,4 @@
-from tests.corpora.dbl_bundle_test_environment import DblBundleTestEnvironment
+from corpora.dbl_bundle_test_environment import DblBundleTestEnvironment
 
 
 def test_texts() -> None:

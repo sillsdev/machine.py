@@ -3,7 +3,7 @@ from io import StringIO
 from machine.corpora import NullScriptureText, UsfmFileTextCorpus
 from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, VerseRef, Versification
 from machine.tokenization import NullTokenizer
-from tests.corpora.corpora_test_helpers import USFM_TEST_PROJECT_PATH
+from corpora.corpora_test_helpers import USFM_TEST_PROJECT_PATH
 
 
 def test_get_segments_nonempty_text() -> None:

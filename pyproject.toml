@@ -60,6 +60,8 @@ sil-thot = "^3.3.5"
 chardet = "^4.0.0"
 networkx = "^2.6.3"
 sentencepiece = "^0.1.95"
+libclang = "^11.1.0"
+tensorflow = "^2.7.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
@@ -71,6 +73,7 @@ pytest-mockito = "^0.0.4"
 [tool.poetry.extras]
 sentencepiece = ["sentencepiece"]
 thot = ["sil-thot"]
+tensorflow = ["libclang", "tensorflow"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
