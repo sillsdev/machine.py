@@ -26,7 +26,7 @@ class RangeInfo:
 
     @property
     def is_in_range(self) -> bool:
-        return self.source_segment_ref is not None or self.target_segment_ref is not None
+        return self.source_segment_ref is not None and self.target_segment_ref is not None
 
     def create_text_segment(self) -> ParallelTextSegment:
         seg = ParallelTextSegment(

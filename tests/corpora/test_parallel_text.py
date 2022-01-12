@@ -437,7 +437,7 @@ def test_segments_adjacent_ranges_different_texts() -> None:
     assert segments[1].target_segment == "target segment 3 . target segment 4 .".split()
 
 
-def test_get_segments_range_all_source_segments() -> None:
+def test_get_segments_all_source_segments() -> None:
     source_text = MemoryText(
         "text1",
         [
