@@ -1,5 +1,5 @@
 from pytest import approx
-from translation.thot.thot_test_helpers import TOY_CORPUS_FAST_ALIGN_PATH
+from testutils.thot_test_helpers import TOY_CORPUS_FAST_ALIGN_PATH
 
 from machine.translation import WordAlignmentMatrix
 from machine.translation.thot import ThotFastAlignWordAlignmentModel, ThotSymmetrizedWordAlignmentModel

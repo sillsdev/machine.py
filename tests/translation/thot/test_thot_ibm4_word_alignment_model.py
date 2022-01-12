@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-from translation.thot.thot_test_helpers import create_test_parallel_corpus
+from testutils.thot_test_helpers import create_test_parallel_corpus
 
 from machine.translation import WordAlignmentMatrix
 from machine.translation.thot import ThotIbm4WordAlignmentModel

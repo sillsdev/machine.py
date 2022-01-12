@@ -1,5 +1,5 @@
 from mockito import ANY, when
-from test_utils import make_concrete
+from testutils import make_concrete
 
 from machine.translation import WordAligner, WordAlignmentMatrix
 

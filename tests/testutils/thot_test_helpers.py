@@ -1,11 +1,11 @@
-from pathlib import Path
-
 from machine.corpora import DictionaryTextCorpus, MemoryText, ParallelTextCorpus, TextSegment, TextSegmentRef
 
-TOY_CORPUS_HMM_PATH = Path(__file__).parent / "data" / "toy_corpus_hmm"
+from . import TEST_DATA_PATH
+
+TOY_CORPUS_HMM_PATH = TEST_DATA_PATH / "toy_corpus_hmm"
 TOY_CORPUS_HMM_CONFIG_FILENAME = TOY_CORPUS_HMM_PATH / "smt.cfg"
 
-TOY_CORPUS_FAST_ALIGN_PATH = Path(__file__).parent / "data" / "toy_corpus_fa"
+TOY_CORPUS_FAST_ALIGN_PATH = TEST_DATA_PATH / "toy_corpus_fa"
 TOY_CORPUS_FAST_ALIGN_CONFIG_FILENAME = TOY_CORPUS_FAST_ALIGN_PATH / "smt.cfg"
 
 

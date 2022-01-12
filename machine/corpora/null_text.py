@@ -20,6 +20,6 @@ class NullText(Text):
         return self._sort_key
 
     def get_segments(
-        self, include_text: bool = True, based_on: Optional[Text] = None
+        self, include_text: bool = True, sort_based_on: Optional[Text] = None
     ) -> ContextManagedGenerator[TextSegment, None, None]:
         return ContextManagedGenerator(gen())

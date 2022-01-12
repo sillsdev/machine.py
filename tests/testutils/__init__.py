@@ -1,7 +1,10 @@
 from abc import ABC
+from pathlib import Path
 from typing import Type, TypeVar, cast
 
 T = TypeVar("T", bound=ABC)
+
+TEST_DATA_PATH = Path(__file__).parent / "data"
 
 
 def make_concrete(abc_class: Type[T]) -> Type[T]:

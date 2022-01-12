@@ -1,5 +1,4 @@
-from machine.translation.thot import ThotWordAlignmentParameters
-from machine.translation.thot.thot_word_alignment_model_type import ThotWordAlignmentModelType
+from machine.translation.thot import ThotWordAlignmentModelType, ThotWordAlignmentParameters
 
 
 def test_get_fast_align_iteration_count_default() -> None:

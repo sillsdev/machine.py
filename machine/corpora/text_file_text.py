@@ -19,7 +19,7 @@ class TextFileText(TextBase):
     def filename(self) -> Path:
         return self._filename
 
-    def _get_segments(self, include_text: bool, based_on: Optional[Text]) -> Generator[TextSegment, None, None]:
+    def _get_segments(self, include_text: bool, sort_based_on: Optional[Text]) -> Generator[TextSegment, None, None]:
         with open(self._filename, "r", encoding="utf-8-sig") as file:
             section_num = 1
             segment_num = 1

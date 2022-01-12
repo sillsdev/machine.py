@@ -1,4 +1,4 @@
-from corpora.corpora_test_helpers import USFM_TEST_PROJECT_PATH
+from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH
 
 from machine.corpora import UsfmFileTextCorpus
 from machine.tokenization import LatinWordTokenizer

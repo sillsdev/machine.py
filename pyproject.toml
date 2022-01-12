@@ -23,6 +23,7 @@ line_length = 120
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+norecursedirs = "tests/testutils"
 
 [tool.pyright]
 typeCheckingMode = "basic"

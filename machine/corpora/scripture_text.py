@@ -1,10 +1,10 @@
 from abc import abstractmethod
-from typing import Generator, List, Optional, cast
+from typing import Generator, List, Optional, Tuple
 
 from ..scripture.verse_ref import VerseRef, Versification, VersificationType
 from ..tokenization import Tokenizer
 from ..utils.context_managed_generator import ContextManagedGenerator
-from .corpora_helpers import gen, get_scripture_text_sort_key
+from .corpora_helpers import get_scripture_text_sort_key
 from .text import Text
 from .text_base import TextBase
 from .text_segment import TextSegment
@@ -23,24 +23,29 @@ class ScriptureText(TextBase):
     def versification(self) -> Versification:
         return self._versification
 
-    def _get_segments(self, include_text: bool, based_on: Optional[Text]) -> Generator[TextSegment, None, None]:
-        based_on_versification: Optional[Versification] = None
-        if isinstance(based_on, ScriptureText) and self.versification != based_on.versification:
-            based_on_versification = based_on.versification
-        seg_list: List[TextSegment] = []
+    def _get_segments(self, include_text: bool, sort_based_on: Optional[Text]) -> Generator[TextSegment, None, None]:
+        sort_based_on_versification: Optional[Versification] = None
+        if isinstance(sort_based_on, ScriptureText) and self.versification != sort_based_on.versification:
+            sort_based_on_versification = sort_based_on.versification
+        seg_list: List[Tuple[VerseRef, TextSegment]] = []
         out_of_order = False
         with ContextManagedGenerator(self._get_segments_in_doc_order(include_text)) as segs:
             prev_verse_ref = VerseRef()
             for seg in segs:
-                if based_on_versification is not None:
-                    cast(VerseRef, seg.segment_ref).change_versification(based_on_versification)
-                seg_list.append(seg)
-                if seg.segment_ref < prev_verse_ref:
+                verse_ref: VerseRef
+                if sort_based_on_versification is None:
+                    verse_ref = seg.segment_ref
+                else:
+                    verse_ref = seg.segment_ref
+                    verse_ref = verse_ref.copy()
+                    verse_ref.change_versification(sort_based_on_versification)
+                seg_list.append((verse_ref, seg))
+                if verse_ref < prev_verse_ref:
                     out_of_order = True
-                prev_verse_ref = seg.segment_ref
+                prev_verse_ref = verse_ref
         if out_of_order:
-            seg_list.sort(key=lambda s: s.segment_ref)
-        return ContextManagedGenerator(gen(seg_list))
+            seg_list.sort(key=lambda t: t[0])
+        return ContextManagedGenerator(s for _, s in seg_list)
 
     @abstractmethod
     def _get_segments_in_doc_order(self, include_text: bool) -> Generator[TextSegment, None, None]:

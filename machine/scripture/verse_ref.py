@@ -351,6 +351,15 @@ class VerseRef(Comparable):
             return 1
         return 0
 
+    def exact_equals(self, other: "VerseRef") -> bool:
+        return (
+            self.book_num == other.book_num
+            and self.chapter_num == other.chapter_num
+            and self.verse_num == other.verse_num
+            and self.verse == other.verse
+            and self.versification == other.versification
+        )
+
     def __hash__(self) -> int:
         if self._verse is not None:
             return self.bbbcccvvv ^ hash(self._verse)
