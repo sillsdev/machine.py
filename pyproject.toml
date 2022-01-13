@@ -30,7 +30,7 @@ typeCheckingMode = "basic"
 
 [tool.poetry]
 name = "sil-machine"
-version = "0.4.1"
+version = "0.4.2"
 description = "A natural language processing library that is focused on providing tools for resource-poor languages."
 license = "MIT"
 authors = ["SIL International"]
@@ -75,6 +75,7 @@ pytest-mockito = "^0.0.4"
 sentencepiece = ["sentencepiece"]
 thot = ["sil-thot"]
 tensorflow = ["libclang", "tensorflow"]
+all = ["sentencepiece", "sil-thot", "libclang", "tensorflow"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
