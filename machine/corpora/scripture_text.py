@@ -40,7 +40,7 @@ class ScriptureText(TextBase):
                     verse_ref = verse_ref.copy()
                     verse_ref.change_versification(sort_based_on_versification)
                 seg_list.append((verse_ref, seg))
-                if verse_ref < prev_verse_ref:
+                if not out_of_order and verse_ref < prev_verse_ref:
                     out_of_order = True
                 prev_verse_ref = verse_ref
         if out_of_order:
