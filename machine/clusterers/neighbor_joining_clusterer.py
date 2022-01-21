@@ -33,7 +33,7 @@ class NeighborJoiningClusterer(UnrootedHierarchicalClusterer[T]):
 
         while len(clusters) > 2:
             r = {
-                c: sum(distances[frozenset([c, oc])] / (len(clusters) - 2) for oc in clusters if oc != c)
+                c: sum(distances[frozenset([c, oc])] / (len(clusters) - 2) for oc in clusters if oc is not c)
                 for c in clusters
             }
             min_i = 0
@@ -75,7 +75,7 @@ class NeighborJoiningClusterer(UnrootedHierarchicalClusterer[T]):
                 tree.add_edge(u_cluster, j_cluster, weight=max(j_len, 0))
 
             for k_cluster in clusters:
-                if k_cluster == i_cluster or k_cluster == j_cluster:
+                if k_cluster is i_cluster or k_cluster is j_cluster:
                     continue
                 ki_key = frozenset([k_cluster, i_cluster])
                 kj_key = frozenset([k_cluster, j_cluster])
