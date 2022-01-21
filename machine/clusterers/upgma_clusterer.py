@@ -77,7 +77,7 @@ class UpgmaClusterer(RootedHierarchicalClusterer[T]):
             i_weight = i_count / (i_count + j_count)
             j_weight = j_count / (i_count + j_count)
             for k_cluster in clusters:
-                if k_cluster == i_cluster or k_cluster == j_cluster:
+                if k_cluster is i_cluster or k_cluster is j_cluster:
                     continue
                 ki_key = frozenset([k_cluster, i_cluster])
                 kj_key = frozenset([k_cluster, j_cluster])
