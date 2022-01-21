@@ -44,24 +44,28 @@ class UsxVerseParser:
                 for evt in self._parse_element(e, ctxt):
                     yield evt
             elif e.tag == "verse":
-                verse = e.get("number")
-                if verse is None:
-                    verse = e.get("pubnumber")
-                assert verse is not None
-                if ctxt.chapter is not None and ctxt.verse is not None:
-                    if verse == ctxt.verse:
-                        yield ctxt.create_verse()
-
-                        # ignore duplicate verse
-                        ctxt.verse = None
-                    elif are_overlapping_verse_ranges(verse, ctxt.verse):
-                        # merge overlapping verse ranges in to one range
-                        ctxt.verse = merge_verse_ranges(verse, ctxt.verse)
-                    else:
-                        yield ctxt.create_verse()
-                        ctxt.verse = verse
+                if "eid" in e.attrib:
+                    yield ctxt.create_verse()
+                    ctxt.verse = None
                 else:
-                    ctxt.verse = verse
+                    verse = e.get("number")
+                    if verse is None:
+                        verse = e.get("pubnumber")
+                    assert verse is not None
+                    if ctxt.chapter is not None and ctxt.verse is not None:
+                        if verse == ctxt.verse:
+                            yield ctxt.create_verse()
+
+                            # ignore duplicate verse
+                            ctxt.verse = None
+                        elif are_overlapping_verse_ranges(verse, ctxt.verse):
+                            # merge overlapping verse ranges in to one range
+                            ctxt.verse = merge_verse_ranges(verse, ctxt.verse)
+                        else:
+                            yield ctxt.create_verse()
+                            ctxt.verse = verse
+                    else:
+                        ctxt.verse = verse
             elif e.tag == "char":
                 if e.get("style") == "rq":
                     if ctxt.chapter is not None and ctxt.verse is not None:

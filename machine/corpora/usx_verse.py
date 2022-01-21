@@ -20,7 +20,7 @@ class UsxVerse:
                 if token.element.get("style") == "rq":
                     text = text.rstrip()
 
-            if len(token.text) == 0 or token.text.isspace():
+            if len(token.text) == 0 or token.text.startswith("\n"):
                 continue
 
             if (

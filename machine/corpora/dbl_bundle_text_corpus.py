@@ -12,13 +12,15 @@ from .scripture_text_corpus import ScriptureTextCorpus
 
 
 class DblBundleTextCorpus(ScriptureTextCorpus):
-    _SUPPORTED_VERSIONS = {"2.0", "2.1"}
+    _SUPPORTED_VERSIONS = {"2.0", "2.1", "2.2"}
 
     def __init__(self, word_tokenizer: Tokenizer[str, int, str], filename: StrPath) -> None:
         with ZipFile(filename, "r") as archive:
             with archive.open("metadata.xml", "r") as stream:
                 doc = etree.parse(stream)
-            if doc.getroot().get("version") not in DblBundleTextCorpus._SUPPORTED_VERSIONS:
+            version = doc.getroot().get("version", "2.0")
+            parts = version.split(".", maxsplit=3)
+            if f"{parts[0]}.{parts[1]}" not in DblBundleTextCorpus._SUPPORTED_VERSIONS:
                 raise RuntimeError("Unsupported version of DBL bundle.")
 
             versification_entry = next(

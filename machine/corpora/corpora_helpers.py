@@ -58,7 +58,7 @@ def get_scripture_text_sort_key(id: str) -> str:
 
 
 def get_usx_id(filename: Path) -> str:
-    name = filename.name
+    name = filename.stem
     if len(name) == 3:
         return name
     return name[3:6]

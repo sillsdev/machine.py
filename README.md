@@ -7,3 +7,9 @@ Machine is a natural language processing library. It is specifically focused on 
 ```
 pip install sil-machine
 ```
+
+## Tutorials
+
+If you would like to find out more about how to use Machine, check out the tutorial Jupyter notebooks:
+
+- [Text Corpora](examples/corpora.ipynb)
