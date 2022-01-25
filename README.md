@@ -4,6 +4,8 @@ Machine is a natural language processing library. It is specifically focused on 
 
 ## Installation
 
+Machine is available as a pip package:
+
 ```
 pip install sil-machine
 ```
@@ -12,4 +14,4 @@ pip install sil-machine
 
 If you would like to find out more about how to use Machine, check out the tutorial Jupyter notebooks:
 
-- [Text Corpora](examples/corpora.ipynb)
+- [Text Corpora](samples/corpora.ipynb)
