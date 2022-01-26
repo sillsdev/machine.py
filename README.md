@@ -15,3 +15,4 @@ pip install sil-machine
 If you would like to find out more about how to use Machine, check out the tutorial Jupyter notebooks:
 
 - [Text Corpora](samples/corpora.ipynb)
+- [Word Alignment](samples/word_alignment.ipynb)
