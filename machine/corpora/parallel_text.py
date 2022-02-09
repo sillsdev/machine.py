@@ -15,8 +15,8 @@ from .text_segment import TextSegment
 @dataclass
 class RangeInfo:
     text: "ParallelText"
-    source_segment_ref: Optional[object] = field(default=None, init=False)
-    target_segment_ref: Optional[object] = field(default=None, init=False)
+    source_segment_refs: List[Any] = field(default_factory=list, init=False)
+    target_segment_refs: List[Any] = field(default_factory=list, init=False)
     source_segment: List[str] = field(default_factory=list, init=False)
     target_segment: List[str] = field(default_factory=list, init=False)
     is_source_sentence_start: bool = field(default=False, init=False)
@@ -26,13 +26,13 @@ class RangeInfo:
 
     @property
     def is_in_range(self) -> bool:
-        return self.source_segment_ref is not None and self.target_segment_ref is not None
+        return len(self.source_segment_refs) > 0 and len(self.target_segment_refs) > 0
 
     def create_text_segment(self) -> ParallelTextSegment:
         seg = ParallelTextSegment(
             self.text.id,
-            self.source_segment_ref,
-            self.target_segment_ref,
+            self.source_segment_refs.copy(),
+            self.target_segment_refs.copy(),
             self.source_segment.copy(),
             self.target_segment.copy(),
             aligned_word_pairs=None,
@@ -44,8 +44,8 @@ class RangeInfo:
             is_target_range_start=False,
             is_empty=self.is_source_empty or self.is_target_empty,
         )
-        self.source_segment_ref = None
-        self.target_segment_ref = None
+        self.source_segment_refs.clear()
+        self.target_segment_refs.clear()
         self.source_segment.clear()
         self.target_segment.clear()
         self.is_source_sentence_start = False
@@ -96,7 +96,7 @@ class ParallelText:
         self, all_source_segments: bool, all_target_segments: bool, include_text: bool
     ) -> Generator[ParallelTextSegment, None, None]:
         with self._source_text.get_segments(include_text) as src_iterator, self._target_text.get_segments(
-            include_text, sort_based_on=self._source_text
+            include_text, based_on=self._source_text
         ) as trg_iterator, self._text_alignment_collection.alignments as alignment_iterator:
             range_info = RangeInfo(self)
             source_same_ref_segments: List[TextSegment] = []
@@ -108,18 +108,38 @@ class ParallelText:
             while src_segment is not None and trg_segment is not None:
                 compare1 = _compare_seg_refs(src_segment.segment_ref, trg_segment.segment_ref)
                 if compare1 < 0:
-                    for seg in self._create_source_text_segments(
-                        range_info, src_segment, target_same_ref_segments, all_source_segments
-                    ):
-                        yield seg
+                    if not all_target_segments and src_segment.is_in_range:
+                        if range_info.is_in_range and trg_segment.is_in_range and len(trg_segment.segment) > 0:
+                            yield range_info.create_text_segment()
+                        range_info.source_segment_refs.append(src_segment.segment_ref)
+                        target_same_ref_segments.clear()
+                        range_info.source_segment.extend(src_segment.segment)
+                        if range_info.is_source_empty:
+                            range_info.is_source_empty = src_segment.is_empty
+                            range_info.is_source_sentence_start = src_segment.is_sentence_start
+                    else:
+                        for seg in self._create_source_text_segments(
+                            range_info, src_segment, target_same_ref_segments, all_source_segments
+                        ):
+                            yield seg
 
                     source_same_ref_segments.append(src_segment)
                     src_segment = next(src_iterator, None)
                 elif compare1 > 0:
-                    for seg in self._create_target_text_segments(
-                        range_info, trg_segment, source_same_ref_segments, all_target_segments
-                    ):
-                        yield seg
+                    if not all_source_segments and trg_segment.is_in_range:
+                        if range_info.is_in_range and src_segment.is_in_range and len(src_segment.segment) > 0:
+                            yield range_info.create_text_segment()
+                        range_info.target_segment_refs.append(trg_segment.segment_ref)
+                        source_same_ref_segments.clear()
+                        range_info.target_segment.extend(trg_segment.segment)
+                        if range_info.is_target_empty:
+                            range_info.is_target_empty = trg_segment.is_empty
+                            range_info.is_target_sentence_start = trg_segment.is_sentence_start
+                    else:
+                        for seg in self._create_target_text_segments(
+                            range_info, trg_segment, source_same_ref_segments, all_target_segments
+                        ):
+                            yield seg
                     target_same_ref_segments.append(trg_segment)
                     trg_segment = next(trg_iterator, None)
                 else:
@@ -149,9 +169,10 @@ class ParallelText:
                         ):
                             yield range_info.create_text_segment()
 
-                        if not range_info.is_in_range:
-                            range_info.source_segment_ref = src_segment.segment_ref
-                            range_info.target_segment_ref = trg_segment.segment_ref
+                        range_info.source_segment_refs.append(src_segment.segment_ref)
+                        range_info.target_segment_refs.append(trg_segment.segment_ref)
+                        source_same_ref_segments.clear()
+                        target_same_ref_segments.clear()
                         range_info.source_segment.extend(src_segment.segment)
                         range_info.target_segment.extend(trg_segment.segment)
                         if range_info.is_source_empty:
@@ -224,8 +245,8 @@ class ParallelText:
             yield range_info.create_text_segment()
         yield ParallelTextSegment(
             self.id,
-            None if src_seg is None else src_seg.segment_ref,
-            None if trg_seg is None else trg_seg.segment_ref,
+            [] if src_seg is None else [src_seg.segment_ref],
+            [] if trg_seg is None else [trg_seg.segment_ref],
             [] if src_seg is None else src_seg.segment,
             [] if trg_seg is None else trg_seg.segment,
             aligned_word_pairs,

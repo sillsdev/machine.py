@@ -27,12 +27,12 @@ class TextBase(Text):
         return self._word_tokenizer
 
     def get_segments(
-        self, include_text: bool = True, sort_based_on: Optional[Text] = None
+        self, include_text: bool = True, based_on: Optional[Text] = None
     ) -> ContextManagedGenerator[TextSegment, None, None]:
-        return ContextManagedGenerator(self._get_segments(include_text, sort_based_on))
+        return ContextManagedGenerator(self._get_segments(include_text, based_on))
 
     @abstractmethod
-    def _get_segments(self, include_text: bool, sort_based_on: Optional[Text]) -> Generator[TextSegment, None, None]:
+    def _get_segments(self, include_text: bool, based_on: Optional[Text]) -> Generator[TextSegment, None, None]:
         ...
 
     def _create_text_segment(

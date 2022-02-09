@@ -97,8 +97,10 @@ class VerseRef(Comparable):
             raise ValueError("This start verse contains multiple verses.")
         if end.has_multiple:
             raise ValueError("This end verse contains multiple verses.")
+        if start.versification != end.versification:
+            raise ValueError("The start and end verses do not have the same versification.")
 
-        return VerseRef(start.book, start.chapter, f"{start.verse_num}-{end.verse_num}")
+        return VerseRef(start.book, start.chapter, f"{start.verse_num}-{end.verse_num}", start.versification)
 
     @classmethod
     def from_bbbcccvvv(cls, bbbcccvvv: int, versification: Optional["Versification"] = None) -> "VerseRef":

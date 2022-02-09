@@ -20,6 +20,6 @@ class MemoryText(Text):
         return self._id
 
     def get_segments(
-        self, include_text: bool = True, sort_based_on: Optional[Text] = None
+        self, include_text: bool = True, based_on: Optional[Text] = None
     ) -> ContextManagedGenerator[TextSegment, None, None]:
         return ContextManagedGenerator(gen(self._segments))

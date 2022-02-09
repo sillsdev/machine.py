@@ -23,22 +23,45 @@ class ScriptureText(TextBase):
     def versification(self) -> Versification:
         return self._versification
 
-    def _get_segments(self, include_text: bool, sort_based_on: Optional[Text]) -> Generator[TextSegment, None, None]:
-        sort_based_on_versification: Optional[Versification] = None
-        if isinstance(sort_based_on, ScriptureText) and self.versification != sort_based_on.versification:
-            sort_based_on_versification = sort_based_on.versification
+    def _get_segments(self, include_text: bool, based_on: Optional[Text]) -> Generator[TextSegment, None, None]:
+        based_on_versification: Optional[Versification] = None
+        if isinstance(based_on, ScriptureText) and self.versification != based_on.versification:
+            based_on_versification = based_on.versification
         seg_list: List[Tuple[VerseRef, TextSegment]] = []
         out_of_order = False
         with ContextManagedGenerator(self._get_segments_in_doc_order(include_text)) as segs:
             prev_verse_ref = VerseRef()
+            range_start_offset = -1
             for seg in segs:
                 verse_ref: VerseRef
-                if sort_based_on_versification is None:
+                if based_on_versification is None:
                     verse_ref = seg.segment_ref
                 else:
                     verse_ref = seg.segment_ref
                     verse_ref = verse_ref.copy()
-                    verse_ref.change_versification(sort_based_on_versification)
+                    verse_ref.change_versification(based_on_versification)
+                    # convert one-to-many mapping to a verse range
+                    if verse_ref == prev_verse_ref:
+                        range_start_verse_ref, range_start_seg = seg_list[range_start_offset]
+                        is_range_start = False
+                        if range_start_offset == -1:
+                            is_range_start = range_start_seg.is_range_start if range_start_seg.is_in_range else True
+                        seg_list[range_start_offset] = (
+                            range_start_verse_ref,
+                            TextSegment(
+                                range_start_seg.text_id,
+                                range_start_seg.segment_ref,
+                                list(range_start_seg.segment) + list(seg.segment),
+                                range_start_seg.is_sentence_start,
+                                is_in_range=True,
+                                is_range_start=is_range_start,
+                                is_empty=range_start_seg.is_empty and seg.is_empty,
+                            ),
+                        )
+                        seg = self._create_empty_text_segment(seg.segment_ref, is_in_range=True)
+                        range_start_offset -= 1
+                    else:
+                        range_start_offset = -1
                 seg_list.append((verse_ref, seg))
                 if not out_of_order and verse_ref < prev_verse_ref:
                     out_of_order = True

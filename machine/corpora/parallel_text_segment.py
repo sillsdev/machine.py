@@ -7,8 +7,8 @@ from .aligned_word_pair import AlignedWordPair
 @dataclass(eq=False, frozen=True)
 class ParallelTextSegment:
     text_id: str
-    source_segment_ref: Optional[Any]
-    target_segment_ref: Optional[Any]
+    source_segment_refs: Sequence[Any]
+    target_segment_refs: Sequence[Any]
     source_segment: Sequence[str]
     target_segment: Sequence[str]
     aligned_word_pairs: Optional[Collection[AlignedWordPair]]
@@ -21,9 +21,9 @@ class ParallelTextSegment:
     is_empty: bool
 
     def __post_init__(self) -> None:
-        if self.source_segment_ref is None and self.target_segment_ref is None:
-            raise ValueError("Either the source or target segment ref must be set.")
+        if len(self.source_segment_refs) == 0 and len(self.target_segment_refs) == 0:
+            raise ValueError("Either a source or target segment ref must be set.")
 
     @property
     def segment_ref(self) -> Any:
-        return self.target_segment_ref if self.source_segment_ref is None else self.source_segment_ref
+        return self.target_segment_refs[0] if len(self.source_segment_refs) == 0 else self.source_segment_refs[0]

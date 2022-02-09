@@ -31,14 +31,17 @@ def test_get_segments_nonempty_text() -> None:
     assert verse_ref(segments[6]).exact_equals(VerseRef.from_string("MAT 2:2", corpus.versification))
     assert segments[6].segment[0] == "Chapter two, verse two. Chapter two, verse three."
     assert segments[6].is_in_range
+    assert segments[6].is_range_start
 
     assert verse_ref(segments[7]).exact_equals(VerseRef.from_string("MAT 2:3", corpus.versification))
     assert len(segments[7].segment) == 0
     assert segments[7].is_in_range
+    assert not segments[7].is_range_start
 
     assert verse_ref(segments[8]).exact_equals(VerseRef.from_string("MAT 2:4a", corpus.versification))
     assert len(segments[8].segment) == 0
     assert segments[8].is_in_range
+    assert not segments[8].is_range_start
 
     assert verse_ref(segments[9]).exact_equals(VerseRef.from_string("MAT 2:4b", corpus.versification))
     assert segments[9].segment[0] == "Chapter two, verse four."
@@ -108,14 +111,17 @@ def test_get_segments_include_markers() -> None:
     assert verse_ref(segments[6]).exact_equals(VerseRef.from_string("MAT 2:2", corpus.versification))
     assert segments[6].segment[0] == "Chapter two, verse \\fm ∆\\fm*two. Chapter two, verse three."
     assert segments[6].is_in_range
+    assert segments[6].is_range_start
 
     assert verse_ref(segments[7]).exact_equals(VerseRef.from_string("MAT 2:3", corpus.versification))
     assert len(segments[7].segment) == 0
     assert segments[7].is_in_range
+    assert not segments[7].is_range_start
 
     assert verse_ref(segments[8]).exact_equals(VerseRef.from_string("MAT 2:4a", corpus.versification))
     assert len(segments[8].segment) == 0
     assert segments[8].is_in_range
+    assert not segments[8].is_range_start
 
     assert verse_ref(segments[9]).exact_equals(VerseRef.from_string("MAT 2:4b", corpus.versification))
     assert segments[9].segment[0] == "Chapter two, verse four."
@@ -127,10 +133,10 @@ def test_get_segments_include_markers() -> None:
     assert segments[11].segment[0] == 'Chapter two, verse \\w six|strong="12345" \\w*.'
 
 
-def test_get_segments_sort_based_on() -> None:
+def test_get_segments_based_on() -> None:
     tokenizer = NullTokenizer()
 
-    src = "MAT 1:2 = MAT 1:3\nMAT 1:3 = MAT 1:2\n"
+    src = "&MAT 1:4-5 = MAT 1:4\n" "MAT 1:2 = MAT 1:3\n" "MAT 1:3 = MAT 1:2\n"
     stream = StringIO(src)
     versification = Versification("custom", "vers.txt", ENGLISH_VERSIFICATION)
     versification = Versification.parse(stream, "vers.txt", versification, "custom")
@@ -140,7 +146,7 @@ def test_get_segments_sort_based_on() -> None:
     orig_vers_text = NullScriptureText(tokenizer, "MAT", ORIGINAL_VERSIFICATION)
 
     text = corpus.get_text("MAT")
-    segments = list(text.get_segments(sort_based_on=orig_vers_text))
+    segments = list(text.get_segments(based_on=orig_vers_text))
 
     assert len(segments) == 14
 
@@ -153,8 +159,16 @@ def test_get_segments_sort_based_on() -> None:
     assert verse_ref(segments[2]).exact_equals(VerseRef.from_string("MAT 1:2", versification))
     assert segments[2].segment[0] == "Chapter one, verse two."
 
+    assert verse_ref(segments[3]).exact_equals(VerseRef.from_string("MAT 1:4", versification))
+    assert segments[3].segment[0] == "Chapter one, verse four,"
+    assert segments[3].segment[1] == "Chapter one, verse five."
+    assert segments[3].is_in_range
+    assert segments[3].is_range_start
+
     assert verse_ref(segments[4]).exact_equals(VerseRef.from_string("MAT 1:5", versification))
-    assert segments[4].segment[0] == "Chapter one, verse five."
+    assert len(segments[4].segment) == 0
+    assert segments[4].is_in_range
+    assert not segments[4].is_range_start
 
     assert verse_ref(segments[5]).exact_equals(VerseRef.from_string("MAT 2:1", versification))
     assert segments[5].segment[0] == "Chapter two, verse one."
@@ -162,14 +176,17 @@ def test_get_segments_sort_based_on() -> None:
     assert verse_ref(segments[6]).exact_equals(VerseRef.from_string("MAT 2:2", versification))
     assert segments[6].segment[0] == "Chapter two, verse two. Chapter two, verse three."
     assert segments[6].is_in_range
+    assert segments[6].is_range_start
 
     assert verse_ref(segments[7]).exact_equals(VerseRef.from_string("MAT 2:3", versification))
     assert len(segments[7].segment) == 0
     assert segments[7].is_in_range
+    assert not segments[7].is_range_start
 
     assert verse_ref(segments[8]).exact_equals(VerseRef.from_string("MAT 2:4a", versification))
     assert len(segments[8].segment) == 0
     assert segments[8].is_in_range
+    assert not segments[8].is_range_start
 
     assert verse_ref(segments[9]).exact_equals(VerseRef.from_string("MAT 2:4b", versification))
     assert segments[9].segment[0] == "Chapter two, verse four."
