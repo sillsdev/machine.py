@@ -1,4 +1,4 @@
-from typing import Callable, Collection, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import Callable, Collection, Iterable, List, Optional, Sequence, Set, Tuple, cast
 
 import numpy as np
 from sortedcontainers import SortedSet
@@ -312,7 +312,7 @@ class WordAlignmentMatrix:
     def _koehn_grow(
         self, grow_condition: Callable[[int, int], bool], orig: "WordAlignmentMatrix", other: "WordAlignmentMatrix"
     ) -> None:
-        p = SortedSet()
+        p = cast(Set[Tuple[int, int]], SortedSet())
         for i in range(self.row_count):
             for j in range(self.column_count):
                 if (orig[i, j] or other[i, j]) and not self[i, j]:
@@ -321,7 +321,7 @@ class WordAlignmentMatrix:
         keep_going = len(p) > 0
         while keep_going:
             keep_going = False
-            added = SortedSet()
+            added = cast(Set[Tuple[int, int]], SortedSet())
             for i, j in p:
                 if (not self.is_row_aligned(i) or not self.is_column_aligned(j)) and grow_condition(i, j):
                     self[i, j] = True

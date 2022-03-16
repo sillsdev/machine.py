@@ -63,6 +63,7 @@ networkx = "^2.6.3"
 sentencepiece = "^0.1.95"
 libclang = "^11.1.0"
 tensorflow = "^2.7.0"
+OpenNMT-tf = "^2.25.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
@@ -75,7 +76,7 @@ ipykernel = "^6.7.0"
 [tool.poetry.extras]
 sentencepiece = ["sentencepiece"]
 thot = ["sil-thot"]
-tensorflow = ["libclang", "tensorflow"]
+tensorflow = ["libclang", "tensorflow", "OpenNMT-tf"]
 all = ["sentencepiece", "sil-thot", "libclang", "tensorflow"]
 
 [build-system]
