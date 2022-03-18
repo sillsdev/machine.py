@@ -8,5 +8,9 @@ def test_texts() -> None:
 
 def test_get_text() -> None:
     with DblBundleTestEnvironment() as env:
-        assert any(env.corpus.get_text("MAT").get_segments())
-        assert not any(env.corpus.get_text("LUK").get_segments())
+        mat = env.corpus.get_text("MAT")
+        assert mat is not None
+        assert any(mat.get_rows())
+
+        luk = env.corpus.get_text("LUK")
+        assert luk is None

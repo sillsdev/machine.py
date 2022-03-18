@@ -1,25 +1,23 @@
 from pathlib import Path
-from typing import Generator, Optional
+from typing import Generator
 
-from ..tokenization.tokenizer import Tokenizer
 from ..utils.string_utils import is_integer
 from ..utils.typeshed import StrPath
-from .text import Text
 from .text_base import TextBase
-from .text_segment import TextSegment
-from .text_segment_ref import TextSegmentRef
+from .text_corpus_row import TextCorpusRow
+from .text_corpus_row_ref import TextCorpusRowRef
 
 
 class TextFileText(TextBase):
-    def __init__(self, word_tokenizer: Tokenizer[str, int, str], id: str, filename: StrPath) -> None:
-        super().__init__(word_tokenizer, id, id)
+    def __init__(self, id: str, filename: StrPath) -> None:
+        super().__init__(id, id)
         self._filename = Path(filename)
 
     @property
     def filename(self) -> Path:
         return self._filename
 
-    def _get_segments(self, include_text: bool, based_on: Optional[Text]) -> Generator[TextSegment, None, None]:
+    def _get_rows(self) -> Generator[TextCorpusRow, None, None]:
         with open(self._filename, "r", encoding="utf-8-sig") as file:
             section_num = 1
             segment_num = 1
@@ -31,5 +29,5 @@ class TextFileText(TextBase):
                         section_num = int(section_num_str)
                         segment_num = 1
                 else:
-                    yield self._create_text_segment(include_text, line, TextSegmentRef(section_num, segment_num))
+                    yield self._create_row(line, TextCorpusRowRef(self.id, section_num, segment_num))
                     segment_num += 1

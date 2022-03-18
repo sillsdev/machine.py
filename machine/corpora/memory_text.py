@@ -1,15 +1,14 @@
-from typing import Iterable, Optional
+from typing import Generator, Iterable
 
-from ..utils.context_managed_generator import ContextManagedGenerator
 from .corpora_helpers import gen
 from .text import Text
-from .text_segment import TextSegment
+from .text_corpus_row import TextCorpusRow
 
 
 class MemoryText(Text):
-    def __init__(self, id: str, segments: Iterable[TextSegment] = []) -> None:
+    def __init__(self, id: str, rows: Iterable[TextCorpusRow] = []) -> None:
         self._id = id
-        self._segments = list(segments)
+        self._rows = list(rows)
 
     @property
     def id(self) -> str:
@@ -19,7 +18,5 @@ class MemoryText(Text):
     def sort_key(self) -> str:
         return self._id
 
-    def get_segments(
-        self, include_text: bool = True, based_on: Optional[Text] = None
-    ) -> ContextManagedGenerator[TextSegment, None, None]:
-        return ContextManagedGenerator(gen(self._segments))
+    def _get_rows(self) -> Generator[TextCorpusRow, None, None]:
+        return gen(self._rows)

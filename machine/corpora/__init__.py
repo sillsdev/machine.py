@@ -3,45 +3,35 @@ from .dbl_bundle_text import DblBundleText
 from .dbl_bundle_text_corpus import DblBundleTextCorpus
 from .dictionary_text_alignment_corpus import DictionaryTextAlignmentCorpus
 from .dictionary_text_corpus import DictionaryTextCorpus
-from .filtered_text_alignment_corpus import FilteredTextAlignmentCorpus
-from .filtered_text_corpus import FilteredTextCorpus
 from .memory_text import MemoryText
 from .memory_text_alignment_collection import MemoryTextAlignmentCollection
-from .null_scripture_text import NullScriptureText
-from .null_text import NullText
-from .null_text_alignment_collection import NullTextAlignmentCollection
-from .parallel_text import ParallelText
 from .parallel_text_corpus import ParallelTextCorpus
-from .parallel_text_segment import ParallelTextSegment
+from .parallel_text_corpus_row import ParallelTextCorpusRow
+from .parallel_text_corpus_view import ParallelTextCorpusView
 from .paratext_text_corpus import ParatextTextCorpus
+from .scripture_text_corpus import ScriptureTextCorpus
 from .text import Text
-from .text_alignment import TextAlignment
 from .text_alignment_collection import TextAlignmentCollection
 from .text_alignment_corpus import TextAlignmentCorpus
+from .text_alignment_corpus_row import TextAlignmentCorpusRow
+from .text_alignment_corpus_view import TextAlignmentCorpusView
 from .text_corpus import TextCorpus
+from .text_corpus_row import TextCorpusRow
+from .text_corpus_row_ref import TextCorpusRowRef
+from .text_corpus_view import TextCorpusView
 from .text_file_text import TextFileText
 from .text_file_text_alignment_collection import TextFileTextAlignmentCollection
 from .text_file_text_alignment_corpus import TextFileTextAlignmentCorpus
 from .text_file_text_corpus import TextFileTextCorpus
-from .text_segment import TextSegment
-from .text_segment_ref import TextSegmentRef
 from .token_processors import (
-    ESCAPE_SPACES,
-    LOWERCASE,
-    NFC_NORMALIZE,
-    NFD_NORMALIZE,
-    NFKC_NORMALIZE,
-    NFKD_NORMALIZE,
-    NO_OP,
-    UNESCAPE_SPACES,
-    EscapeSpacesTokenProcessor,
-    LowercaseTokenProcessor,
-    NoOpTokenProcessor,
-    NormalizeTokenProcessor,
-    PipelineTokenProcessor,
-    TokenProcessor,
-    UnescapeSpacesTokenProcessor,
-    pipeline,
+    escape_spaces,
+    lowercase,
+    nfc_normalize,
+    nfd_normalize,
+    nfkc_normalize,
+    nfkd_normalize,
+    normalize,
+    unescape_spaces,
 )
 from .usfm_file_text import UsfmFileText
 from .usfm_file_text_corpus import UsfmFileTextCorpus
@@ -58,43 +48,26 @@ __all__ = [
     "DblBundleTextCorpus",
     "DictionaryTextAlignmentCorpus",
     "DictionaryTextCorpus",
-    "ESCAPE_SPACES",
-    "EscapeSpacesTokenProcessor",
-    "FilteredTextAlignmentCorpus",
-    "FilteredTextCorpus",
-    "LOWERCASE",
-    "LowercaseTokenProcessor",
     "MemoryText",
     "MemoryTextAlignmentCollection",
-    "NFC_NORMALIZE",
-    "NFD_NORMALIZE",
-    "NFKC_NORMALIZE",
-    "NFKD_NORMALIZE",
-    "NO_OP",
-    "NoOpTokenProcessor",
-    "NormalizeTokenProcessor",
-    "NullScriptureText",
-    "NullText",
-    "NullTextAlignmentCollection",
-    "ParallelText",
     "ParallelTextCorpus",
-    "ParallelTextSegment",
+    "ParallelTextCorpusRow",
+    "ParallelTextCorpusView",
     "ParatextTextCorpus",
-    "PipelineTokenProcessor",
+    "ScriptureTextCorpus",
     "Text",
-    "TextAlignment",
     "TextAlignmentCollection",
     "TextAlignmentCorpus",
+    "TextAlignmentCorpusRow",
+    "TextAlignmentCorpusView",
     "TextCorpus",
+    "TextCorpusRow",
+    "TextCorpusRowRef",
+    "TextCorpusView",
     "TextFileText",
     "TextFileTextAlignmentCollection",
     "TextFileTextAlignmentCorpus",
     "TextFileTextCorpus",
-    "TextSegment",
-    "TextSegmentRef",
-    "TokenProcessor",
-    "UNESCAPE_SPACES",
-    "UnescapeSpacesTokenProcessor",
     "UsfmFileText",
     "UsfmFileTextCorpus",
     "UsfmJustification",
@@ -107,5 +80,12 @@ __all__ = [
     "UsxFileTextAlignmentCollection",
     "UsxFileTextAlignmentCorpus",
     "UsxFileTextCorpus",
-    "pipeline",
+    "escape_spaces",
+    "lowercase",
+    "nfc_normalize",
+    "nfd_normalize",
+    "nfkc_normalize",
+    "nfkd_normalize",
+    "normalize",
+    "unescape_spaces",
 ]

@@ -4,18 +4,18 @@ import numpy as np
 from sortedcontainers import SortedSet
 
 from ..corpora.aligned_word_pair import AlignedWordPair
-from ..corpora.parallel_text_segment import ParallelTextSegment
+from ..corpora.parallel_text_corpus_row import ParallelTextCorpusRow
 from .symmetrization_heuristic import SymmetrizationHeuristic
 
 
 class WordAlignmentMatrix:
     @classmethod
-    def from_parallel_text_segment(cls, segment: ParallelTextSegment) -> Optional["WordAlignmentMatrix"]:
-        if segment.aligned_word_pairs is None:
+    def from_parallel_text_corpus_row(cls, row: ParallelTextCorpusRow) -> Optional["WordAlignmentMatrix"]:
+        if row.aligned_word_pairs is None:
             return None
 
-        matrix = cls.from_word_pairs(len(segment.source_segment), len(segment.target_segment))
-        for word_pair in segment.aligned_word_pairs:
+        matrix = cls.from_word_pairs(len(row.source_segment), len(row.target_segment))
+        for word_pair in row.aligned_word_pairs:
             matrix[word_pair.source_index, word_pair.target_index] = True
         return matrix
 

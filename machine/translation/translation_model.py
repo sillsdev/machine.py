@@ -4,8 +4,7 @@ from contextlib import AbstractContextManager
 from types import TracebackType
 from typing import Optional, Type
 
-from ..corpora.parallel_text_corpus import ParallelTextCorpus
-from ..corpora.token_processors import NO_OP, TokenProcessor
+from ..corpora.parallel_text_corpus_view import ParallelTextCorpusView
 from .trainer import Trainer
 from .translation_engine import TranslationEngine
 
@@ -18,9 +17,7 @@ class TranslationModel(AbstractContextManager):
     @abstractmethod
     def create_trainer(
         self,
-        corpus: ParallelTextCorpus,
-        source_preprocessor: TokenProcessor = NO_OP,
-        target_preprocessor: TokenProcessor = NO_OP,
+        corpus: ParallelTextCorpusView,
         max_corpus_count: int = sys.maxsize,
     ) -> Trainer:
         ...

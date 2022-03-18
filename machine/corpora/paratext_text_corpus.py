@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import List
 
 from ..scripture.verse_ref import Versification
-from ..tokenization.tokenizer import Tokenizer
 from ..utils.string_utils import parse_integer
 from ..utils.typeshed import StrPath
 from .scripture_text_corpus import ScriptureTextCorpus
@@ -12,9 +11,7 @@ from .usfm_stylesheet import UsfmStylesheet
 
 
 class ParatextTextCorpus(ScriptureTextCorpus):
-    def __init__(
-        self, word_tokenizer: Tokenizer[str, int, str], project_dir: StrPath, include_markers: bool = False
-    ) -> None:
+    def __init__(self, project_dir: StrPath, include_markers: bool = False) -> None:
         if not isinstance(project_dir, Path):
             project_dir = Path(project_dir)
         settings_filename = project_dir / "Settings.xml"
@@ -66,10 +63,8 @@ class ParatextTextCorpus(ScriptureTextCorpus):
 
         texts: List[UsfmFileText] = []
         for sfm_filename in project_dir.glob(f"{prefix}*{suffix}"):
-            texts.append(
-                UsfmFileText(word_tokenizer, stylesheet, encoding, sfm_filename, versification, include_markers)
-            )
-        super().__init__(word_tokenizer, versification, texts)
+            texts.append(UsfmFileText(stylesheet, encoding, sfm_filename, versification, include_markers))
+        super().__init__(versification, texts)
 
 
 _ENCODINGS = {

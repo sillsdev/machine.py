@@ -1,33 +1,29 @@
-from abc import ABC, abstractmethod
-from typing import Generator, Iterable
+from abc import abstractmethod
+from typing import Generator, Iterable, Optional
 
-from ..utils.context_managed_generator import ContextManagedGenerator
 from .text import Text
-from .text_segment import TextSegment
+from .text_corpus_row import TextCorpusRow
+from .text_corpus_view import TextCorpusView
 
 
-class TextCorpus(ABC):
+class TextCorpus(TextCorpusView):
     @property
     @abstractmethod
     def texts(self) -> Iterable[Text]:
         ...
 
-    @abstractmethod
-    def __getitem__(self, id: str) -> Text:
-        ...
+    @property
+    def source(self) -> TextCorpusView:
+        return self
 
     @abstractmethod
-    def create_null_text(self, id: str) -> Text:
+    def __getitem__(self, id: str) -> Optional[Text]:
         ...
 
-    def get_text(self, id: str) -> Text:
+    def get_text(self, id: str) -> Optional[Text]:
         return self[id]
 
-    def get_segments(self, include_text: bool = True) -> ContextManagedGenerator[TextSegment, None, None]:
-        return ContextManagedGenerator(self._get_segments(include_text))
-
-    def _get_segments(self, include_text: bool) -> Generator[TextSegment, None, None]:
+    def _get_rows(self, based_on: Optional[TextCorpusView]) -> Generator[TextCorpusRow, None, None]:
         for text in self.texts:
-            with text.get_segments(include_text) as segments:
-                for segment in segments:
-                    yield segment
+            with text.get_rows() as rows:
+                yield from rows

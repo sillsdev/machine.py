@@ -4,9 +4,8 @@ from typing import Callable, List, Optional, Tuple, Union, overload
 
 import thot.alignment as ta
 
-from ...corpora.parallel_text_corpus import ParallelTextCorpus
-from ...corpora.parallel_text_segment import ParallelTextSegment
-from ...corpora.token_processors import NO_OP, TokenProcessor
+from ...corpora.parallel_text_corpus_row import ParallelTextCorpusRow
+from ...corpora.parallel_text_corpus_view import ParallelTextCorpusView
 from ...utils.progress_status import ProgressStatus
 from ...utils.typeshed import StrPath
 from ..trainer import Trainer, TrainStats
@@ -19,11 +18,9 @@ class ThotWordAlignmentModelTrainer(Trainer):
     def __init__(
         self,
         model_type: ThotWordAlignmentModelType,
-        corpus: ParallelTextCorpus,
+        corpus: ParallelTextCorpusView,
         prefix_filename: Optional[StrPath],
         parameters: ThotWordAlignmentParameters = ThotWordAlignmentParameters(),
-        source_preprocessor: TokenProcessor = NO_OP,
-        target_preprocessor: TokenProcessor = NO_OP,
         max_corpus_count: int = sys.maxsize,
     ) -> None:
         ...
@@ -35,35 +32,29 @@ class ThotWordAlignmentModelTrainer(Trainer):
         corpus: Tuple[StrPath, StrPath],
         prefix_filename: Optional[StrPath],
         parameters: ThotWordAlignmentParameters = ThotWordAlignmentParameters(),
-        source_preprocessor: TokenProcessor = NO_OP,
-        target_preprocessor: TokenProcessor = NO_OP,
     ) -> None:
         ...
 
     def __init__(
         self,
         model_type: ThotWordAlignmentModelType,
-        corpus: Union[ParallelTextCorpus, Tuple[StrPath, StrPath]],
+        corpus: Union[ParallelTextCorpusView, Tuple[StrPath, StrPath]],
         prefix_filename: Optional[StrPath],
         parameters: ThotWordAlignmentParameters = ThotWordAlignmentParameters(),
-        source_preprocessor: TokenProcessor = NO_OP,
-        target_preprocessor: TokenProcessor = NO_OP,
         max_corpus_count: int = sys.maxsize,
     ) -> None:
         if isinstance(corpus, tuple) and max_corpus_count != sys.maxsize:
             raise ValueError("max_corpus_count cannot be set when corpus filenames are provided.")
 
         self._prefix_filename = None if prefix_filename is None else Path(prefix_filename)
-        self._source_preprocessor = source_preprocessor
-        self._target_preprocessor = target_preprocessor
         self._parallel_corpus = corpus
         self._max_corpus_count = max_corpus_count
         self._stats = TrainStats()
 
-        def null_segment_filter(s: ParallelTextSegment, i: int) -> bool:
+        def null_row_filter(s: ParallelTextCorpusRow, i: int) -> bool:
             return True
 
-        self._segment_filter = null_segment_filter
+        self._row_filter = null_row_filter
 
         self._models: List[Tuple[ta.AlignmentModel, int]] = []
         if model_type is ThotWordAlignmentModelType.FAST_ALIGN:
@@ -127,14 +118,14 @@ class ThotWordAlignmentModelTrainer(Trainer):
         return self._stats
 
     @property
-    def segment_filter(self) -> Callable[[ParallelTextSegment, int], bool]:
-        return self._segment_filter
+    def row_filter(self) -> Callable[[ParallelTextCorpusRow, int], bool]:
+        return self._row_filter
 
-    @segment_filter.setter
-    def segment_filter(self, value: Callable[[ParallelTextSegment, int], bool]) -> None:
+    @row_filter.setter
+    def row_filter(self, value: Callable[[ParallelTextCorpusRow, int], bool]) -> None:
         if isinstance(self._parallel_corpus, tuple):
-            raise RuntimeError("A segment filter cannot be set when corpus filenames are provided.")
-        self._segment_filter = value
+            raise RuntimeError("A row filter cannot be set when corpus filenames are provided.")
+        self._row_filter = value
 
     @property
     def _model(self) -> ta.AlignmentModel:
@@ -151,19 +142,18 @@ class ThotWordAlignmentModelTrainer(Trainer):
         if progress is not None:
             progress(ProgressStatus.from_step(cur_step, num_steps))
 
-        if isinstance(self._parallel_corpus, ParallelTextCorpus):
+        if isinstance(self._parallel_corpus, ParallelTextCorpusView):
             corpus_count = 0
             index = 0
-            for segment in self._parallel_corpus.segments:
-                if self._segment_filter(segment, index):
-                    source_segment = self._source_preprocessor.process(segment.source_segment)
-                    target_segment = self._target_preprocessor.process(segment.target_segment)
-                    self._model.add_sentence_pair(source_segment, target_segment, 1)
-                    if self._is_segment_valid(segment):
-                        corpus_count += 1
-                index += 1
-                if corpus_count == self._max_corpus_count:
-                    break
+            with self._parallel_corpus.get_rows() as rows:
+                for row in rows:
+                    if self._row_filter(row, index):
+                        self._model.add_sentence_pair(row.source_segment, row.target_segment, 1)
+                        if self._is_segment_valid(row):
+                            corpus_count += 1
+                    index += 1
+                    if corpus_count == self._max_corpus_count:
+                        break
         else:
             self._model.read_sentence_pairs(str(self._parallel_corpus[0]), str(self._parallel_corpus[1]))
         cur_step += 1
@@ -198,9 +188,9 @@ class ThotWordAlignmentModelTrainer(Trainer):
         if self._prefix_filename is not None:
             self._model.print(str(self._prefix_filename))
 
-    def _is_segment_valid(self, segment: ParallelTextSegment) -> bool:
+    def _is_segment_valid(self, row: ParallelTextCorpusRow) -> bool:
         return (
-            not segment.is_empty
-            and len(segment.source_segment) <= self._max_segment_length
-            and len(segment.target_segment) <= self._max_segment_length
+            not row.is_empty
+            and len(row.source_segment) <= self._max_segment_length
+            and len(row.target_segment) <= self._max_segment_length
         )

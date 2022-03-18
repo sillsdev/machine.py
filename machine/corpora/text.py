@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Generator
 
 from ..utils.context_managed_generator import ContextManagedGenerator
-from .text_segment import TextSegment
+from .text_corpus_row import TextCorpusRow
 
 
 class Text(ABC):
@@ -16,8 +16,9 @@ class Text(ABC):
     def sort_key(self) -> str:
         ...
 
+    def get_rows(self) -> ContextManagedGenerator[TextCorpusRow, None, None]:
+        return ContextManagedGenerator(self._get_rows())
+
     @abstractmethod
-    def get_segments(
-        self, include_text: bool = True, based_on: Optional["Text"] = None
-    ) -> ContextManagedGenerator[TextSegment, None, None]:
+    def _get_rows(self) -> Generator[TextCorpusRow, None, None]:
         ...

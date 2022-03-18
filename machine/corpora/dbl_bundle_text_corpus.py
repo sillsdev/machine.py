@@ -5,7 +5,6 @@ from typing import List
 from zipfile import ZipFile
 
 from ..scripture.verse_ref import Versification, VersificationType
-from ..tokenization.tokenizer import Tokenizer
 from ..utils.typeshed import StrPath
 from .dbl_bundle_text import DblBundleText
 from .scripture_text_corpus import ScriptureTextCorpus
@@ -14,7 +13,7 @@ from .scripture_text_corpus import ScriptureTextCorpus
 class DblBundleTextCorpus(ScriptureTextCorpus):
     _SUPPORTED_VERSIONS = {"2.0", "2.1", "2.2"}
 
-    def __init__(self, word_tokenizer: Tokenizer[str, int, str], filename: StrPath) -> None:
+    def __init__(self, filename: StrPath) -> None:
         with ZipFile(filename, "r") as archive:
             with archive.open("metadata.xml", "r") as stream:
                 doc = etree.parse(stream)
@@ -38,8 +37,6 @@ class DblBundleTextCorpus(ScriptureTextCorpus):
         texts: List[DblBundleText] = []
         for content_elem in doc.getroot().findall("./publications/publication[@default='true']/structure/content"):
             texts.append(
-                DblBundleText(
-                    word_tokenizer, content_elem.get("role", ""), filename, content_elem.get("src", ""), versification
-                )
+                DblBundleText(content_elem.get("role", ""), filename, content_elem.get("src", ""), versification)
             )
-        super().__init__(word_tokenizer, versification, texts)
+        super().__init__(versification, texts)

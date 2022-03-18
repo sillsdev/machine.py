@@ -5,8 +5,7 @@ from typing import Collection, Iterable, Iterator, Optional, Sequence, Tuple, Un
 
 import thot.alignment as ta
 
-from ...corpora.parallel_text_corpus import ParallelTextCorpus
-from ...corpora.token_processors import NO_OP, TokenProcessor
+from ...corpora.parallel_text_corpus_view import ParallelTextCorpusView
 from ...utils.typeshed import StrPath
 from ..ibm1_word_alignment_model import Ibm1WordAlignmentModel
 from ..trainer import Trainer
@@ -71,12 +70,10 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
 
     def create_trainer(
         self,
-        corpus: ParallelTextCorpus,
-        source_preprocessor: TokenProcessor = NO_OP,
-        target_preprocessor: TokenProcessor = NO_OP,
+        corpus: ParallelTextCorpusView,
         max_corpus_count: int = sys.maxsize,
     ) -> Trainer:
-        return _Trainer(self, corpus, self._prefix_filename, source_preprocessor, target_preprocessor, max_corpus_count)
+        return _Trainer(self, corpus, self._prefix_filename, max_corpus_count)
 
     def get_best_alignment(self, source_segment: Sequence[str], target_segment: Sequence[str]) -> WordAlignmentMatrix:
         _, matrix = self._model.get_best_alignment(source_segment, target_segment)
@@ -173,10 +170,8 @@ class _Trainer(ThotWordAlignmentModelTrainer):
     def __init__(
         self,
         model: ThotWordAlignmentModel,
-        corpus: ParallelTextCorpus,
+        corpus: ParallelTextCorpusView,
         prefix_filename: Optional[StrPath],
-        source_preprocessor: TokenProcessor,
-        target_preprocessor: TokenProcessor,
         max_corpus_count: int,
     ) -> None:
         super().__init__(
@@ -184,8 +179,6 @@ class _Trainer(ThotWordAlignmentModelTrainer):
             corpus,
             prefix_filename,
             model.parameters,
-            source_preprocessor,
-            target_preprocessor,
             max_corpus_count,
         )
         self._machine_model = model

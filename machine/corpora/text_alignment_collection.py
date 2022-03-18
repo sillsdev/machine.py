@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
+from typing import Generator
 
 from ..utils.context_managed_generator import ContextManagedGenerator
-from .text_alignment import TextAlignment
+from .text_alignment_corpus_row import TextAlignmentCorpusRow
 
 
 class TextAlignmentCollection(ABC):
@@ -15,11 +16,9 @@ class TextAlignmentCollection(ABC):
     def sort_key(self) -> str:
         ...
 
-    @property
-    @abstractmethod
-    def alignments(self) -> ContextManagedGenerator[TextAlignment, None, None]:
-        ...
+    def get_rows(self) -> ContextManagedGenerator[TextAlignmentCorpusRow, None, None]:
+        return ContextManagedGenerator(self._get_rows())
 
     @abstractmethod
-    def invert(self) -> "TextAlignmentCollection":
+    def _get_rows(self) -> Generator[TextAlignmentCorpusRow, None, None]:
         ...

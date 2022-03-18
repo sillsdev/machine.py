@@ -2,15 +2,18 @@ from dataclasses import dataclass
 from typing import Any, Sequence
 
 
-@dataclass(eq=False, frozen=True)
-class TextSegment:
-    text_id: str
-    segment_ref: Any
+@dataclass
+class TextCorpusRow:
+    ref: Any
     segment: Sequence[str]
     is_sentence_start: bool
     is_in_range: bool
     is_range_start: bool
     is_empty: bool
+
+    @property
+    def text(self) -> str:
+        return " ".join(self.segment)
 
     def __repr__(self) -> str:
         if self.is_empty:
@@ -19,4 +22,4 @@ class TextSegment:
             segment = " ".join(self.segment)
         else:
             segment = "NONEMPTY"
-        return f"{self.segment_ref} - {segment}"
+        return f"{self.ref} - {segment}"

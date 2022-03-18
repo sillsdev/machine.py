@@ -3,8 +3,8 @@ from abc import abstractmethod
 from typing import Collection, Dict, Iterable, Optional, Sequence, Tuple, Union
 
 from ..corpora.aligned_word_pair import AlignedWordPair
-from ..corpora.parallel_text_corpus import ParallelTextCorpus, ParallelTextSegment
-from ..corpora.token_processors import NO_OP, TokenProcessor
+from ..corpora.parallel_text_corpus_row import ParallelTextCorpusRow
+from ..corpora.parallel_text_corpus_view import ParallelTextCorpusView
 from .trainer import Trainer
 from .word_aligner import WordAligner
 from .word_alignment_matrix import WordAlignmentMatrix
@@ -30,9 +30,7 @@ class WordAlignmentModel(WordAligner):
     @abstractmethod
     def create_trainer(
         self,
-        corpus: ParallelTextCorpus,
-        source_preprocessor: TokenProcessor = NO_OP,
-        target_preprocessor: TokenProcessor = NO_OP,
+        corpus: ParallelTextCorpusView,
         max_corpus_count: int = sys.maxsize,
     ) -> Trainer:
         ...
@@ -95,29 +93,23 @@ class WordAlignmentModel(WordAligner):
 
     def get_alignment_string(
         self,
-        segment: ParallelTextSegment,
+        row: ParallelTextCorpusRow,
         include_scores: bool = True,
-        source_preprocessor: TokenProcessor = NO_OP,
-        target_preprocessor: TokenProcessor = NO_OP,
     ) -> str:
-        source_segment = source_preprocessor.process(segment.source_segment)
-        target_segment = target_preprocessor.process(segment.target_segment)
         alignment = self.get_best_alignment_from_known(
-            source_segment, target_segment, WordAlignmentMatrix.from_parallel_text_segment(segment)
+            row.source_segment, row.target_segment, WordAlignmentMatrix.from_parallel_text_corpus_row(row)
         )
         if not include_scores:
             return str(alignment)
-        return " ".join(str(wp) for wp in self.get_aligned_word_pairs(source_segment, target_segment, alignment))
+        return " ".join(
+            str(wp) for wp in self.get_aligned_word_pairs(row.source_segment, row.target_segment, alignment)
+        )
 
     def get_giza_format_string(
         self,
-        segment: ParallelTextSegment,
-        source_preprocessor: TokenProcessor = NO_OP,
-        target_preprocessor: TokenProcessor = NO_OP,
+        row: ParallelTextCorpusRow,
     ) -> str:
-        source_segment = source_preprocessor.process(segment.source_segment)
-        target_segment = target_preprocessor.process(segment.target_segment)
         alignment = self.get_best_alignment_from_known(
-            source_segment, target_segment, WordAlignmentMatrix.from_parallel_text_segment(segment)
+            row.source_segment, row.target_segment, WordAlignmentMatrix.from_parallel_text_corpus_row(row)
         )
-        return alignment.to_giza_format(source_segment, target_segment)
+        return alignment.to_giza_format(row.source_segment, row.target_segment)

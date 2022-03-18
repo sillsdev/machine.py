@@ -10,6 +10,7 @@ from opennmt.training import Trainer as OnmtTrainer
 from opennmt.utils.checkpoint import Checkpoint
 from opennmt.utils.misc import disable_mixed_precision, enable_mixed_precision
 
+from ...corpora.parallel_text_corpus_view import ParallelTextCorpusView
 from ...utils.progress_status import ProgressStatus
 from ..trainer import Trainer, TrainStats
 
@@ -19,9 +20,11 @@ class OpenNmtModelTrainer(Trainer, Runner):
         self,
         model_type: str,
         config: dict,
+        corpus: ParallelTextCorpusView,
         mixed_precision: bool = False,
     ):
         super().__init__(load_model_from_catalog(model_type), config, mixed_precision=mixed_precision)
+        self._corpus = corpus
         self._stats = TrainStats()
 
     def train(
@@ -43,6 +46,7 @@ class OpenNmtModelTrainer(Trainer, Runner):
         batch_size_multiple = 8 if mixed_precision and batch_type == "tokens" else 1
 
         def dataset_fn(input_context):
+
             model.examples_inputter.make_training_dataset(
                 data_config["train_features_file"],
                 data_config.get("train_labels_file"),

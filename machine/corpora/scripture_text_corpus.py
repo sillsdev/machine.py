@@ -1,28 +1,25 @@
-from typing import Iterable
+from typing import Generator, Iterable, Optional, cast
 
 from ..scripture.verse_ref import Versification
-from ..tokenization.tokenizer import Tokenizer
 from .dictionary_text_corpus import DictionaryTextCorpus
-from .null_scripture_text import NullScriptureText
 from .scripture_text import ScriptureText
-from .text import Text
+from .text_corpus_row import TextCorpusRow
+from .text_corpus_view import TextCorpusView
 
 
 class ScriptureTextCorpus(DictionaryTextCorpus):
-    def __init__(
-        self, word_tokenizer: Tokenizer[str, int, str], versification: Versification, texts: Iterable[ScriptureText]
-    ) -> None:
+    def __init__(self, versification: Versification, texts: Iterable[ScriptureText] = []) -> None:
         super().__init__(texts)
-        self._word_tokenizer = word_tokenizer
         self._versification = versification
 
     @property
     def versification(self) -> Versification:
         return self._versification
 
-    @property
-    def word_tokenizer(self) -> Tokenizer[str, int, str]:
-        return self._word_tokenizer
-
-    def create_null_text(self, id: str) -> Text:
-        return NullScriptureText(self.word_tokenizer, id, self.versification)
+    def _get_rows(self, based_on: Optional[TextCorpusView]) -> Generator[TextCorpusRow, None, None]:
+        based_on_versification: Optional[Versification] = None
+        if based_on is not None and isinstance(based_on.source, ScriptureTextCorpus):
+            based_on_versification = based_on.source.versification
+        for text in cast(Iterable[ScriptureText], self.texts):
+            with text.get_rows(based_on_versification) as rows:
+                yield from rows

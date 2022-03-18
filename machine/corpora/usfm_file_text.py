@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Optional
 
 from ..scripture.verse_ref import Versification
-from ..tokenization import Tokenizer
 from ..utils.typeshed import StrPath
 from .file_stream_container import FileStreamContainer
 from .stream_container import StreamContainer
@@ -13,16 +12,13 @@ from .usfm_text_base import UsfmTextBase
 class UsfmFileText(UsfmTextBase):
     def __init__(
         self,
-        word_tokenizer: Tokenizer[str, int, str],
         stylesheet: UsfmStylesheet,
         encoding: str,
         filename: StrPath,
         versification: Optional[Versification] = None,
         include_markers: bool = False,
     ) -> None:
-        super().__init__(
-            word_tokenizer, _get_id(filename, encoding), stylesheet, encoding, versification, include_markers
-        )
+        super().__init__(_get_id(filename, encoding), stylesheet, encoding, versification, include_markers)
 
         self._filename = Path(filename)
 

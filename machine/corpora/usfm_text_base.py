@@ -3,12 +3,11 @@ from io import TextIOWrapper
 from typing import Generator, Optional
 
 from ..scripture.verse_ref import Versification, are_overlapping_verse_ranges
-from ..tokenization.tokenizer import Tokenizer
 from ..utils.string_utils import has_sentence_ending, is_integer
 from .corpora_helpers import merge_verse_ranges
 from .scripture_text import ScriptureText
 from .stream_container import StreamContainer
-from .text_segment import TextSegment
+from .text_corpus_row import TextCorpusRow
 from .usfm_marker import UsfmMarker, UsfmTextType
 from .usfm_parser import UsfmParser
 from .usfm_stylesheet import UsfmStylesheet
@@ -18,14 +17,13 @@ from .usfm_token import UsfmToken, UsfmTokenType
 class UsfmTextBase(ScriptureText):
     def __init__(
         self,
-        word_tokenizer: Tokenizer[str, int, str],
         id: str,
         stylesheet: UsfmStylesheet,
         encoding: str,
         versification: Optional[Versification],
         include_markers: bool,
     ) -> None:
-        super().__init__(word_tokenizer, id, versification)
+        super().__init__(id, versification)
 
         self._parser = UsfmParser(stylesheet)
         self._encoding = encoding
@@ -35,7 +33,7 @@ class UsfmTextBase(ScriptureText):
     def _create_stream_container(self) -> StreamContainer:
         ...
 
-    def _get_segments_in_doc_order(self, include_text: bool) -> Generator[TextSegment, None, None]:
+    def _get_rows(self) -> Generator[TextCorpusRow, None, None]:
         usfm = self._read_usfm()
         cur_embed_marker: Optional[UsfmMarker] = None
         cur_span_marker: Optional[UsfmMarker] = None
@@ -48,7 +46,7 @@ class UsfmTextBase(ScriptureText):
         for token in self._parser.parse(usfm):
             if token.type == UsfmTokenType.CHAPTER:
                 if chapter is not None and verse is not None:
-                    yield from self._create_text_segments(include_text, chapter, verse, text, sentence_start)
+                    yield from self._create_rows(chapter, verse, text, sentence_start)
                     sentence_start = True
                     text = ""
                 chapter = token.text
@@ -57,7 +55,7 @@ class UsfmTextBase(ScriptureText):
                 assert token.text is not None
                 if chapter is not None and verse is not None:
                     if token.text == verse:
-                        yield from self._create_text_segments(include_text, chapter, verse, text, sentence_start)
+                        yield from self._create_rows(chapter, verse, text, sentence_start)
                         sentence_start = has_sentence_ending(text)
                         text = ""
 
@@ -66,7 +64,7 @@ class UsfmTextBase(ScriptureText):
                     elif are_overlapping_verse_ranges(token.text, verse):
                         verse = merge_verse_ranges(token.text, verse)
                     else:
-                        yield from self._create_text_segments(include_text, chapter, verse, text, sentence_start)
+                        yield from self._create_rows(chapter, verse, text, sentence_start)
                         sentence_start = has_sentence_ending(text)
                         text = ""
                         verse = token.text
@@ -145,7 +143,7 @@ class UsfmTextBase(ScriptureText):
             prev_token = token
 
         if chapter is not None and verse is not None:
-            yield from self._create_text_segments(include_text, chapter, verse, text, sentence_start)
+            yield from self._create_rows(chapter, verse, text, sentence_start)
 
     def _read_usfm(self) -> str:
         with self._create_stream_container() as stream_container, TextIOWrapper(

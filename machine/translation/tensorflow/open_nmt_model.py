@@ -14,8 +14,7 @@ from opennmt.utils.checkpoint import Checkpoint
 from opennmt.utils.misc import extract_batches, item_or_tuple
 
 from ...annotations.range import Range
-from ...corpora.parallel_text_corpus import ParallelTextCorpus
-from ...corpora.token_processors import NO_OP, TokenProcessor
+from ...corpora.parallel_text_corpus_view import ParallelTextCorpusView
 from ..trainer import Trainer
 from ..translation_engine import TranslationEngine
 from ..translation_model import TranslationModel
@@ -46,9 +45,7 @@ class OpenNmtModel(TranslationModel, Runner):
 
     def create_trainer(
         self,
-        corpus: ParallelTextCorpus,
-        source_preprocessor: TokenProcessor = NO_OP,
-        target_preprocessor: TokenProcessor = NO_OP,
+        corpus: ParallelTextCorpusView,
         max_corpus_count: int = sys.maxsize,
     ) -> Trainer:
         ...

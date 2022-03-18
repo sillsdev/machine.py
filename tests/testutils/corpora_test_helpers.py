@@ -1,8 +1,8 @@
 import shutil
 from pathlib import Path
 
-from machine.corpora.text_segment import TextSegment
-from machine.scripture.verse_ref import VerseRef
+from machine.corpora import TextCorpusRow
+from machine.scripture import VerseRef
 
 from . import TEST_DATA_PATH
 
@@ -15,6 +15,6 @@ def create_test_dbl_bundle(temp_dir: Path) -> Path:
     return temp_dir / "Tes.zip"
 
 
-def verse_ref(segment: TextSegment) -> VerseRef:
-    assert isinstance(segment.segment_ref, VerseRef)
-    return segment.segment_ref
+def verse_ref(segment: TextCorpusRow) -> VerseRef:
+    assert isinstance(segment.ref, VerseRef)
+    return segment.ref
