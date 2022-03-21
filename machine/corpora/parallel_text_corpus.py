@@ -30,10 +30,6 @@ class ParallelTextCorpus(ParallelTextCorpusView):
     def source(self) -> ParallelTextCorpusView:
         return self
 
-    @property
-    def text_alignment_corpus(self) -> TextAlignmentCorpusView:
-        return self._text_alignment_corpus
-
     def _get_rows(self, all_source_rows: bool, all_target_rows: bool) -> Generator[ParallelTextCorpusRow, None, None]:
         with self._source_corpus.get_rows() as src_iterator, self._target_corpus.get_rows(
             self._source_corpus

@@ -4,6 +4,8 @@ from typing import Callable, Generator, Optional
 from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
 from ..utils.context_managed_generator import ContextManagedGenerator
+from .parallel_text_corpus_view import ParallelTextCorpusView
+from .text_alignment_corpus_view import TextAlignmentCorpusView
 from .text_corpus_row import TextCorpusRow
 from .token_processors import escape_spaces, lowercase, normalize, unescape_spaces
 
@@ -22,6 +24,9 @@ class TextCorpusView(ABC):
     @abstractmethod
     def _get_rows(self, based_on: Optional["TextCorpusView"]) -> Generator[TextCorpusRow, None, None]:
         ...
+
+    def __len__(self) -> int:
+        return self.get_count()
 
     def get_count(self) -> int:
         with self.get_rows() as rows:
@@ -83,6 +88,13 @@ class TextCorpusView(ABC):
 
     def filter(self, predicate: Callable[[TextCorpusRow], bool]) -> "TextCorpusView":
         return FilterTextCorpusView(self, predicate)
+
+    def zip(
+        self, other: "TextCorpusView", alignment_corpus: Optional[TextAlignmentCorpusView] = None
+    ) -> ParallelTextCorpusView:
+        from .parallel_text_corpus import ParallelTextCorpus
+
+        return ParallelTextCorpus(self, other, alignment_corpus)
 
 
 class TransformTextCorpusView(TextCorpusView):

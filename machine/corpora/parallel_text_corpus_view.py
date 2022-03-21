@@ -23,6 +23,9 @@ class ParallelTextCorpusView(ABC):
     def _get_rows(self, all_source_rows: bool, all_target_rows: bool) -> Generator[ParallelTextCorpusRow, None, None]:
         ...
 
+    def __len__(self) -> int:
+        return self.get_count()
+
     def get_count(self, all_source_rows: bool = False, all_target_rows: bool = False) -> int:
         with self.get_rows(all_source_rows, all_target_rows) as rows:
             return sum(1 for _ in rows)
