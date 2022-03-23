@@ -148,7 +148,7 @@ class TranslationResultBuilder:
             trg_phrase_start_index = phrase_info.target_cut
 
         return TranslationResult(
-            source_segment, self._words.copy(), self._confidences.copy(), sources, alignment, phrases
+            len(source_segment), self._words.copy(), self._confidences.copy(), sources, alignment, phrases
         )
 
     def _resize_alignment(self, phrase_index: int, cols_to_copy: List[int]) -> None:
