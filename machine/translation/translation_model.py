@@ -1,4 +1,3 @@
-import sys
 from abc import abstractmethod
 from contextlib import AbstractContextManager
 from types import TracebackType
@@ -15,11 +14,7 @@ class TranslationModel(AbstractContextManager):
         ...
 
     @abstractmethod
-    def create_trainer(
-        self,
-        corpus: ParallelTextCorpusView,
-        max_corpus_count: int = sys.maxsize,
-    ) -> Trainer:
+    def create_trainer(self, corpus: ParallelTextCorpusView) -> Trainer:
         ...
 
     def __enter__(self) -> "TranslationModel":

@@ -1,4 +1,4 @@
-from machine.corpora import DictionaryTextCorpus, MemoryText, ParallelTextCorpus, TextCorpusRow, TextCorpusRowRef
+from machine.corpora import DictionaryTextCorpus, MemoryText, ParallelTextCorpus, RowRef, TextRow
 
 from . import TEST_DATA_PATH
 
@@ -45,9 +45,10 @@ def create_test_parallel_corpus() -> ParallelTextCorpus:
     return ParallelTextCorpus(src_corpus, trg_corpus)
 
 
-def _segment(ref: int, segment: str) -> TextCorpusRow:
-    return TextCorpusRow(
-        TextCorpusRowRef("text1", ref),
+def _segment(ref: int, segment: str) -> TextRow:
+    return TextRow(
+        "text1",
+        RowRef(ref),
         segment.split(),
         is_sentence_start=True,
         is_in_range=False,

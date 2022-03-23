@@ -9,14 +9,14 @@ from ..scripture.verse_ref import VerseRef, Versification
 from ..tokenization import RangeTokenizer
 from ..utils.typeshed import StrPath
 from .aligned_word_pair import AlignedWordPair
+from .alignment_collection import AlignmentCollection
+from .alignment_row import AlignmentRow
 from .corpora_helpers import get_scripture_text_sort_key, get_usx_id
-from .text_alignment_collection import TextAlignmentCollection
-from .text_alignment_corpus_row import TextAlignmentCorpusRow
 from .usx_token import UsxToken
 from .usx_verse_parser import UsxVerseParser
 
 
-class UsxFileTextAlignmentCollection(TextAlignmentCollection):
+class UsxFileAlignmentCollection(AlignmentCollection):
     def __init__(
         self,
         src_word_tokenizer: RangeTokenizer[str, int, str],
@@ -46,7 +46,7 @@ class UsxFileTextAlignmentCollection(TextAlignmentCollection):
     def sort_key(self) -> str:
         return self._sort_key
 
-    def _get_rows(self) -> Generator[TextAlignmentCorpusRow, None, None]:
+    def _get_rows(self) -> Generator[AlignmentRow, None, None]:
         with open(self._src_filename, "rb") as src_stream, open(self._trg_filename, "rb") as trg_stream:
             src_iterator = iter(self._parser.parse(src_stream))
             trg_iterator = iter(self._parser.parse(trg_stream))
@@ -103,19 +103,9 @@ class UsxFileTextAlignmentCollection(TextAlignmentCollection):
                     src_verse = next(src_iterator, None)
                     trg_verse = next(trg_iterator, None)
 
-    def invert(self) -> "UsxFileTextAlignmentCollection":
-        return UsxFileTextAlignmentCollection(
-            self._trg_word_tokenizer,
-            self._src_word_tokenizer,
-            self._trg_filename,
-            self._src_filename,
-            self._trg_versification,
-            self._src_versification,
-        )
-
     def _create_text_alignment(
         self, verse_ref: VerseRef, src_tokens: Sequence[UsxToken], trg_tokens: Sequence[UsxToken]
-    ) -> TextAlignmentCorpusRow:
+    ) -> AlignmentRow:
         src_links = _get_links(self._src_word_tokenizer, src_tokens)
         trg_links = _get_links(self._trg_word_tokenizer, trg_tokens)
 
@@ -126,7 +116,7 @@ class UsxFileTextAlignmentCollection(TextAlignmentCollection):
                 for src_index in src_indices:
                     for trg_index in trg_indices:
                         word_pairs.add(AlignedWordPair(src_index, trg_index))
-        return TextAlignmentCorpusRow(verse_ref, word_pairs)
+        return AlignmentRow(self.id, verse_ref, word_pairs)
 
 
 @dataclass

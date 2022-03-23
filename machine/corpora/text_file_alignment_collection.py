@@ -3,12 +3,12 @@ from typing import Generator
 from ..utils.string_utils import is_integer
 from ..utils.typeshed import StrPath
 from .aligned_word_pair import AlignedWordPair
-from .text_alignment_collection import TextAlignmentCollection
-from .text_alignment_corpus_row import TextAlignmentCorpusRow
-from .text_corpus_row_ref import TextCorpusRowRef
+from .alignment_collection import AlignmentCollection
+from .alignment_row import AlignmentRow
+from .row_ref import RowRef
 
 
-class TextFileTextAlignmentCollection(TextAlignmentCollection):
+class TextFileAlignmentCollection(AlignmentCollection):
     def __init__(self, id: str, filename: StrPath) -> None:
         self._id = id
         self._filename = filename
@@ -21,7 +21,7 @@ class TextFileTextAlignmentCollection(TextAlignmentCollection):
     def sort_key(self) -> str:
         return self._id
 
-    def _get_rows(self) -> Generator[TextAlignmentCorpusRow, None, None]:
+    def _get_rows(self) -> Generator[AlignmentRow, None, None]:
         with open(self._filename, "r", encoding="utf-8-sig") as file:
             section_num = 1
             segment_num = 1
@@ -33,7 +33,5 @@ class TextFileTextAlignmentCollection(TextAlignmentCollection):
                         section_num = int(section_num_str)
                         segment_num = 1
                 else:
-                    yield TextAlignmentCorpusRow(
-                        TextCorpusRowRef(self.id, section_num, segment_num), AlignedWordPair.parse(line)
-                    )
+                    yield AlignmentRow(self.id, RowRef(self.id, section_num, segment_num), AlignedWordPair.parse(line))
                     segment_num += 1

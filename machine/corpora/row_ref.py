@@ -7,7 +7,7 @@ from ..utils.string_utils import parse_integer
 
 
 @dataclass(frozen=True)
-class TextCorpusRowRef(Comparable):
+class RowRef(Comparable):
     keys: Sequence[str]
 
     @overload
@@ -29,8 +29,8 @@ class TextCorpusRowRef(Comparable):
         object.__setattr__(self, "keys", keys)
 
     def compare_to(self, other: object) -> int:
-        if not isinstance(other, TextCorpusRowRef):
-            raise TypeError("other is not a TextCorpusRowRef object.")
+        if not isinstance(other, RowRef):
+            raise TypeError("other is not a RowRef object.")
         if self is other:
             return 0
         for i in range(min(len(self.keys), len(other.keys))):

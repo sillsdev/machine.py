@@ -1,40 +1,19 @@
-from abc import ABC, abstractmethod
+from itertools import islice
 from typing import Callable, Generator, Optional
 
 from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
-from ..utils.context_managed_generator import ContextManagedGenerator
-from .parallel_text_corpus_row import ParallelTextCorpusRow
+from .corpus_view import CorpusView
+from .parallel_text_row import ParallelTextRow
 from .token_processors import escape_spaces, lowercase, normalize, unescape_spaces
 
 
-class ParallelTextCorpusView(ABC):
-    @property
-    @abstractmethod
-    def source(self) -> "ParallelTextCorpusView":
-        ...
-
-    def get_rows(
-        self, all_source_rows: bool = False, all_target_rows: bool = False
-    ) -> ContextManagedGenerator[ParallelTextCorpusRow, None, None]:
-        return ContextManagedGenerator(self._get_rows(all_source_rows, all_target_rows))
-
-    @abstractmethod
-    def _get_rows(self, all_source_rows: bool, all_target_rows: bool) -> Generator[ParallelTextCorpusRow, None, None]:
-        ...
-
-    def __len__(self) -> int:
-        return self.get_count()
-
-    def get_count(self, all_source_rows: bool = False, all_target_rows: bool = False) -> int:
-        with self.get_rows(all_source_rows, all_target_rows) as rows:
-            return sum(1 for _ in rows)
-
+class ParallelTextCorpusView(CorpusView[ParallelTextRow]):
     def invert(self) -> "ParallelTextCorpusView":
-        def _invert(row: ParallelTextCorpusRow) -> ParallelTextCorpusRow:
+        def _invert(row: ParallelTextRow) -> ParallelTextRow:
             return row.invert()
 
-        return TransformParallelTextCorpusView(self, _invert)
+        return self.transform(_invert)
 
     def tokenize(
         self, source_tokenizer: Tokenizer[str, int, str], target_tokenizer: Optional[Tokenizer[str, int, str]] = None
@@ -42,12 +21,12 @@ class ParallelTextCorpusView(ABC):
         if target_tokenizer is None:
             target_tokenizer = source_tokenizer
 
-        def _tokenize(row: ParallelTextCorpusRow) -> ParallelTextCorpusRow:
+        def _tokenize(row: ParallelTextRow) -> ParallelTextRow:
             row.source_segment = list(source_tokenizer.tokenize(row.source_text))
             row.target_segment = list(target_tokenizer.tokenize(row.target_text))
             return row
 
-        return TransformParallelTextCorpusView(self, _tokenize)
+        return self.transform(_tokenize)
 
     def detokenize(
         self, source_detokenizer: Detokenizer[str, str], target_detokenizer: Optional[Detokenizer[str, str]] = None
@@ -55,20 +34,20 @@ class ParallelTextCorpusView(ABC):
         if target_detokenizer is None:
             target_detokenizer = source_detokenizer
 
-        def _detokenize(row: ParallelTextCorpusRow) -> ParallelTextCorpusRow:
+        def _detokenize(row: ParallelTextRow) -> ParallelTextRow:
             row.source_segment = [source_detokenizer.detokenize(row.source_segment)]
             row.target_segment = [target_detokenizer.detokenize(row.target_segment)]
             return row
 
-        return TransformParallelTextCorpusView(self, _detokenize)
+        return self.transform(_detokenize)
 
     def normalize(self, normalization_form: str) -> "ParallelTextCorpusView":
-        def _normalize(row: ParallelTextCorpusRow) -> ParallelTextCorpusRow:
+        def _normalize(row: ParallelTextRow) -> ParallelTextRow:
             row.source_segment = normalize(normalization_form, row.source_segment)
             row.target_segment = normalize(normalization_form, row.target_segment)
             return row
 
-        return TransformParallelTextCorpusView(self, _normalize)
+        return self.transform(_normalize)
 
     def nfc_normalize(self) -> "ParallelTextCorpusView":
         return self.normalize("NFC")
@@ -83,61 +62,64 @@ class ParallelTextCorpusView(ABC):
         return self.normalize("NFKD")
 
     def lowercase(self) -> "ParallelTextCorpusView":
-        def _lowercase(row: ParallelTextCorpusRow) -> ParallelTextCorpusRow:
+        def _lowercase(row: ParallelTextRow) -> ParallelTextRow:
             row.source_segment = lowercase(row.source_segment)
             row.target_segment = lowercase(row.target_segment)
             return row
 
-        return TransformParallelTextCorpusView(self, _lowercase)
+        return self.transform(_lowercase)
 
     def escape_spaces(self) -> "ParallelTextCorpusView":
-        def _escape_spaces(row: ParallelTextCorpusRow) -> ParallelTextCorpusRow:
+        def _escape_spaces(row: ParallelTextRow) -> ParallelTextRow:
             row.source_segment = escape_spaces(row.source_segment)
             row.target_segment = escape_spaces(row.target_segment)
             return row
 
-        return TransformParallelTextCorpusView(self, _escape_spaces)
+        return self.transform(_escape_spaces)
 
     def unescape_spaces(self) -> "ParallelTextCorpusView":
-        def _unescape_spaces(row: ParallelTextCorpusRow) -> ParallelTextCorpusRow:
+        def _unescape_spaces(row: ParallelTextRow) -> ParallelTextRow:
             row.source_segment = unescape_spaces(row.source_segment)
             row.target_segment = unescape_spaces(row.target_segment)
             return row
 
-        return TransformParallelTextCorpusView(self, _unescape_spaces)
+        return self.transform(_unescape_spaces)
 
-    def filter(self, predicate: Callable[[ParallelTextCorpusRow], bool]) -> "ParallelTextCorpusView":
+    def filter(self, predicate: Callable[[ParallelTextRow], bool]) -> "ParallelTextCorpusView":
         return FilterParallelTextCorpusView(self, predicate)
+
+    def transform(self, transform: Callable[[ParallelTextRow], ParallelTextRow]) -> "ParallelTextCorpusView":
+        return TransformParallelTextCorpusView(self, transform)
+
+    def take(self, count: int) -> "ParallelTextCorpusView":
+        return TakeParallelTextCorpusView(self, count)
 
 
 class TransformParallelTextCorpusView(ParallelTextCorpusView):
-    def __init__(
-        self, corpus: ParallelTextCorpusView, transform: Callable[[ParallelTextCorpusRow], ParallelTextCorpusRow]
-    ):
+    def __init__(self, corpus: ParallelTextCorpusView, transform: Callable[[ParallelTextRow], ParallelTextRow]):
         self._corpus = corpus
         self._transform = transform
 
-    @property
-    def source(self) -> ParallelTextCorpusView:
-        return self._corpus.source
-
-    def _get_rows(self, all_source_rows: bool, all_target_rows: bool) -> Generator[ParallelTextCorpusRow, None, None]:
-        with self._corpus.get_rows(all_source_rows, all_target_rows) as rows:
-            for row in rows:
-                yield self._transform(row)
+    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
+        with self._corpus.get_rows() as rows:
+            yield from map(self._transform, rows)
 
 
 class FilterParallelTextCorpusView(ParallelTextCorpusView):
-    def __init__(self, corpus: ParallelTextCorpusView, predicate: Callable[[ParallelTextCorpusRow], bool]):
+    def __init__(self, corpus: ParallelTextCorpusView, predicate: Callable[[ParallelTextRow], bool]):
         self._corpus = corpus
         self._predicate = predicate
 
-    @property
-    def source(self) -> ParallelTextCorpusView:
-        return self._corpus.source
+    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
+        with self._corpus.get_rows() as rows:
+            yield from filter(self._predicate, rows)
 
-    def _get_rows(self, all_source_rows: bool, all_target_rows: bool) -> Generator[ParallelTextCorpusRow, None, None]:
-        with self._corpus.get_rows(all_source_rows, all_target_rows) as rows:
-            for row in rows:
-                if self._predicate(row):
-                    yield row
+
+class TakeParallelTextCorpusView(ParallelTextCorpusView):
+    def __init__(self, corpus: ParallelTextCorpusView, count: int):
+        self._corpus = corpus
+        self._count = count
+
+    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
+        with self._corpus.get_rows() as rows:
+            yield from islice(rows, self._count)

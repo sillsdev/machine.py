@@ -3,9 +3,9 @@ from typing import Generator
 
 from ..utils.string_utils import is_integer
 from ..utils.typeshed import StrPath
+from .row_ref import RowRef
 from .text_base import TextBase
-from .text_corpus_row import TextCorpusRow
-from .text_corpus_row_ref import TextCorpusRowRef
+from .text_row import TextRow
 
 
 class TextFileText(TextBase):
@@ -17,7 +17,7 @@ class TextFileText(TextBase):
     def filename(self) -> Path:
         return self._filename
 
-    def _get_rows(self) -> Generator[TextCorpusRow, None, None]:
+    def _get_rows(self) -> Generator[TextRow, None, None]:
         with open(self._filename, "r", encoding="utf-8-sig") as file:
             section_num = 1
             segment_num = 1
@@ -29,5 +29,5 @@ class TextFileText(TextBase):
                         section_num = int(section_num_str)
                         segment_num = 1
                 else:
-                    yield self._create_row(line, TextCorpusRowRef(self.id, section_num, segment_num))
+                    yield self._create_row(line, RowRef(self.id, section_num, segment_num))
                     segment_num += 1

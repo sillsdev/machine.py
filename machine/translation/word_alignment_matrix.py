@@ -4,13 +4,13 @@ import numpy as np
 from sortedcontainers import SortedSet
 
 from ..corpora.aligned_word_pair import AlignedWordPair
-from ..corpora.parallel_text_corpus_row import ParallelTextCorpusRow
+from ..corpora.parallel_text_row import ParallelTextRow
 from .symmetrization_heuristic import SymmetrizationHeuristic
 
 
 class WordAlignmentMatrix:
     @classmethod
-    def from_parallel_text_corpus_row(cls, row: ParallelTextCorpusRow) -> Optional["WordAlignmentMatrix"]:
+    def from_parallel_text_corpus_row(cls, row: ParallelTextRow) -> Optional["WordAlignmentMatrix"]:
         if row.aligned_word_pairs is None:
             return None
 

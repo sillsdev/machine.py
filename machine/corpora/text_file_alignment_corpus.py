@@ -3,11 +3,11 @@ from typing import Any, Iterable, overload
 
 from ..utils.typeshed import StrPath
 from .corpora_helpers import get_files
-from .dictionary_text_alignment_corpus import DictionaryTextAlignmentCorpus
-from .text_file_text_alignment_collection import TextFileTextAlignmentCollection
+from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
+from .text_file_alignment_collection import TextFileAlignmentCollection
 
 
-class TextFileTextAlignmentCorpus(DictionaryTextAlignmentCorpus):
+class TextFileAlignmentCorpus(DictionaryAlignmentCorpus):
     @overload
     def __init__(self, file_patterns: Iterable[StrPath]) -> None:
         ...
@@ -24,5 +24,5 @@ class TextFileTextAlignmentCorpus(DictionaryTextAlignmentCorpus):
             file_patterns = (str(p) for p in args)
         else:
             file_patterns = (str(p) for p in args[0])
-        collections = (TextFileTextAlignmentCollection(id, filename) for id, filename in get_files(file_patterns))
+        collections = (TextFileAlignmentCollection(id, filename) for id, filename in get_files(file_patterns))
         super().__init__(collections)

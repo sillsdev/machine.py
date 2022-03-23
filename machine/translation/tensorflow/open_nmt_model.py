@@ -1,5 +1,4 @@
 import heapq
-import sys
 from types import TracebackType
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type, cast
 
@@ -43,11 +42,7 @@ class OpenNmtModel(TranslationModel, Runner):
         self._engines.add(engine)
         return engine
 
-    def create_trainer(
-        self,
-        corpus: ParallelTextCorpusView,
-        max_corpus_count: int = sys.maxsize,
-    ) -> Trainer:
+    def create_trainer(self, corpus: ParallelTextCorpusView) -> Trainer:
         ...
 
     def restore_checkpoint(self) -> Tuple[SequenceToSequence, dict]:

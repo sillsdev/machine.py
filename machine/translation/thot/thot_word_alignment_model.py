@@ -1,4 +1,3 @@
-import sys
 from abc import abstractmethod
 from pathlib import Path
 from typing import Collection, Iterable, Iterator, Optional, Sequence, Tuple, Union
@@ -68,12 +67,8 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
         if self._prefix_filename is not None:
             self._model.print(str(self._prefix_filename))
 
-    def create_trainer(
-        self,
-        corpus: ParallelTextCorpusView,
-        max_corpus_count: int = sys.maxsize,
-    ) -> Trainer:
-        return _Trainer(self, corpus, self._prefix_filename, max_corpus_count)
+    def create_trainer(self, corpus: ParallelTextCorpusView) -> Trainer:
+        return _Trainer(self, corpus, self._prefix_filename)
 
     def get_best_alignment(self, source_segment: Sequence[str], target_segment: Sequence[str]) -> WordAlignmentMatrix:
         _, matrix = self._model.get_best_alignment(source_segment, target_segment)
@@ -168,19 +163,9 @@ class _ThotWordVocabulary(WordVocabulary):
 
 class _Trainer(ThotWordAlignmentModelTrainer):
     def __init__(
-        self,
-        model: ThotWordAlignmentModel,
-        corpus: ParallelTextCorpusView,
-        prefix_filename: Optional[StrPath],
-        max_corpus_count: int,
+        self, model: ThotWordAlignmentModel, corpus: ParallelTextCorpusView, prefix_filename: Optional[StrPath]
     ) -> None:
-        super().__init__(
-            model.type,
-            corpus,
-            prefix_filename,
-            model.parameters,
-            max_corpus_count,
-        )
+        super().__init__(model.type, corpus, prefix_filename, model.parameters)
         self._machine_model = model
 
     def save(self) -> None:

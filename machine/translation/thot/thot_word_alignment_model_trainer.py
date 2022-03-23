@@ -4,8 +4,8 @@ from typing import Callable, List, Optional, Tuple, Union, overload
 
 import thot.alignment as ta
 
-from ...corpora.parallel_text_corpus_row import ParallelTextCorpusRow
 from ...corpora.parallel_text_corpus_view import ParallelTextCorpusView
+from ...corpora.parallel_text_row import ParallelTextRow
 from ...utils.progress_status import ProgressStatus
 from ...utils.typeshed import StrPath
 from ..trainer import Trainer, TrainStats
@@ -50,11 +50,6 @@ class ThotWordAlignmentModelTrainer(Trainer):
         self._parallel_corpus = corpus
         self._max_corpus_count = max_corpus_count
         self._stats = TrainStats()
-
-        def null_row_filter(s: ParallelTextCorpusRow, i: int) -> bool:
-            return True
-
-        self._row_filter = null_row_filter
 
         self._models: List[Tuple[ta.AlignmentModel, int]] = []
         if model_type is ThotWordAlignmentModelType.FAST_ALIGN:
@@ -118,16 +113,6 @@ class ThotWordAlignmentModelTrainer(Trainer):
         return self._stats
 
     @property
-    def row_filter(self) -> Callable[[ParallelTextCorpusRow, int], bool]:
-        return self._row_filter
-
-    @row_filter.setter
-    def row_filter(self, value: Callable[[ParallelTextCorpusRow, int], bool]) -> None:
-        if isinstance(self._parallel_corpus, tuple):
-            raise RuntimeError("A row filter cannot be set when corpus filenames are provided.")
-        self._row_filter = value
-
-    @property
     def _model(self) -> ta.AlignmentModel:
         return self._models[-1][0]
 
@@ -147,10 +132,9 @@ class ThotWordAlignmentModelTrainer(Trainer):
             index = 0
             with self._parallel_corpus.get_rows() as rows:
                 for row in rows:
-                    if self._row_filter(row, index):
-                        self._model.add_sentence_pair(row.source_segment, row.target_segment, 1)
-                        if self._is_segment_valid(row):
-                            corpus_count += 1
+                    self._model.add_sentence_pair(row.source_segment, row.target_segment, 1)
+                    if self._is_segment_valid(row):
+                        corpus_count += 1
                     index += 1
                     if corpus_count == self._max_corpus_count:
                         break
@@ -188,7 +172,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
         if self._prefix_filename is not None:
             self._model.print(str(self._prefix_filename))
 
-    def _is_segment_valid(self, row: ParallelTextCorpusRow) -> bool:
+    def _is_segment_valid(self, row: ParallelTextRow) -> bool:
         return (
             not row.is_empty
             and len(row.source_segment) <= self._max_segment_length

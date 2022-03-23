@@ -1,10 +1,9 @@
-import sys
 from abc import abstractmethod
 from typing import Collection, Dict, Iterable, Optional, Sequence, Tuple, Union
 
 from ..corpora.aligned_word_pair import AlignedWordPair
-from ..corpora.parallel_text_corpus_row import ParallelTextCorpusRow
 from ..corpora.parallel_text_corpus_view import ParallelTextCorpusView
+from ..corpora.parallel_text_row import ParallelTextRow
 from .trainer import Trainer
 from .word_aligner import WordAligner
 from .word_alignment_matrix import WordAlignmentMatrix
@@ -28,11 +27,7 @@ class WordAlignmentModel(WordAligner):
         ...
 
     @abstractmethod
-    def create_trainer(
-        self,
-        corpus: ParallelTextCorpusView,
-        max_corpus_count: int = sys.maxsize,
-    ) -> Trainer:
+    def create_trainer(self, corpus: ParallelTextCorpusView) -> Trainer:
         ...
 
     @abstractmethod
@@ -93,7 +88,7 @@ class WordAlignmentModel(WordAligner):
 
     def get_alignment_string(
         self,
-        row: ParallelTextCorpusRow,
+        row: ParallelTextRow,
         include_scores: bool = True,
     ) -> str:
         alignment = self.get_best_alignment_from_known(
@@ -107,7 +102,7 @@ class WordAlignmentModel(WordAligner):
 
     def get_giza_format_string(
         self,
-        row: ParallelTextCorpusRow,
+        row: ParallelTextRow,
     ) -> str:
         alignment = self.get_best_alignment_from_known(
             row.source_segment, row.target_segment, WordAlignmentMatrix.from_parallel_text_corpus_row(row)

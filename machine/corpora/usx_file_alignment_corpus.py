@@ -5,11 +5,11 @@ from ..scripture.verse_ref import Versification
 from ..tokenization.range_tokenizer import RangeTokenizer
 from ..utils.typeshed import StrPath
 from .corpora_helpers import get_usx_id, get_usx_versification
-from .dictionary_text_alignment_corpus import DictionaryTextAlignmentCorpus
-from .usx_file_text_alignment_collection import UsxFileTextAlignmentCollection
+from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
+from .usx_file_alignment_collection import UsxFileAlignmentCollection
 
 
-class UsxFileTextAlignmentCorpus(DictionaryTextAlignmentCorpus):
+class UsxFileAlignmentCorpus(DictionaryAlignmentCorpus):
     def __init__(
         self,
         src_word_tokenizer: RangeTokenizer[str, int, str],
@@ -27,12 +27,12 @@ class UsxFileTextAlignmentCorpus(DictionaryTextAlignmentCorpus):
         src_filenames = _get_filenames(src_project_dir)
         trg_filenames = _get_filenames(trg_project_dir)
 
-        alignments: List[UsxFileTextAlignmentCollection] = []
+        alignments: List[UsxFileAlignmentCollection] = []
         for id in src_filenames.keys() & trg_filenames.keys():
             src_filename = src_filenames[id]
             trg_filename = trg_filenames[id]
             alignments.append(
-                UsxFileTextAlignmentCollection(
+                UsxFileAlignmentCollection(
                     src_word_tokenizer,
                     trg_word_tokenizer,
                     src_filename,

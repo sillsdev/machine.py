@@ -1,7 +1,7 @@
 from typing import Any
 
 from .text import Text
-from .text_corpus_row import TextCorpusRow
+from .text_row import TextRow
 
 
 class TextBase(Text):
@@ -24,11 +24,9 @@ class TextBase(Text):
         is_sentence_start: bool = True,
         is_in_range: bool = False,
         is_range_start: bool = False,
-    ) -> TextCorpusRow:
+    ) -> TextRow:
         text = text.strip()
-        return TextCorpusRow(ref, [text], is_sentence_start, is_in_range, is_range_start, is_empty=len(text) == 0)
+        return TextRow(self.id, ref, [text], is_sentence_start, is_in_range, is_range_start, is_empty=len(text) == 0)
 
-    def _create_empty_row(self, ref: Any, is_in_range: bool = False) -> TextCorpusRow:
-        return TextCorpusRow(
-            ref, [], is_sentence_start=True, is_in_range=is_in_range, is_range_start=False, is_empty=True
-        )
+    def _create_empty_row(self, ref: Any, is_in_range: bool = False) -> TextRow:
+        return TextRow(self.id, ref, is_in_range=is_in_range)

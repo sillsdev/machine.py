@@ -4,7 +4,7 @@ from testutils.dbl_bundle_test_environment import DblBundleTestEnvironment
 from machine.scripture import VerseRef
 
 
-def test_get_segments_nonempty_text() -> None:
+def test_get_rows_nonempty_text() -> None:
     with DblBundleTestEnvironment() as env:
         text = env.corpus.get_text("MAT")
         assert text is not None
@@ -46,7 +46,7 @@ def test_get_segments_nonempty_text() -> None:
         assert rows[11].text == "Chapter two, verse six."
 
 
-def test_get_segments_sentence_start() -> None:
+def test_get_rows_sentence_start() -> None:
     with DblBundleTestEnvironment() as env:
         text = env.corpus.get_text("MAT")
         assert text is not None
@@ -63,7 +63,7 @@ def test_get_segments_sentence_start() -> None:
         assert not rows[4].is_sentence_start
 
 
-def test_get_segments_empty_text() -> None:
+def test_get_rows_empty_text() -> None:
     with DblBundleTestEnvironment() as env:
         text = env.corpus.get_text("MRK")
         assert text is not None

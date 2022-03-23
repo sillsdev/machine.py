@@ -2,11 +2,11 @@ from typing import Generator, Iterable
 
 from .corpora_helpers import gen
 from .text import Text
-from .text_corpus_row import TextCorpusRow
+from .text_row import TextRow
 
 
 class MemoryText(Text):
-    def __init__(self, id: str, rows: Iterable[TextCorpusRow] = []) -> None:
+    def __init__(self, id: str, rows: Iterable[TextRow] = []) -> None:
         self._id = id
         self._rows = list(rows)
 
@@ -18,5 +18,5 @@ class MemoryText(Text):
     def sort_key(self) -> str:
         return self._id
 
-    def _get_rows(self) -> Generator[TextCorpusRow, None, None]:
+    def _get_rows(self) -> Generator[TextRow, None, None]:
         return gen(self._rows)

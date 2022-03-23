@@ -1,28 +1,28 @@
 from .aligned_word_pair import AlignedWordPair
+from .alignment_collection import AlignmentCollection
+from .alignment_corpus import AlignmentCorpus
+from .alignment_corpus_view import AlignmentCorpusView
+from .alignment_row import AlignmentRow
 from .dbl_bundle_text import DblBundleText
 from .dbl_bundle_text_corpus import DblBundleTextCorpus
-from .dictionary_text_alignment_corpus import DictionaryTextAlignmentCorpus
+from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .dictionary_text_corpus import DictionaryTextCorpus
+from .memory_alignment_collection import MemoryAlignmentCollection
 from .memory_text import MemoryText
-from .memory_text_alignment_collection import MemoryTextAlignmentCollection
 from .parallel_text_corpus import ParallelTextCorpus
-from .parallel_text_corpus_row import ParallelTextCorpusRow
 from .parallel_text_corpus_view import ParallelTextCorpusView
+from .parallel_text_row import ParallelTextRow
 from .paratext_text_corpus import ParatextTextCorpus
+from .row_ref import RowRef
 from .scripture_text_corpus import ScriptureTextCorpus
 from .text import Text
-from .text_alignment_collection import TextAlignmentCollection
-from .text_alignment_corpus import TextAlignmentCorpus
-from .text_alignment_corpus_row import TextAlignmentCorpusRow
-from .text_alignment_corpus_view import TextAlignmentCorpusView
 from .text_corpus import TextCorpus
-from .text_corpus_row import TextCorpusRow
-from .text_corpus_row_ref import TextCorpusRowRef
 from .text_corpus_view import TextCorpusView
+from .text_file_alignment_collection import TextFileAlignmentCollection
+from .text_file_alignment_corpus import TextFileAlignmentCorpus
 from .text_file_text import TextFileText
-from .text_file_text_alignment_collection import TextFileTextAlignmentCollection
-from .text_file_text_alignment_corpus import TextFileTextAlignmentCorpus
 from .text_file_text_corpus import TextFileTextCorpus
+from .text_row import TextRow
 from .token_processors import (
     escape_spaces,
     lowercase,
@@ -37,37 +37,37 @@ from .usfm_file_text import UsfmFileText
 from .usfm_file_text_corpus import UsfmFileTextCorpus
 from .usfm_marker import UsfmJustification, UsfmMarker, UsfmStyleType, UsfmTextProperties, UsfmTextType
 from .usfm_stylesheet import UsfmStylesheet
+from .usx_file_alignment_collection import UsxFileAlignmentCollection
+from .usx_file_alignment_corpus import UsxFileAlignmentCorpus
 from .usx_file_text import UsxFileText
-from .usx_file_text_alignment_collection import UsxFileTextAlignmentCollection
-from .usx_file_text_alignment_corpus import UsxFileTextAlignmentCorpus
 from .usx_file_text_corpus import UsxFileTextCorpus
 
 __all__ = [
     "AlignedWordPair",
+    "AlignmentCollection",
+    "AlignmentCorpus",
+    "AlignmentCorpusView",
+    "AlignmentRow",
     "DblBundleText",
     "DblBundleTextCorpus",
-    "DictionaryTextAlignmentCorpus",
+    "DictionaryAlignmentCorpus",
     "DictionaryTextCorpus",
+    "MemoryAlignmentCollection",
     "MemoryText",
-    "MemoryTextAlignmentCollection",
     "ParallelTextCorpus",
-    "ParallelTextCorpusRow",
     "ParallelTextCorpusView",
+    "ParallelTextRow",
     "ParatextTextCorpus",
+    "RowRef",
     "ScriptureTextCorpus",
     "Text",
-    "TextAlignmentCollection",
-    "TextAlignmentCorpus",
-    "TextAlignmentCorpusRow",
-    "TextAlignmentCorpusView",
     "TextCorpus",
-    "TextCorpusRow",
-    "TextCorpusRowRef",
     "TextCorpusView",
+    "TextFileAlignmentCollection",
+    "TextFileAlignmentCorpus",
     "TextFileText",
-    "TextFileTextAlignmentCollection",
-    "TextFileTextAlignmentCorpus",
     "TextFileTextCorpus",
+    "TextRow",
     "UsfmFileText",
     "UsfmFileTextCorpus",
     "UsfmJustification",
@@ -76,9 +76,9 @@ __all__ = [
     "UsfmStylesheet",
     "UsfmTextProperties",
     "UsfmTextType",
+    "UsxFileAlignmentCollection",
+    "UsxFileAlignmentCorpus",
     "UsxFileText",
-    "UsxFileTextAlignmentCollection",
-    "UsxFileTextAlignmentCorpus",
     "UsxFileTextCorpus",
     "escape_spaces",
     "lowercase",

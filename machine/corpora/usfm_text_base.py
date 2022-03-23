@@ -7,7 +7,7 @@ from ..utils.string_utils import has_sentence_ending, is_integer
 from .corpora_helpers import merge_verse_ranges
 from .scripture_text import ScriptureText
 from .stream_container import StreamContainer
-from .text_corpus_row import TextCorpusRow
+from .text_row import TextRow
 from .usfm_marker import UsfmMarker, UsfmTextType
 from .usfm_parser import UsfmParser
 from .usfm_stylesheet import UsfmStylesheet
@@ -33,7 +33,7 @@ class UsfmTextBase(ScriptureText):
     def _create_stream_container(self) -> StreamContainer:
         ...
 
-    def _get_rows(self) -> Generator[TextCorpusRow, None, None]:
+    def _get_rows(self) -> Generator[TextRow, None, None]:
         usfm = self._read_usfm()
         cur_embed_marker: Optional[UsfmMarker] = None
         cur_span_marker: Optional[UsfmMarker] = None

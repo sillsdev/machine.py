@@ -1,57 +1,36 @@
-from abc import ABC, abstractmethod
+from itertools import islice
 from typing import Callable, Generator, Optional
 
 from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
-from ..utils.context_managed_generator import ContextManagedGenerator
+from .alignment_corpus_view import AlignmentCorpusView
+from .corpus_view import CorpusView
 from .parallel_text_corpus_view import ParallelTextCorpusView
-from .text_alignment_corpus_view import TextAlignmentCorpusView
-from .text_corpus_row import TextCorpusRow
+from .text_row import TextRow
 from .token_processors import escape_spaces, lowercase, normalize, unescape_spaces
 
 
-class TextCorpusView(ABC):
-    @property
-    @abstractmethod
-    def source(self) -> "TextCorpusView":
-        ...
-
-    def get_rows(
-        self, based_on: Optional["TextCorpusView"] = None
-    ) -> ContextManagedGenerator[TextCorpusRow, None, None]:
-        return ContextManagedGenerator(self._get_rows(based_on))
-
-    @abstractmethod
-    def _get_rows(self, based_on: Optional["TextCorpusView"]) -> Generator[TextCorpusRow, None, None]:
-        ...
-
-    def __len__(self) -> int:
-        return self.get_count()
-
-    def get_count(self) -> int:
-        with self.get_rows() as rows:
-            return sum(1 for _ in rows)
-
+class TextCorpusView(CorpusView[TextRow]):
     def tokenize(self, tokenizer: Tokenizer[str, int, str]) -> "TextCorpusView":
-        def _tokenize(row: TextCorpusRow) -> TextCorpusRow:
+        def _tokenize(row: TextRow) -> TextRow:
             row.segment = list(tokenizer.tokenize(row.text))
             return row
 
-        return TransformTextCorpusView(self, _tokenize)
+        return self.transform(_tokenize)
 
     def detokenize(self, detokenizer: Detokenizer[str, str]) -> "TextCorpusView":
-        def _detokenize(row: TextCorpusRow) -> TextCorpusRow:
+        def _detokenize(row: TextRow) -> TextRow:
             row.segment = [detokenizer.detokenize(row.segment)]
             return row
 
-        return TransformTextCorpusView(self, _detokenize)
+        return self.transform(_detokenize)
 
     def normalize(self, normalization_form: str) -> "TextCorpusView":
-        def _normalize(row: TextCorpusRow) -> TextCorpusRow:
+        def _normalize(row: TextRow) -> TextRow:
             row.segment = normalize(normalization_form, row.segment)
             return row
 
-        return TransformTextCorpusView(self, _normalize)
+        return self.transform(_normalize)
 
     def nfc_normalize(self) -> "TextCorpusView":
         return self.normalize("NFC")
@@ -66,63 +45,72 @@ class TextCorpusView(ABC):
         return self.normalize("NFKD")
 
     def lowercase(self) -> "TextCorpusView":
-        def _lowercase(row: TextCorpusRow) -> TextCorpusRow:
+        def _lowercase(row: TextRow) -> TextRow:
             row.segment = lowercase(row.segment)
             return row
 
-        return TransformTextCorpusView(self, _lowercase)
+        return self.transform(_lowercase)
 
     def escape_spaces(self) -> "TextCorpusView":
-        def _escape_spaces(row: TextCorpusRow) -> TextCorpusRow:
+        def _escape_spaces(row: TextRow) -> TextRow:
             row.segment = escape_spaces(row.segment)
             return row
 
-        return TransformTextCorpusView(self, _escape_spaces)
+        return self.transform(_escape_spaces)
 
     def unescape_spaces(self) -> "TextCorpusView":
-        def _unescape_spaces(row: TextCorpusRow) -> TextCorpusRow:
+        def _unescape_spaces(row: TextRow) -> TextRow:
             row.segment = unescape_spaces(row.segment)
             return row
 
-        return TransformTextCorpusView(self, _unescape_spaces)
+        return self.transform(_unescape_spaces)
 
-    def filter(self, predicate: Callable[[TextCorpusRow], bool]) -> "TextCorpusView":
+    def filter(self, predicate: Callable[[TextRow], bool]) -> "TextCorpusView":
         return FilterTextCorpusView(self, predicate)
 
-    def zip(
-        self, other: "TextCorpusView", alignment_corpus: Optional[TextAlignmentCorpusView] = None
+    def transform(self, transform: Callable[[TextRow], TextRow]) -> "TextCorpusView":
+        return TransformTextCorpusView(self, transform)
+
+    def take(self, count: int) -> "TextCorpusView":
+        return TakeTextCorpusView(self, count)
+
+    def align_rows(
+        self,
+        other: "TextCorpusView",
+        alignment_corpus: Optional[AlignmentCorpusView] = None,
+        all_source_rows: bool = False,
+        all_target_rows: bool = False,
     ) -> ParallelTextCorpusView:
         from .parallel_text_corpus import ParallelTextCorpus
 
-        return ParallelTextCorpus(self, other, alignment_corpus)
+        return ParallelTextCorpus(self, other, alignment_corpus, all_source_rows, all_target_rows)
 
 
 class TransformTextCorpusView(TextCorpusView):
-    def __init__(self, corpus: TextCorpusView, transform: Callable[[TextCorpusRow], TextCorpusRow]) -> None:
+    def __init__(self, corpus: TextCorpusView, transform: Callable[[TextRow], TextRow]) -> None:
         self._corpus = corpus
         self._transform = transform
 
-    @property
-    def source(self) -> TextCorpusView:
-        return self._corpus.source
-
-    def _get_rows(self, based_on: Optional[TextCorpusView] = None) -> Generator[TextCorpusRow, None, None]:
-        with self._corpus.get_rows(based_on) as rows:
-            for row in rows:
-                yield self._transform(row)
+    def _get_rows(self) -> Generator[TextRow, None, None]:
+        with self._corpus.get_rows() as rows:
+            yield from map(self._transform, rows)
 
 
 class FilterTextCorpusView(TextCorpusView):
-    def __init__(self, corpus: TextCorpusView, predicate: Callable[[TextCorpusRow], bool]) -> None:
+    def __init__(self, corpus: TextCorpusView, predicate: Callable[[TextRow], bool]) -> None:
         self._corpus = corpus
         self._predicate = predicate
 
-    @property
-    def source(self) -> TextCorpusView:
-        return self._corpus.source
+    def _get_rows(self) -> Generator[TextRow, None, None]:
+        with self._corpus.get_rows() as rows:
+            yield from filter(self._predicate, rows)
 
-    def _get_rows(self, based_on: Optional[TextCorpusView] = None) -> Generator[TextCorpusRow, None, None]:
-        with self._corpus.get_rows(based_on) as rows:
-            for row in rows:
-                if self._predicate(row):
-                    yield row
+
+class TakeTextCorpusView(TextCorpusView):
+    def __init__(self, corpus: TextCorpusView, count: int) -> None:
+        self._corpus = corpus
+        self._count = count
+
+    def _get_rows(self) -> Generator[TextRow, None, None]:
+        with self._corpus.get_rows() as rows:
+            yield from islice(rows, self._count)
