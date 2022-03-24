@@ -15,7 +15,7 @@ from ...utils.progress_status import ProgressStatus
 from ..trainer import Trainer, TrainStats
 
 
-class OpenNmtModelTrainer(Trainer, Runner):
+class OpenNmtModelTrainer(Runner, Trainer):
     def __init__(
         self,
         model_type: str,

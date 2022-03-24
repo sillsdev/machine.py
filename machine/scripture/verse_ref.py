@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum, IntEnum, auto
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Set, TextIO, Tuple, Union
+from typing import Dict, Iterable, List, Optional, Set, TextIO, Tuple, Union, cast
 
 import regex as re
 
@@ -777,7 +777,7 @@ class Versification:
         )
 
     def _change_versification_with_ranges(self, vref: VerseRef) -> bool:
-        parts: List[str] = re.split(r"([,\-])", vref.verse)
+        parts = cast(List[str], re.split(r"([,\-])", vref.verse))
 
         new_vref = vref.copy()
         new_vref.verse = parts[0]

@@ -1,4 +1,3 @@
-import sys
 from typing import Collection, Iterable, Optional, Sequence, Tuple, Union
 
 from ..corpora.parallel_text_corpus_view import ParallelTextCorpusView
@@ -69,12 +68,8 @@ class SymmetrizedWordAlignmentModel(SymmetrizedWordAligner, WordAlignmentModel):
         )
         return max(dir_score, inv_score)
 
-    def create_trainer(
-        self,
-        corpus: ParallelTextCorpusView,
-        max_corpus_count: int = sys.maxsize,
-    ) -> Trainer:
-        direct_trainer = self._direct_word_alignment_model.create_trainer(corpus, max_corpus_count)
-        inverse_trainer = self._inverse_word_alignment_model.create_trainer(corpus.invert(), max_corpus_count)
+    def create_trainer(self, corpus: ParallelTextCorpusView) -> Trainer:
+        direct_trainer = self._direct_word_alignment_model.create_trainer(corpus)
+        inverse_trainer = self._inverse_word_alignment_model.create_trainer(corpus.invert())
 
         return SymmetrizedWordAlignmentModelTrainer(direct_trainer, inverse_trainer)

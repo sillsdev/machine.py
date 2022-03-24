@@ -23,7 +23,7 @@ from ..translation_sources import TranslationSources
 from ..word_alignment_matrix import WordAlignmentMatrix
 
 
-class OpenNmtModel(TranslationModel, Runner):
+class OpenNmtModel(Runner, TranslationModel):
     def __init__(
         self,
         model_type: str,
