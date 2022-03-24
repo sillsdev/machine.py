@@ -1,5 +1,6 @@
 from itertools import islice
-from typing import Callable, Generator, Optional
+from random import Random
+from typing import Any, Callable, Generator, Optional, Tuple
 
 from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
@@ -66,6 +67,9 @@ class TextCorpusView(CorpusView[TextRow]):
         return self.transform(_unescape_spaces)
 
     def filter(self, predicate: Callable[[TextRow], bool]) -> "TextCorpusView":
+        return FilterTextCorpusView(self, lambda row, _: predicate(row))
+
+    def filter_by_index(self, predicate: Callable[[TextRow, int], bool]) -> "TextCorpusView":
         return FilterTextCorpusView(self, predicate)
 
     def transform(self, transform: Callable[[TextRow], TextRow]) -> "TextCorpusView":
@@ -73,6 +77,31 @@ class TextCorpusView(CorpusView[TextRow]):
 
     def take(self, count: int) -> "TextCorpusView":
         return TakeTextCorpusView(self, count)
+
+    def split(
+        self, percent: Optional[float] = None, size: Optional[int] = None, seed: Any = None
+    ) -> Tuple["TextCorpusView", "TextCorpusView", int, int]:
+        if percent is None and size is None:
+            percent = 0.1
+
+        corpus_size = self.count()
+        if percent is not None:
+            split_size = int(percent * corpus_size)
+            if size is not None:
+                split_size = min(split_size, size)
+        else:
+            assert size is not None
+            split_size = size
+
+        rand = Random()
+        if seed is not None:
+            rand.seed(seed)
+        split_indices = set(rand.sample(range(corpus_size), min(split_size, corpus_size)))
+
+        main_corpus = self.filter_by_index(lambda _, i: i not in split_indices)
+        split_corpus = self.filter_by_index(lambda _, i: i in split_indices)
+
+        return main_corpus, split_corpus, corpus_size - len(split_indices), len(split_indices)
 
     def align_rows(
         self,
@@ -97,13 +126,13 @@ class TransformTextCorpusView(TextCorpusView):
 
 
 class FilterTextCorpusView(TextCorpusView):
-    def __init__(self, corpus: TextCorpusView, predicate: Callable[[TextRow], bool]) -> None:
+    def __init__(self, corpus: TextCorpusView, predicate: Callable[[TextRow, int], bool]) -> None:
         self._corpus = corpus
         self._predicate = predicate
 
     def _get_rows(self) -> Generator[TextRow, None, None]:
         with self._corpus.get_rows() as rows:
-            yield from filter(self._predicate, rows)
+            yield from (row for i, row in enumerate(rows) if self._predicate(row, i))
 
 
 class TakeTextCorpusView(TextCorpusView):

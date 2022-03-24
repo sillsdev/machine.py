@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Generator
+from typing import Generator, List, Union
 
 from ..utils.string_utils import is_integer
 from ..utils.typeshed import StrPath
@@ -29,5 +29,10 @@ class TextFileText(TextBase):
                         section_num = int(section_num_str)
                         segment_num = 1
                 else:
-                    yield self._create_row(line, RowRef(self.id, section_num, segment_num))
+                    keys: List[Union[str, int]] = []
+                    if self.id != "*all*":
+                        keys.append(self.id)
+                    keys.append(section_num)
+                    keys.append(segment_num)
+                    yield self._create_row(line, RowRef(keys))
                     segment_num += 1

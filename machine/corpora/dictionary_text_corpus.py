@@ -1,4 +1,4 @@
-from typing import Any, Iterable, Optional, overload
+from typing import Iterable, Optional, overload
 
 from .text import Text
 from .text_corpus import TextCorpus
@@ -6,15 +6,21 @@ from .text_corpus import TextCorpus
 
 class DictionaryTextCorpus(TextCorpus):
     @overload
-    def __init__(self, *args: Text) -> None:
+    def __init__(self, *texts: Text) -> None:
         ...
 
     @overload
     def __init__(self, texts: Iterable[Text]) -> None:
         ...
 
-    def __init__(self, *args: Any) -> None:
-        texts: Iterable[Text] = args if len(args) == 0 or isinstance(args[0], Text) else args[0]
+    def __init__(self, *args, **kwargs) -> None:
+        texts: Iterable[Text]
+        if len(args) == 0:
+            texts = kwargs.get("texts", [])
+        elif isinstance(args[0], Text):
+            texts = args
+        else:
+            texts = args[0]
         self._texts = {t.id: t for t in texts}
 
     @property

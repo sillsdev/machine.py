@@ -1,4 +1,4 @@
-from typing import Generator
+from typing import Generator, List, Union
 
 from ..utils.string_utils import is_integer
 from ..utils.typeshed import StrPath
@@ -33,5 +33,10 @@ class TextFileAlignmentCollection(AlignmentCollection):
                         section_num = int(section_num_str)
                         segment_num = 1
                 else:
-                    yield AlignmentRow(self.id, RowRef(self.id, section_num, segment_num), AlignedWordPair.parse(line))
+                    keys: List[Union[str, int]] = []
+                    if self.id != "*all*":
+                        keys.append(self.id)
+                    keys.append(section_num)
+                    keys.append(segment_num)
+                    yield AlignmentRow(self.id, RowRef(keys), AlignedWordPair.parse(line))
                     segment_num += 1

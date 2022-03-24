@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from functools import reduce
-from typing import Any, Iterable, List, Sequence, Union, overload
+from typing import Iterable, List, Sequence, Union, overload
 
 from ..utils.comparable import Comparable, compare
 from ..utils.string_utils import parse_integer
@@ -18,10 +18,10 @@ class RowRef(Comparable):
     def __init__(self, *keys: Union[str, int]) -> None:
         ...
 
-    def __init__(self, *args: Any) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         keys: List[str]
         if len(args) == 0:
-            keys = []
+            keys = [str(i) for i in kwargs.get("keys", [])]
         elif isinstance(args[0], (str, int)):
             keys = [str(i) for i in args]
         else:

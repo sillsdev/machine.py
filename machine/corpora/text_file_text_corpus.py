@@ -1,5 +1,5 @@
 from pathlib import PurePath
-from typing import Any, Iterable, overload
+from typing import Iterable, overload
 
 from ..utils.typeshed import StrPath
 from .corpora_helpers import get_files
@@ -16,10 +16,10 @@ class TextFileTextCorpus(DictionaryTextCorpus):
     def __init__(self, *file_patterns: StrPath) -> None:
         ...
 
-    def __init__(self, *args: Any) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         file_patterns: Iterable[str]
         if len(args) == 0:
-            file_patterns = []
+            file_patterns = kwargs.get("file_patterns", [])
         elif isinstance(args[0], str) or isinstance(args[0], PurePath):
             file_patterns = (str(p) for p in args)
         else:

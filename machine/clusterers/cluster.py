@@ -1,4 +1,4 @@
-from typing import Any, FrozenSet, Generic, Iterable, Optional, TypeVar, overload
+from typing import FrozenSet, Generic, Iterable, Optional, TypeVar, overload
 
 T = TypeVar("T")
 
@@ -12,7 +12,7 @@ class Cluster(Generic[T]):
     def __init__(self, data_objects: Iterable[T], noise: bool = False, description: Optional[str] = None) -> None:
         ...
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         self._data_objects: FrozenSet[T]
         self._noise: bool
         self._description: Optional[str]
