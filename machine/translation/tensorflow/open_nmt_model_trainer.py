@@ -10,7 +10,7 @@ from opennmt.training import Trainer as OnmtTrainer
 from opennmt.utils.checkpoint import Checkpoint
 from opennmt.utils.misc import disable_mixed_precision, enable_mixed_precision
 
-from ...corpora.parallel_text_corpus_view import ParallelTextCorpusView
+from ...corpora.parallel_text_corpus import ParallelTextCorpus
 from ...utils.progress_status import ProgressStatus
 from ..trainer import Trainer, TrainStats
 
@@ -20,7 +20,7 @@ class OpenNmtModelTrainer(Runner, Trainer):
         self,
         model_type: str,
         config: dict,
-        corpus: ParallelTextCorpusView,
+        corpus: ParallelTextCorpus,
         mixed_precision: bool = False,
     ):
         super().__init__(load_model_from_catalog(model_type), config, mixed_precision=mixed_precision)

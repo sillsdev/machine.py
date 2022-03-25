@@ -30,5 +30,8 @@ class DictionaryTextCorpus(TextCorpus):
     def __getitem__(self, id: str) -> Optional[Text]:
         return self._texts.get(id)
 
+    def get_text(self, id: str) -> Optional[Text]:
+        return self[id]
+
     def _add_text(self, text: Text) -> None:
         self._texts[text.id] = text

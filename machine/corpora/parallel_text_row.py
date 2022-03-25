@@ -6,7 +6,6 @@ from .aligned_word_pair import AlignedWordPair
 class ParallelTextRow:
     def __init__(
         self,
-        text_id: str,
         source_refs: Sequence[Any],
         target_refs: Sequence[Any],
         source_segment: Sequence[str] = [],
@@ -22,7 +21,6 @@ class ParallelTextRow:
     ) -> None:
         if len(source_refs) == 0 and len(target_refs) == 0:
             raise ValueError("Either a source or target ref must be set.")
-        self._text_id = text_id
         self._source_refs = source_refs
         self._target_refs = target_refs
         self.source_segment = source_segment
@@ -35,10 +33,6 @@ class ParallelTextRow:
         self.is_target_in_range = is_target_in_range
         self.is_target_range_start = is_target_range_start
         self.is_empty = is_empty
-
-    @property
-    def text_id(self) -> str:
-        return self._text_id
 
     @property
     def source_refs(self) -> Sequence[Any]:
@@ -62,7 +56,6 @@ class ParallelTextRow:
 
     def invert(self) -> "ParallelTextRow":
         return ParallelTextRow(
-            self.text_id,
             self.target_refs,
             self.source_refs,
             self.target_segment,

@@ -8,8 +8,8 @@ from machine.corpora import (
     DictionaryTextCorpus,
     MemoryAlignmentCollection,
     MemoryText,
-    ParallelTextCorpus,
     RowRef,
+    StandardParallelTextCorpus,
     TextRow,
 )
 from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, VerseRef, Versification
@@ -18,7 +18,7 @@ from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, Ver
 def test_get_rows_no_segments() -> None:
     source_corpus = DictionaryTextCorpus()
     target_corpus = DictionaryTextCorpus()
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus)
     assert not any(parallel_corpus)
 
 
@@ -54,7 +54,7 @@ def test_get_rows_no_missing_rows() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus, alignment_corpus)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus, alignment_corpus)
     rows = list(parallel_corpus)
     assert len(rows) == 3
     assert rows[0].source_refs == [ref(1)]
@@ -103,7 +103,7 @@ def test_get_rows_missing_middle_target_rows() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus, alignment_corpus)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus, alignment_corpus)
     rows = list(parallel_corpus)
     assert len(rows) == 2
     assert rows[0].source_refs == [ref(1)]
@@ -148,7 +148,7 @@ def test_get_rows_missing_middle_source_row() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus, alignment_corpus)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus, alignment_corpus)
     rows = list(parallel_corpus)
     assert len(rows) == 2
     assert rows[0].source_refs == [ref(1)]
@@ -193,7 +193,7 @@ def test_get_rows_missing_last_target_row() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus, alignment_corpus)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus, alignment_corpus)
     rows = list(parallel_corpus)
     assert len(rows) == 2
     assert rows[0].source_refs == [ref(1)]
@@ -238,7 +238,7 @@ def test_get_rows_missing_last_source_row() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus, alignment_corpus)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus, alignment_corpus)
     rows = list(parallel_corpus)
     assert len(rows) == 2
     assert rows[0].source_refs == [ref(1)]
@@ -283,7 +283,7 @@ def test_get_rows_missing_first_target_row() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus, alignment_corpus)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus, alignment_corpus)
     rows = list(parallel_corpus)
     assert len(rows) == 2
     assert rows[0].source_refs == [ref(2)]
@@ -328,7 +328,7 @@ def test_get_rows_missing_first_source_row() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus, alignment_corpus)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus, alignment_corpus)
     rows = list(parallel_corpus)
     assert len(rows) == 2
     assert rows[0].source_refs == [ref(2)]
@@ -373,7 +373,7 @@ def test_get_rows_range() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus)
     rows = list(parallel_corpus)
     assert len(rows) == 3
     assert rows[1].source_refs == [ref(2), ref(3)]
@@ -406,7 +406,7 @@ def test_get_rows_overlapping_ranges() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus)
     rows = list(parallel_corpus)
     assert len(rows) == 1
     assert rows[0].source_refs == [
@@ -455,7 +455,7 @@ def test_get_rows_adjacent_ranges_same_text() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus)
     rows = list(parallel_corpus)
     assert len(rows) == 2
     assert rows[0].source_refs == [ref(1), ref(2)]
@@ -496,7 +496,7 @@ def test_get_rows_adjacent_ranges_different_texts() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus)
     rows = list(parallel_corpus)
     assert len(rows) == 2
     assert rows[0].source_refs == [ref(1), ref(2)]
@@ -529,8 +529,8 @@ def test_get_segments_all_source_rows() -> None:
         MemoryText(
             "text3",
             [
-                text_row(6, "target segment 6 ."),
-                text_row(7, "target segment 7 ."),
+                text_row(6, "source segment 6 ."),
+                text_row(7, "source segment 7 ."),
             ],
         ),
     )
@@ -552,7 +552,7 @@ def test_get_segments_all_source_rows() -> None:
         ),
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus, all_source_rows=True)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus, all_source_rows=True)
     rows = list(parallel_corpus)
     assert len(rows) == 7
     assert rows[1].source_refs == [ref(2)]
@@ -564,6 +564,46 @@ def test_get_segments_all_source_rows() -> None:
     assert rows[4].target_refs == []
     assert rows[4].source_segment == "source segment 5 .".split()
     assert rows[4].target_segment == []
+
+
+def test_get_segments_missing_text() -> None:
+    source_corpus = DictionaryTextCorpus(
+        MemoryText(
+            "text1",
+            [text_row(1, "source segment 1 .")],
+        ),
+        MemoryText(
+            "text2",
+            [text_row(2, "source segment 2 .")],
+        ),
+        MemoryText(
+            "text3",
+            [text_row(3, "source segment 3 .")],
+        ),
+    )
+    target_corpus = DictionaryTextCorpus(
+        MemoryText(
+            "text1",
+            [text_row(1, "target segment 1 .")],
+        ),
+        MemoryText(
+            "text3",
+            [text_row(3, "target segment 3 .")],
+        ),
+    )
+
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus)
+    rows = list(parallel_corpus)
+    assert len(rows) == 2
+    assert rows[0].source_refs == [ref(1)]
+    assert rows[0].target_refs == [ref(1)]
+    assert rows[0].source_segment == "source segment 1 .".split()
+    assert rows[0].target_segment == "target segment 1 .".split()
+
+    assert rows[1].source_refs == [ref(3)]
+    assert rows[1].target_refs == [ref(3)]
+    assert rows[1].source_segment == "source segment 3 .".split()
+    assert rows[1].target_segment == "target segment 3 .".split()
 
 
 def test_get_segments_range_all_target_rows() -> None:
@@ -590,7 +630,7 @@ def test_get_segments_range_all_target_rows() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus, all_target_rows=True)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus, all_target_rows=True)
     rows = list(parallel_corpus)
     assert len(rows) == 4
     assert rows[1].source_refs == [ref(2)]
@@ -631,7 +671,7 @@ def test_get_rows_same_ref_middle_many_to_many() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus)
     rows = list(parallel_corpus)
     assert len(rows) == 6
     assert rows[1].source_refs == [ref(2)]
@@ -675,7 +715,7 @@ def test_get_segments_same_ref_middle_one_to_many() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus, all_target_rows=True)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus, all_target_rows=True)
     rows = list(parallel_corpus)
     assert len(rows) == 4
     assert rows[1].source_refs == [ref(2)]
@@ -711,7 +751,7 @@ def test_get_segments_same_ref_middle_many_to_one() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus, all_source_rows=True)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus, all_source_rows=True)
     rows = list(parallel_corpus)
     assert len(rows) == 4
     assert rows[1].source_refs == [ref(2)]
@@ -746,7 +786,7 @@ def test_get_segments_same_ref_last_one_to_many() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus, all_target_rows=True)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus, all_target_rows=True)
     rows = list(parallel_corpus)
     assert len(rows) == 4
     assert rows[1].source_refs == [ref(2)]
@@ -781,7 +821,7 @@ def test_get_segments_same_ref_last_many_to_one() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus, all_source_rows=True)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus, all_source_rows=True)
     rows = list(parallel_corpus)
     assert len(rows) == 4
     assert rows[1].source_refs == [ref(2)]
@@ -826,7 +866,7 @@ def test_get_segments_same_verse_ref_one_to_many() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus)
     rows = list(parallel_corpus)
     assert len(rows) == 3
     assert rows[1].source_refs == [VerseRef.from_string("MAT 1:2", ORIGINAL_VERSIFICATION)]
@@ -867,7 +907,7 @@ def test_get_rows_verse_ref_out_of_order() -> None:
         )
     )
 
-    parallel_corpus = ParallelTextCorpus(source_corpus, target_corpus)
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus)
     rows = list(parallel_corpus)
     assert len(rows) == 4
 
@@ -898,7 +938,6 @@ def text_row(
     is_range_start: bool = False,
 ) -> TextRow:
     return TextRow(
-        "text1",
         ref(key) if isinstance(key, int) else key,
         [] if len(text) == 0 else text.split(),
         is_sentence_start=is_sentence_start,
@@ -909,7 +948,7 @@ def text_row(
 
 
 def alignment_row(key: int, *pairs: AlignedWordPair) -> AlignmentRow:
-    return AlignmentRow("text1", ref(key), set(pairs))
+    return AlignmentRow(ref(key), set(pairs))
 
 
 def ref(key: int) -> RowRef:

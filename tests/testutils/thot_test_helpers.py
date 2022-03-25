@@ -1,4 +1,4 @@
-from machine.corpora import DictionaryTextCorpus, MemoryText, ParallelTextCorpus, RowRef, TextRow
+from machine.corpora import DictionaryTextCorpus, MemoryText, RowRef, StandardParallelTextCorpus, TextRow
 
 from . import TEST_DATA_PATH
 
@@ -9,7 +9,7 @@ TOY_CORPUS_FAST_ALIGN_PATH = TEST_DATA_PATH / "toy_corpus_fa"
 TOY_CORPUS_FAST_ALIGN_CONFIG_FILENAME = TOY_CORPUS_FAST_ALIGN_PATH / "smt.cfg"
 
 
-def create_test_parallel_corpus() -> ParallelTextCorpus:
+def create_test_parallel_corpus() -> StandardParallelTextCorpus:
     src_corpus = DictionaryTextCorpus(
         MemoryText(
             "text1",
@@ -42,12 +42,11 @@ def create_test_parallel_corpus() -> ParallelTextCorpus:
         )
     )
 
-    return ParallelTextCorpus(src_corpus, trg_corpus)
+    return StandardParallelTextCorpus(src_corpus, trg_corpus)
 
 
 def _segment(ref: int, segment: str) -> TextRow:
     return TextRow(
-        "text1",
         RowRef(ref),
         segment.split(),
         is_sentence_start=True,

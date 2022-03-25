@@ -1,7 +1,6 @@
 from .aligned_word_pair import AlignedWordPair
 from .alignment_collection import AlignmentCollection
 from .alignment_corpus import AlignmentCorpus
-from .alignment_corpus_view import AlignmentCorpusView
 from .alignment_row import AlignmentRow
 from .dbl_bundle_text import DblBundleText
 from .dbl_bundle_text_corpus import DblBundleTextCorpus
@@ -10,14 +9,13 @@ from .dictionary_text_corpus import DictionaryTextCorpus
 from .memory_alignment_collection import MemoryAlignmentCollection
 from .memory_text import MemoryText
 from .parallel_text_corpus import ParallelTextCorpus
-from .parallel_text_corpus_view import ParallelTextCorpusView
 from .parallel_text_row import ParallelTextRow
 from .paratext_text_corpus import ParatextTextCorpus
 from .row_ref import RowRef
 from .scripture_text_corpus import ScriptureTextCorpus
+from .standard_parallel_text_corpus import StandardParallelTextCorpus
 from .text import Text
 from .text_corpus import TextCorpus
-from .text_corpus_view import TextCorpusView
 from .text_file_alignment_collection import TextFileAlignmentCollection
 from .text_file_alignment_corpus import TextFileAlignmentCorpus
 from .text_file_text import TextFileText
@@ -46,7 +44,6 @@ __all__ = [
     "AlignedWordPair",
     "AlignmentCollection",
     "AlignmentCorpus",
-    "AlignmentCorpusView",
     "AlignmentRow",
     "DblBundleText",
     "DblBundleTextCorpus",
@@ -55,14 +52,13 @@ __all__ = [
     "MemoryAlignmentCollection",
     "MemoryText",
     "ParallelTextCorpus",
-    "ParallelTextCorpusView",
     "ParallelTextRow",
     "ParatextTextCorpus",
     "RowRef",
     "ScriptureTextCorpus",
+    "StandardParallelTextCorpus",
     "Text",
     "TextCorpus",
-    "TextCorpusView",
     "TextFileAlignmentCollection",
     "TextFileAlignmentCorpus",
     "TextFileText",
