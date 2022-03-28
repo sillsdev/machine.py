@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from ..scripture.verse_ref import Versification
 from ..utils.typeshed import StrPath
-from .corpora_helpers import get_usx_versification
+from .corpora_utils import get_usx_versification
 from .scripture_text_corpus import ScriptureTextCorpus
 from .usx_file_text import UsxFileText
 

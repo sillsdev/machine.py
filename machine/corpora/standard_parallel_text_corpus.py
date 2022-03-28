@@ -31,6 +31,26 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
         self._all_source_rows = all_source_rows
         self._all_target_rows = all_target_rows
 
+    @property
+    def source_corpus(self) -> TextCorpus:
+        return self._source_corpus
+
+    @property
+    def target_corpus(self) -> TextCorpus:
+        return self._target_corpus
+
+    @property
+    def alignment_corpus(self) -> AlignmentCorpus:
+        return self._alignment_corpus
+
+    @property
+    def all_source_rows(self) -> bool:
+        return self._all_source_rows
+
+    @property
+    def all_target_rows(self) -> bool:
+        return self._all_target_rows
+
     def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
         source_text_ids = {t.id for t in self._source_corpus.texts}
         target_text_ids = {t.id for t in self._target_corpus.texts}

@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from itertools import islice
-from random import Random
 from typing import Any, Callable, Generator, Iterable, Optional, Tuple
 
 from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .alignment_corpus import AlignmentCorpus
+from .corpora_utils import get_split_indices
 from .parallel_text_corpus import ParallelTextCorpus
 from .text import Text
 from .text_row import TextRow
@@ -108,22 +108,8 @@ class TextCorpus(ABC, Iterable[TextRow]):
     def split(
         self, percent: Optional[float] = None, size: Optional[int] = None, seed: Any = None
     ) -> Tuple["TextCorpus", "TextCorpus", int, int]:
-        if percent is None and size is None:
-            percent = 0.1
-
         corpus_size = self.count()
-        if percent is not None:
-            split_size = int(percent * corpus_size)
-            if size is not None:
-                split_size = min(split_size, size)
-        else:
-            assert size is not None
-            split_size = size
-
-        rand = Random()
-        if seed is not None:
-            rand.seed(seed)
-        split_indices = set(rand.sample(range(corpus_size), min(split_size, corpus_size)))
+        split_indices = get_split_indices(corpus_size, percent, size, seed)
 
         main_corpus = self.filter_by_index(lambda _, i: i not in split_indices)
         split_corpus = self.filter_by_index(lambda _, i: i in split_indices)

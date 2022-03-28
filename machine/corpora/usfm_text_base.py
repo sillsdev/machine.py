@@ -4,7 +4,7 @@ from typing import Generator, Optional
 
 from ..scripture.verse_ref import Versification, are_overlapping_verse_ranges
 from ..utils.string_utils import has_sentence_ending, is_integer
-from .corpora_helpers import merge_verse_ranges
+from .corpora_utils import merge_verse_ranges
 from .scripture_text import ScriptureText
 from .stream_container import StreamContainer
 from .text_row import TextRow

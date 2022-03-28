@@ -2,7 +2,7 @@ from pathlib import PurePath
 from typing import Iterable, overload
 
 from ..utils.typeshed import StrPath
-from .corpora_helpers import get_files
+from .corpora_utils import get_files
 from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .text_file_alignment_collection import TextFileAlignmentCollection
 

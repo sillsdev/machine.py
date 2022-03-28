@@ -2,7 +2,7 @@ from typing import Generator, List, Optional
 
 from ..scripture.verse_ref import VerseRef, Versification, VersificationType
 from ..utils.context_managed_generator import ContextManagedGenerator
-from .corpora_helpers import gen, get_scripture_text_sort_key
+from .corpora_utils import gen, get_scripture_text_sort_key
 from .text_base import TextBase
 from .text_row import TextRow
 

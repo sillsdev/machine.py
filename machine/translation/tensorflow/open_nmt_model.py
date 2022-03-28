@@ -1,4 +1,7 @@
+import copy
 import heapq
+import os
+import shutil
 from types import TracebackType
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type, cast
 
@@ -14,13 +17,13 @@ from opennmt.utils.misc import extract_batches, item_or_tuple
 
 from ...annotations.range import Range
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
-from ..trainer import Trainer
 from ..translation_engine import TranslationEngine
 from ..translation_model import TranslationModel
 from ..translation_result import TranslationResult
 from ..translation_result_builder import TranslationResultBuilder
 from ..translation_sources import TranslationSources
 from ..word_alignment_matrix import WordAlignmentMatrix
+from .open_nmt_model_trainer import OpenNmtModelTrainer
 
 
 class OpenNmtModel(Runner, TranslationModel):
@@ -31,19 +34,28 @@ class OpenNmtModel(Runner, TranslationModel):
         mixed_precision: bool = False,
     ):
         super().__init__(load_model_from_catalog(model_type), config, mixed_precision=mixed_precision)
+        self._model_type = model_type
         self._engines: Set[OpenNmtEngine] = set()
+
+    @property
+    def model_type(self) -> str:
+        return self._model_type
 
     @property
     def config(self) -> dict:
         return self._config
+
+    @property
+    def mixed_precision(self) -> bool:
+        return self._mixed_precision
 
     def create_engine(self) -> "OpenNmtEngine":
         engine = OpenNmtEngine(self)
         self._engines.add(engine)
         return engine
 
-    def create_trainer(self, corpus: ParallelTextCorpus) -> Trainer:
-        ...
+    def create_trainer(self, corpus: ParallelTextCorpus) -> OpenNmtModelTrainer:
+        return _Trainer(self, corpus)
 
     def restore_checkpoint(self) -> Tuple[SequenceToSequence, dict]:
         config = self._finalize_config()
@@ -58,17 +70,27 @@ class OpenNmtModel(Runner, TranslationModel):
     def __enter__(self) -> "OpenNmtModel":
         return self
 
-    def _finalize_config(self, training=False, num_replicas=1, num_devices=1):
-        config = super()._finalize_config(training, num_replicas, num_devices)
-        config["params"]["num_hypotheses"] = 0
-        return config
+
+class _Trainer(OpenNmtModelTrainer):
+    def __init__(self, model: OpenNmtModel, corpus: ParallelTextCorpus):
+        self._model = model
+        config = copy.deepcopy(self._model.config)
+        config["model_dir"] = config["model_dir"] + ".tmp"
+        super().__init__(self._model.model_type, config, corpus, self._model.mixed_precision, resume=False)
+
+    def save(self) -> None:
+        if os.path.isdir(self._model.model_dir):
+            shutil.rmtree(self._model.model_dir)
+        shutil.move(self.model_dir, self._model.model_dir)
+        for engine in self._model._engines:
+            engine.restore()
 
 
 class OpenNmtEngine(TranslationEngine):
     def __init__(self, model: OpenNmtModel):
         self._model = model
-        self._checkpoint_model, self._config = self._model.restore_checkpoint()
         self._infer_fn: Any = None
+        self.restore()
 
     @property
     def _features_inputter(self) -> Inputter:
@@ -77,6 +99,9 @@ class OpenNmtEngine(TranslationEngine):
     @property
     def _labels_inputter(self) -> Inputter:
         return cast(Inputter, self._checkpoint_model.labels_inputter)
+
+    def restore(self) -> None:
+        self._checkpoint_model, self._config = self._model.restore_checkpoint()
 
     def translate(self, segment: Sequence[str]) -> TranslationResult:
         return self.translate_n(1, segment)[0]

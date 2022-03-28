@@ -2,12 +2,33 @@ import os
 import platform
 from glob import glob
 from pathlib import Path
-from typing import Generator, Iterable, Optional, Tuple, TypeVar
+from random import Random
+from typing import Any, Generator, Iterable, Optional, Set, Tuple, TypeVar
 
 import regex as re
 
 from ..scripture.canon import book_id_to_number
 from ..scripture.verse_ref import VERSE_RANGE_SEPARATOR, VERSE_SEQUENCE_INDICATOR, Versification, VersificationType
+
+
+def get_split_indices(
+    corpus_size: int, percent: Optional[float] = None, size: Optional[int] = None, seed: Any = None
+) -> Set[int]:
+    if percent is None and size is None:
+        percent = 0.1
+
+    if percent is not None:
+        split_size = int(percent * corpus_size)
+        if size is not None:
+            split_size = min(split_size, size)
+    else:
+        assert size is not None
+        split_size = size
+
+    rand = Random()
+    if seed is not None:
+        rand.seed(seed)
+    return set(rand.sample(range(corpus_size), min(split_size, corpus_size)))
 
 
 def get_files(file_patterns: Iterable[str]) -> Iterable[Tuple[str, str]]:

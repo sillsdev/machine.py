@@ -4,7 +4,7 @@ from typing import BinaryIO, Iterable, List, Optional
 
 from ..scripture.verse_ref import are_overlapping_verse_ranges
 from ..utils.string_utils import has_sentence_ending, is_integer
-from .corpora_helpers import merge_verse_ranges
+from .corpora_utils import merge_verse_ranges
 from .usx_token import UsxToken
 from .usx_verse import UsxVerse
 

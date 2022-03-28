@@ -1,6 +1,6 @@
 from typing import Generator, Iterable
 
-from .corpora_helpers import gen
+from .corpora_utils import gen
 from .text import Text
 from .text_row import TextRow
 

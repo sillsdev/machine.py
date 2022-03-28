@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 from ..scripture.verse_ref import Versification
 from ..tokenization.range_tokenizer import RangeTokenizer
 from ..utils.typeshed import StrPath
-from .corpora_helpers import get_usx_id, get_usx_versification
+from .corpora_utils import get_usx_id, get_usx_versification
 from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .usx_file_alignment_collection import UsxFileAlignmentCollection
 

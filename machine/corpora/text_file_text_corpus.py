@@ -2,7 +2,7 @@ from pathlib import PurePath
 from typing import Iterable, overload
 
 from ..utils.typeshed import StrPath
-from .corpora_helpers import get_files
+from .corpora_utils import get_files
 from .dictionary_text_corpus import DictionaryTextCorpus
 from .text_file_text import TextFileText
 

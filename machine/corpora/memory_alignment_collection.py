@@ -2,7 +2,7 @@ from typing import Generator, Iterable
 
 from .alignment_collection import AlignmentCollection
 from .alignment_row import AlignmentRow
-from .corpora_helpers import gen
+from .corpora_utils import gen
 
 
 class MemoryAlignmentCollection(AlignmentCollection):

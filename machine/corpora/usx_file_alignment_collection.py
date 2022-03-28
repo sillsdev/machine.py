@@ -11,7 +11,7 @@ from ..utils.typeshed import StrPath
 from .aligned_word_pair import AlignedWordPair
 from .alignment_collection import AlignmentCollection
 from .alignment_row import AlignmentRow
-from .corpora_helpers import get_scripture_text_sort_key, get_usx_id
+from .corpora_utils import get_scripture_text_sort_key, get_usx_id
 from .usx_token import UsxToken
 from .usx_verse_parser import UsxVerseParser
 
@@ -116,7 +116,7 @@ class UsxFileAlignmentCollection(AlignmentCollection):
                 for src_index in src_indices:
                     for trg_index in trg_indices:
                         word_pairs.add(AlignedWordPair(src_index, trg_index))
-        return AlignmentRow(self.id, verse_ref, word_pairs)
+        return AlignmentRow(verse_ref, word_pairs)
 
 
 @dataclass
