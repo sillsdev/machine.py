@@ -24,7 +24,7 @@ class OpenNmtModelTrainer(Runner, Trainer):
         self,
         model_type: str,
         config: dict,
-        corpus: ParallelTextCorpus,
+        corpus: Optional[ParallelTextCorpus] = None,
         mixed_precision: bool = False,
         resume: bool = True,
     ):
@@ -60,45 +60,49 @@ class OpenNmtModelTrainer(Runner, Trainer):
         max_features_length = train_config.get("maximum_features_length")
         max_labels_length = train_config.get("maximum_labels_length")
 
-        corpus = self._corpus.filter(
-            lambda row: not row.is_empty
-            and (max_features_length is None or len(row.source_segment) <= max_features_length)
-            and (max_labels_length is None or len(row.target_segment) <= max_labels_length)
-        )
-        corpus_size = corpus.count()
+        if self._corpus is not None:
+            corpus = self._corpus.filter(
+                lambda row: not row.is_empty
+                and (max_features_length is None or len(row.source_segment) <= max_features_length)
+                and (max_labels_length is None or len(row.target_segment) <= max_labels_length)
+            )
+            corpus_size = corpus.count()
 
-        if not self._resume:
-            if os.path.isdir(self.model_dir):
-                shutil.rmtree(self.model_dir)
-            if os.path.isfile(train_src_path):
-                os.remove(train_src_path)
-            if os.path.isfile(train_trg_path):
-                os.remove(train_trg_path)
-            if os.path.isfile(eval_src_path):
-                os.remove(eval_src_path)
-            if os.path.isfile(eval_trg_path):
-                os.remove(eval_trg_path)
+            if not self._resume:
+                if os.path.isdir(self.model_dir):
+                    shutil.rmtree(self.model_dir)
+                if os.path.isfile(train_src_path):
+                    os.remove(train_src_path)
+                if os.path.isfile(train_trg_path):
+                    os.remove(train_trg_path)
+                if os.path.isfile(eval_src_path):
+                    os.remove(eval_src_path)
+                if os.path.isfile(eval_trg_path):
+                    os.remove(eval_trg_path)
 
-        if (
-            not os.path.isfile(train_src_path)
-            or not os.path.isfile(train_trg_path)
-            or not os.path.isfile(eval_src_path)
-            or not os.path.isfile(eval_trg_path)
-        ):
-            test_indices = get_split_indices(corpus_size, size=self.val_size, seed=31415)
-            with ExitStack() as stack:
-                train_src_file = stack.enter_context(open(train_src_path, "w", encoding="utf-8", newline="\n"))
-                train_trg_file = stack.enter_context(open(train_trg_path, "w", encoding="utf-8", newline="\n"))
-                eval_src_file = stack.enter_context(open(eval_src_path, "w", encoding="utf-8", newline="\n"))
-                eval_trg_file = stack.enter_context(open(eval_trg_path, "w", encoding="utf-8", newline="\n"))
+            if (
+                not os.path.isfile(train_src_path)
+                or not os.path.isfile(train_trg_path)
+                or not os.path.isfile(eval_src_path)
+                or not os.path.isfile(eval_trg_path)
+            ):
+                test_indices = get_split_indices(corpus_size, size=self.val_size, seed=31415)
+                with ExitStack() as stack:
+                    train_src_file = stack.enter_context(open(train_src_path, "w", encoding="utf-8", newline="\n"))
+                    train_trg_file = stack.enter_context(open(train_trg_path, "w", encoding="utf-8", newline="\n"))
+                    eval_src_file = stack.enter_context(open(eval_src_path, "w", encoding="utf-8", newline="\n"))
+                    eval_trg_file = stack.enter_context(open(eval_trg_path, "w", encoding="utf-8", newline="\n"))
 
-                for i, row in enumerate(corpus):
-                    if i in test_indices:
-                        eval_src_file.write(row.source_text + "\n")
-                        eval_trg_file.write(row.target_text + "\n")
-                    else:
-                        train_src_file.write(row.source_text + "\n")
-                        train_trg_file.write(row.target_text + "\n")
+                    for i, row in enumerate(corpus):
+                        if i in test_indices:
+                            eval_src_file.write(row.source_text + "\n")
+                            eval_trg_file.write(row.target_text + "\n")
+                        else:
+                            train_src_file.write(row.source_text + "\n")
+                            train_trg_file.write(row.target_text + "\n")
+            train_corpus_size = max(corpus_size - self.val_size, 0)
+        else:
+            train_corpus_size = model.examples_inputter.get_dataset_size([train_src_path, train_trg_path])
 
         def dataset_fn(input_context):
             return model.examples_inputter.make_training_dataset(
@@ -162,7 +166,7 @@ class OpenNmtModelTrainer(Runner, Trainer):
         if mixed_precision:
             disable_mixed_precision()
 
-        self._stats.trained_segment_count = max(corpus_size - self.val_size, 0)
+        self._stats.trained_segment_count = train_corpus_size
         if evaluator.last_evaluated_step is not None:
             for name, value in evaluator.last_evaluated_step:
                 self._stats.metrics[name] = value
