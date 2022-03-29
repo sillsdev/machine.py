@@ -38,5 +38,5 @@ class TextFileAlignmentCollection(AlignmentCollection):
                         keys.append(self.id)
                     keys.append(section_num)
                     keys.append(segment_num)
-                    yield AlignmentRow(self.id, RowRef(keys), AlignedWordPair.parse(line))
+                    yield AlignmentRow(RowRef(keys), AlignedWordPair.parse(line))
                     segment_num += 1
