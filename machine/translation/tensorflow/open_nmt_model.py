@@ -129,7 +129,7 @@ class OpenNmtEngine(TranslationEngine):
     def translate(
         self, segment: Sequence[str], n: Optional[int] = None
     ) -> Union[TranslationResult, List[TranslationResult]]:
-        return next(iter(self.translate_batch([segment], n)))
+        return next(iter(self.translate_batch([segment], n or 1)))
 
     @overload
     def translate_batch(self, segments: Iterable[Sequence[str]]) -> Iterable[TranslationResult]:
