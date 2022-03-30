@@ -3,7 +3,7 @@ import heapq
 import os
 import shutil
 from types import TracebackType
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type, cast
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type, Union, cast, overload
 
 import numpy as np
 import tensorflow as tf
@@ -118,16 +118,30 @@ class OpenNmtEngine(TranslationEngine):
     def restore(self) -> None:
         self._checkpoint_model, self._config = self._model.restore_checkpoint()
 
+    @overload
     def translate(self, segment: Sequence[str]) -> TranslationResult:
-        return self.translate_n(1, segment)[0]
+        ...
 
-    def translate_n(self, n: int, segment: Sequence[str]) -> List[TranslationResult]:
-        return next(iter(self.translate_many_n(n, [segment])))
+    @overload
+    def translate(self, segment: Sequence[str], n: int) -> List[TranslationResult]:
+        ...
 
-    def translate_many(self, segments: Iterable[Sequence[str]]) -> Iterable[TranslationResult]:
-        return (hyps[0] for hyps in self.translate_many_n(1, segments))
+    def translate(
+        self, segment: Sequence[str], n: Optional[int] = None
+    ) -> Union[TranslationResult, List[TranslationResult]]:
+        return next(iter(self.translate_batch([segment], n)))
 
-    def translate_many_n(self, n: int, segments: Iterable[Sequence[str]]) -> Iterable[List[TranslationResult]]:
+    @overload
+    def translate_batch(self, segments: Iterable[Sequence[str]]) -> Iterable[TranslationResult]:
+        ...
+
+    @overload
+    def translate_batch(self, segments: Iterable[Sequence[str]], n: int) -> Iterable[List[TranslationResult]]:
+        ...
+
+    def translate_batch(
+        self, segments: Iterable[Sequence[str]], n: Optional[int] = None
+    ) -> Union[Iterable[TranslationResult], Iterable[List[TranslationResult]]]:
         infer_config = self._config["infer"]
         features = (" ".join(segment) for segment in segments)
         dataset = self._make_inference_dataset(
@@ -158,7 +172,7 @@ class OpenNmtEngine(TranslationEngine):
                 src_tokens = prediction["src_tokens"][:src_length]
                 src_segment = self._features_inputter.tokenizer.detokenize(src_tokens)
 
-                num_hypotheses = min(n, len(prediction["log_probs"]))
+                num_hypotheses = min(n or 1, len(prediction["log_probs"]))
                 hypotheses: List[TranslationResult] = []
                 for i in range(num_hypotheses):
                     trg_length = prediction["length"][i]
@@ -186,7 +200,7 @@ class OpenNmtEngine(TranslationEngine):
                 while len(heap) > 0 and heap[0] == next_index:
                     i = heapq.heappop(heap)
                     result = queued_results.pop(i)
-                    yield result
+                    yield result if n is not None else result[0]
                     next_index += 1
 
     def __enter__(self) -> "OpenNmtEngine":
