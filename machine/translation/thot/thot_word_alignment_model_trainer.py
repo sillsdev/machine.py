@@ -4,7 +4,7 @@ from typing import Callable, List, Optional, Tuple, Union, overload
 
 import thot.alignment as ta
 
-from ...corpora.parallel_text_corpus import ParallelTextCorpus
+from ...corpora.corpus import Corpus
 from ...corpora.parallel_text_row import ParallelTextRow
 from ...utils.progress_status import ProgressStatus
 from ...utils.typeshed import StrPath
@@ -18,7 +18,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
     def __init__(
         self,
         model_type: ThotWordAlignmentModelType,
-        corpus: ParallelTextCorpus,
+        corpus: Corpus[ParallelTextRow],
         prefix_filename: Optional[StrPath],
         parameters: ThotWordAlignmentParameters = ThotWordAlignmentParameters(),
         max_corpus_count: int = sys.maxsize,
@@ -38,7 +38,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
     def __init__(
         self,
         model_type: ThotWordAlignmentModelType,
-        corpus: Union[ParallelTextCorpus, Tuple[StrPath, StrPath]],
+        corpus: Union[Corpus[ParallelTextRow], Tuple[StrPath, StrPath]],
         prefix_filename: Optional[StrPath],
         parameters: ThotWordAlignmentParameters = ThotWordAlignmentParameters(),
         max_corpus_count: int = sys.maxsize,
@@ -127,7 +127,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
         if progress is not None:
             progress(ProgressStatus.from_step(cur_step, num_steps))
 
-        if isinstance(self._parallel_corpus, ParallelTextCorpus):
+        if isinstance(self._parallel_corpus, Corpus):
             corpus_count = 0
             index = 0
             with self._parallel_corpus.get_rows() as rows:

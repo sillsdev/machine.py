@@ -11,7 +11,8 @@ from opennmt.utils.checkpoint import Checkpoint
 from opennmt.utils.misc import disable_mixed_precision, enable_mixed_precision
 
 from ...corpora.corpora_utils import get_split_indices
-from ...corpora.parallel_text_corpus import ParallelTextCorpus
+from ...corpora.corpus import Corpus
+from ...corpora.parallel_text_row import ParallelTextRow
 from ...utils.progress_status import ProgressStatus
 from ..trainer import Trainer, TrainStats
 from .open_nmt_utils import OpenNmtRunner, delete_model, delete_train_summary_files
@@ -22,7 +23,7 @@ class OpenNmtModelTrainer(Trainer):
         self,
         model_type: str,
         config: dict,
-        corpus: Optional[ParallelTextCorpus] = None,
+        corpus: Optional[Corpus[ParallelTextRow]] = None,
         mixed_precision: bool = False,
         resume: bool = False,
         val_size: int = 250,
@@ -199,8 +200,9 @@ class OpenNmtModelTrainer(Trainer):
                 eval_src_file = stack.enter_context(eval_src_path.open("w", encoding="utf-8", newline="\n"))
                 eval_trg_path.parent.mkdir(parents=True, exist_ok=True)
                 eval_trg_file = stack.enter_context(eval_trg_path.open("w", encoding="utf-8", newline="\n"))
+                rows = stack.enter_context(corpus.get_rows())
 
-                for i, row in enumerate(corpus):
+                for i, row in enumerate(rows):
                     if i in test_indices:
                         eval_src_file.write(row.source_text + "\n")
                         eval_trg_file.write(row.target_text + "\n")
