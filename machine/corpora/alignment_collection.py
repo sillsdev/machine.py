@@ -1,11 +1,10 @@
-from abc import ABC, abstractmethod
-from typing import Generator
+from abc import abstractmethod
 
-from ..utils.context_managed_generator import ContextManagedGenerator
 from .alignment_row import AlignmentRow
+from .corpus import Corpus
 
 
-class AlignmentCollection(ABC):
+class AlignmentCollection(Corpus[AlignmentRow]):
     @property
     @abstractmethod
     def id(self) -> str:
@@ -14,11 +13,4 @@ class AlignmentCollection(ABC):
     @property
     @abstractmethod
     def sort_key(self) -> str:
-        ...
-
-    def get_rows(self) -> ContextManagedGenerator[AlignmentRow, None, None]:
-        return ContextManagedGenerator(self._get_rows())
-
-    @abstractmethod
-    def _get_rows(self) -> Generator[AlignmentRow, None, None]:
         ...

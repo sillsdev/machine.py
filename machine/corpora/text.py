@@ -1,11 +1,10 @@
-from abc import ABC, abstractmethod
-from typing import Generator
+from abc import abstractmethod
 
-from ..utils.context_managed_generator import ContextManagedGenerator
+from .corpus import Corpus
 from .text_row import TextRow
 
 
-class Text(ABC):
+class Text(Corpus[TextRow]):
     @property
     @abstractmethod
     def id(self) -> str:
@@ -14,11 +13,4 @@ class Text(ABC):
     @property
     @abstractmethod
     def sort_key(self) -> str:
-        ...
-
-    def get_rows(self) -> ContextManagedGenerator[TextRow, None, None]:
-        return ContextManagedGenerator(self._get_rows())
-
-    @abstractmethod
-    def _get_rows(self) -> Generator[TextRow, None, None]:
         ...

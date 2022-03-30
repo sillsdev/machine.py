@@ -18,14 +18,15 @@ class AlignmentCorpus(Corpus[AlignmentRow]):
     ) -> ContextManagedGenerator[AlignmentRow, None, None]:
         return ContextManagedGenerator(self._get_rows(alignment_collection_ids))
 
-    def _get_rows(self, alignment_collection_ids: Optional[Iterable[str]]) -> Generator[AlignmentRow, None, None]:
+    def _get_rows(
+        self, alignment_collection_ids: Optional[Iterable[str]] = None
+    ) -> Generator[AlignmentRow, None, None]:
         alignment_collection_id_set = set(
             (t.id for t in self.alignment_collections) if alignment_collection_ids is None else alignment_collection_ids
         )
         for tac in self.alignment_collections:
             if tac.id in alignment_collection_id_set:
-                with tac.get_rows() as rows:
-                    yield from rows
+                yield from tac
 
     def invert(self) -> "AlignmentCorpus":
         def _invert(row: AlignmentRow) -> AlignmentRow:
@@ -47,5 +48,4 @@ class _TransformAlignmentCorpus(AlignmentCorpus):
         return self._corpus.alignment_collections
 
     def _get_rows(self) -> Generator[AlignmentRow, None, None]:
-        with self._corpus.get_rows() as rows:
-            yield from map(self._transform, rows)
+        yield from map(self._transform, self._corpus)

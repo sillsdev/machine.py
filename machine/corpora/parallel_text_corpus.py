@@ -80,5 +80,4 @@ class _TransformParallelTextCorpus(ParallelTextCorpus):
         self._transform = transform
 
     def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
-        with self._corpus.get_rows() as rows:
-            yield from map(self._transform, rows)
+        yield from map(self._transform, self._corpus)
