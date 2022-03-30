@@ -7,6 +7,7 @@ except ImportError:
     )
 
 from .open_nmt_model import OpenNmtEngine, OpenNmtModel
+from .open_nmt_model_trainer import OpenNmtModelTrainer
 from .saved_model_nmt_engine import SavedModelNmtEngine
 
-__all__ = ["OpenNmtEngine", "OpenNmtModel", "SavedModelNmtEngine"]
+__all__ = ["OpenNmtEngine", "OpenNmtModel", "OpenNmtModelTrainer", "SavedModelNmtEngine"]

@@ -7,8 +7,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Ty
 
 import numpy as np
 import tensorflow as tf
-from opennmt import Runner
-from opennmt.config import load_model_from_catalog
+from opennmt.config import try_prefix_paths
 from opennmt.data import inference_pipeline
 from opennmt.inputters import Inputter
 from opennmt.models import SequenceToSequence
@@ -24,22 +23,27 @@ from ..translation_result_builder import TranslationResultBuilder
 from ..translation_sources import TranslationSources
 from ..word_alignment_matrix import WordAlignmentMatrix
 from .open_nmt_model_trainer import OpenNmtModelTrainer
+from .open_nmt_utils import OpenNmtRunner, delete_model, model_exists, move_model
 
 
-class OpenNmtModel(Runner, TranslationModel):
+class OpenNmtModel(TranslationModel):
     def __init__(
         self,
         model_type: str,
         config: dict,
         mixed_precision: bool = False,
     ):
-        super().__init__(load_model_from_catalog(model_type), config, mixed_precision=mixed_precision)
-        self._model_type = model_type
+        self._config = config
+        self._runner = OpenNmtRunner(model_type, config, mixed_precision)
         self._engines: Set[OpenNmtEngine] = set()
 
     @property
+    def model_dir(self) -> str:
+        return self._runner.model_dir
+
+    @property
     def model_type(self) -> str:
-        return self._model_type
+        return self._runner.model_type
 
     @property
     def config(self) -> dict:
@@ -47,7 +51,7 @@ class OpenNmtModel(Runner, TranslationModel):
 
     @property
     def mixed_precision(self) -> bool:
-        return self._mixed_precision
+        return self._runner.mixed_precision
 
     def create_engine(self) -> "OpenNmtEngine":
         engine = OpenNmtEngine(self)
@@ -58,8 +62,7 @@ class OpenNmtModel(Runner, TranslationModel):
         return _Trainer(self, corpus)
 
     def restore_checkpoint(self) -> Tuple[SequenceToSequence, dict]:
-        config = self._finalize_config()
-        model = self._init_model(config)
+        config, model = self._runner.load()
         checkpoint = Checkpoint.from_config(config, model)
         checkpoint.restore(weights_only=True)
         return model, config
@@ -74,14 +77,26 @@ class OpenNmtModel(Runner, TranslationModel):
 class _Trainer(OpenNmtModelTrainer):
     def __init__(self, model: OpenNmtModel, corpus: ParallelTextCorpus):
         self._model = model
-        config = copy.deepcopy(self._model.config)
-        config["model_dir"] = config["model_dir"] + ".tmp"
-        super().__init__(self._model.model_type, config, corpus, self._model.mixed_precision, resume=False)
+        if model_exists(self._model.model_dir):
+            config: dict = copy.deepcopy(self._model.config)
+            config["data"] = cast(dict, try_prefix_paths(config["model_dir"], config["data"]))
+            config["model_dir"] = os.path.join(config["model_dir"], "train.tmp")
+            data_config = config["data"]
+            orig_data_config = self._model.config["data"]
+            data_config["train_features_file"] = orig_data_config["train_features_file"]
+            data_config["train_labels_file"] = orig_data_config["train_labels_file"]
+            data_config["eval_features_file"] = orig_data_config["eval_features_file"]
+            data_config["eval_labels_file"] = orig_data_config["eval_labels_file"]
+        else:
+            config = self._model.config
+        super().__init__(self._model.model_type, config, corpus, self._model.mixed_precision)
 
     def save(self) -> None:
-        if os.path.isdir(self._model.model_dir):
-            shutil.rmtree(self._model.model_dir)
-        shutil.move(self.model_dir, self._model.model_dir)
+        super().save()
+        if self._model.model_dir != self.model_dir:
+            delete_model(self._model.model_dir)
+            move_model(self.model_dir, self._model.model_dir)
+            shutil.rmtree(self.model_dir)
         for engine in self._model._engines:
             engine.restore()
 

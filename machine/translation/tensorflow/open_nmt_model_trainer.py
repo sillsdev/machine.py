@@ -1,13 +1,10 @@
 import math
-import os
-import shutil
 from contextlib import ExitStack
+from pathlib import Path
 from typing import Callable, Optional
 
 import opennmt.training as onmt_training
 import tensorflow as tf
-from opennmt import Runner
-from opennmt.config import load_model_from_catalog
 from opennmt.evaluation import Evaluator
 from opennmt.models import Model
 from opennmt.utils.checkpoint import Checkpoint
@@ -17,104 +14,64 @@ from ...corpora.corpora_utils import get_split_indices
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
 from ...utils.progress_status import ProgressStatus
 from ..trainer import Trainer, TrainStats
+from .open_nmt_utils import OpenNmtRunner, delete_model, delete_train_summary_files
 
 
-class OpenNmtModelTrainer(Runner, Trainer):
+class OpenNmtModelTrainer(Trainer):
     def __init__(
         self,
         model_type: str,
         config: dict,
         corpus: Optional[ParallelTextCorpus] = None,
         mixed_precision: bool = False,
-        resume: bool = True,
+        resume: bool = False,
+        val_size: int = 250,
     ):
-        super().__init__(load_model_from_catalog(model_type), config, mixed_precision=mixed_precision)
+        self._runner = OpenNmtRunner(model_type, config, mixed_precision)
         self._corpus = corpus
-        self._resume = resume
+        self.resume = resume
         self._stats = TrainStats()
-        self.val_size = 250
+        self.val_size = val_size
+
+    @property
+    def model_dir(self) -> str:
+        return self._runner.model_dir
 
     def train(
         self,
         progress: Optional[Callable[[ProgressStatus], None]] = None,
         check_canceled: Optional[Callable[[], None]] = None,
     ) -> None:
-        config = self._finalize_config(training=True, num_replicas=1, num_devices=1)
+        delete_train_summary_files(self.model_dir)
 
-        mixed_precision = self._mixed_precision and enable_mixed_precision()
-        model: Model = self._init_model(config)
+        mixed_precision = self._runner.mixed_precision and enable_mixed_precision()
+
+        config, model = self._runner.load(training=True)
         optimizer = model.get_optimizer()
 
-        data_config = config["data"]
-        train_config = config["train"]
-        eval_config = config["eval"]
+        data_config: dict = config["data"]
+        train_config: dict = config["train"]
+        eval_config: dict = config["eval"]
 
         batch_type = train_config["batch_type"]
         batch_size_multiple = 8 if mixed_precision and batch_type == "tokens" else 1
 
-        train_src_path = data_config["train_features_file"]
-        train_trg_path = data_config["train_labels_file"]
-        eval_src_path = data_config["eval_features_file"]
-        eval_trg_path = data_config["eval_labels_file"]
+        train_corpus_size = self._create_corpus_files(config, model)
 
-        max_features_length = train_config.get("maximum_features_length")
-        max_labels_length = train_config.get("maximum_labels_length")
-
-        if self._corpus is not None:
-            corpus = self._corpus.filter(
-                lambda row: not row.is_empty
-                and (max_features_length is None or len(row.source_segment) <= max_features_length)
-                and (max_labels_length is None or len(row.target_segment) <= max_labels_length)
-            )
-            corpus_size = corpus.count()
-
-            if not self._resume:
-                if os.path.isdir(self.model_dir):
-                    shutil.rmtree(self.model_dir)
-                if os.path.isfile(train_src_path):
-                    os.remove(train_src_path)
-                if os.path.isfile(train_trg_path):
-                    os.remove(train_trg_path)
-                if os.path.isfile(eval_src_path):
-                    os.remove(eval_src_path)
-                if os.path.isfile(eval_trg_path):
-                    os.remove(eval_trg_path)
-
-            if (
-                not os.path.isfile(train_src_path)
-                or not os.path.isfile(train_trg_path)
-                or not os.path.isfile(eval_src_path)
-                or not os.path.isfile(eval_trg_path)
-            ):
-                test_indices = get_split_indices(corpus_size, size=self.val_size, seed=31415)
-                with ExitStack() as stack:
-                    train_src_file = stack.enter_context(open(train_src_path, "w", encoding="utf-8", newline="\n"))
-                    train_trg_file = stack.enter_context(open(train_trg_path, "w", encoding="utf-8", newline="\n"))
-                    eval_src_file = stack.enter_context(open(eval_src_path, "w", encoding="utf-8", newline="\n"))
-                    eval_trg_file = stack.enter_context(open(eval_trg_path, "w", encoding="utf-8", newline="\n"))
-
-                    for i, row in enumerate(corpus):
-                        if i in test_indices:
-                            eval_src_file.write(row.source_text + "\n")
-                            eval_trg_file.write(row.target_text + "\n")
-                        else:
-                            train_src_file.write(row.source_text + "\n")
-                            train_trg_file.write(row.target_text + "\n")
-            train_corpus_size = max(corpus_size - self.val_size, 0)
-        else:
-            train_corpus_size = model.examples_inputter.get_dataset_size([train_src_path, train_trg_path])
+        if not self.resume:
+            delete_model(self.model_dir)
 
         def dataset_fn(input_context):
             return model.examples_inputter.make_training_dataset(
-                train_src_path,
-                train_trg_path,
+                data_config["train_features_file"],
+                data_config["train_labels_file"],
                 train_config["batch_size"],
                 batch_type=batch_type,
                 batch_size_multiple=batch_size_multiple,
                 shuffle_buffer_size=train_config["sample_buffer_size"],
                 length_bucket_width=train_config["length_bucket_width"],
-                maximum_features_length=max_features_length,
-                maximum_labels_length=max_labels_length,
+                maximum_features_length=train_config.get("maximum_features_length"),
+                maximum_labels_length=train_config.get("maximum_labels_length"),
                 single_pass=train_config.get("single_pass", False),
                 num_shards=input_context.num_input_pipelines,
                 shard_index=input_context.input_pipeline_id,
@@ -158,25 +115,107 @@ class OpenNmtModelTrainer(Runner, Trainer):
 
         average_last_checkpoints = train_config.get("average_last_checkpoints", 0)
         if average_last_checkpoints > 0:
-            self.average_checkpoints(
-                os.path.join(checkpoint.model_dir, "avg"),
-                max_count=average_last_checkpoints,
+            self._runner.average_checkpoints(
+                str(Path(checkpoint.model_dir) / "avg"), max_count=average_last_checkpoints
             )
 
         if mixed_precision:
             disable_mixed_precision()
 
         self._stats.trained_segment_count = train_corpus_size
-        if evaluator.last_evaluated_step is not None:
-            for name, value in evaluator.last_evaluated_step:
+        if evaluator.metrics_history is not None:
+            for name, value in evaluator.metrics_history[-1][1].items():
                 self._stats.metrics[name] = value
 
     def save(self) -> None:
-        ...
+        delete_train_summary_files(self.model_dir)
+        if self._corpus is not None:
+            data_config: dict = self._runner.config["data"]
+            train_src_path = self._prefix_path(data_config, "train_features_file")
+            train_trg_path = self._prefix_path(data_config, "train_labels_file")
+            eval_src_path = self._prefix_path(data_config, "eval_features_file")
+            eval_trg_path = self._prefix_path(data_config, "eval_labels_file")
+            if train_src_path.is_file():
+                train_src_path.unlink()
+            if train_trg_path.is_file():
+                train_trg_path.unlink()
+            if eval_src_path.is_file():
+                eval_src_path.unlink()
+            if eval_trg_path.is_file():
+                eval_trg_path.unlink()
 
     @property
     def stats(self) -> TrainStats:
         return self._stats
+
+    def _create_corpus_files(self, config: dict, model: Model) -> int:
+        data_config: dict = config["data"]
+
+        if self._corpus is None:
+            return model.examples_inputter.get_dataset_size(
+                [data_config["train_features_file"], data_config["train_labels_file"]]
+            )
+
+        train_config: dict = config["train"]
+
+        max_features_length = train_config.get("maximum_features_length")
+        max_labels_length = train_config.get("maximum_labels_length")
+
+        corpus = self._corpus.filter(
+            lambda row: not row.is_empty
+            and (max_features_length is None or len(row.source_segment) <= max_features_length)
+            and (max_labels_length is None or len(row.target_segment) <= max_labels_length)
+        )
+        corpus_size = corpus.count()
+
+        train_src_path = self._prefix_path(data_config, "train_features_file")
+        train_trg_path = self._prefix_path(data_config, "train_labels_file")
+        eval_src_path = self._prefix_path(data_config, "eval_features_file")
+        eval_trg_path = self._prefix_path(data_config, "eval_labels_file")
+
+        if not self.resume:
+            if train_src_path.is_file():
+                train_src_path.unlink()
+            if train_trg_path.is_file():
+                train_trg_path.unlink()
+            if eval_src_path.is_file():
+                eval_src_path.unlink()
+            if eval_trg_path.is_file():
+                eval_trg_path.unlink()
+
+        if (
+            not train_src_path.is_file()
+            or not train_trg_path.is_file()
+            or not eval_src_path.is_file()
+            or not eval_trg_path.is_file()
+        ):
+            test_indices = get_split_indices(corpus_size, size=self.val_size, seed=31415)
+            with ExitStack() as stack:
+                train_src_path.parent.mkdir(parents=True, exist_ok=True)
+                train_src_file = stack.enter_context(train_src_path.open("w", encoding="utf-8", newline="\n"))
+                train_trg_path.parent.mkdir(parents=True, exist_ok=True)
+                train_trg_file = stack.enter_context(train_trg_path.open("w", encoding="utf-8", newline="\n"))
+                eval_src_path.parent.mkdir(parents=True, exist_ok=True)
+                eval_src_file = stack.enter_context(eval_src_path.open("w", encoding="utf-8", newline="\n"))
+                eval_trg_path.parent.mkdir(parents=True, exist_ok=True)
+                eval_trg_file = stack.enter_context(eval_trg_path.open("w", encoding="utf-8", newline="\n"))
+
+                for i, row in enumerate(corpus):
+                    if i in test_indices:
+                        eval_src_file.write(row.source_text + "\n")
+                        eval_trg_file.write(row.target_text + "\n")
+                    else:
+                        train_src_file.write(row.source_text + "\n")
+                        train_trg_file.write(row.target_text + "\n")
+
+        return max(corpus_size - self.val_size, 0)
+
+    def _prefix_path(self, data_config: dict, name: str) -> Path:
+        path = Path(data_config[name])
+        if not path.is_absolute():
+            path = Path(self.model_dir) / path
+            data_config[name] = str(path)
+        return path
 
 
 def _count_batch_accum(batch_size, target_batch_size, num_replicas=1):
