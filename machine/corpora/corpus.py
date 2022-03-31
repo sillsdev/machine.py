@@ -17,11 +17,12 @@ class Corpus(ABC, Generic[Row], Iterable[Row]):
     def _get_rows(self) -> Generator[Row, None, None]:
         ...
 
-    def __iter__(self) -> Generator[Row, None, None]:
-        return self._get_rows()
+    def __iter__(self) -> ContextManagedGenerator[Row, None, None]:
+        return self.get_rows()
 
     def count(self) -> int:
-        return sum(1 for _ in self)
+        with self.get_rows() as rows:
+            return sum(1 for _ in rows)
 
     def filter(self, predicate: Callable[[Row], bool]) -> "Corpus[Row]":
         return _FilterCorpus(self, lambda row, _: predicate(row))
@@ -47,7 +48,8 @@ class Corpus(ABC, Generic[Row], Iterable[Row]):
         return ContextManagedGenerator(self._map(selector))
 
     def _map(self, selector: Callable[[Row], Item]) -> Generator[Item, None, None]:
-        yield from (selector(row) for row in self)
+        with self.get_rows() as rows:
+            yield from (selector(row) for row in rows)
 
 
 class _FilterCorpus(Corpus[Row]):
@@ -56,7 +58,8 @@ class _FilterCorpus(Corpus[Row]):
         self._predicate = predicate
 
     def _get_rows(self) -> Generator[Row, None, None]:
-        yield from (row for i, row in enumerate(self._corpus) if self._predicate(row, i))
+        with self._corpus.get_rows() as rows:
+            yield from (row for i, row in enumerate(rows) if self._predicate(row, i))
 
 
 class _TakeCorpus(Corpus[Row]):
@@ -65,4 +68,5 @@ class _TakeCorpus(Corpus[Row]):
         self._count = count
 
     def _get_rows(self) -> Generator[Row, None, None]:
-        yield from islice(self._corpus, self._count)
+        with self._corpus.get_rows() as rows:
+            yield from islice(rows, self._count)

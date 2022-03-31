@@ -130,13 +130,14 @@ class ThotWordAlignmentModelTrainer(Trainer):
         if isinstance(self._parallel_corpus, Corpus):
             corpus_count = 0
             index = 0
-            for row in self._parallel_corpus:
-                self._model.add_sentence_pair(row.source_segment, row.target_segment, 1)
-                if self._is_segment_valid(row):
-                    corpus_count += 1
-                index += 1
-                if corpus_count == self._max_corpus_count:
-                    break
+            with self._parallel_corpus.get_rows() as rows:
+                for row in rows:
+                    self._model.add_sentence_pair(row.source_segment, row.target_segment, 1)
+                    if self._is_segment_valid(row):
+                        corpus_count += 1
+                    index += 1
+                    if corpus_count == self._max_corpus_count:
+                        break
         else:
             self._model.read_sentence_pairs(str(self._parallel_corpus[0]), str(self._parallel_corpus[1]))
         cur_step += 1

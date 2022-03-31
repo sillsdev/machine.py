@@ -25,7 +25,8 @@ class TextCorpus(Corpus[TextRow]):
         text_id_set = set((t.id for t in self.texts) if text_ids is None else text_ids)
         for text in self.texts:
             if text.id in text_id_set:
-                yield from text.get_rows()
+                with text.get_rows() as rows:
+                    yield from rows
 
     def tokenize(self, tokenizer: Tokenizer[str, int, str]) -> "TextCorpus":
         def _tokenize(row: TextRow) -> TextRow:
@@ -109,7 +110,8 @@ class _TransformTextCorpus(TextCorpus):
         return self._corpus.texts
 
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
-        yield from map(self._transform, self._corpus.get_rows(text_ids))
+        with self._corpus.get_rows(text_ids) as rows:
+            yield from map(self._transform, rows)
 
 
 class _TextFilterTextCorpus(TextCorpus):
@@ -122,4 +124,5 @@ class _TextFilterTextCorpus(TextCorpus):
         return (t for t in self._corpus.texts if self._predicate(t))
 
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
-        yield from self._corpus.get_rows((t.id for t in self.texts) if text_ids is None else text_ids)
+        with self._corpus.get_rows((t.id for t in self.texts) if text_ids is None else text_ids) as rows:
+            yield from rows

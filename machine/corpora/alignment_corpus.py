@@ -26,7 +26,8 @@ class AlignmentCorpus(Corpus[AlignmentRow]):
         )
         for tac in self.alignment_collections:
             if tac.id in alignment_collection_id_set:
-                yield from tac
+                with tac.get_rows() as rows:
+                    yield from rows
 
     def invert(self) -> "AlignmentCorpus":
         def _invert(row: AlignmentRow) -> AlignmentRow:
@@ -48,4 +49,5 @@ class _TransformAlignmentCorpus(AlignmentCorpus):
         return self._corpus.alignment_collections
 
     def _get_rows(self) -> Generator[AlignmentRow, None, None]:
-        yield from map(self._transform, self._corpus)
+        with self._corpus.get_rows() as rows:
+            yield from map(self._transform, rows)

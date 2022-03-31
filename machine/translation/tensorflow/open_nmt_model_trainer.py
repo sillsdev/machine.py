@@ -200,8 +200,9 @@ class OpenNmtModelTrainer(Trainer):
                 eval_src_file = stack.enter_context(eval_src_path.open("w", encoding="utf-8", newline="\n"))
                 eval_trg_path.parent.mkdir(parents=True, exist_ok=True)
                 eval_trg_file = stack.enter_context(eval_trg_path.open("w", encoding="utf-8", newline="\n"))
+                rows = stack.enter_context(corpus.get_rows())
 
-                for i, row in enumerate(corpus):
+                for i, row in enumerate(rows):
                     if i in test_indices:
                         eval_src_file.write(row.source_text + "\n")
                         eval_trg_file.write(row.target_text + "\n")
