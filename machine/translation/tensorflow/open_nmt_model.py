@@ -76,7 +76,7 @@ class OpenNmtModel(TranslationModel):
         self._engines.add(engine)
         return engine
 
-    def create_trainer(self, corpus: Corpus[ParallelTextRow]) -> OpenNmtModelTrainer:
+    def create_trainer(self, corpus: Optional[Corpus[ParallelTextRow]] = None) -> OpenNmtModelTrainer:
         return _Trainer(self, corpus)
 
     def restore_checkpoint(self) -> Tuple[SequenceToSequence, dict]:
@@ -93,18 +93,19 @@ class OpenNmtModel(TranslationModel):
 
 
 class _Trainer(OpenNmtModelTrainer):
-    def __init__(self, model: OpenNmtModel, corpus: Corpus[ParallelTextRow]):
+    def __init__(self, model: OpenNmtModel, corpus: Optional[Corpus[ParallelTextRow]]):
         self._model = model
         if model_exists(self._model.model_dir):
             temp_config: dict = copy.deepcopy(self._model.config)
             temp_config["data"] = cast(dict, try_prefix_paths(temp_config["model_dir"], temp_config["data"]))
             temp_config["model_dir"] = os.path.join(temp_config["model_dir"], "train.tmp")
-            temp_data_config = temp_config["data"]
-            data_config = self._model.config["data"]
-            temp_data_config["train_features_file"] = data_config["train_features_file"]
-            temp_data_config["train_labels_file"] = data_config["train_labels_file"]
-            temp_data_config["eval_features_file"] = data_config["eval_features_file"]
-            temp_data_config["eval_labels_file"] = data_config["eval_labels_file"]
+            if corpus is not None:
+                temp_data_config = temp_config["data"]
+                data_config = self._model.config["data"]
+                temp_data_config["train_features_file"] = data_config["train_features_file"]
+                temp_data_config["train_labels_file"] = data_config["train_labels_file"]
+                temp_data_config["eval_features_file"] = data_config["eval_features_file"]
+                temp_data_config["eval_labels_file"] = data_config["eval_labels_file"]
         else:
             temp_config = self._model.config
         super().__init__(
@@ -115,9 +116,10 @@ class _Trainer(OpenNmtModelTrainer):
         super().save()
         if self._model.model_dir != self.model_dir:
             delete_model(self._model.model_dir)
-            delete_corpus_files(self._model.runner.config)
             move_model(self.model_dir, self._model.model_dir)
-            move_corpus_files(self._runner.config, self._model.runner.config)
+            if self._corpus is not None:
+                delete_corpus_files(self._model.runner.config)
+                move_corpus_files(self._runner.config, self._model.runner.config)
             shutil.rmtree(self.model_dir)
         for engine in self._model._engines:
             engine.restore()
