@@ -3,9 +3,12 @@ from itertools import islice
 from typing import Any, Callable, Generator, Generic, Iterable, Optional, Tuple, TypeVar
 
 from ..utils.context_managed_generator import ContextManagedGenerator
+from .alignment_row import AlignmentRow
 from .corpora_utils import get_split_indices
+from .parallel_text_row import ParallelTextRow
+from .text_row import TextRow
 
-Row = TypeVar("Row")
+Row = TypeVar("Row", TextRow, ParallelTextRow, AlignmentRow)
 Item = TypeVar("Item")
 
 
@@ -20,12 +23,19 @@ class Corpus(ABC, Generic[Row], Iterable[Row]):
     def __iter__(self) -> ContextManagedGenerator[Row, None, None]:
         return self.get_rows()
 
-    def count(self) -> int:
+    @property
+    def missing_rows_allowed(self) -> bool:
+        return True
+
+    def count(self, include_empty: bool = True) -> int:
         with self.get_rows() as rows:
-            return sum(1 for _ in rows)
+            return sum(1 for row in rows if include_empty or not row.is_empty)
+
+    def filter_empty(self) -> "Corpus[Row]":
+        return self.filter(lambda r: not r.is_empty)
 
     def filter(self, predicate: Callable[[Row], bool]) -> "Corpus[Row]":
-        return _FilterCorpus(self, lambda row, _: predicate(row))
+        return self.filter_by_index(lambda r, _: predicate(r))
 
     def filter_by_index(self, predicate: Callable[[Row, int], bool]) -> "Corpus[Row]":
         return _FilterCorpus(self, predicate)
@@ -34,13 +44,13 @@ class Corpus(ABC, Generic[Row], Iterable[Row]):
         return _TakeCorpus(self, count)
 
     def split(
-        self, percent: Optional[float] = None, size: Optional[int] = None, seed: Any = None
+        self, percent: Optional[float] = None, size: Optional[int] = None, include_empty: bool = True, seed: Any = None
     ) -> Tuple["Corpus[Row]", "Corpus[Row]", int, int]:
-        corpus_size = self.count()
+        corpus_size = self.count(include_empty)
         split_indices = get_split_indices(corpus_size, percent, size, seed)
 
-        main_corpus = self.filter_by_index(lambda _, i: i not in split_indices)
-        split_corpus = self.filter_by_index(lambda _, i: i in split_indices)
+        main_corpus = self.filter_by_index(lambda r, i: i not in split_indices and (include_empty or not r.is_empty))
+        split_corpus = self.filter_by_index(lambda r, i: i in split_indices and (include_empty or not r.is_empty))
 
         return main_corpus, split_corpus, corpus_size - len(split_indices), len(split_indices)
 

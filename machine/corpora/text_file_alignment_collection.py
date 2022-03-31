@@ -40,3 +40,11 @@ class TextFileAlignmentCollection(AlignmentCollection):
                     keys.append(segment_num)
                     yield AlignmentRow(RowRef(keys), AlignedWordPair.parse(line))
                     segment_num += 1
+
+    @property
+    def missing_rows_allowed(self) -> bool:
+        return False
+
+    def count(self, include_empty: bool = True) -> int:
+        with open(self._filename, mode="rb") as file:
+            return sum(1 for line in file if include_empty or len(line.strip()) > 0)

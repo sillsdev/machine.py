@@ -24,7 +24,14 @@ from ..translation_result_builder import TranslationResultBuilder
 from ..translation_sources import TranslationSources
 from ..word_alignment_matrix import WordAlignmentMatrix
 from .open_nmt_model_trainer import OpenNmtModelTrainer
-from .open_nmt_utils import OpenNmtRunner, delete_model, model_exists, move_model
+from .open_nmt_utils import (
+    OpenNmtRunner,
+    delete_corpus_files,
+    delete_model,
+    model_exists,
+    move_corpus_files,
+    move_model,
+)
 
 
 class OpenNmtModel(TranslationModel):
@@ -32,10 +39,12 @@ class OpenNmtModel(TranslationModel):
         self,
         model_type: str,
         config: dict,
+        parent_config: Optional[dict] = None,
         mixed_precision: bool = False,
     ):
         self._config = config
-        self._runner = OpenNmtRunner(model_type, config, mixed_precision)
+        self._parent_config = parent_config
+        self._runner = OpenNmtRunner(model_type, config, mixed_precision, prefix_corpus_paths=True)
         self._engines: Set[OpenNmtEngine] = set()
 
     @property
@@ -51,8 +60,16 @@ class OpenNmtModel(TranslationModel):
         return self._config
 
     @property
+    def parent_config(self) -> Optional[dict]:
+        return self._parent_config
+
+    @property
     def mixed_precision(self) -> bool:
         return self._runner.mixed_precision
+
+    @property
+    def runner(self) -> OpenNmtRunner:
+        return self._runner
 
     def create_engine(self) -> "OpenNmtEngine":
         engine = OpenNmtEngine(self)
@@ -79,24 +96,28 @@ class _Trainer(OpenNmtModelTrainer):
     def __init__(self, model: OpenNmtModel, corpus: Corpus[ParallelTextRow]):
         self._model = model
         if model_exists(self._model.model_dir):
-            config: dict = copy.deepcopy(self._model.config)
-            config["data"] = cast(dict, try_prefix_paths(config["model_dir"], config["data"]))
-            config["model_dir"] = os.path.join(config["model_dir"], "train.tmp")
-            data_config = config["data"]
-            orig_data_config = self._model.config["data"]
-            data_config["train_features_file"] = orig_data_config["train_features_file"]
-            data_config["train_labels_file"] = orig_data_config["train_labels_file"]
-            data_config["eval_features_file"] = orig_data_config["eval_features_file"]
-            data_config["eval_labels_file"] = orig_data_config["eval_labels_file"]
+            temp_config: dict = copy.deepcopy(self._model.config)
+            temp_config["data"] = cast(dict, try_prefix_paths(temp_config["model_dir"], temp_config["data"]))
+            temp_config["model_dir"] = os.path.join(temp_config["model_dir"], "train.tmp")
+            temp_data_config = temp_config["data"]
+            data_config = self._model.config["data"]
+            temp_data_config["train_features_file"] = data_config["train_features_file"]
+            temp_data_config["train_labels_file"] = data_config["train_labels_file"]
+            temp_data_config["eval_features_file"] = data_config["eval_features_file"]
+            temp_data_config["eval_labels_file"] = data_config["eval_labels_file"]
         else:
-            config = self._model.config
-        super().__init__(self._model.model_type, config, corpus, self._model.mixed_precision)
+            temp_config = self._model.config
+        super().__init__(
+            self._model.model_type, temp_config, corpus, self._model.parent_config, self._model.mixed_precision
+        )
 
     def save(self) -> None:
         super().save()
         if self._model.model_dir != self.model_dir:
             delete_model(self._model.model_dir)
+            delete_corpus_files(self._model.runner.config)
             move_model(self.model_dir, self._model.model_dir)
+            move_corpus_files(self._runner.config, self._model.runner.config)
             shutil.rmtree(self.model_dir)
         for engine in self._model._engines:
             engine.restore()
@@ -162,6 +183,7 @@ class OpenNmtEngine(TranslationEngine):
         next_index = 0
         heap: List[int] = []
         for source in dataset:
+            source: dict = source
             predictions = self._infer_fn(source)
             predictions["src_tokens"] = source["tokens"]
             predictions["src_length"] = source["length"]

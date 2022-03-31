@@ -28,6 +28,13 @@ class TextCorpus(Corpus[TextRow]):
                 with text.get_rows() as rows:
                     yield from rows
 
+    @property
+    def missing_rows_allowed(self) -> bool:
+        return any(t.missing_rows_allowed for t in self.texts)
+
+    def count(self, include_empty: bool = True) -> int:
+        return sum(t.count(include_empty) for t in self.texts)
+
     def tokenize(self, tokenizer: Tokenizer[str, int, str]) -> "TextCorpus":
         def _tokenize(row: TextRow) -> TextRow:
             row.segment = list(tokenizer.tokenize(row.text))
@@ -108,6 +115,13 @@ class _TransformTextCorpus(TextCorpus):
     @property
     def texts(self) -> Iterable[Text]:
         return self._corpus.texts
+
+    @property
+    def missing_rows_allowed(self) -> bool:
+        return self._corpus.missing_rows_allowed
+
+    def count(self, include_empty: bool = True) -> int:
+        return self._corpus.count(include_empty)
 
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
         with self._corpus.get_rows(text_ids) as rows:

@@ -79,6 +79,13 @@ class _TransformParallelTextCorpus(ParallelTextCorpus):
         self._corpus = corpus
         self._transform = transform
 
+    @property
+    def missing_rows_allowed(self) -> bool:
+        return self._corpus.missing_rows_allowed
+
+    def count(self, include_empty: bool = True) -> int:
+        return self._corpus.count(include_empty)
+
     def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
         with self._corpus.get_rows() as rows:
             yield from map(self._transform, rows)

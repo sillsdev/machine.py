@@ -15,7 +15,7 @@ from ...corpora.corpus import Corpus
 from ...corpora.parallel_text_row import ParallelTextRow
 from ...utils.progress_status import ProgressStatus
 from ..trainer import Trainer, TrainStats
-from .open_nmt_utils import OpenNmtRunner, delete_model, delete_train_summary_files
+from .open_nmt_utils import OpenNmtRunner, delete_corpus_files, delete_model, delete_train_summary_files, model_exists
 
 
 class OpenNmtModelTrainer(Trainer):
@@ -24,12 +24,14 @@ class OpenNmtModelTrainer(Trainer):
         model_type: str,
         config: dict,
         corpus: Optional[Corpus[ParallelTextRow]] = None,
+        parent_config: Optional[dict] = None,
         mixed_precision: bool = False,
         resume: bool = False,
         val_size: int = 250,
     ):
-        self._runner = OpenNmtRunner(model_type, config, mixed_precision)
+        self._runner = OpenNmtRunner(model_type, config, mixed_precision, prefix_corpus_paths=corpus is not None)
         self._corpus = corpus
+        self._parent_config = parent_config
         self.resume = resume
         self._stats = TrainStats()
         self.val_size = val_size
@@ -44,6 +46,10 @@ class OpenNmtModelTrainer(Trainer):
         check_canceled: Optional[Callable[[], None]] = None,
     ) -> None:
         delete_train_summary_files(self.model_dir)
+        if not self.resume:
+            delete_model(self.model_dir)
+            if self._corpus is not None:
+                delete_corpus_files(self._runner.config)
 
         mixed_precision = self._runner.mixed_precision and enable_mixed_precision()
 
@@ -54,13 +60,32 @@ class OpenNmtModelTrainer(Trainer):
         train_config: dict = config["train"]
         eval_config: dict = config["eval"]
 
+        train_corpus_size = self._create_corpus_files(data_config, model)
+        parent_checkpoint_path = self._create_parent_checkpoint(data_config)
+
+        checkpoint = Checkpoint.from_config(config, model, optimizer=optimizer)
+        checkpoint.restore(parent_checkpoint_path, weights_only=parent_checkpoint_path is not None)
+        evaluator = Evaluator.from_config(model, config)
+
+        # Set gradients accumulation based on the requested effective batch size.
+        if train_config.get("effective_batch_size") is not None:
+            accum_steps = _count_batch_accum(
+                train_config["batch_size"],
+                train_config["effective_batch_size"],
+                num_replicas=1,
+            )
+            tf.get_logger().info(
+                "Accumulate gradients of %d iterations to reach effective batch size of %d",
+                accum_steps,
+                train_config["effective_batch_size"],
+            )
+        else:
+            accum_steps = 1
+
+        trainer = _Trainer(progress, check_canceled, model, optimizer, checkpoint=checkpoint)
+
         batch_type = train_config["batch_type"]
         batch_size_multiple = 8 if mixed_precision and batch_type == "tokens" else 1
-
-        train_corpus_size = self._create_corpus_files(config, model)
-
-        if not self.resume:
-            delete_model(self.model_dir)
 
         def dataset_fn(input_context):
             return model.examples_inputter.make_training_dataset(
@@ -81,27 +106,6 @@ class OpenNmtModelTrainer(Trainer):
                 weights=data_config.get("train_files_weights"),
                 batch_autotune_mode=train_config.get("batch_autotune_mode"),
             )
-
-        checkpoint = Checkpoint.from_config(config, model, optimizer=optimizer)
-        checkpoint.restore()
-        evaluator = Evaluator.from_config(model, config)
-
-        # Set gradients accumulation based on the requested effective batch size.
-        if train_config.get("effective_batch_size") is not None:
-            accum_steps = _count_batch_accum(
-                train_config["batch_size"],
-                train_config["effective_batch_size"],
-                num_replicas=1,
-            )
-            tf.get_logger().info(
-                "Accumulate gradients of %d iterations to reach effective batch size of %d",
-                accum_steps,
-                train_config["effective_batch_size"],
-            )
-        else:
-            accum_steps = 1
-
-        trainer = _Trainer(progress, check_canceled, model, optimizer, checkpoint=checkpoint)
 
         trainer(
             dataset_fn,
@@ -130,59 +134,20 @@ class OpenNmtModelTrainer(Trainer):
 
     def save(self) -> None:
         delete_train_summary_files(self.model_dir)
-        if self._corpus is not None:
-            data_config: dict = self._runner.config["data"]
-            train_src_path = self._prefix_path(data_config, "train_features_file")
-            train_trg_path = self._prefix_path(data_config, "train_labels_file")
-            eval_src_path = self._prefix_path(data_config, "eval_features_file")
-            eval_trg_path = self._prefix_path(data_config, "eval_labels_file")
-            if train_src_path.is_file():
-                train_src_path.unlink()
-            if train_trg_path.is_file():
-                train_trg_path.unlink()
-            if eval_src_path.is_file():
-                eval_src_path.unlink()
-            if eval_trg_path.is_file():
-                eval_trg_path.unlink()
 
     @property
     def stats(self) -> TrainStats:
         return self._stats
 
-    def _create_corpus_files(self, config: dict, model: Model) -> int:
-        data_config: dict = config["data"]
+    def _create_corpus_files(self, data_config: dict, model: Model) -> int:
+        train_src_path = Path(data_config["train_features_file"])
+        train_trg_path = Path(data_config["train_labels_file"])
 
         if self._corpus is None:
-            return model.examples_inputter.get_dataset_size(
-                [data_config["train_features_file"], data_config["train_labels_file"]]
-            )
+            return model.examples_inputter.get_dataset_size([str(train_src_path), str(train_trg_path)])
 
-        train_config: dict = config["train"]
-
-        max_features_length = train_config.get("maximum_features_length")
-        max_labels_length = train_config.get("maximum_labels_length")
-
-        corpus = self._corpus.filter(
-            lambda row: not row.is_empty
-            and (max_features_length is None or len(row.source_segment) <= max_features_length)
-            and (max_labels_length is None or len(row.target_segment) <= max_labels_length)
-        )
-        corpus_size = corpus.count()
-
-        train_src_path = self._prefix_path(data_config, "train_features_file")
-        train_trg_path = self._prefix_path(data_config, "train_labels_file")
-        eval_src_path = self._prefix_path(data_config, "eval_features_file")
-        eval_trg_path = self._prefix_path(data_config, "eval_labels_file")
-
-        if not self.resume:
-            if train_src_path.is_file():
-                train_src_path.unlink()
-            if train_trg_path.is_file():
-                train_trg_path.unlink()
-            if eval_src_path.is_file():
-                eval_src_path.unlink()
-            if eval_trg_path.is_file():
-                eval_trg_path.unlink()
+        eval_src_path = Path(data_config["eval_features_file"])
+        eval_trg_path = Path(data_config["eval_labels_file"])
 
         if (
             not train_src_path.is_file()
@@ -190,6 +155,8 @@ class OpenNmtModelTrainer(Trainer):
             or not eval_src_path.is_file()
             or not eval_trg_path.is_file()
         ):
+            corpus_size = self._corpus.count(include_empty=False)
+
             test_indices = get_split_indices(corpus_size, size=self.val_size, seed=31415)
             with ExitStack() as stack:
                 train_src_path.parent.mkdir(parents=True, exist_ok=True)
@@ -200,7 +167,7 @@ class OpenNmtModelTrainer(Trainer):
                 eval_src_file = stack.enter_context(eval_src_path.open("w", encoding="utf-8", newline="\n"))
                 eval_trg_path.parent.mkdir(parents=True, exist_ok=True)
                 eval_trg_file = stack.enter_context(eval_trg_path.open("w", encoding="utf-8", newline="\n"))
-                rows = stack.enter_context(corpus.get_rows())
+                rows = stack.enter_context(self._corpus.filter_empty().get_rows())
 
                 for i, row in enumerate(rows):
                     if i in test_indices:
@@ -210,14 +177,23 @@ class OpenNmtModelTrainer(Trainer):
                         train_src_file.write(row.source_text + "\n")
                         train_trg_file.write(row.target_text + "\n")
 
-        return max(corpus_size - self.val_size, 0)
+            return max(corpus_size - self.val_size, 0)
+        else:
+            return model.examples_inputter.get_dataset_size([str(train_src_path), str(train_trg_path)])
 
-    def _prefix_path(self, data_config: dict, name: str) -> Path:
-        path = Path(data_config[name])
-        if not path.is_absolute():
-            path = Path(self.model_dir) / path
-            data_config[name] = str(path)
-        return path
+    def _create_parent_checkpoint(self, data_config: dict) -> Optional[str]:
+        if self._parent_config is None:
+            return None
+
+        parent_checkpoint_path = Path(self.model_dir) / "parent"
+        if parent_checkpoint_path.is_dir():
+            return None if model_exists(self.model_dir) else str(parent_checkpoint_path)
+        else:
+            parent_runner = OpenNmtRunner(self._runner.model_type, self._parent_config)
+            parent_runner.update_vocab(
+                str(parent_checkpoint_path), data_config["source_vocabulary"], data_config["target_vocabulary"]
+            )
+            return str(parent_checkpoint_path)
 
 
 def _count_batch_accum(batch_size, target_batch_size, num_replicas=1):

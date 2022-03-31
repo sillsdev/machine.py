@@ -12,5 +12,9 @@ class AlignmentRow:
     def ref(self) -> Any:
         return self._ref
 
+    @property
+    def is_empty(self) -> bool:
+        return len(self.aligned_word_pairs) == 0
+
     def invert(self) -> "AlignmentRow":
         return AlignmentRow(self.ref, {ta.invert() for ta in self.aligned_word_pairs})
