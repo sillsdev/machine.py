@@ -1,6 +1,8 @@
-from typing import Callable, Generator, Optional
+from itertools import islice
+from typing import Any, Callable, Generator, Optional, Tuple
 
 from ..tokenization.tokenizer import Tokenizer
+from .corpora_utils import get_split_indices
 from .corpus import Corpus
 from .parallel_text_row import ParallelTextRow
 from .token_processors import escape_spaces, lowercase, normalize, unescape_spaces
@@ -73,6 +75,29 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
     def transform(self, transform: Callable[[ParallelTextRow], ParallelTextRow]) -> "ParallelTextCorpus":
         return _TransformParallelTextCorpus(self, transform)
 
+    def filter_nonempty(self) -> "ParallelTextCorpus":
+        return self.filter(lambda r: not r.is_empty)
+
+    def filter(self, predicate: Callable[[ParallelTextRow], bool]) -> "ParallelTextCorpus":
+        return self.filter_by_index(lambda r, _: predicate(r))
+
+    def filter_by_index(self, predicate: Callable[[ParallelTextRow, int], bool]) -> "ParallelTextCorpus":
+        return _FilterParallelTextCorpus(self, predicate)
+
+    def take(self, count: int) -> "ParallelTextCorpus":
+        return _TakeParallelTextCorpus(self, count)
+
+    def split(
+        self, percent: Optional[float] = None, size: Optional[int] = None, include_empty: bool = True, seed: Any = None
+    ) -> Tuple["ParallelTextCorpus", "ParallelTextCorpus", int, int]:
+        corpus_size = self.count(include_empty)
+        split_indices = get_split_indices(corpus_size, percent, size, seed)
+
+        main_corpus = self.filter_by_index(lambda r, i: i not in split_indices and (include_empty or not r.is_empty))
+        split_corpus = self.filter_by_index(lambda r, i: i in split_indices and (include_empty or not r.is_empty))
+
+        return main_corpus, split_corpus, corpus_size - len(split_indices), len(split_indices)
+
 
 class _TransformParallelTextCorpus(ParallelTextCorpus):
     def __init__(self, corpus: ParallelTextCorpus, transform: Callable[[ParallelTextRow], ParallelTextRow]):
@@ -89,3 +114,23 @@ class _TransformParallelTextCorpus(ParallelTextCorpus):
     def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
         with self._corpus.get_rows() as rows:
             yield from map(self._transform, rows)
+
+
+class _FilterParallelTextCorpus(ParallelTextCorpus):
+    def __init__(self, corpus: ParallelTextCorpus, predicate: Callable[[ParallelTextRow, int], bool]) -> None:
+        self._corpus = corpus
+        self._predicate = predicate
+
+    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
+        with self._corpus.get_rows() as rows:
+            yield from (row for i, row in enumerate(rows) if self._predicate(row, i))
+
+
+class _TakeParallelTextCorpus(ParallelTextCorpus):
+    def __init__(self, corpus: ParallelTextCorpus, count: int) -> None:
+        self._corpus = corpus
+        self._count = count
+
+    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
+        with self._corpus.get_rows() as rows:
+            yield from islice(rows, self._count)

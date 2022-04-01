@@ -1,10 +1,12 @@
 from abc import abstractmethod
-from typing import Callable, Generator, Iterable, Optional
+from itertools import islice
+from typing import Any, Callable, Generator, Iterable, Optional, Tuple
 
 from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .alignment_corpus import AlignmentCorpus
+from .corpora_utils import get_split_indices
 from .corpus import Corpus
 from .parallel_text_corpus import ParallelTextCorpus
 from .text import Text
@@ -106,6 +108,29 @@ class TextCorpus(Corpus[TextRow]):
 
         return StandardParallelTextCorpus(self, other, alignment_corpus, all_source_rows, all_target_rows)
 
+    def filter_nonempty(self) -> "TextCorpus":
+        return self.filter(lambda r: not r.is_empty)
+
+    def filter(self, predicate: Callable[[TextRow], bool]) -> "TextCorpus":
+        return self.filter_by_index(lambda r, _: predicate(r))
+
+    def filter_by_index(self, predicate: Callable[[TextRow, int], bool]) -> "TextCorpus":
+        return _FilterTextCorpus(self, predicate)
+
+    def take(self, count: int) -> "TextCorpus":
+        return _TakeTextCorpus(self, count)
+
+    def split(
+        self, percent: Optional[float] = None, size: Optional[int] = None, include_empty: bool = True, seed: Any = None
+    ) -> Tuple["TextCorpus", "TextCorpus", int, int]:
+        corpus_size = self.count(include_empty)
+        split_indices = get_split_indices(corpus_size, percent, size, seed)
+
+        main_corpus = self.filter_by_index(lambda r, i: i not in split_indices and (include_empty or not r.is_empty))
+        split_corpus = self.filter_by_index(lambda r, i: i in split_indices and (include_empty or not r.is_empty))
+
+        return main_corpus, split_corpus, corpus_size - len(split_indices), len(split_indices)
+
 
 class _TransformTextCorpus(TextCorpus):
     def __init__(self, corpus: TextCorpus, transform: Callable[[TextRow], TextRow]) -> None:
@@ -140,3 +165,31 @@ class _TextFilterTextCorpus(TextCorpus):
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
         with self._corpus.get_rows((t.id for t in self.texts) if text_ids is None else text_ids) as rows:
             yield from rows
+
+
+class _FilterTextCorpus(TextCorpus):
+    def __init__(self, corpus: TextCorpus, predicate: Callable[[TextRow, int], bool]) -> None:
+        self._corpus = corpus
+        self._predicate = predicate
+
+    @property
+    def texts(self) -> Iterable[Text]:
+        return self._corpus.texts
+
+    def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
+        with self._corpus.get_rows(text_ids) as rows:
+            yield from (row for i, row in enumerate(rows) if self._predicate(row, i))
+
+
+class _TakeTextCorpus(TextCorpus):
+    def __init__(self, corpus: TextCorpus, count: int) -> None:
+        self._corpus = corpus
+        self._count = count
+
+    @property
+    def texts(self) -> Iterable[Text]:
+        return self._corpus.texts
+
+    def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
+        with self._corpus.get_rows(text_ids) as rows:
+            yield from islice(rows, self._count)

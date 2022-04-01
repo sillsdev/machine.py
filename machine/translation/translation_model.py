@@ -3,8 +3,7 @@ from contextlib import AbstractContextManager
 from types import TracebackType
 from typing import Optional, Type
 
-from ..corpora.corpus import Corpus
-from ..corpora.parallel_text_row import ParallelTextRow
+from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from .trainer import Trainer
 from .translation_engine import TranslationEngine
 
@@ -15,7 +14,7 @@ class TranslationModel(AbstractContextManager):
         ...
 
     @abstractmethod
-    def create_trainer(self, corpus: Corpus[ParallelTextRow]) -> Trainer:
+    def create_trainer(self, corpus: ParallelTextCorpus) -> Trainer:
         ...
 
     def __enter__(self) -> "TranslationModel":

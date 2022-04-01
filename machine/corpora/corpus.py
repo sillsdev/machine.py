@@ -31,28 +31,18 @@ class Corpus(ABC, Generic[Row], Iterable[Row]):
         with self.get_rows() as rows:
             return sum(1 for row in rows if include_empty or not row.is_empty)
 
-    def filter_empty(self) -> "Corpus[Row]":
+    def filter_nonempty(self) -> ContextManagedGenerator[Row, None, None]:
         return self.filter(lambda r: not r.is_empty)
 
-    def filter(self, predicate: Callable[[Row], bool]) -> "Corpus[Row]":
+    def filter(self, predicate: Callable[[Row], bool]) -> ContextManagedGenerator[Row, None, None]:
         return self.filter_by_index(lambda r, _: predicate(r))
 
-    def filter_by_index(self, predicate: Callable[[Row, int], bool]) -> "Corpus[Row]":
-        return _FilterCorpus(self, predicate)
+    def filter_by_index(self, predicate: Callable[[Row, int], bool]) -> ContextManagedGenerator[Row, None, None]:
+        def _get_rows() -> Generator[Row, None, None]:
+            with self.get_rows() as rows:
+                yield from (row for i, row in enumerate(rows) if predicate(row, i))
 
-    def take(self, count: int) -> "Corpus[Row]":
-        return _TakeCorpus(self, count)
-
-    def split(
-        self, percent: Optional[float] = None, size: Optional[int] = None, include_empty: bool = True, seed: Any = None
-    ) -> Tuple["Corpus[Row]", "Corpus[Row]", int, int]:
-        corpus_size = self.count(include_empty)
-        split_indices = get_split_indices(corpus_size, percent, size, seed)
-
-        main_corpus = self.filter_by_index(lambda r, i: i not in split_indices and (include_empty or not r.is_empty))
-        split_corpus = self.filter_by_index(lambda r, i: i in split_indices and (include_empty or not r.is_empty))
-
-        return main_corpus, split_corpus, corpus_size - len(split_indices), len(split_indices)
+        return ContextManagedGenerator(_get_rows())
 
     def interleaved_split(
         self, percent: Optional[float] = None, size: Optional[int] = None, include_empty: bool = True, seed: Any = None
@@ -60,41 +50,33 @@ class Corpus(ABC, Generic[Row], Iterable[Row]):
         corpus_size = self.count(include_empty)
         split_indices = get_split_indices(corpus_size, percent, size, seed)
 
-        corpus = self
-        if not include_empty:
-            corpus = self.filter(lambda r: not r.is_empty)
+        def _get_rows() -> Generator[Tuple[Row, bool], None, None]:
+            if include_empty:
+                corpus = self.get_rows()
+            else:
+                corpus = self.filter_nonempty()
+            with corpus as rows:
+                yield from ((row, i in split_indices) for i, row in enumerate(rows))
+
         return (
-            corpus.map_by_index(lambda r, i: (r, i in split_indices)),
+            ContextManagedGenerator(_get_rows()),
             corpus_size - len(split_indices),
             len(split_indices),
         )
 
+    def take(self, count: int) -> ContextManagedGenerator[Row, None, None]:
+        def _get_rows() -> Generator[Row, None, None]:
+            with self.get_rows() as rows:
+                yield from islice(rows, count)
+
+        return ContextManagedGenerator(_get_rows())
+
     def map(self, selector: Callable[[Row], Item]) -> ContextManagedGenerator[Item, None, None]:
-        return ContextManagedGenerator(self._map_by_index(lambda r, _: selector(r)))
+        return self.map_by_index(lambda r, _: selector(r))
 
     def map_by_index(self, selector: Callable[[Row, int], Item]) -> ContextManagedGenerator[Item, None, None]:
-        return ContextManagedGenerator(self._map_by_index(selector))
+        def _map_rows() -> Generator[Item, None, None]:
+            with self.get_rows() as rows:
+                yield from (selector(row, i) for i, row in enumerate(rows))
 
-    def _map_by_index(self, selector: Callable[[Row, int], Item]) -> Generator[Item, None, None]:
-        with self.get_rows() as rows:
-            yield from (selector(row, i) for i, row in enumerate(rows))
-
-
-class _FilterCorpus(Corpus[Row]):
-    def __init__(self, corpus: Corpus[Row], predicate: Callable[[Row, int], bool]) -> None:
-        self._corpus = corpus
-        self._predicate = predicate
-
-    def _get_rows(self) -> Generator[Row, None, None]:
-        with self._corpus.get_rows() as rows:
-            yield from (row for i, row in enumerate(rows) if self._predicate(row, i))
-
-
-class _TakeCorpus(Corpus[Row]):
-    def __init__(self, corpus: Corpus, count: int) -> None:
-        self._corpus = corpus
-        self._count = count
-
-    def _get_rows(self) -> Generator[Row, None, None]:
-        with self._corpus.get_rows() as rows:
-            yield from islice(rows, self._count)
+        return ContextManagedGenerator(_map_rows())

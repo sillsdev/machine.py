@@ -131,6 +131,8 @@ class OpenNmtRunner(Runner):
         return config, model
 
     def _prefix_path(self, data_config: dict, name: str) -> None:
+        if name not in data_config:
+            return
         path = Path(data_config[name])
         if not path.is_absolute():
             path = Path(self.model_dir) / path

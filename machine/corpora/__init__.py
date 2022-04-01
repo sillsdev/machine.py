@@ -2,6 +2,7 @@ from .aligned_word_pair import AlignedWordPair
 from .alignment_collection import AlignmentCollection
 from .alignment_corpus import AlignmentCorpus
 from .alignment_row import AlignmentRow
+from .corpus import Corpus
 from .dbl_bundle_text import DblBundleText
 from .dbl_bundle_text_corpus import DblBundleTextCorpus
 from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
@@ -45,6 +46,7 @@ __all__ = [
     "AlignmentCollection",
     "AlignmentCorpus",
     "AlignmentRow",
+    "Corpus",
     "DblBundleText",
     "DblBundleTextCorpus",
     "DictionaryAlignmentCorpus",

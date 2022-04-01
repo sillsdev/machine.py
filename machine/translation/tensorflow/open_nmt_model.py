@@ -15,8 +15,7 @@ from opennmt.utils.checkpoint import Checkpoint
 from opennmt.utils.misc import extract_batches, item_or_tuple
 
 from ...annotations.range import Range
-from ...corpora.corpus import Corpus
-from ...corpora.parallel_text_row import ParallelTextRow
+from ...corpora.parallel_text_corpus import ParallelTextCorpus
 from ..translation_engine import TranslationEngine
 from ..translation_model import TranslationModel
 from ..translation_result import TranslationResult
@@ -76,7 +75,7 @@ class OpenNmtModel(TranslationModel):
         self._engines.add(engine)
         return engine
 
-    def create_trainer(self, corpus: Optional[Corpus[ParallelTextRow]] = None) -> OpenNmtModelTrainer:
+    def create_trainer(self, corpus: Optional[ParallelTextCorpus] = None) -> OpenNmtModelTrainer:
         return _Trainer(self, corpus)
 
     def restore_checkpoint(self) -> Tuple[SequenceToSequence, dict]:
@@ -93,7 +92,7 @@ class OpenNmtModel(TranslationModel):
 
 
 class _Trainer(OpenNmtModelTrainer):
-    def __init__(self, model: OpenNmtModel, corpus: Optional[Corpus[ParallelTextRow]]):
+    def __init__(self, model: OpenNmtModel, corpus: Optional[ParallelTextCorpus]):
         self._model = model
         if model_exists(self._model.model_dir):
             temp_config: dict = copy.deepcopy(self._model.config)
@@ -153,7 +152,9 @@ class OpenNmtEngine(TranslationEngine):
     def translate(
         self, segment: Sequence[str], n: Optional[int] = None
     ) -> Union[TranslationResult, List[TranslationResult]]:
-        return next(iter(self.translate_batch([segment], n or 1)))
+        if n is None:
+            return next(iter(self.translate_batch([segment])))
+        return next(iter(self.translate_batch([segment], n)))
 
     @overload
     def translate_batch(self, segments: Iterable[Sequence[str]]) -> Iterable[TranslationResult]:

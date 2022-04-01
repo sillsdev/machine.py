@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import Collection, Dict, Iterable, Optional, Sequence, Tuple, Union
 
 from ..corpora.aligned_word_pair import AlignedWordPair
-from ..corpora.corpus import Corpus
+from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from ..corpora.parallel_text_row import ParallelTextRow
 from .trainer import Trainer
 from .word_aligner import WordAligner
@@ -27,7 +27,7 @@ class WordAlignmentModel(WordAligner):
         ...
 
     @abstractmethod
-    def create_trainer(self, corpus: Corpus[ParallelTextRow]) -> Trainer:
+    def create_trainer(self, corpus: ParallelTextCorpus) -> Trainer:
         ...
 
     @abstractmethod

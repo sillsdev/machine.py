@@ -9,7 +9,7 @@ def test_get_rows_nonempty_text() -> None:
 
     text = corpus.get_text("MAT")
     assert text is not None
-    rows = list(corpus.get_rows())
+    rows = list(corpus)
 
     assert len(rows) == 14
 
@@ -55,7 +55,7 @@ def test_get_rows_sentence_start() -> None:
 
     text = corpus.get_text("MAT")
     assert text is not None
-    rows = list(text.get_rows())
+    rows = list(text)
 
     assert len(rows) == 14
 
@@ -73,7 +73,7 @@ def test_get_rows_empty_text() -> None:
 
     text = corpus.get_text("MRK")
     assert text is not None
-    rows = list(text.get_rows())
+    rows = list(text)
 
     assert len(rows) == 0
 
@@ -83,7 +83,7 @@ def test_get_rows_include_markers() -> None:
 
     text = corpus.get_text("MAT")
     assert text is not None
-    rows = list(text.get_rows())
+    rows = list(text)
 
     assert len(rows) == 14
 

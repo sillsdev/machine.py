@@ -10,8 +10,7 @@ from opennmt.models import Model
 from opennmt.utils.checkpoint import Checkpoint
 from opennmt.utils.misc import disable_mixed_precision, enable_mixed_precision
 
-from ...corpora.corpus import Corpus
-from ...corpora.parallel_text_row import ParallelTextRow
+from ...corpora.parallel_text_corpus import ParallelTextCorpus
 from ...utils.progress_status import ProgressStatus
 from ..trainer import Trainer, TrainStats
 from .open_nmt_utils import OpenNmtRunner, delete_corpus_files, delete_model, delete_train_summary_files, model_exists
@@ -22,7 +21,7 @@ class OpenNmtModelTrainer(Trainer):
         self,
         model_type: str,
         config: dict,
-        corpus: Optional[Corpus[ParallelTextRow]] = None,
+        corpus: Optional[ParallelTextCorpus] = None,
         parent_config: Optional[dict] = None,
         mixed_precision: bool = False,
         resume: bool = False,
@@ -166,8 +165,8 @@ class OpenNmtModelTrainer(Trainer):
                 eval_trg_file = stack.enter_context(eval_trg_path.open("w", encoding="utf-8", newline="\n"))
                 rows = stack.enter_context(corpus)
 
-                for row, in_test in rows:
-                    if in_test:
+                for row, is_test_row in rows:
+                    if is_test_row:
                         eval_src_file.write(row.source_text + "\n")
                         eval_trg_file.write(row.target_text + "\n")
                     else:

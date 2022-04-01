@@ -4,8 +4,7 @@ from typing import Collection, Iterable, Iterator, Optional, Sequence, Tuple, Un
 
 import thot.alignment as ta
 
-from ...corpora.corpus import Corpus
-from ...corpora.parallel_text_row import ParallelTextRow
+from ...corpora.parallel_text_corpus import ParallelTextCorpus
 from ...utils.typeshed import StrPath
 from ..ibm1_word_alignment_model import Ibm1WordAlignmentModel
 from ..trainer import Trainer
@@ -68,7 +67,7 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
         if self._prefix_filename is not None:
             self._model.print(str(self._prefix_filename))
 
-    def create_trainer(self, corpus: Corpus[ParallelTextRow]) -> Trainer:
+    def create_trainer(self, corpus: ParallelTextCorpus) -> Trainer:
         return _Trainer(self, corpus, self._prefix_filename)
 
     def get_best_alignment(self, source_segment: Sequence[str], target_segment: Sequence[str]) -> WordAlignmentMatrix:
@@ -164,7 +163,7 @@ class _ThotWordVocabulary(WordVocabulary):
 
 class _Trainer(ThotWordAlignmentModelTrainer):
     def __init__(
-        self, model: ThotWordAlignmentModel, corpus: Corpus[ParallelTextRow], prefix_filename: Optional[StrPath]
+        self, model: ThotWordAlignmentModel, corpus: ParallelTextCorpus, prefix_filename: Optional[StrPath]
     ) -> None:
         super().__init__(model.type, corpus, prefix_filename, model.parameters)
         self._machine_model = model

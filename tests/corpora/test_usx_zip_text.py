@@ -8,7 +8,7 @@ def test_get_rows_nonempty_text() -> None:
     with DblBundleTestEnvironment() as env:
         text = env.corpus.get_text("MAT")
         assert text is not None
-        rows = list(text.get_rows())
+        rows = list(text)
 
         assert len(rows) == 14
 
@@ -50,7 +50,7 @@ def test_get_rows_sentence_start() -> None:
     with DblBundleTestEnvironment() as env:
         text = env.corpus.get_text("MAT")
         assert text is not None
-        rows = list(text.get_rows())
+        rows = list(text)
 
         assert len(rows) == 14
 
@@ -67,6 +67,6 @@ def test_get_rows_empty_text() -> None:
     with DblBundleTestEnvironment() as env:
         text = env.corpus.get_text("MRK")
         assert text is not None
-        rows = list(text.get_rows())
+        rows = list(text)
 
         assert len(rows) == 0
