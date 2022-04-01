@@ -54,12 +54,30 @@ class Corpus(ABC, Generic[Row], Iterable[Row]):
 
         return main_corpus, split_corpus, corpus_size - len(split_indices), len(split_indices)
 
-    def map(self, selector: Callable[[Row], Item]) -> ContextManagedGenerator[Item, None, None]:
-        return ContextManagedGenerator(self._map(selector))
+    def interleaved_split(
+        self, percent: Optional[float] = None, size: Optional[int] = None, include_empty: bool = True, seed: Any = None
+    ) -> Tuple[ContextManagedGenerator[Tuple[Row, bool], None, None], int, int]:
+        corpus_size = self.count(include_empty)
+        split_indices = get_split_indices(corpus_size, percent, size, seed)
 
-    def _map(self, selector: Callable[[Row], Item]) -> Generator[Item, None, None]:
+        corpus = self
+        if not include_empty:
+            corpus = self.filter(lambda r: not r.is_empty)
+        return (
+            corpus.map_by_index(lambda r, i: (r, i in split_indices)),
+            corpus_size - len(split_indices),
+            len(split_indices),
+        )
+
+    def map(self, selector: Callable[[Row], Item]) -> ContextManagedGenerator[Item, None, None]:
+        return ContextManagedGenerator(self._map_by_index(lambda r, _: selector(r)))
+
+    def map_by_index(self, selector: Callable[[Row, int], Item]) -> ContextManagedGenerator[Item, None, None]:
+        return ContextManagedGenerator(self._map_by_index(selector))
+
+    def _map_by_index(self, selector: Callable[[Row, int], Item]) -> Generator[Item, None, None]:
         with self.get_rows() as rows:
-            yield from (selector(row) for row in rows)
+            yield from (selector(row, i) for i, row in enumerate(rows))
 
 
 class _FilterCorpus(Corpus[Row]):

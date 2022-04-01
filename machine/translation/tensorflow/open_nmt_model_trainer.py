@@ -10,7 +10,6 @@ from opennmt.models import Model
 from opennmt.utils.checkpoint import Checkpoint
 from opennmt.utils.misc import disable_mixed_precision, enable_mixed_precision
 
-from ...corpora.corpora_utils import get_split_indices
 from ...corpora.corpus import Corpus
 from ...corpora.parallel_text_row import ParallelTextRow
 from ...utils.progress_status import ProgressStatus
@@ -155,9 +154,7 @@ class OpenNmtModelTrainer(Trainer):
             or not eval_src_path.is_file()
             or not eval_trg_path.is_file()
         ):
-            corpus_size = self._corpus.count(include_empty=False)
-
-            test_indices = get_split_indices(corpus_size, size=self.val_size, seed=31415)
+            corpus, train_size, _ = self._corpus.interleaved_split(size=self.val_size, include_empty=False, seed=31415)
             with ExitStack() as stack:
                 train_src_path.parent.mkdir(parents=True, exist_ok=True)
                 train_src_file = stack.enter_context(train_src_path.open("w", encoding="utf-8", newline="\n"))
@@ -167,17 +164,17 @@ class OpenNmtModelTrainer(Trainer):
                 eval_src_file = stack.enter_context(eval_src_path.open("w", encoding="utf-8", newline="\n"))
                 eval_trg_path.parent.mkdir(parents=True, exist_ok=True)
                 eval_trg_file = stack.enter_context(eval_trg_path.open("w", encoding="utf-8", newline="\n"))
-                rows = stack.enter_context(self._corpus.filter_empty().get_rows())
+                rows = stack.enter_context(corpus)
 
-                for i, row in enumerate(rows):
-                    if i in test_indices:
+                for row, in_test in rows:
+                    if in_test:
                         eval_src_file.write(row.source_text + "\n")
                         eval_trg_file.write(row.target_text + "\n")
                     else:
                         train_src_file.write(row.source_text + "\n")
                         train_trg_file.write(row.target_text + "\n")
 
-            return max(corpus_size - self.val_size, 0)
+            return train_size
         else:
             return model.examples_inputter.get_dataset_size([str(train_src_path), str(train_trg_path)])
 
