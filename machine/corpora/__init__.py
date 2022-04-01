@@ -7,6 +7,7 @@ from .dbl_bundle_text import DblBundleText
 from .dbl_bundle_text_corpus import DblBundleTextCorpus
 from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .dictionary_text_corpus import DictionaryTextCorpus
+from .flatten import flatten
 from .memory_alignment_collection import MemoryAlignmentCollection
 from .memory_text import MemoryText
 from .parallel_text_corpus import ParallelTextCorpus
@@ -79,6 +80,7 @@ __all__ = [
     "UsxFileText",
     "UsxFileTextCorpus",
     "escape_spaces",
+    "flatten",
     "lowercase",
     "nfc_normalize",
     "nfd_normalize",
