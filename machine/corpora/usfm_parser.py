@@ -93,7 +93,6 @@ class UsfmParser:
                     index += 1
 
             is_nested = tag.startswith("+")
-            _, _, col_span = is_cell_range(tag)
             # Lookup marker
             marker = self._stylesheet.get_marker(tag.lstrip("+"))
 
@@ -106,6 +105,7 @@ class UsfmParser:
                     index, data = _get_next_word(usfm, index, preserve_whitespace)
                     tokens.append(UsfmToken(UsfmTokenType.VERSE, marker, None, data))
                 else:
+                    _, _, col_span = is_cell_range(tag)
                     tokens.append(
                         UsfmToken(UsfmTokenType.CHARACTER, marker, None, is_nested=is_nested, col_span=col_span)
                     )
@@ -134,7 +134,7 @@ class UsfmParser:
                     tokens.append(UsfmToken(UsfmTokenType.PARAGRAPH, marker, None))
                 else:
                     # Create unknown token with a corresponding end note
-                    tokens.append(UsfmToken(UsfmTokenType.UNKNOWN, marker, None))
+                    tokens.append(UsfmToken(UsfmTokenType.UNKNOWN, marker, None, is_nested=is_nested))
             elif marker.style_type in {UsfmStyleType.MILESTONE, UsfmStyleType.MILESTONE_END}:
                 # if a milestone is not followed by a ending \* treat don't create a milestone token for the begining.
                 # Instead create at text token for all the text up to the beginning of the next marker. This will make
