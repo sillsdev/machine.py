@@ -11,7 +11,7 @@ def test_get_rows_nonempty_text() -> None:
     assert text is not None
     rows = list(corpus)
 
-    assert len(rows) == 14
+    assert len(rows) == 17
 
     assert verse_ref(rows[0]).exact_equals(VerseRef.from_string("MAT 1:1", corpus.versification))
     assert rows[0].text == "Chapter one, verse one."
@@ -49,6 +49,12 @@ def test_get_rows_nonempty_text() -> None:
     assert verse_ref(rows[11]).exact_equals(VerseRef.from_string("MAT 2:6", corpus.versification))
     assert rows[11].text == "Chapter two, verse six."
 
+    assert verse_ref(rows[15]).exact_equals(VerseRef.from_string("MAT 2:9", corpus.versification))
+    assert rows[15].text == "Chapter 2 verse 9"
+
+    assert verse_ref(rows[16]).exact_equals(VerseRef.from_string("MAT 2:10", corpus.versification))
+    assert rows[16].text == "Chapter 2 verse 10"
+
 
 def test_get_rows_sentence_start() -> None:
     corpus = UsfmFileTextCorpus("usfm.sty", "utf-8-sig", USFM_TEST_PROJECT_PATH)
@@ -57,7 +63,7 @@ def test_get_rows_sentence_start() -> None:
     assert text is not None
     rows = list(text)
 
-    assert len(rows) == 14
+    assert len(rows) == 17
 
     assert verse_ref(rows[3]).exact_equals(VerseRef.from_string("MAT 1:4", corpus.versification))
     assert rows[3].text == "Chapter one, verse four,"
@@ -85,7 +91,7 @@ def test_get_rows_include_markers() -> None:
     assert text is not None
     rows = list(text)
 
-    assert len(rows) == 14
+    assert len(rows) == 17
 
     assert verse_ref(rows[0]).exact_equals(VerseRef.from_string("MAT 1:1", corpus.versification))
     assert (
@@ -124,3 +130,9 @@ def test_get_rows_include_markers() -> None:
 
     assert verse_ref(rows[11]).exact_equals(VerseRef.from_string("MAT 2:6", corpus.versification))
     assert rows[11].text == 'Chapter two, verse \\w six|strong="12345" \\w*.'
+
+    assert verse_ref(rows[15]).exact_equals(VerseRef.from_string("MAT 2:9", corpus.versification))
+    assert rows[15].text == "Chapter\\tcr2 2\\tc3 verse\\tcr4 9 \\tr \\tc1-2"
+
+    assert verse_ref(rows[16]).exact_equals(VerseRef.from_string("MAT 2:10", corpus.versification))
+    assert rows[16].text == "Chapter 2\\tc3-4 verse 10"

@@ -1,10 +1,32 @@
 from pathlib import Path
 from typing import Dict, List, Optional, TextIO, Tuple
 
+import regex as re
+
 from ..utils.file_utils import detect_encoding
 from ..utils.string_utils import parse_integer
 from ..utils.typeshed import StrPath
-from .usfm_marker import UsfmJustification, UsfmMarker, UsfmStyleType, UsfmTextProperties, UsfmTextType
+from .usfm_marker import (
+    UsfmJustification,
+    UsfmMarker,
+    UsfmStyleAttribute,
+    UsfmStyleType,
+    UsfmTextProperties,
+    UsfmTextType,
+)
+
+_CELL_RANGE_REGEX = re.compile(r"^(t[ch][cr]?[1-5])-([2-5])$")
+
+
+def is_cell_range(tag: str) -> Tuple[bool, str, int]:
+    match = _CELL_RANGE_REGEX.match(tag)
+    if match is not None:
+        base_tag = match.group(1)
+        col_span = int(match.group(2)[0]) - int(base_tag[-1]) + 1
+        if col_span >= 2:
+            return True, base_tag, col_span
+
+    return False, "", 0
 
 
 class UsfmStylesheet:
@@ -18,11 +40,19 @@ class UsfmStylesheet:
                 encoding = detect_encoding(alternate_filename)
                 self._parse(alternate_filename, encoding)
 
-    def get_marker(self, marker_str: str) -> UsfmMarker:
-        marker = self._markers.get(marker_str)
-        if marker is None:
-            marker = self._create_marker(marker_str)
-            marker.style_type = UsfmStyleType.UNKNOWN
+    def get_marker(self, tag: str) -> UsfmMarker:
+        marker = self._markers.get(tag)
+        if marker is not None:
+            return marker
+
+        is_cell, base_tag, _ = is_cell_range(tag)
+        if is_cell:
+            marker = self._markers.get(base_tag)
+            if marker is not None:
+                return marker
+
+        marker = self._create_marker(tag)
+        marker.style_type = UsfmStyleType.UNKNOWN
         return marker
 
     def _parse(self, filename: StrPath, encoding: str = "utf-8-sig") -> None:
@@ -56,8 +86,8 @@ class UsfmStylesheet:
             entry_marker = self._create_marker(entry_text)
             end_marker = _parse_marker_entry(entry_marker, entries, i + 1)
 
-            if end_marker is not None and end_marker.marker not in self._markers:
-                self._markers[end_marker.marker] = end_marker
+            if end_marker is not None and end_marker.tag not in self._markers:
+                self._markers[end_marker.tag] = end_marker
 
     def _create_marker(self, marker_str: str) -> UsfmMarker:
         # If tag already exists update with addtl info (normally from custom.sty)
@@ -118,6 +148,8 @@ _TEXT_PROPERTY_MAPPINGS = {
 def _split_stylesheet(stream: TextIO) -> List[Tuple[str, str]]:
     entries: List[Tuple[str, str]] = []
     for line in stream:
+        if line.startswith("#!"):
+            line = line[2:]
         line = line.split("#")[0].strip()
         if line == "":
             continue
@@ -159,12 +191,29 @@ def _parse_text_type(marker: UsfmMarker, entry_text: str) -> None:
         marker.text_type = text_type
 
 
+def _parse_attributes(marker: UsfmMarker, entry_text: str) -> None:
+    attribute_names = entry_text.split()
+    if len(attribute_names) == 0:
+        raise ValueError("Attributes cannot be empty.")
+    found_optional = False
+    for attribute in attribute_names:
+        is_optional = attribute.startswith("?")
+        if not is_optional and found_optional:
+            raise ValueError("Required attributes must precede optional attributes.")
+
+        marker.attributes.append(UsfmStyleAttribute(attribute[1:] if is_optional else attribute, not is_optional))
+        found_optional |= is_optional
+
+    if sum(1 for a in marker.attributes if a.is_required) <= 1:
+        marker.default_attribute_name = marker.attributes[0].name
+
+
 def _parse_marker_entry(marker: UsfmMarker, entries: List[Tuple[str, str]], entry_index: int) -> Optional[UsfmMarker]:
     # The following items are present for conformance with Paratext release 5.0 stylesheets.  Release 6.0 and later
     # follows the guidelines set in InitPropertyMaps.
 
     # Make sure \id gets book property
-    if marker.marker == "id":
+    if marker.tag == "id":
         marker.text_properties |= UsfmTextProperties.BOOK
 
     end_marker: Optional[UsfmMarker] = None
@@ -266,14 +315,16 @@ def _parse_marker_entry(marker: UsfmMarker, entries: List[Tuple[str, str]], entr
         elif entry_marker == "endmarker":
             end_marker = UsfmMarker(entry_text)
             end_marker.style_type = UsfmStyleType.END
-            marker.end_marker = entry_text
+            marker.end_tag = entry_text
+        elif entry_marker == "attributes":
+            _parse_attributes(marker, entry_text)
 
     # If we have not seen an end marker but this is a character style
     if marker.style_type == UsfmStyleType.CHARACTER and end_marker is None:
-        end_marker_str = marker.marker + "*"
+        end_marker_str = marker.tag + "*"
         end_marker = UsfmMarker(end_marker_str)
         end_marker.style_type = UsfmStyleType.END
-        marker.end_marker = end_marker_str
+        marker.end_tag = end_marker_str
 
     # Special cases
     if (

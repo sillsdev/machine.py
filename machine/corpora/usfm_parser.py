@@ -1,7 +1,7 @@
-from typing import List, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 from .usfm_marker import UsfmStyleType, UsfmTextProperties
-from .usfm_stylesheet import UsfmStylesheet
+from .usfm_stylesheet import UsfmStylesheet, is_cell_range
 from .usfm_token import UsfmToken, UsfmTokenType
 
 
@@ -25,7 +25,15 @@ class UsfmParser:
                 if not preserve_whitespace:
                     text = _regularize_spaces(text)
 
-                tokens.append(UsfmToken(UsfmTokenType.TEXT, None, text))
+                attribute_token, text = self._handle_attributes(
+                    usfm, preserve_whitespace, tokens, next_marker_index, text
+                )
+
+                if len(text) > 0:
+                    tokens.append(UsfmToken(UsfmTokenType.TEXT, None, text))
+
+                if attribute_token is not None:
+                    tokens.append(attribute_token)
 
                 index = next_marker_index
                 continue
@@ -40,6 +48,11 @@ class UsfmParser:
                 if ch == "\\":
                     break
 
+                # don't require a space before the | that starts attributes - mainly for milestones to allow
+                # \qt-s|speaker\*
+                if ch == "|":
+                    break
+
                 # End star is part of marker
                 if ch == "*":
                     index += 1
@@ -52,55 +65,97 @@ class UsfmParser:
                     break
                 index += 1
 
-            marker_str = usfm[marker_start:index].rstrip()
+            tag = usfm[marker_start:index].rstrip()
+            # Milestone stop/end markers are ended with \*, so marker will just be * and can be skipped
+            if tag == "*":
+                # make sure that previous token was a milestone - have to skip space only tokens that may have been
+                # added when preserve_whitespace is true.
+                prev_token: Optional[UsfmToken] = None
+                if len(tokens) > 0:
+                    prev_token = next(
+                        t
+                        for t in reversed(tokens)
+                        if t.type != UsfmTokenType.TEXT or (t.text is not None and t.text.strip() != "")
+                    )
+                if (
+                    prev_token is not None
+                    and prev_token.marker is not None
+                    and prev_token.marker.style_type in {UsfmStyleType.MILESTONE, UsfmStyleType.MILESTONE_END}
+                ):
+                    # if the last item is an empty text token, remove it so we don't get extra space.
+                    if tokens[-1].type == UsfmTokenType.TEXT:
+                        tokens.pop()
+                    continue
 
             # Multiple whitespace after non-end marker is ok
-            if not marker_str.endswith("*") and not preserve_whitespace:
+            if not tag.endswith("*") and not preserve_whitespace:
                 while index < len(usfm) and _is_nonsemantic_whitespace(usfm[index]):
                     index += 1
 
-            is_nested = marker_str.startswith("+")
+            is_nested = tag.startswith("+")
+            _, _, col_span = is_cell_range(tag)
             # Lookup marker
-            marker = self._stylesheet.get_marker(marker_str.lstrip("+"))
+            marker = self._stylesheet.get_marker(tag.lstrip("+"))
 
-            # If starts with a plus and is not a character style, it is an unknown marker
+            # If starts with a plus and is not a character style or an end style, it is an unknown tag
             if is_nested and marker.style_type != UsfmStyleType.CHARACTER and marker.style_type != UsfmStyleType.END:
-                marker = self._stylesheet.get_marker(marker_str)
+                marker = self._stylesheet.get_marker(tag)
 
             if marker.style_type == UsfmStyleType.CHARACTER:
                 if (marker.text_properties & UsfmTextProperties.VERSE) == UsfmTextProperties.VERSE:
-                    index, text = _get_next_word(usfm, index, preserve_whitespace)
-                    tokens.append(UsfmToken(UsfmTokenType.VERSE, marker, text))
+                    index, data = _get_next_word(usfm, index, preserve_whitespace)
+                    tokens.append(UsfmToken(UsfmTokenType.VERSE, marker, None, data))
                 else:
-                    tokens.append(UsfmToken(UsfmTokenType.CHARACTER, marker, None, is_nested))
+                    tokens.append(
+                        UsfmToken(UsfmTokenType.CHARACTER, marker, None, is_nested=is_nested, col_span=col_span)
+                    )
             elif marker.style_type == UsfmStyleType.PARAGRAPH:
                 # Handle chapter special case
                 if (marker.text_properties & UsfmTextProperties.CHAPTER) == UsfmTextProperties.CHAPTER:
-                    index, text = _get_next_word(usfm, index, preserve_whitespace)
-                    tokens.append(UsfmToken(UsfmTokenType.CHAPTER, marker, text))
+                    index, data = _get_next_word(usfm, index, preserve_whitespace)
+                    tokens.append(UsfmToken(UsfmTokenType.CHAPTER, marker, None, data))
                 elif (marker.text_properties & UsfmTextProperties.BOOK) == UsfmTextProperties.BOOK:
-                    index, text = _get_next_word(usfm, index, preserve_whitespace)
-                    tokens.append(UsfmToken(UsfmTokenType.BOOK, marker, text))
+                    index, data = _get_next_word(usfm, index, preserve_whitespace)
+                    tokens.append(UsfmToken(UsfmTokenType.BOOK, marker, None, data))
                 else:
                     tokens.append(UsfmToken(UsfmTokenType.PARAGRAPH, marker, None))
             elif marker.style_type == UsfmStyleType.NOTE:
-                index, text = _get_next_word(usfm, index, preserve_whitespace)
-                tokens.append(UsfmToken(UsfmTokenType.NOTE, marker, text))
+                index, data = _get_next_word(usfm, index, preserve_whitespace)
+                tokens.append(UsfmToken(UsfmTokenType.NOTE, marker, None, data))
             elif marker.style_type == UsfmStyleType.END:
-                tokens.append(UsfmToken(UsfmTokenType.END, marker, None, is_nested))
+                tokens.append(UsfmToken(UsfmTokenType.END, marker, None, is_nested=is_nested))
             elif marker.style_type == UsfmStyleType.UNKNOWN:
                 # End tokens are always end tokens, even if unknown
-                if marker_str.endswith("*"):
-                    tokens.append(UsfmToken(UsfmTokenType.END, marker, None, is_nested))
+                if tag.endswith("*"):
+                    tokens.append(UsfmToken(UsfmTokenType.END, marker, None, is_nested=is_nested))
                 # Handle special case of esb and esbe which might not be in basic stylesheet but are always sidebars
                 # and so should be tokenized as paragraphs
-                elif marker_str == "esb" or marker_str == "esbe":
+                elif tag == "esb" or tag == "esbe":
                     tokens.append(UsfmToken(UsfmTokenType.PARAGRAPH, marker, None))
                 else:
                     # Create unknown token with a corresponding end note
                     tokens.append(UsfmToken(UsfmTokenType.UNKNOWN, marker, None))
+            elif marker.style_type in {UsfmStyleType.MILESTONE, UsfmStyleType.MILESTONE_END}:
+                # if a milestone is not followed by a ending \* treat don't create a milestone token for the begining.
+                # Instead create at text token for all the text up to the beginning of the next marker. This will make
+                # typing of milestones easiest since the partially typed milestone more be reformatted to have a normal
+                # ending even if it hasn't been typed yet.
+                if not _milestone_ended(usfm, index):
+                    end_of_text = usfm.find("\\", index) if index < len(usfm) - 1 else -1
+                    if end_of_text == -1:
+                        end_of_text = len(usfm)
+                    milestone_text = usfm[index:end_of_text]
+                    # add back space that was removed after marker
+                    if len(milestone_text) > 0 and milestone_text[0] not in {" ", "|"}:
+                        milestone_text = " " + milestone_text
+                    tokens.append(UsfmToken(UsfmTokenType.TEXT, None, "\\" + tag + milestone_text))
+                    index = end_of_text
+                elif marker.style_type == UsfmStyleType.MILESTONE:
+                    tokens.append(UsfmToken(UsfmTokenType.MILESTONE, marker, None))
+                else:
+                    tokens.append(UsfmToken(UsfmTokenType.MILESTONE_END, marker, None))
 
-        # Forces a space to be present in tokenization if immediately before a token requiring a preceeding CR/LF. This
+        # Forces a space to be present in tokenization if immediately before a token requiring a preceding CR/LF. This
         # is to ensure that when written to disk and re-read, that tokenization will match. For example,
         # "\p test\p here" requires a space after "test". Also, "\p \em test\em*\p here" requires a space token inserted
         # after \em*
@@ -126,13 +181,50 @@ class UsfmParser:
                     if prev_token.type == UsfmTokenType.TEXT:
                         assert prev_token.text is not None
                         if not prev_token.text.endswith(" "):
-                            tokens[i - 1] = UsfmToken(UsfmTokenType.TEXT, None, prev_token.text + " ")
+                            t = tokens[i - 1]
+                            assert t.text is not None
+                            t.text = t.text + " "
                     elif prev_token.type == UsfmTokenType.END:
                         # Insert space token after * of end marker
                         tokens.insert(i, UsfmToken(UsfmTokenType.TEXT, None, " "))
                         i += 1
 
         return tokens
+
+    def _handle_attributes(
+        self, usfm: str, preserve_whitespace: bool, tokens: List[UsfmToken], next_marker_index: int, text: str
+    ) -> Tuple[Optional[UsfmToken], str]:
+        attribute_index = text.find("|")
+        if attribute_index == -1:
+            return None, text
+
+        matching_token = _find_matching_start_marker(usfm, tokens, next_marker_index)
+        if matching_token is None or matching_token.marker is None:
+            return None, text
+
+        matching_marker = self._stylesheet.get_marker(matching_token.marker.tag)
+        if matching_marker.style_type not in {
+            UsfmStyleType.CHARACTER,
+            UsfmStyleType.MILESTONE,
+            UsfmStyleType.MILESTONE_END,
+        }:
+            return None, text  # leave attributes of other styles as regular text
+
+        attribute_token: Optional[UsfmToken] = None
+        attributes_value = text[attribute_index + 1 :]
+        adjusted_text = matching_token.set_attributes(
+            attributes_value,
+            matching_marker.default_attribute_name,
+            text[:attribute_index],
+            preserve_whitespace,
+        )
+        if adjusted_text is not None:
+            text = adjusted_text
+
+            if matching_marker.style_type == UsfmStyleType.CHARACTER:  # Don't do this for milestones
+                attribute_token = UsfmToken(UsfmTokenType.ATTRIBUTE, matching_marker, None, attributes_value)
+                attribute_token.copy_attributes(matching_token)
+        return attribute_token, text
 
 
 _ZERO_WIDTH_SPACE = "\u200B"
@@ -186,3 +278,43 @@ def _regularize_spaces(text: str) -> str:
             result += ch
             was_space = False
     return result
+
+
+def _find_matching_start_marker(usfm: str, tokens: List[UsfmToken], next_marker_index: int) -> Optional[UsfmToken]:
+    expected_start_marker = _before_end_marker(usfm, next_marker_index)
+    if expected_start_marker is None:
+        return None
+
+    if expected_start_marker == "" and tokens[-1].type in {UsfmTokenType.MILESTONE, UsfmTokenType.MILESTONE_END}:
+        return tokens[-1]
+
+    nesting_level = 0
+    for i in range(len(tokens) - 1, -1, -1):
+        token = tokens[i]
+        if token.type == UsfmTokenType.END:
+            nesting_level += 1
+        elif token.type not in {UsfmTokenType.TEXT, UsfmTokenType.ATTRIBUTE}:
+            if nesting_level > 0:
+                nesting_level -= 1
+            elif nesting_level == 0:
+                return token
+    return None
+
+
+def _before_end_marker(usfm: str, next_marker_index: int) -> Optional[str]:
+    index = next_marker_index + 1
+    while index < len(usfm) and usfm[index] != "*" and not usfm[index].isspace():
+        index += 1
+
+    if index >= len(usfm) or usfm[index] != "*":
+        return None
+    start_marker = usfm[next_marker_index + 1 : index - next_marker_index - 1]
+    return start_marker
+
+
+def _milestone_ended(usfm: str, index: int) -> bool:
+    next_marker_index = usfm.find("\\", index) if index < len(usfm) else -1
+    if next_marker_index == -1 or next_marker_index > len(usfm) - 2:
+        return False
+
+    return usfm[next_marker_index : next_marker_index + 2] == "\\*"

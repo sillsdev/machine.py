@@ -1,5 +1,6 @@
+from dataclasses import dataclass
 from enum import Enum, Flag, auto
-from typing import Optional, Set
+from typing import List, Optional, Set
 
 
 class UsfmTextType(Enum):
@@ -25,6 +26,8 @@ class UsfmStyleType(Enum):
     NOTE = auto()
     PARAGRAPH = auto()
     END = auto()
+    MILESTONE = auto()
+    MILESTONE_END = auto()
 
 
 class UsfmTextProperties(Flag):
@@ -49,13 +52,19 @@ class UsfmTextProperties(Flag):
     NOTE = auto()
 
 
+@dataclass
+class UsfmStyleAttribute:
+    name: str
+    is_required: bool
+
+
 class UsfmMarker:
-    def __init__(self, marker: str) -> None:
-        self.marker = marker
+    def __init__(self, tag: str) -> None:
+        self.tag = tag
         self.bold: bool = False
         self.description: Optional[str] = None
         self.encoding: Optional[str] = None
-        self.end_marker: Optional[str] = None
+        self.end_tag: Optional[str] = None
         self.first_line_indent: int = 0
         self.font_name: Optional[str] = None
         self.font_size: int = 0
@@ -80,10 +89,16 @@ class UsfmMarker:
         self.xml_tag: Optional[str] = None
         self.regular: bool = False
         self.color: int = 0
+        self._attributes: List[UsfmStyleAttribute] = []
+        self.default_attribute_name: Optional[str] = None
 
     @property
     def occurs_under(self) -> Set[str]:
         return self._occurs_under
 
+    @property
+    def attributes(self) -> List[UsfmStyleAttribute]:
+        return self._attributes
+
     def __repr__(self) -> str:
-        return f"\\{self.marker}"
+        return f"\\{self.tag}"
