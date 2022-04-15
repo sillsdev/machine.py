@@ -35,7 +35,14 @@ from .token_processors import (
 )
 from .usfm_file_text import UsfmFileText
 from .usfm_file_text_corpus import UsfmFileTextCorpus
-from .usfm_marker import UsfmJustification, UsfmMarker, UsfmStyleType, UsfmTextProperties, UsfmTextType
+from .usfm_marker import (
+    UsfmJustification,
+    UsfmMarker,
+    UsfmStyleAttribute,
+    UsfmStyleType,
+    UsfmTextProperties,
+    UsfmTextType,
+)
 from .usfm_stylesheet import UsfmStylesheet
 from .usx_file_alignment_collection import UsxFileAlignmentCollection
 from .usx_file_alignment_corpus import UsxFileAlignmentCorpus
@@ -71,6 +78,7 @@ __all__ = [
     "UsfmFileTextCorpus",
     "UsfmJustification",
     "UsfmMarker",
+    "UsfmStyleAttribute",
     "UsfmStyleType",
     "UsfmStylesheet",
     "UsfmTextProperties",
