@@ -43,6 +43,8 @@ class VerseRef(Comparable):
         else:
             if isinstance(book, str):
                 self.book_num = book_id_to_number(book)
+            elif book == 0:
+                self._book_num = 0
             else:
                 self.book_num = book
 

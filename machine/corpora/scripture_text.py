@@ -34,9 +34,8 @@ class ScriptureText(TextBase):
         return ContextManagedGenerator(gen(seg_list))
 
     def _create_rows(
-        self, chapter: str, verse: str, text: str, is_sentence_start: bool = True
+        self, verse_ref: VerseRef, text: str, is_sentence_start: bool = True
     ) -> Generator[TextRow, None, None]:
-        verse_ref = VerseRef(self.id, chapter, verse, self._versification)
         if verse_ref.has_multiple:
             first_verse = True
             for vref in verse_ref.all_verses():
@@ -47,3 +46,6 @@ class ScriptureText(TextBase):
                     yield self._create_empty_row(vref, is_in_range=True)
         else:
             yield self._create_row(text, verse_ref, is_sentence_start)
+
+    def _create_verse_ref(self, chapter: str, verse: str) -> VerseRef:
+        return VerseRef(self.id, chapter, verse, self._versification)

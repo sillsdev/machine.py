@@ -20,4 +20,5 @@ class UsxTextBase(ScriptureText):
     def _get_rows(self) -> Generator[TextRow, None, None]:
         with self._create_stream_container() as stream_container, stream_container.open_stream() as stream:
             for verse in self._parser.parse(stream):
-                yield from self._create_rows(verse.chapter, verse.verse, verse.text, verse.is_sentence_start)
+                verse_ref = self._create_verse_ref(verse.chapter, verse.verse)
+                yield from self._create_rows(verse_ref, verse.text, verse.is_sentence_start)

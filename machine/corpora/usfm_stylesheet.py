@@ -6,20 +6,13 @@ import regex as re
 from ..utils.file_utils import detect_encoding
 from ..utils.string_utils import parse_integer
 from ..utils.typeshed import StrPath
-from .usfm_marker import (
-    UsfmJustification,
-    UsfmMarker,
-    UsfmStyleAttribute,
-    UsfmStyleType,
-    UsfmTextProperties,
-    UsfmTextType,
-)
+from .usfm_tag import UsfmJustification, UsfmStyleAttribute, UsfmStyleType, UsfmTag, UsfmTextProperties, UsfmTextType
 
 _CELL_RANGE_REGEX = re.compile(r"^(t[ch][cr]?[1-5])-([2-5])$")
 
 
-def is_cell_range(tag: str) -> Tuple[bool, str, int]:
-    match = _CELL_RANGE_REGEX.match(tag)
+def is_cell_range(marker: str) -> Tuple[bool, str, int]:
+    match = _CELL_RANGE_REGEX.match(marker)
     if match is not None:
         base_tag = match.group(1)
         col_span = int(match.group(2)[0]) - int(base_tag[-1]) + 1
@@ -31,7 +24,7 @@ def is_cell_range(tag: str) -> Tuple[bool, str, int]:
 
 class UsfmStylesheet:
     def __init__(self, filename: StrPath, alternate_filename: Optional[StrPath] = None) -> None:
-        self._markers: Dict[str, UsfmMarker] = {}
+        self._tags: Dict[str, UsfmTag] = {}
         self._parse(filename)
         if alternate_filename is not None:
             try:
@@ -40,20 +33,20 @@ class UsfmStylesheet:
                 encoding = detect_encoding(alternate_filename)
                 self._parse(alternate_filename, encoding)
 
-    def get_marker(self, tag: str) -> UsfmMarker:
-        marker = self._markers.get(tag)
-        if marker is not None:
-            return marker
+    def get_tag(self, marker: str) -> UsfmTag:
+        tag = self._tags.get(marker)
+        if tag is not None:
+            return tag
 
-        is_cell, base_tag, _ = is_cell_range(tag)
+        is_cell, base_marker, _ = is_cell_range(marker)
         if is_cell:
-            marker = self._markers.get(base_tag)
-            if marker is not None:
-                return marker
+            tag = self._tags.get(base_marker)
+            if tag is not None:
+                return tag
 
-        marker = self._create_marker(tag)
-        marker.style_type = UsfmStyleType.UNKNOWN
-        return marker
+        tag = self._create_tag(marker)
+        tag.style_type = UsfmStyleType.UNKNOWN
+        return tag
 
     def _parse(self, filename: StrPath, encoding: str = "utf-8-sig") -> None:
         if not isinstance(filename, Path):
@@ -77,27 +70,27 @@ class UsfmStylesheet:
             parts = entry_text.split()
             if len(parts) > 1 and parts[1] == "-":
                 # If the entry looks like "\marker xy -" remove the tag and its end tag if any
-                if parts[0] in self._markers:
-                    del self._markers[parts[0]]
-                if parts[0] + "*" in self._markers:
-                    del self._markers[parts[0] + "*"]
+                if parts[0] in self._tags:
+                    del self._tags[parts[0]]
+                if parts[0] + "*" in self._tags:
+                    del self._tags[parts[0] + "*"]
                 continue
 
-            entry_marker = self._create_marker(entry_text)
-            end_marker = _parse_marker_entry(entry_marker, entries, i + 1)
+            entry_marker = self._create_tag(entry_text)
+            end_marker = _parse_tag_entry(entry_marker, entries, i + 1)
 
-            if end_marker is not None and end_marker.tag not in self._markers:
-                self._markers[end_marker.tag] = end_marker
+            if end_marker is not None and end_marker.marker not in self._tags:
+                self._tags[end_marker.marker] = end_marker
 
-    def _create_marker(self, marker_str: str) -> UsfmMarker:
+    def _create_tag(self, marker: str) -> UsfmTag:
         # If tag already exists update with addtl info (normally from custom.sty)
-        marker = self._markers.get(marker_str)
-        if marker is None:
-            marker = UsfmMarker(marker_str)
-            if marker_str != "c" and marker_str != "v":
-                marker.text_properties = UsfmTextProperties.PUBLISHABLE
-            self._markers[marker_str] = marker
-        return marker
+        tag = self._tags.get(marker)
+        if tag is None:
+            tag = UsfmTag(marker)
+            if marker != "c" and marker != "v":
+                tag.text_properties = UsfmTextProperties.PUBLISHABLE
+            self._tags[marker] = tag
+        return tag
 
 
 _JUSTIFICATION_MAPPINGS = {
@@ -163,7 +156,7 @@ def _split_stylesheet(stream: TextIO) -> List[Tuple[str, str]]:
     return entries
 
 
-def _parse_text_properties(marker: UsfmMarker, entry_text: str) -> None:
+def _parse_text_properties(marker: UsfmTag, entry_text: str) -> None:
     entry_text = entry_text.lower()
     parts = entry_text.split()
 
@@ -179,7 +172,7 @@ def _parse_text_properties(marker: UsfmMarker, entry_text: str) -> None:
         marker.text_properties &= ~UsfmTextProperties.PUBLISHABLE
 
 
-def _parse_text_type(marker: UsfmMarker, entry_text: str) -> None:
+def _parse_text_type(marker: UsfmTag, entry_text: str) -> None:
     entry_text = entry_text.lower()
     if entry_text == "chapternumber":
         marker.text_properties |= UsfmTextProperties.CHAPTER
@@ -191,7 +184,7 @@ def _parse_text_type(marker: UsfmMarker, entry_text: str) -> None:
         marker.text_type = text_type
 
 
-def _parse_attributes(marker: UsfmMarker, entry_text: str) -> None:
+def _parse_attributes(marker: UsfmTag, entry_text: str) -> None:
     attribute_names = entry_text.split()
     if len(attribute_names) == 0:
         raise ValueError("Attributes cannot be empty.")
@@ -208,15 +201,15 @@ def _parse_attributes(marker: UsfmMarker, entry_text: str) -> None:
         marker.default_attribute_name = marker.attributes[0].name
 
 
-def _parse_marker_entry(marker: UsfmMarker, entries: List[Tuple[str, str]], entry_index: int) -> Optional[UsfmMarker]:
+def _parse_tag_entry(tag: UsfmTag, entries: List[Tuple[str, str]], entry_index: int) -> Optional[UsfmTag]:
     # The following items are present for conformance with Paratext release 5.0 stylesheets.  Release 6.0 and later
     # follows the guidelines set in InitPropertyMaps.
 
     # Make sure \id gets book property
-    if marker.tag == "id":
-        marker.text_properties |= UsfmTextProperties.BOOK
+    if tag.marker == "id":
+        tag.text_properties |= UsfmTextProperties.BOOK
 
-    end_marker: Optional[UsfmMarker] = None
+    end_marker: Optional[UsfmTag] = None
     while entry_index < len(entries):
         entry_marker, entry_text = entries[entry_index]
         entry_index += 1
@@ -225,115 +218,115 @@ def _parse_marker_entry(marker: UsfmMarker, entries: List[Tuple[str, str]], entr
             break
 
         if entry_marker == "name":
-            marker.name = entry_text
+            tag.name = entry_text
         elif entry_marker == "description":
-            marker.description = entry_text
+            tag.description = entry_text
         elif entry_marker == "fontname":
-            marker.font_name = entry_text
+            tag.font_name = entry_text
         elif entry_marker == "fontsize":
             if entry_text == "-":
-                marker.font_size = 0
+                tag.font_size = 0
             else:
                 font_size = parse_integer(entry_text)
                 if font_size is not None and font_size >= 0:
-                    marker.font_size = font_size
+                    tag.font_size = font_size
         elif entry_marker == "xmltag":
-            marker.xml_tag = entry_text
+            tag.xml_tag = entry_text
         elif entry_marker == "encoding":
-            marker.encoding = entry_text
+            tag.encoding = entry_text
         elif entry_marker == "linespacing":
             line_spacing = parse_integer(entry_text)
             if line_spacing is not None and line_spacing >= 0:
-                marker.line_spacing = line_spacing
+                tag.line_spacing = line_spacing
         elif entry_marker == "spacebefore":
             space_before = parse_integer(entry_text)
             if space_before is not None and space_before >= 0:
-                marker.space_before = space_before
+                tag.space_before = space_before
         elif entry_marker == "spaceafter":
             space_after = parse_integer(entry_text)
             if space_after is not None and space_after >= 0:
-                marker.space_after = space_after
+                tag.space_after = space_after
         elif entry_marker == "leftmargin":
             left_margin = parse_integer(entry_text)
             if left_margin is not None and left_margin >= 0:
-                marker.left_margin = left_margin
+                tag.left_margin = left_margin
         elif entry_marker == "rightmargin":
             right_margin = parse_integer(entry_text)
             if right_margin is not None and right_margin >= 0:
-                marker.right_margin = right_margin
+                tag.right_margin = right_margin
         elif entry_marker == "firstlineindent":
             first_line_indent = parse_integer(entry_text)
             if first_line_indent is not None and first_line_indent >= 0:
-                marker.first_line_indent = first_line_indent
+                tag.first_line_indent = first_line_indent
         elif entry_marker == "rank":
             if entry_text == "-":
-                marker.rank = 0
+                tag.rank = 0
             else:
                 rank = parse_integer(entry_text)
                 if rank is not None and rank >= 0:
-                    marker.rank = rank
+                    tag.rank = rank
         elif entry_marker == "bold":
-            marker.bold = entry_text != "-"
+            tag.bold = entry_text != "-"
         elif entry_marker == "smallcaps":
-            marker.small_caps = entry_text != "-"
+            tag.small_caps = entry_text != "-"
         elif entry_marker == "subscript":
-            marker.subscript = entry_text != "-"
+            tag.subscript = entry_text != "-"
         elif entry_marker == "italic":
-            marker.italic = entry_text != "-"
+            tag.italic = entry_text != "-"
         elif entry_marker == "regular":
-            marker.italic = False
-            marker.bold = False
-            marker.superscript = False
-            marker.regular = True
+            tag.italic = False
+            tag.bold = False
+            tag.superscript = False
+            tag.regular = True
         elif entry_marker == "underline":
-            marker.underline = entry_text != "-"
+            tag.underline = entry_text != "-"
         elif entry_marker == "superscript":
-            marker.superscript = entry_text != "-"
+            tag.superscript = entry_text != "-"
         elif entry_marker == "notrepeatable":
-            marker.not_repeatable = entry_text != "-"
+            tag.not_repeatable = entry_text != "-"
         elif entry_marker == "textproperties":
-            _parse_text_properties(marker, entry_text)
+            _parse_text_properties(tag, entry_text)
         elif entry_marker == "texttype":
-            _parse_text_type(marker, entry_text)
+            _parse_text_type(tag, entry_text)
         elif entry_marker == "color":
             if entry_text == "-":
-                marker.color = 0
+                tag.color = 0
             else:
                 color = parse_integer(entry_text)
                 if color is not None and color >= 0:
-                    marker.color = color
+                    tag.color = color
         elif entry_marker == "justification":
             justification = _JUSTIFICATION_MAPPINGS.get(entry_text.lower())
             if justification is not None:
-                marker.justification = justification
+                tag.justification = justification
         elif entry_marker == "styletype":
             style_type = _STYLE_MAPPINGS.get(entry_text.lower())
             if style_type is not None:
-                marker.style_type = style_type
+                tag.style_type = style_type
         elif entry_marker == "occursunder":
-            marker.occurs_under.update(entry_text.split())
+            tag.occurs_under.update(entry_text.split())
         elif entry_marker == "endmarker":
-            end_marker = UsfmMarker(entry_text)
+            end_marker = UsfmTag(entry_text)
             end_marker.style_type = UsfmStyleType.END
-            marker.end_tag = entry_text
+            tag.end_marker = entry_text
         elif entry_marker == "attributes":
-            _parse_attributes(marker, entry_text)
+            _parse_attributes(tag, entry_text)
 
     # If we have not seen an end marker but this is a character style
-    if marker.style_type == UsfmStyleType.CHARACTER and end_marker is None:
-        end_marker_str = marker.tag + "*"
-        end_marker = UsfmMarker(end_marker_str)
+    if tag.style_type == UsfmStyleType.CHARACTER and end_marker is None:
+        end_marker_str = tag.marker + "*"
+        end_marker = UsfmTag(end_marker_str)
         end_marker.style_type = UsfmStyleType.END
-        marker.end_tag = end_marker_str
+        tag.end_marker = end_marker_str
 
     # Special cases
     if (
-        marker.text_type == UsfmTextType.OTHER
-        and (marker.text_properties & UsfmTextProperties.NONPUBLISHABLE) != UsfmTextProperties.NONPUBLISHABLE
-        and (marker.text_properties & UsfmTextProperties.CHAPTER) != UsfmTextProperties.CHAPTER
-        and (marker.text_properties & UsfmTextProperties.VERSE) != UsfmTextProperties.VERSE
-        and (marker.style_type == UsfmStyleType.CHARACTER or marker.style_type == UsfmStyleType.PARAGRAPH)
+        tag.text_type == UsfmTextType.OTHER
+        and (tag.text_properties & UsfmTextProperties.NONPUBLISHABLE) != UsfmTextProperties.NONPUBLISHABLE
+        and (tag.text_properties & UsfmTextProperties.CHAPTER) != UsfmTextProperties.CHAPTER
+        and (tag.text_properties & UsfmTextProperties.VERSE) != UsfmTextProperties.VERSE
+        and (tag.style_type == UsfmStyleType.CHARACTER or tag.style_type == UsfmStyleType.PARAGRAPH)
     ):
-        marker.text_properties |= UsfmTextProperties.PUBLISHABLE
+        tag.text_properties |= UsfmTextProperties.PUBLISHABLE
 
     return end_marker

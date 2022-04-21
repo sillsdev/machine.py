@@ -3,7 +3,8 @@ from enum import Enum, Flag, auto
 from typing import List, Optional, Set
 
 
-class UsfmTextType(Enum):
+class UsfmTextType(Flag):
+    NOT_SPECIFIED = 0
     TITLE = auto()
     SECTION = auto()
     VERSE_TEXT = auto()
@@ -58,13 +59,13 @@ class UsfmStyleAttribute:
     is_required: bool
 
 
-class UsfmMarker:
-    def __init__(self, tag: str) -> None:
-        self.tag = tag
+class UsfmTag:
+    def __init__(self, marker: str) -> None:
+        self.marker = marker
         self.bold: bool = False
         self.description: Optional[str] = None
         self.encoding: Optional[str] = None
-        self.end_tag: Optional[str] = None
+        self.end_marker: Optional[str] = None
         self.first_line_indent: int = 0
         self.font_name: Optional[str] = None
         self.font_size: int = 0
@@ -101,4 +102,4 @@ class UsfmMarker:
         return self._attributes
 
     def __repr__(self) -> str:
-        return f"\\{self.tag}"
+        return f"\\{self.marker}"

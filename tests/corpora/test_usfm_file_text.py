@@ -132,7 +132,7 @@ def test_get_rows_include_markers() -> None:
     assert rows[11].text == 'Chapter two, verse \\w six|strong="12345" \\w*.'
 
     assert verse_ref(rows[15]).exact_equals(VerseRef.from_string("MAT 2:9", corpus.versification))
-    assert rows[15].text == "Chapter\\tcr2 2\\tc3 verse\\tcr4 9 \\tr \\tc1-2"
+    assert rows[15].text == "Chapter\\tcr2 2\\tc3 verse\\tcr4 9"
 
     assert verse_ref(rows[16]).exact_equals(VerseRef.from_string("MAT 2:10", corpus.versification))
     assert rows[16].text == "Chapter 2\\tc3-4 verse 10"
