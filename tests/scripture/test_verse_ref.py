@@ -186,8 +186,6 @@ def test_invalid() -> None:
     with raises(ValueError):
         VerseRef(-1, 1, 1)
     with raises(ValueError):
-        VerseRef(0, 1, 1)
-    with raises(ValueError):
         VerseRef(LAST_BOOK + 1, 1, 1)
     with raises(ValueError):
         VerseRef(2, -42, 1)
