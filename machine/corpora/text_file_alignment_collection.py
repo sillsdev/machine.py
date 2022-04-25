@@ -1,11 +1,10 @@
-from typing import Generator, List, Union
+from typing import Generator
 
-from ..utils.string_utils import is_integer
 from ..utils.typeshed import StrPath
 from .aligned_word_pair import AlignedWordPair
 from .alignment_collection import AlignmentCollection
 from .alignment_row import AlignmentRow
-from .row_ref import RowRef
+from .text_file_ref import TextFileRef
 
 
 class TextFileAlignmentCollection(AlignmentCollection):
@@ -23,23 +22,11 @@ class TextFileAlignmentCollection(AlignmentCollection):
 
     def _get_rows(self) -> Generator[AlignmentRow, None, None]:
         with open(self._filename, "r", encoding="utf-8-sig") as file:
-            section_num = 1
-            segment_num = 1
+            line_num = 1
             for line in file:
                 line = line.rstrip("\r\n")
-                if line.startswith("// section "):
-                    section_num_str = line[11:].strip()
-                    if is_integer(section_num_str):
-                        section_num = int(section_num_str)
-                        segment_num = 1
-                else:
-                    keys: List[Union[str, int]] = []
-                    if self.id != "*all*":
-                        keys.append(self.id)
-                    keys.append(section_num)
-                    keys.append(segment_num)
-                    yield AlignmentRow(RowRef(keys), AlignedWordPair.parse(line))
-                    segment_num += 1
+                yield AlignmentRow(TextFileRef(self.id, line_num), AlignedWordPair.parse(line))
+                line_num += 1
 
     @property
     def missing_rows_allowed(self) -> bool:

@@ -1,5 +1,5 @@
 from itertools import islice
-from typing import Any, Callable, Generator, Iterable, Optional, Sequence, Tuple
+from typing import Any, Callable, Generator, Iterable, List, Optional, Tuple
 
 from ..tokenization.tokenizer import Tokenizer
 from .corpora_utils import get_split_indices
@@ -22,8 +22,10 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
             target_tokenizer = source_tokenizer
 
         def _tokenize(row: ParallelTextRow) -> ParallelTextRow:
-            row.source_segment = list(source_tokenizer.tokenize(row.source_text))
-            row.target_segment = list(target_tokenizer.tokenize(row.target_text))
+            if len(row.source_segment) > 0:
+                row.source_segment = list(source_tokenizer.tokenize(row.source_text))
+            if len(row.target_segment) > 0:
+                row.target_segment = list(target_tokenizer.tokenize(row.target_text))
             return row
 
         return self.transform(_tokenize)
@@ -102,6 +104,14 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
         return self.map(lambda r: (r.source_segment, r.target_segment))
 
 
+def flatten_parallel_text_corpora(corpora: Iterable[ParallelTextCorpus]) -> ParallelTextCorpus:
+    corpus_list = list(corpora)
+    if len(corpus_list) == 0:
+        return corpus_list[0]
+
+    return _FlattenParallelTextCorpus(corpus_list)
+
+
 class _TransformParallelTextCorpus(ParallelTextCorpus):
     def __init__(self, corpus: ParallelTextCorpus, transform: Callable[[ParallelTextRow], ParallelTextRow]):
         self._corpus = corpus
@@ -137,3 +147,20 @@ class _TakeParallelTextCorpus(ParallelTextCorpus):
     def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
         with self._corpus.get_rows() as rows:
             yield from islice(rows, self._count)
+
+
+class _FlattenParallelTextCorpus(ParallelTextCorpus):
+    def __init__(self, corpora: List[ParallelTextCorpus]) -> None:
+        self._corpora = corpora
+
+    @property
+    def missing_rows_allowed(self) -> bool:
+        return any(corpus.missing_rows_allowed for corpus in self._corpora)
+
+    def count(self, include_empty: bool = True) -> int:
+        return sum(corpus.count(include_empty) for corpus in self._corpora)
+
+    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
+        for corpus in self._corpora:
+            with corpus.get_rows() as rows:
+                yield from rows
