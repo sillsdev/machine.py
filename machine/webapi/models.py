@@ -7,7 +7,7 @@ from bson.objectid import ObjectId
 if sys.version_info >= (3, 8):
     from typing import TypedDict
 else:
-    from typing_extensions import TypedDict
+    from typing_extensions import NotRequired, TypedDict
 
 
 DATA_TYPE_TEXT_CORPUS = "TextCorpus"
@@ -37,32 +37,32 @@ class ChangeEvent(TypedDict):
     revision: int
 
 
-class Entity(TypedDict, total=False):
-    _id: ObjectId
-    revision: int
+class Entity(TypedDict):
+    _id: NotRequired[ObjectId]
+    revision: NotRequired[int]
 
 
-class Build(Entity, total=False):
+class Build(Entity):
     engineRef: ObjectId
-    jobId: str
+    jobId: NotRequired[str]
     step: int
-    percentCompleted: float
-    message: str
+    percentCompleted: NotRequired[float]
+    message: NotRequired[str]
     state: str
-    dateFinished: datetime
+    dateFinished: NotRequired[datetime]
 
 
-class DataFile(Entity, total=False):
+class DataFile(Entity):
     engineRef: ObjectId
     dataType: str
     name: str
     format: str
-    corpusType: str
-    corpusId: str
+    corpusType: NotRequired[str]
+    corpusId: NotRequired[str]
     filename: str
 
 
-class Engine(Entity, total=False):
+class Engine(Entity):
     sourceLanguageTag: str
     targetLanguageTag: str
     engineType: str

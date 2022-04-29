@@ -30,11 +30,11 @@ class DataFileService:
             if key == "":
                 continue
             corpus_data_files = list(grouping)
-            format = corpus_data_files[0].get("format", FILE_FORMAT_TEXT)
+            format = corpus_data_files[0]["format"]
             corpus: Optional[TextCorpus] = None
             if format == FILE_FORMAT_TEXT:
                 corpus = DictionaryTextCorpus(
-                    TextFileText(f.get("name", ""), self._get_data_file_path(f)) for f in corpus_data_files
+                    TextFileText(f["name"], self._get_data_file_path(f)) for f in corpus_data_files
                 )
             elif format == FILE_FORMAT_PARATEXT:
                 corpus = ParatextTextCorpus(self._get_data_file_path(corpus_data_files[0]))
@@ -45,4 +45,4 @@ class DataFileService:
         return corpora
 
     def _get_data_file_path(self, data_file: DataFile) -> str:
-        return os.path.join(self._config["data_files_dir"], data_file.get("filename", ""))
+        return os.path.join(self._config["data_files_dir"], data_file["filename"])
