@@ -146,6 +146,7 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
                         ):
                             yield range_info.create_row()
 
+                        range_info.text_id = src_row.text_id
                         range_info.source_refs.append(src_row.ref)
                         range_info.target_refs.append(trg_row.ref)
                         source_same_ref_rows.clear()
@@ -184,6 +185,7 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
 
             while src_row is not None:
                 if not self._all_target_rows and src_row.is_in_range:
+                    range_info.text_id = src_row.text_id
                     range_info.source_refs.append(src_row.ref)
                     target_same_ref_rows.clear()
                     range_info.source_segment.extend(src_row.segment)
@@ -196,6 +198,7 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
 
             while trg_row is not None:
                 if not self._all_source_rows and trg_row.is_in_range:
+                    range_info.text_id = trg_row.text_id
                     range_info.target_refs.append(trg_row.ref)
                     source_same_ref_rows.clear()
                     range_info.target_segment.extend(trg_row.segment)
@@ -218,7 +221,14 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
     ) -> Iterable[ParallelTextRow]:
         if range_info.is_in_range:
             yield range_info.create_row()
+        if src_row is not None:
+            text_id = src_row.text_id
+        elif trg_row is not None:
+            text_id = trg_row.text_id
+        else:
+            raise ValueError("Either a source or target must be specified.")
         yield ParallelTextRow(
+            text_id,
             [] if src_row is None else [src_row.ref],
             [] if trg_row is None else [trg_row.ref],
             [] if src_row is None else src_row.segment,
@@ -264,6 +274,7 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
 
 @dataclass
 class _RangeInfo:
+    text_id: str = field(default="", init=False)
     source_refs: List[Any] = field(default_factory=list, init=False)
     target_refs: List[Any] = field(default_factory=list, init=False)
     source_segment: List[str] = field(default_factory=list, init=False)
@@ -279,6 +290,7 @@ class _RangeInfo:
 
     def create_row(self) -> ParallelTextRow:
         row = ParallelTextRow(
+            self.text_id,
             self.source_refs.copy(),
             self.target_refs.copy(),
             self.source_segment.copy(),
@@ -372,6 +384,7 @@ class _TargetCorpusGenerator(ContextManager["_TargetCorpusGenerator"], Generator
                 seg_list[range_start_offset] = (
                     range_start_verse_ref,
                     TextRow(
+                        range_start_row.text_id,
                         range_start_row.ref,
                         list(range_start_row.segment) + list(row.segment),
                         range_start_row.is_sentence_start,
@@ -380,7 +393,7 @@ class _TargetCorpusGenerator(ContextManager["_TargetCorpusGenerator"], Generator
                         is_empty=range_start_row.is_empty and row.is_empty,
                     ),
                 )
-                row = TextRow(row.ref, is_in_range=True)
+                row = TextRow(row.text_id, row.ref, is_in_range=True)
                 range_start_offset -= 1
             else:
                 range_start_offset = -1

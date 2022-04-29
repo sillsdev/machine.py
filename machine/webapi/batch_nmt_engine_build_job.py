@@ -3,7 +3,7 @@ import os
 import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Callable, Dict, List, Optional, Set
 
 from bson.objectid import ObjectId
 from opennmt import END_OF_SENTENCE_TOKEN, PADDING_TOKEN, START_OF_SENTENCE_TOKEN
@@ -14,8 +14,6 @@ from sentencepiece import SentencePieceTrainer
 from ..corpora.dictionary_text_corpus import DictionaryTextCorpus
 from ..corpora.parallel_text_corpus import ParallelTextCorpus, flatten_parallel_text_corpora
 from ..corpora.text_corpus import TextCorpus
-from ..corpora.text_file_ref import TextFileRef
-from ..scripture.verse_ref import VerseRef
 from ..tokenization.sentencepiece import SentencePieceDetokenizer, SentencePieceTokenizer
 from ..translation.tensorflow.open_nmt_model import OpenNmtModel
 from ..translation.tensorflow.open_nmt_model_trainer import OpenNmtModelTrainer
@@ -121,26 +119,27 @@ class BatchNmtEngineBuildJob:
             if check_canceled is not None:
                 check_canceled()
 
+            corpora_translate_text_ids = self._data_file_service.get_translate_text_ids(engine_id)
             detokenizer = SentencePieceDetokenizer()
             model = OpenNmtModel(model_type, model_config, mixed_precision=mixed_precision)
             with model.create_engine() as translation_engine:
                 for corpus_id, corpus in parallel_corpora.items():
                     if check_canceled is not None:
                         check_canceled()
-                    corpus = corpus.filter(lambda r: len(r.target_segment) == 0)
+                    translate_text_ids = corpora_translate_text_ids.get(corpus_id, set())
+                    corpus = corpus.filter(lambda r: len(r.target_segment) == 0 and r.text_id in translate_text_ids)
                     with corpus.tokenize(source_tokenizer).get_rows() as rows:
                         translations = translation_engine.translate_batch(r.source_segment for r in rows)
                     with corpus.get_rows() as rows:
                         buffer: List[Translation] = []
                         for row, translation in zip(rows, translations):
                             refs = list(row.source_refs)
-                            text_id = _get_text_id(refs[0])
                             text = detokenizer.detokenize(translation.target_segment)
                             buffer.append(
                                 {
                                     "engineRef": ObjectId(engine_id),
                                     "corpusId": corpus_id,
-                                    "textId": text_id,
+                                    "textId": row.text_id,
                                     "refs": refs,
                                     "text": text,
                                 }
@@ -175,14 +174,6 @@ def _create_parallel_corpora(
         parallel_corpora[source_id] = source_corpus.align_rows(target_corpus, all_source_rows=True)
 
     return parallel_corpora
-
-
-def _get_text_id(ref: Any) -> str:
-    if isinstance(ref, VerseRef):
-        return ref.book
-    if isinstance(ref, TextFileRef):
-        return ref.file_id
-    raise ValueError(f"Unsupported ref type: {ref}")
 
 
 def _convert_vocab(sp_vocab_path: Path, onmt_vocab_path: Path, tags: Set[str] = set()) -> None:

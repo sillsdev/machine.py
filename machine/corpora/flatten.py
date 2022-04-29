@@ -81,11 +81,9 @@ class _FlattenAlignmentCorpus(AlignmentCorpus):
     def count(self, include_empty: bool = True) -> int:
         return sum(c.count(include_empty) for c in self._corpora)
 
-    def _get_rows(
-        self, alignment_collection_ids: Optional[Iterable[str]] = None
-    ) -> Generator[AlignmentRow, None, None]:
+    def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[AlignmentRow, None, None]:
         for corpus in self._corpora:
-            with corpus.get_rows(alignment_collection_ids) as rows:
+            with corpus.get_rows(text_ids) as rows:
                 yield from rows
 
 

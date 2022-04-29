@@ -116,7 +116,7 @@ class UsxFileAlignmentCollection(AlignmentCollection):
                 for src_index in src_indices:
                     for trg_index in trg_indices:
                         word_pairs.append(AlignedWordPair(src_index, trg_index))
-        return AlignmentRow(verse_ref, word_pairs)
+        return AlignmentRow(self.id, verse_ref, word_pairs)
 
 
 @dataclass

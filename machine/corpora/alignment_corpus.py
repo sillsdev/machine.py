@@ -14,17 +14,11 @@ class AlignmentCorpus(Corpus[AlignmentRow]):
     def alignment_collections(self) -> Iterable[AlignmentCollection]:
         ...
 
-    def get_rows(
-        self, alignment_collection_ids: Optional[Iterable[str]] = None
-    ) -> ContextManagedGenerator[AlignmentRow, None, None]:
-        return ContextManagedGenerator(self._get_rows(alignment_collection_ids))
+    def get_rows(self, text_ids: Optional[Iterable[str]] = None) -> ContextManagedGenerator[AlignmentRow, None, None]:
+        return ContextManagedGenerator(self._get_rows(text_ids))
 
-    def _get_rows(
-        self, alignment_collection_ids: Optional[Iterable[str]] = None
-    ) -> Generator[AlignmentRow, None, None]:
-        alignment_collection_id_set = set(
-            (t.id for t in self.alignment_collections) if alignment_collection_ids is None else alignment_collection_ids
-        )
+    def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[AlignmentRow, None, None]:
+        alignment_collection_id_set = set((t.id for t in self.alignment_collections) if text_ids is None else text_ids)
         for tac in self.alignment_collections:
             if tac.id in alignment_collection_id_set:
                 with tac.get_rows() as rows:
@@ -75,10 +69,8 @@ class _TransformAlignmentCorpus(AlignmentCorpus):
     def count(self, include_empty: bool = True) -> int:
         return self._corpus.count(include_empty)
 
-    def _get_rows(
-        self, alignment_collection_ids: Optional[Iterable[str]] = None
-    ) -> Generator[AlignmentRow, None, None]:
-        with self._corpus.get_rows(alignment_collection_ids) as rows:
+    def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[AlignmentRow, None, None]:
+        with self._corpus.get_rows(text_ids) as rows:
             yield from map(self._transform, rows)
 
 
@@ -91,10 +83,8 @@ class _FilterAlignmentCorpus(AlignmentCorpus):
     def alignment_collections(self) -> Iterable[AlignmentCollection]:
         return self._corpus.alignment_collections
 
-    def _get_rows(
-        self, alignment_collection_ids: Optional[Iterable[str]] = None
-    ) -> Generator[AlignmentRow, None, None]:
-        with self._corpus.get_rows(alignment_collection_ids) as rows:
+    def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[AlignmentRow, None, None]:
+        with self._corpus.get_rows(text_ids) as rows:
             yield from (row for i, row in enumerate(rows) if self._predicate(row, i))
 
 
@@ -107,8 +97,6 @@ class _TakeAlignmentCorpus(AlignmentCorpus):
     def alignment_collections(self) -> Iterable[AlignmentCollection]:
         return self._corpus.alignment_collections
 
-    def _get_rows(
-        self, alignment_collection_ids: Optional[Iterable[str]] = None
-    ) -> Generator[AlignmentRow, None, None]:
-        with self._corpus.get_rows(alignment_collection_ids) as rows:
+    def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[AlignmentRow, None, None]:
+        with self._corpus.get_rows(text_ids) as rows:
             yield from islice(rows, self._count)

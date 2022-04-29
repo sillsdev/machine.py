@@ -26,9 +26,9 @@ def test_get_rows_no_missing_rows() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "source segment 1 .", is_sentence_start=False),
-                text_row(2, "source segment 2 ."),
-                text_row(3, "source segment 3 ."),
+                text_row("text1", 1, "source segment 1 .", is_sentence_start=False),
+                text_row("text1", 2, "source segment 2 ."),
+                text_row("text1", 3, "source segment 3 ."),
             ],
         )
     )
@@ -36,9 +36,9 @@ def test_get_rows_no_missing_rows() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "target segment 1 ."),
-                text_row(2, "target segment 2 ."),
-                text_row(3, "target segment 3 .", is_sentence_start=False),
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 2, "target segment 2 ."),
+                text_row("text1", 3, "target segment 3 .", is_sentence_start=False),
             ],
         )
     )
@@ -46,9 +46,9 @@ def test_get_rows_no_missing_rows() -> None:
         MemoryAlignmentCollection(
             "text1",
             [
-                alignment_row(1, AlignedWordPair(0, 0)),
-                alignment_row(2, AlignedWordPair(1, 1)),
-                alignment_row(3, AlignedWordPair(2, 2)),
+                alignment_row("text1", 1, AlignedWordPair(0, 0)),
+                alignment_row("text1", 2, AlignedWordPair(1, 1)),
+                alignment_row("text1", 3, AlignedWordPair(2, 2)),
             ],
         )
     )
@@ -77,9 +77,9 @@ def test_get_rows_missing_middle_target_rows() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "source segment 1 ."),
-                text_row(2, "source segment 2 ."),
-                text_row(3, "source segment 3 ."),
+                text_row("text1", 1, "source segment 1 ."),
+                text_row("text1", 2, "source segment 2 ."),
+                text_row("text1", 3, "source segment 3 ."),
             ],
         )
     )
@@ -87,8 +87,8 @@ def test_get_rows_missing_middle_target_rows() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "target segment 1 ."),
-                text_row(3, "target segment 3 ."),
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 3, "target segment 3 ."),
             ],
         )
     )
@@ -96,8 +96,8 @@ def test_get_rows_missing_middle_target_rows() -> None:
         MemoryAlignmentCollection(
             "text1",
             [
-                alignment_row(1, AlignedWordPair(0, 0)),
-                alignment_row(3, AlignedWordPair(2, 2)),
+                alignment_row("text1", 1, AlignedWordPair(0, 0)),
+                alignment_row("text1", 3, AlignedWordPair(2, 2)),
             ],
         )
     )
@@ -122,8 +122,8 @@ def test_get_rows_missing_middle_source_row() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "source segment 1 ."),
-                text_row(3, "source segment 3 ."),
+                text_row("text1", 1, "source segment 1 ."),
+                text_row("text1", 3, "source segment 3 ."),
             ],
         )
     )
@@ -131,9 +131,9 @@ def test_get_rows_missing_middle_source_row() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "target segment 1 ."),
-                text_row(2, "target segment 2 ."),
-                text_row(3, "target segment 3 ."),
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 2, "target segment 2 ."),
+                text_row("text1", 3, "target segment 3 ."),
             ],
         )
     )
@@ -141,8 +141,8 @@ def test_get_rows_missing_middle_source_row() -> None:
         MemoryAlignmentCollection(
             "text1",
             [
-                alignment_row(1, AlignedWordPair(0, 0)),
-                alignment_row(3, AlignedWordPair(2, 2)),
+                alignment_row("text1", 1, AlignedWordPair(0, 0)),
+                alignment_row("text1", 3, AlignedWordPair(2, 2)),
             ],
         )
     )
@@ -167,9 +167,9 @@ def test_get_rows_missing_last_target_row() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "source segment 1 ."),
-                text_row(2, "source segment 2 ."),
-                text_row(3, "source segment 3 ."),
+                text_row("text1", 1, "source segment 1 ."),
+                text_row("text1", 2, "source segment 2 ."),
+                text_row("text1", 3, "source segment 3 ."),
             ],
         )
     )
@@ -177,8 +177,8 @@ def test_get_rows_missing_last_target_row() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "target segment 1 ."),
-                text_row(2, "target segment 2 ."),
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 2, "target segment 2 ."),
             ],
         )
     )
@@ -186,8 +186,8 @@ def test_get_rows_missing_last_target_row() -> None:
         MemoryAlignmentCollection(
             "text1",
             [
-                alignment_row(1, AlignedWordPair(0, 0)),
-                alignment_row(2, AlignedWordPair(1, 1)),
+                alignment_row("text1", 1, AlignedWordPair(0, 0)),
+                alignment_row("text1", 2, AlignedWordPair(1, 1)),
             ],
         )
     )
@@ -212,8 +212,8 @@ def test_get_rows_missing_last_source_row() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "source segment 1 ."),
-                text_row(2, "source segment 2 ."),
+                text_row("text1", 1, "source segment 1 ."),
+                text_row("text1", 2, "source segment 2 ."),
             ],
         )
     )
@@ -221,9 +221,9 @@ def test_get_rows_missing_last_source_row() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "target segment 1 ."),
-                text_row(2, "target segment 2 ."),
-                text_row(3, "target segment 3 ."),
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 2, "target segment 2 ."),
+                text_row("text1", 3, "target segment 3 ."),
             ],
         )
     )
@@ -231,8 +231,8 @@ def test_get_rows_missing_last_source_row() -> None:
         MemoryAlignmentCollection(
             "text1",
             [
-                alignment_row(1, AlignedWordPair(0, 0)),
-                alignment_row(2, AlignedWordPair(1, 1)),
+                alignment_row("text1", 1, AlignedWordPair(0, 0)),
+                alignment_row("text1", 2, AlignedWordPair(1, 1)),
             ],
         )
     )
@@ -257,9 +257,9 @@ def test_get_rows_missing_first_target_row() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "source segment 1 ."),
-                text_row(2, "source segment 2 ."),
-                text_row(3, "source segment 3 ."),
+                text_row("text1", 1, "source segment 1 ."),
+                text_row("text1", 2, "source segment 2 ."),
+                text_row("text1", 3, "source segment 3 ."),
             ],
         )
     )
@@ -267,8 +267,8 @@ def test_get_rows_missing_first_target_row() -> None:
         MemoryText(
             "text1",
             [
-                text_row(2, "target segment 2 ."),
-                text_row(3, "target segment 3 ."),
+                text_row("text1", 2, "target segment 2 ."),
+                text_row("text1", 3, "target segment 3 ."),
             ],
         )
     )
@@ -276,8 +276,8 @@ def test_get_rows_missing_first_target_row() -> None:
         MemoryAlignmentCollection(
             "text1",
             [
-                alignment_row(2, AlignedWordPair(1, 1)),
-                alignment_row(3, AlignedWordPair(2, 2)),
+                alignment_row("text1", 2, AlignedWordPair(1, 1)),
+                alignment_row("text1", 3, AlignedWordPair(2, 2)),
             ],
         )
     )
@@ -302,8 +302,8 @@ def test_get_rows_missing_first_source_row() -> None:
         MemoryText(
             "text1",
             [
-                text_row(2, "source segment 2 ."),
-                text_row(3, "source segment 3 ."),
+                text_row("text1", 2, "source segment 2 ."),
+                text_row("text1", 3, "source segment 3 ."),
             ],
         )
     )
@@ -311,9 +311,9 @@ def test_get_rows_missing_first_source_row() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "target segment 1 ."),
-                text_row(2, "target segment 2 ."),
-                text_row(3, "target segment 3 ."),
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 2, "target segment 2 ."),
+                text_row("text1", 3, "target segment 3 ."),
             ],
         )
     )
@@ -321,8 +321,8 @@ def test_get_rows_missing_first_source_row() -> None:
         MemoryAlignmentCollection(
             "text1",
             [
-                alignment_row(2, AlignedWordPair(1, 1)),
-                alignment_row(3, AlignedWordPair(2, 2)),
+                alignment_row("text1", 2, AlignedWordPair(1, 1)),
+                alignment_row("text1", 3, AlignedWordPair(2, 2)),
             ],
         )
     )
@@ -347,16 +347,17 @@ def test_get_rows_range() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "source segment 1 ."),
+                text_row("text1", 1, "source segment 1 ."),
                 text_row(
+                    "text1",
                     2,
                     "source segment 2 . source segment 3 .",
                     is_sentence_start=False,
                     is_in_range=True,
                     is_range_start=True,
                 ),
-                text_row(3, is_in_range=True),
-                text_row(4, "source segment 4 ."),
+                text_row("text1", 3, is_in_range=True),
+                text_row("text1", 4, "source segment 4 ."),
             ],
         )
     )
@@ -364,10 +365,10 @@ def test_get_rows_range() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "target segment 1 ."),
-                text_row(2, "target segment 2 ."),
-                text_row(3, "target segment 3 ."),
-                text_row(4, "target segment 4 ."),
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 2, "target segment 2 ."),
+                text_row("text1", 3, "target segment 3 ."),
+                text_row("text1", 4, "target segment 4 ."),
             ],
         )
     )
@@ -388,9 +389,9 @@ def test_get_rows_overlapping_ranges() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "source segment 1 ."),
-                text_row(2, "source segment 2 . source segment 3 .", is_in_range=True, is_range_start=True),
-                text_row(3, is_in_range=True),
+                text_row("text1", 1, "source segment 1 ."),
+                text_row("text1", 2, "source segment 2 . source segment 3 .", is_in_range=True, is_range_start=True),
+                text_row("text1", 3, is_in_range=True),
             ],
         )
     )
@@ -398,9 +399,9 @@ def test_get_rows_overlapping_ranges() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "target segment 1 . target segment 2 .", is_in_range=True, is_range_start=True),
-                text_row(2, is_in_range=True),
-                text_row(3, "target segment 3 ."),
+                text_row("text1", 1, "target segment 1 . target segment 2 .", is_in_range=True, is_range_start=True),
+                text_row("text1", 2, is_in_range=True),
+                text_row("text1", 3, "target segment 3 ."),
             ],
         )
     )
@@ -422,15 +423,16 @@ def test_get_rows_adjacent_ranges_same_text() -> None:
             "text1",
             [
                 text_row(
+                    "text1",
                     1,
                     "source segment 1 . source segment 2 .",
                     is_sentence_start=False,
                     is_in_range=True,
                     is_range_start=True,
                 ),
-                text_row(2, is_in_range=True),
-                text_row(3, "source segment 3 . source segment 4 .", is_in_range=True, is_range_start=True),
-                text_row(4, is_in_range=True),
+                text_row("text1", 2, is_in_range=True),
+                text_row("text1", 3, "source segment 3 . source segment 4 .", is_in_range=True, is_range_start=True),
+                text_row("text1", 4, is_in_range=True),
             ],
         )
     )
@@ -438,10 +440,10 @@ def test_get_rows_adjacent_ranges_same_text() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "target segment 1 .", is_sentence_start=False),
-                text_row(2, "target segment 2 ."),
-                text_row(3, "target segment 3 ."),
-                text_row(4, "target segment 4 ."),
+                text_row("text1", 1, "target segment 1 .", is_sentence_start=False),
+                text_row("text1", 2, "target segment 2 ."),
+                text_row("text1", 3, "target segment 3 ."),
+                text_row("text1", 4, "target segment 4 ."),
             ],
         )
     )
@@ -468,10 +470,10 @@ def test_get_rows_adjacent_ranges_different_texts() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "source segment 1 . source segment 2 .", is_in_range=True, is_range_start=True),
-                text_row(2, is_in_range=True),
-                text_row(3, "source segment 3 ."),
-                text_row(4, "source segment 4 ."),
+                text_row("text1", 1, "source segment 1 . source segment 2 .", is_in_range=True, is_range_start=True),
+                text_row("text1", 2, is_in_range=True),
+                text_row("text1", 3, "source segment 3 ."),
+                text_row("text1", 4, "source segment 4 ."),
             ],
         )
     )
@@ -479,10 +481,10 @@ def test_get_rows_adjacent_ranges_different_texts() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "target segment 1 ."),
-                text_row(2, "target segment 2 ."),
-                text_row(3, "target segment 3 . target segment 4 .", is_in_range=True, is_range_start=True),
-                text_row(4, is_in_range=True),
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 2, "target segment 2 ."),
+                text_row("text1", 3, "target segment 3 . target segment 4 .", is_in_range=True, is_range_start=True),
+                text_row("text1", 4, is_in_range=True),
             ],
         )
     )
@@ -505,23 +507,23 @@ def test_get_segments_all_source_rows() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "source segment 1 ."),
-                text_row(2, "source segment 2 ."),
-                text_row(3, "source segment 3 ."),
-                text_row(4, "source segment 4 ."),
+                text_row("text1", 1, "source segment 1 ."),
+                text_row("text1", 2, "source segment 2 ."),
+                text_row("text1", 3, "source segment 3 ."),
+                text_row("text1", 4, "source segment 4 ."),
             ],
         ),
         MemoryText(
             "text2",
             [
-                text_row(5, "source segment 5 ."),
+                text_row("text2", 5, "source segment 5 ."),
             ],
         ),
         MemoryText(
             "text3",
             [
-                text_row(6, "source segment 6 ."),
-                text_row(7, "source segment 7 ."),
+                text_row("text3", 6, "source segment 6 ."),
+                text_row("text3", 7, "source segment 7 ."),
             ],
         ),
     )
@@ -529,16 +531,16 @@ def test_get_segments_all_source_rows() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "target segment 1 ."),
-                text_row(3, "target segment 3 ."),
-                text_row(4, "target segment 4 ."),
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 3, "target segment 3 ."),
+                text_row("text1", 4, "target segment 4 ."),
             ],
         ),
         MemoryText(
             "text3",
             [
-                text_row(6, "target segment 6 ."),
-                text_row(7, "target segment 7 ."),
+                text_row("text3", 6, "target segment 6 ."),
+                text_row("text3", 7, "target segment 7 ."),
             ],
         ),
     )
@@ -561,25 +563,25 @@ def test_get_segments_missing_text() -> None:
     source_corpus = DictionaryTextCorpus(
         MemoryText(
             "text1",
-            [text_row(1, "source segment 1 .")],
+            [text_row("text1", 1, "source segment 1 .")],
         ),
         MemoryText(
             "text2",
-            [text_row(2, "source segment 2 .")],
+            [text_row("text2", 2, "source segment 2 .")],
         ),
         MemoryText(
             "text3",
-            [text_row(3, "source segment 3 .")],
+            [text_row("text3", 3, "source segment 3 .")],
         ),
     )
     target_corpus = DictionaryTextCorpus(
         MemoryText(
             "text1",
-            [text_row(1, "target segment 1 .")],
+            [text_row("text1", 1, "target segment 1 .")],
         ),
         MemoryText(
             "text3",
-            [text_row(3, "target segment 3 .")],
+            [text_row("text3", 3, "target segment 3 .")],
         ),
     )
 
@@ -602,10 +604,10 @@ def test_get_segments_range_all_target_rows() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "source segment 1 ."),
-                text_row(2, "source segment 2 . source segment 3 .", is_in_range=True, is_range_start=True),
-                text_row(3, is_in_range=True),
-                text_row(4, "source segment 4 ."),
+                text_row("text1", 1, "source segment 1 ."),
+                text_row("text1", 2, "source segment 2 . source segment 3 .", is_in_range=True, is_range_start=True),
+                text_row("text1", 3, is_in_range=True),
+                text_row("text1", 4, "source segment 4 ."),
             ],
         )
     )
@@ -613,10 +615,10 @@ def test_get_segments_range_all_target_rows() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "target segment 1 ."),
-                text_row(2, "target segment 2 ."),
-                text_row(3, "target segment 3 ."),
-                text_row(4, "target segment 4 ."),
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 2, "target segment 2 ."),
+                text_row("text1", 3, "target segment 3 ."),
+                text_row("text1", 4, "target segment 4 ."),
             ],
         )
     )
@@ -643,10 +645,10 @@ def test_get_rows_same_ref_middle_many_to_many() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "source segment 1 ."),
-                text_row(2, "source segment 2-1 ."),
-                text_row(2, "source segment 2-2 ."),
-                text_row(3, "source segment 3 ."),
+                text_row("text1", 1, "source segment 1 ."),
+                text_row("text1", 2, "source segment 2-1 ."),
+                text_row("text1", 2, "source segment 2-2 ."),
+                text_row("text1", 3, "source segment 3 ."),
             ],
         )
     )
@@ -654,10 +656,10 @@ def test_get_rows_same_ref_middle_many_to_many() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "target segment 1 ."),
-                text_row(2, "target segment 2-1 ."),
-                text_row(2, "target segment 2-2 ."),
-                text_row(3, "target segment 3 ."),
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 2, "target segment 2-1 ."),
+                text_row("text1", 2, "target segment 2-2 ."),
+                text_row("text1", 3, "target segment 3 ."),
             ],
         )
     )
@@ -688,9 +690,9 @@ def test_get_segments_same_ref_middle_one_to_many() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "source segment 1 ."),
-                text_row(2, "source segment 2 ."),
-                text_row(3, "source segment 3 ."),
+                text_row("text1", 1, "source segment 1 ."),
+                text_row("text1", 2, "source segment 2 ."),
+                text_row("text1", 3, "source segment 3 ."),
             ],
         )
     )
@@ -698,10 +700,10 @@ def test_get_segments_same_ref_middle_one_to_many() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "target segment 1 ."),
-                text_row(2, "target segment 2-1 ."),
-                text_row(2, "target segment 2-2 ."),
-                text_row(3, "target segment 3 ."),
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 2, "target segment 2-1 ."),
+                text_row("text1", 2, "target segment 2-2 ."),
+                text_row("text1", 3, "target segment 3 ."),
             ],
         )
     )
@@ -724,10 +726,10 @@ def test_get_segments_same_ref_middle_many_to_one() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "source segment 1 ."),
-                text_row(2, "source segment 2-1 ."),
-                text_row(2, "source segment 2-2 ."),
-                text_row(3, "source segment 3 ."),
+                text_row("text1", 1, "source segment 1 ."),
+                text_row("text1", 2, "source segment 2-1 ."),
+                text_row("text1", 2, "source segment 2-2 ."),
+                text_row("text1", 3, "source segment 3 ."),
             ],
         )
     )
@@ -735,9 +737,9 @@ def test_get_segments_same_ref_middle_many_to_one() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "target segment 1 ."),
-                text_row(2, "target segment 2 ."),
-                text_row(3, "target segment 3 ."),
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 2, "target segment 2 ."),
+                text_row("text1", 3, "target segment 3 ."),
             ],
         )
     )
@@ -760,8 +762,8 @@ def test_get_segments_same_ref_last_one_to_many() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "source segment 1 ."),
-                text_row(2, "source segment 2 ."),
+                text_row("text1", 1, "source segment 1 ."),
+                text_row("text1", 2, "source segment 2 ."),
             ],
         )
     )
@@ -769,10 +771,10 @@ def test_get_segments_same_ref_last_one_to_many() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "target segment 1 ."),
-                text_row(2, "target segment 2-1 ."),
-                text_row(2, "target segment 2-2 ."),
-                text_row(3, "target segment 3 ."),
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 2, "target segment 2-1 ."),
+                text_row("text1", 2, "target segment 2-2 ."),
+                text_row("text1", 3, "target segment 3 ."),
             ],
         )
     )
@@ -795,10 +797,10 @@ def test_get_segments_same_ref_last_many_to_one() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "source segment 1 ."),
-                text_row(2, "source segment 2-1 ."),
-                text_row(2, "source segment 2-2 ."),
-                text_row(3, "source segment 3 ."),
+                text_row("text1", 1, "source segment 1 ."),
+                text_row("text1", 2, "source segment 2-1 ."),
+                text_row("text1", 2, "source segment 2-2 ."),
+                text_row("text1", 3, "source segment 3 ."),
             ],
         )
     )
@@ -806,8 +808,8 @@ def test_get_segments_same_ref_last_many_to_one() -> None:
         MemoryText(
             "text1",
             [
-                text_row(1, "target segment 1 ."),
-                text_row(2, "target segment 2 ."),
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 2, "target segment 2 ."),
             ],
         )
     )
@@ -834,9 +836,15 @@ def test_get_segments_same_verse_ref_one_to_many() -> None:
         MemoryText(
             "MAT",
             [
-                text_row(VerseRef.from_string("MAT 1:1", ORIGINAL_VERSIFICATION), "source chapter one, verse one ."),
-                text_row(VerseRef.from_string("MAT 1:2", ORIGINAL_VERSIFICATION), "source chapter one, verse two ."),
-                text_row(VerseRef.from_string("MAT 1:3", ORIGINAL_VERSIFICATION), "source chapter one, verse three ."),
+                text_row(
+                    "MAT", VerseRef.from_string("MAT 1:1", ORIGINAL_VERSIFICATION), "source chapter one, verse one ."
+                ),
+                text_row(
+                    "MAT", VerseRef.from_string("MAT 1:2", ORIGINAL_VERSIFICATION), "source chapter one, verse two ."
+                ),
+                text_row(
+                    "MAT", VerseRef.from_string("MAT 1:3", ORIGINAL_VERSIFICATION), "source chapter one, verse three ."
+                ),
             ],
         )
     )
@@ -844,15 +852,16 @@ def test_get_segments_same_verse_ref_one_to_many() -> None:
         MemoryText(
             "MAT",
             [
-                text_row(VerseRef.from_string("MAT 1:1", versification), "target chapter one, verse one ."),
+                text_row("MAT", VerseRef.from_string("MAT 1:1", versification), "target chapter one, verse one ."),
                 text_row(
+                    "MAT",
                     VerseRef.from_string("MAT 1:2", versification),
                     "target chapter one, verse two . target chapter one, verse three .",
                     is_in_range=True,
                     is_range_start=True,
                 ),
-                text_row(VerseRef.from_string("MAT 1:3", versification), is_in_range=True),
-                text_row(VerseRef.from_string("MAT 1:4", versification), "target chapter one, verse four ."),
+                text_row("MAT", VerseRef.from_string("MAT 1:3", versification), is_in_range=True),
+                text_row("MAT", VerseRef.from_string("MAT 1:4", versification), "target chapter one, verse four ."),
             ],
         )
     )
@@ -878,10 +887,18 @@ def test_get_rows_verse_ref_out_of_order() -> None:
         MemoryText(
             "MAT",
             [
-                text_row(VerseRef.from_string("MAT 1:1", ORIGINAL_VERSIFICATION), "source chapter one, verse one ."),
-                text_row(VerseRef.from_string("MAT 1:2", ORIGINAL_VERSIFICATION), "source chapter one, verse two ."),
-                text_row(VerseRef.from_string("MAT 1:3", ORIGINAL_VERSIFICATION), "source chapter one, verse three ."),
-                text_row(VerseRef.from_string("MAT 1:4", ORIGINAL_VERSIFICATION), "source chapter one, verse four ."),
+                text_row(
+                    "MAT", VerseRef.from_string("MAT 1:1", ORIGINAL_VERSIFICATION), "source chapter one, verse one ."
+                ),
+                text_row(
+                    "MAT", VerseRef.from_string("MAT 1:2", ORIGINAL_VERSIFICATION), "source chapter one, verse two ."
+                ),
+                text_row(
+                    "MAT", VerseRef.from_string("MAT 1:3", ORIGINAL_VERSIFICATION), "source chapter one, verse three ."
+                ),
+                text_row(
+                    "MAT", VerseRef.from_string("MAT 1:4", ORIGINAL_VERSIFICATION), "source chapter one, verse four ."
+                ),
             ],
         )
     )
@@ -889,11 +906,11 @@ def test_get_rows_verse_ref_out_of_order() -> None:
         MemoryText(
             "MAT",
             [
-                text_row(VerseRef.from_string("MAT 1:1", versification), "target chapter one, verse one ."),
-                text_row(VerseRef.from_string("MAT 1:2", versification), "target chapter one, verse two ."),
-                text_row(VerseRef.from_string("MAT 1:3", versification), "target chapter one, verse three ."),
-                text_row(VerseRef.from_string("MAT 1:4", versification), "target chapter one, verse four ."),
-                text_row(VerseRef.from_string("MAT 1:5", versification), "target chapter one, verse five ."),
+                text_row("MAT", VerseRef.from_string("MAT 1:1", versification), "target chapter one, verse one ."),
+                text_row("MAT", VerseRef.from_string("MAT 1:2", versification), "target chapter one, verse two ."),
+                text_row("MAT", VerseRef.from_string("MAT 1:3", versification), "target chapter one, verse three ."),
+                text_row("MAT", VerseRef.from_string("MAT 1:4", versification), "target chapter one, verse four ."),
+                text_row("MAT", VerseRef.from_string("MAT 1:5", versification), "target chapter one, verse five ."),
             ],
         )
     )
@@ -922,6 +939,7 @@ def test_get_rows_verse_ref_out_of_order() -> None:
 
 
 def text_row(
+    text_id: str,
     ref: Any,
     text: str = "",
     is_sentence_start: bool = True,
@@ -929,6 +947,7 @@ def text_row(
     is_range_start: bool = False,
 ) -> TextRow:
     return TextRow(
+        text_id,
         ref,
         [] if len(text) == 0 else text.split(),
         is_sentence_start=is_sentence_start,
@@ -938,5 +957,5 @@ def text_row(
     )
 
 
-def alignment_row(ref: int, *pairs: AlignedWordPair) -> AlignmentRow:
-    return AlignmentRow(ref, set(pairs))
+def alignment_row(text_id: str, ref: int, *pairs: AlignedWordPair) -> AlignmentRow:
+    return AlignmentRow(text_id, ref, set(pairs))

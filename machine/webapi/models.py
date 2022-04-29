@@ -57,9 +57,10 @@ class DataFile(Entity):
     dataType: str
     name: str
     format: str
+    filename: str
     corpusType: NotRequired[str]
     corpusId: NotRequired[str]
-    filename: str
+    translate: NotRequired[bool]
 
 
 class Engine(Entity):

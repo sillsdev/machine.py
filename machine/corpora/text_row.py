@@ -4,6 +4,7 @@ from typing import Any, Sequence
 class TextRow:
     def __init__(
         self,
+        text_id: str,
         ref: Any,
         segment: Sequence[str] = [],
         is_sentence_start: bool = True,
@@ -11,6 +12,7 @@ class TextRow:
         is_range_start: bool = False,
         is_empty: bool = True,
     ) -> None:
+        self._text_id = text_id
         self._ref = ref
 
         self.segment = segment
@@ -18,6 +20,10 @@ class TextRow:
         self.is_in_range = is_in_range
         self.is_range_start = is_range_start
         self.is_empty = is_empty
+
+    @property
+    def text_id(self) -> str:
+        return self._text_id
 
     @property
     def ref(self) -> Any:

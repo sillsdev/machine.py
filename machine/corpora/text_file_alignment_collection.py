@@ -25,7 +25,7 @@ class TextFileAlignmentCollection(AlignmentCollection):
             line_num = 1
             for line in file:
                 line = line.rstrip("\r\n")
-                yield AlignmentRow(TextFileRef(self.id, line_num), AlignedWordPair.parse(line))
+                yield AlignmentRow(self.id, TextFileRef(self.id, line_num), AlignedWordPair.parse(line))
                 line_num += 1
 
     @property
