@@ -1,8 +1,9 @@
-from typing import Any, Generic, List, Mapping, Optional, TypeVar, Union, cast
+from typing import Any, Generic, List, Mapping, MutableMapping, Optional, TypeVar, Union, cast
 
 from bson.objectid import ObjectId
 from pymongo.collection import Collection, ReturnDocument
 from pymongo.cursor import Cursor
+from pymongo.database import Database
 from pymongo.write_concern import WriteConcern
 
 from .models import ENTITY_CHANGE_DELETE, ENTITY_CHANGE_INSERT, ENTITY_CHANGE_UPDATE, ChangeEvent, Entity
@@ -15,12 +16,10 @@ class Repository(Generic[TEntity]):
         self._collection = collection
         self._is_subscribable = is_subscribable
         if is_subscribable:
-            self._change_events = cast(
-                Collection[ChangeEvent],
-                collection.database.get_collection(collection.name + "_log").with_options(
-                    write_concern=WriteConcern(w=0)
-                ),
-            )
+            database = cast(Database, collection.database)
+            self._change_events: Collection[ChangeEvent] = database.get_collection(
+                collection.name + "_log"
+            ).with_options(write_concern=WriteConcern(w=0))
 
     def get(self, filter: Union[Mapping[str, Any], ObjectId, str]) -> Optional[TEntity]:
         if isinstance(filter, ObjectId):
@@ -38,7 +37,7 @@ class Repository(Generic[TEntity]):
     def insert_many(self, entities: List[TEntity]) -> None:
         for entity in entities:
             entity["revision"] = 1
-        res = self._collection.insert_many(cast(List[dict], entities))
+        res = self._collection.insert_many(cast(List[MutableMapping[str, Any]], entities))
         if res.acknowledged and self._is_subscribable:
             for entity in entities:
                 self._change_events.insert_many(
@@ -52,7 +51,7 @@ class Repository(Generic[TEntity]):
 
     def insert(self, entity: TEntity) -> None:
         entity["revision"] = 1
-        res = self._collection.insert_one(cast(dict, entity))
+        res = self._collection.insert_one(cast(MutableMapping[str, Any], entity))
         if res.acknowledged and self._is_subscribable:
             self._change_events.insert_one(
                 {"entityRef": entity.get("_id"), "changeType": ENTITY_CHANGE_INSERT, "revision": entity.get("revision")}
