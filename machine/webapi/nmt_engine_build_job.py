@@ -26,7 +26,7 @@ from .repository import Repository
 _TRANSLATION_INSERT_BUFFER_SIZE = 100
 
 
-class BatchNmtEngineBuildJob:
+class NmtEngineBuildJob:
     def __init__(
         self,
         engines: Repository[Engine],
@@ -193,7 +193,7 @@ def _convert_vocab(sp_vocab_path: Path, onmt_vocab_path: Path, tags: Set[str] = 
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Trains an NMT model and inferences on all untranslated data.")
+    parser = argparse.ArgumentParser(description="Trains an NMT model.")
     parser.add_argument("--engine", required=True, type=str, help="Engine Id")
     parser.add_argument("--build", required=True, type=str, help="Build Id")
     parser.add_argument("--data-files-dir", required=True, type=str, help="Data files directory")
@@ -213,7 +213,7 @@ def main() -> int:
     data_files: Repository[DataFile] = Repository(database.files)
     translations: Repository[Translation] = Repository(database.translations)
     data_file_service = DataFileService(data_files, vars(args))
-    job = BatchNmtEngineBuildJob(engines, builds, translations, data_file_service, vars(args))
+    job = NmtEngineBuildJob(engines, builds, translations, data_file_service, vars(args))
     cancellation_token_file: Optional[str] = args.cancellation_token_file
 
     def check_canceled() -> None:

@@ -22,4 +22,4 @@ class AlignmentRow:
         return len(self.aligned_word_pairs) == 0
 
     def invert(self) -> "AlignmentRow":
-        return AlignmentRow(self.ref, {ta.invert() for ta in self.aligned_word_pairs})
+        return AlignmentRow(self.text_id, self.ref, {ta.invert() for ta in self.aligned_word_pairs})
