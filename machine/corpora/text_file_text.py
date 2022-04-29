@@ -2,8 +2,8 @@ from pathlib import Path
 from typing import Generator
 
 from ..utils.typeshed import StrPath
-from .text_file_ref import TextFileRef
 from .text_base import TextBase
+from .text_file_ref import TextFileRef
 from .text_row import TextRow
 
 

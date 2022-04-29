@@ -201,7 +201,7 @@ def _convert_vocab(sp_vocab_path: Path, onmt_vocab_path: Path, tags: Set[str] = 
     vocab.serialize(onmt_vocab_path)
 
 
-def main() -> None:
+def main() -> int:
     parser = argparse.ArgumentParser(description="Trains an NMT model and inferences on all untranslated data.")
     parser.add_argument("--engine", required=True, type=str, help="Engine Id")
     parser.add_argument("--build", required=True, type=str, help="Build Id")
@@ -232,8 +232,9 @@ def main() -> None:
     try:
         job.run(check_canceled)
     except CanceledError:
-        sys.exit(1)
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
