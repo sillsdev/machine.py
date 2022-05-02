@@ -1,13 +1,9 @@
-import copy
 import heapq
-import os
-import shutil
 from types import TracebackType
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type, Union, cast, overload
 
 import numpy as np
 import tensorflow as tf
-from opennmt.config import try_prefix_paths
 from opennmt.data import inference_pipeline
 from opennmt.inputters import Inputter
 from opennmt.models import SequenceToSequence
@@ -23,14 +19,7 @@ from ..translation_result_builder import TranslationResultBuilder
 from ..translation_sources import TranslationSources
 from ..word_alignment_matrix import WordAlignmentMatrix
 from .open_nmt_model_trainer import OpenNmtModelTrainer
-from .open_nmt_utils import (
-    OpenNmtRunner,
-    delete_corpus_files,
-    delete_model,
-    model_exists,
-    move_corpus_files,
-    move_model,
-)
+from .open_nmt_utils import OpenNmtRunner
 
 
 class OpenNmtModel(TranslationModel):
@@ -94,32 +83,12 @@ class OpenNmtModel(TranslationModel):
 class _Trainer(OpenNmtModelTrainer):
     def __init__(self, model: OpenNmtModel, corpus: Optional[ParallelTextCorpus]):
         self._model = model
-        if model_exists(self._model.model_dir):
-            temp_config: dict = copy.deepcopy(self._model.config)
-            temp_config["data"] = cast(dict, try_prefix_paths(temp_config["model_dir"], temp_config["data"]))
-            temp_config["model_dir"] = os.path.join(temp_config["model_dir"], "train.tmp")
-            if corpus is not None:
-                temp_data_config = temp_config["data"]
-                data_config = self._model.config["data"]
-                temp_data_config["train_features_file"] = data_config["train_features_file"]
-                temp_data_config["train_labels_file"] = data_config["train_labels_file"]
-                temp_data_config["eval_features_file"] = data_config["eval_features_file"]
-                temp_data_config["eval_labels_file"] = data_config["eval_labels_file"]
-        else:
-            temp_config = self._model.config
         super().__init__(
-            self._model.model_type, temp_config, corpus, self._model.parent_config, self._model.mixed_precision
+            self._model.model_type, self._model.config, corpus, self._model.parent_config, self._model.mixed_precision
         )
 
     def save(self) -> None:
         super().save()
-        if self._model.model_dir != self.model_dir:
-            delete_model(self._model.model_dir)
-            move_model(self.model_dir, self._model.model_dir)
-            if self._corpus is not None:
-                delete_corpus_files(self._model.runner.config)
-                move_corpus_files(self._runner.config, self._model.runner.config)
-            shutil.rmtree(self.model_dir)
         for engine in self._model._engines:
             engine.restore()
 

@@ -1,10 +1,14 @@
+import copy
 import math
+import os
+import shutil
 from contextlib import ExitStack
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Optional, cast
 
 import opennmt.training as onmt_training
 import tensorflow as tf
+from opennmt.config import try_prefix_paths
 from opennmt.evaluation import Evaluator
 from opennmt.models import Model
 from opennmt.utils.checkpoint import Checkpoint
@@ -13,7 +17,15 @@ from opennmt.utils.misc import disable_mixed_precision, enable_mixed_precision
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
 from ...utils.progress_status import ProgressStatus
 from ..trainer import Trainer, TrainStats
-from .open_nmt_utils import OpenNmtRunner, delete_corpus_files, delete_model, delete_train_summary_files, model_exists
+from .open_nmt_utils import (
+    OpenNmtRunner,
+    delete_corpus_files,
+    delete_model,
+    delete_train_summary_files,
+    model_exists,
+    move_corpus_files,
+    move_model,
+)
 
 
 class OpenNmtModelTrainer(Trainer):
@@ -26,26 +38,39 @@ class OpenNmtModelTrainer(Trainer):
         mixed_precision: bool = False,
         resume: bool = False,
         val_size: int = 250,
+        use_temp_dir: bool = True,
     ):
-        self._runner = OpenNmtRunner(model_type, config, mixed_precision, prefix_corpus_paths=corpus is not None)
+        self._config = config
+        self._use_temp_dir = use_temp_dir
+        if self._use_temp_dir:
+            runner_config: dict = copy.deepcopy(self._config)
+            runner_config["data"] = cast(dict, try_prefix_paths(runner_config["model_dir"], runner_config["data"]))
+            runner_config["model_dir"] = os.path.join(runner_config["model_dir"], "train.tmp")
+            if corpus is not None:
+                runner_data_config = runner_config["data"]
+                data_config = self._config["data"]
+                runner_data_config["train_features_file"] = data_config["train_features_file"]
+                runner_data_config["train_labels_file"] = data_config["train_labels_file"]
+                runner_data_config["eval_features_file"] = data_config["eval_features_file"]
+                runner_data_config["eval_labels_file"] = data_config["eval_labels_file"]
+        else:
+            runner_config = config
+
+        self._runner = OpenNmtRunner(model_type, runner_config, mixed_precision, prefix_corpus_paths=corpus is not None)
         self._corpus = corpus
         self._parent_config = parent_config
         self.resume = resume
         self._stats = TrainStats()
         self.val_size = val_size
 
-    @property
-    def model_dir(self) -> str:
-        return self._runner.model_dir
-
     def train(
         self,
         progress: Optional[Callable[[ProgressStatus], None]] = None,
         check_canceled: Optional[Callable[[], None]] = None,
     ) -> None:
-        delete_train_summary_files(self.model_dir)
+        delete_train_summary_files(self._runner.model_dir)
         if not self.resume:
-            delete_model(self.model_dir)
+            delete_model(self._runner.model_dir)
             if self._corpus is not None:
                 delete_corpus_files(self._runner.config)
 
@@ -125,13 +150,21 @@ class OpenNmtModelTrainer(Trainer):
         if mixed_precision:
             disable_mixed_precision()
 
-        self._stats.trained_segment_count = train_corpus_size
+        self._stats.train_size = train_corpus_size
         if evaluator.metrics_history is not None:
             for name, value in evaluator.metrics_history[-1][1].items():
                 self._stats.metrics[name] = value
 
     def save(self) -> None:
-        delete_train_summary_files(self.model_dir)
+        delete_train_summary_files(self._runner.model_dir)
+        if self._use_temp_dir:
+            model_dir = self._config["model_dir"]
+            delete_model(model_dir)
+            move_model(self._runner.model_dir, model_dir)
+            if self._corpus is not None:
+                delete_corpus_files(self._config)
+                move_corpus_files(self._runner.config, self._config)
+            shutil.rmtree(self._runner.model_dir)
 
     @property
     def stats(self) -> TrainStats:
@@ -181,9 +214,9 @@ class OpenNmtModelTrainer(Trainer):
         if self._parent_config is None:
             return None
 
-        parent_checkpoint_path = Path(self.model_dir) / "parent"
+        parent_checkpoint_path = Path(self._runner.model_dir) / "parent"
         if parent_checkpoint_path.is_dir():
-            return None if model_exists(self.model_dir) else str(parent_checkpoint_path)
+            return None if model_exists(self._runner.model_dir) else str(parent_checkpoint_path)
         else:
             parent_runner = OpenNmtRunner(self._runner.model_type, self._parent_config)
             parent_runner.update_vocab(

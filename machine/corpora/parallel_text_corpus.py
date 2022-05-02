@@ -106,7 +106,7 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
 def flatten_parallel_text_corpora(corpora: Iterable[ParallelTextCorpus]) -> ParallelTextCorpus:
     corpus_list = list(corpora)
-    if len(corpus_list) == 0:
+    if len(corpus_list) == 1:
         return corpus_list[0]
 
     return _FlattenParallelTextCorpus(corpus_list)

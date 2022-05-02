@@ -136,7 +136,7 @@ class TextCorpus(Corpus[TextRow]):
 
 def flatten_text_corpora(corpora: Iterable[TextCorpus]) -> TextCorpus:
     corpus_list = list(corpora)
-    if len(corpus_list) == 0:
+    if len(corpus_list) == 1:
         return corpus_list[0]
 
     return _FlattenTextCorpus(corpus_list)

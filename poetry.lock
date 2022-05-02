@@ -524,6 +524,19 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "mongomock"
+version = "4.0.0"
+description = "Fake pymongo stub for testing simple MongoDB-dependent code"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+packaging = "*"
+sentinels = "*"
+six = "*"
+
+[[package]]
 name = "mypy-extensions"
 version = "0.4.3"
 description = "Experimental type system extensions for programs checked with the mypy typechecker."
@@ -972,6 +985,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "sentinels"
+version = "1.0.0"
+description = "Various objects to denote special meanings in python"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "sil-thot"
 version = "3.3.6"
 description = "A toolkit for statistical word alignment and machine translation"
@@ -1242,11 +1263,12 @@ all = ["sentencepiece", "sil-thot", "libclang", "tensorflow", "OpenNMT-tf"]
 sentencepiece = ["sentencepiece"]
 tensorflow = ["libclang", "tensorflow", "OpenNMT-tf"]
 thot = ["sil-thot"]
+webapi = ["pymongo"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.11"
-content-hash = "5a6dce06343e51acd34ab67eab66bb147438b0b7ea5a9e3b6d202568a3a43c1b"
+content-hash = "860d08a51a2280a5d3c9cb481ee220e1d714febbf6704608478b4b5b37f1d013"
 
 [metadata.files]
 absl-py = [
@@ -1566,6 +1588,10 @@ mccabe = [
 ]
 mockito = [
     {file = "mockito-1.2.2.tar.gz", hash = "sha256:d6b3aca6cdb92bbd47e19ebdb1a0b84ef23ab874eae5c6d505323c8657257c06"},
+]
+mongomock = [
+    {file = "mongomock-4.0.0-py2.py3-none-any.whl", hash = "sha256:cac9c68dd7715b4ab6ae510c20b4676e5ce751f0a5434d5ad8236d974e2a2b69"},
+    {file = "mongomock-4.0.0.tar.gz", hash = "sha256:b1832c3748d47444c18867373e5cea754c2e6f644a0cfbfd667f178f68bdecfc"},
 ]
 mypy-extensions = [
     {file = "mypy_extensions-0.4.3-py2.py3-none-any.whl", hash = "sha256:090fedd75945a69ae91ce1303b5824f428daf5a028d2f6ab8a299250a846f15d"},
@@ -2054,6 +2080,9 @@ sentencepiece = [
     {file = "sentencepiece-0.1.96-pp37-pypy37_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:dadccb2e49244b6e64b4527d13ec14d5e094a90b41cf9b963e457e64182f1941"},
     {file = "sentencepiece-0.1.96-pp37-pypy37_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:48c6d13b3bfff08060c138248e85df60f6fad11135ad7a8fc2ef6005aacca839"},
     {file = "sentencepiece-0.1.96.tar.gz", hash = "sha256:9bdf097d5bd1d8ce42dfee51f6ff05f5578b96e48c6f6006aa4eff69edfa3639"},
+]
+sentinels = [
+    {file = "sentinels-1.0.0.tar.gz", hash = "sha256:7be0704d7fe1925e397e92d18669ace2f619c92b5d4eb21a89f31e026f9ff4b1"},
 ]
 sil-thot = [
     {file = "sil-thot-3.3.6.tar.gz", hash = "sha256:afe9767efb2d53633add9277e4746cd239cfe18be439acadf19c8011495e584e"},

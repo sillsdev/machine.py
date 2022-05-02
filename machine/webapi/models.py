@@ -30,6 +30,9 @@ ENTITY_CHANGE_INSERT = "Insert"
 ENTITY_CHANGE_UPDATE = "Update"
 ENTITY_CHANGE_DELETE = "Delete"
 
+ENGINE_TYPE_SMT_TRANSFER = "SmtTransfer"
+ENGINE_TYPE_NMT = "Nmt"
+
 
 class ChangeEvent(TypedDict):
     entityRef: ObjectId
@@ -66,7 +69,7 @@ class DataFile(Entity):
 class Engine(Entity):
     sourceLanguageTag: str
     targetLanguageTag: str
-    engineType: str
+    type: str
     owner: str
     isBuilding: bool
     modelRevision: int

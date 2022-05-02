@@ -49,13 +49,14 @@ class Repository(Generic[TEntity]):
                     for entity in entities
                 )
 
-    def insert(self, entity: TEntity) -> None:
+    def insert(self, entity: TEntity) -> ObjectId:
         entity["revision"] = 1
         res = self._collection.insert_one(cast(MutableMapping[str, Any], entity))
         if res.acknowledged and self._is_subscribable:
             self._change_events.insert_one(
                 {"entityRef": entity.get("_id"), "changeType": ENTITY_CHANGE_INSERT, "revision": entity.get("revision")}
             )
+        return res.inserted_id
 
     def update(
         self, filter: Union[Mapping[str, Any], ObjectId, str], update: Mapping[str, Any], upsert: bool = False
@@ -64,9 +65,13 @@ class Repository(Generic[TEntity]):
             filter = {"_id": filter}
         elif isinstance(filter, str):
             filter = {"_id": ObjectId(filter)}
-        updates = [update, {"$inc": {"revision": 1}}]
+        update = dict(update)
+        if "$inc" in update:
+            update["$inc"]["revision":1]
+        else:
+            update["$inc"] = {"revision": 1}
         entity = self._collection.find_one_and_update(
-            filter, updates, return_document=ReturnDocument.AFTER, upsert=upsert
+            filter, update, return_document=ReturnDocument.AFTER, upsert=upsert
         )
         if entity is not None and self._is_subscribable:
             self._change_events.insert_one(
