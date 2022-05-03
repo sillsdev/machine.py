@@ -1,4 +1,4 @@
-from typing import Any, Generic, List, Mapping, MutableMapping, Optional, TypeVar, Union, cast
+from typing import Any, Generic, List, Mapping, MutableMapping, Optional, Sequence, TypeVar, Union, cast
 
 from bson.objectid import ObjectId
 from pymongo.collection import Collection, ReturnDocument
@@ -34,7 +34,7 @@ class Repository(Generic[TEntity]):
     def exists(self, filter: Mapping[str, Any]) -> bool:
         return self._collection.count_documents(filter) > 0
 
-    def insert_many(self, entities: List[TEntity]) -> None:
+    def insert_many(self, entities: Sequence[TEntity]) -> None:
         for entity in entities:
             entity["revision"] = 1
         res = self._collection.insert_many(cast(List[MutableMapping[str, Any]], entities))
@@ -67,7 +67,7 @@ class Repository(Generic[TEntity]):
             filter = {"_id": ObjectId(filter)}
         update = dict(update)
         if "$inc" in update:
-            update["$inc"]["revision":1]
+            update["$inc"]["revision"] = 1
         else:
             update["$inc"] = {"revision": 1}
         entity = self._collection.find_one_and_update(

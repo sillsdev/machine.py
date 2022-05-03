@@ -5,6 +5,7 @@ from typing import List
 from ..scripture.verse_ref import Versification
 from ..utils.string_utils import parse_integer
 from ..utils.typeshed import StrPath
+from .corpora_utils import get_encoding
 from .scripture_text_corpus import ScriptureTextCorpus
 from .usfm_file_text import UsfmFileText
 from .usfm_stylesheet import UsfmStylesheet
@@ -29,7 +30,7 @@ class ParatextTextCorpus(ScriptureTextCorpus):
             raise NotImplementedError(
                 f"The project uses a legacy encoding that requires TECKit, map file: {encoding_str}."
             )
-        encoding = _ENCODINGS.get(code_page)
+        encoding = get_encoding(code_page)
         if encoding is None:
             raise RuntimeError(f"Code page {code_page} not supported.")
 
@@ -65,24 +66,3 @@ class ParatextTextCorpus(ScriptureTextCorpus):
         for sfm_filename in project_dir.glob(f"{prefix}*{suffix}"):
             texts.append(UsfmFileText(stylesheet, encoding, sfm_filename, versification, include_markers))
         super().__init__(versification, texts)
-
-
-_ENCODINGS = {
-    936: "gb2313",
-    1200: "utf_16",
-    1201: "utf_16_be",
-    1252: "cp1252",
-    12000: "utf_32",
-    12001: "utf_32_be",
-    20127: "ascii",
-    20936: "gb2312",
-    28591: "latin_1",
-    28598: "iso8859_8",
-    50220: "iso2022_jp",
-    50225: "iso2022_kr",
-    51932: "euc_jp",
-    51949: "euc_kr",
-    52936: "hz",
-    65000: "utf_7",
-    65001: "utf_8_sig",
-}

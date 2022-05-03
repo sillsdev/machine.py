@@ -7,18 +7,18 @@ from .usx_text_base import UsxTextBase
 from .zip_entry_stream_container import ZipEntryStreamContainer
 
 
-class DblBundleText(UsxTextBase):
+class UsxZipText(UsxTextBase):
     def __init__(
         self,
         id: str,
-        bundle_filename: StrPath,
+        archive_filename: StrPath,
         path: str,
         versification: Optional[Versification] = None,
     ) -> None:
         super().__init__(id, versification)
 
-        self._bundle_filename = bundle_filename
+        self._archive_filename = archive_filename
         self._path = path
 
     def _create_stream_container(self) -> StreamContainer:
-        return ZipEntryStreamContainer(self._bundle_filename, self._path)
+        return ZipEntryStreamContainer(self._archive_filename, self._path)

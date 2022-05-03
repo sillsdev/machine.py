@@ -38,14 +38,14 @@ class OpenNmtModelFactory(NmtModelFactory):
         _convert_vocab(engine_dir / "src-sp.vocab", engine_dir / "src.vocab")
         _convert_vocab(engine_dir / "trg-sp.vocab", engine_dir / "trg.vocab")
 
-        corpus = corpus.tokenize(self.create_source_tokenizer(engine_id), self.create_target_tokenizer(engine_id))
+        corpus = corpus.tokenize(self.create_source_tokenizer(engine_id), self._create_target_tokenizer(engine_id))
 
         # TODO: Add support for parent models
         model_config = self._create_model_config(engine_id)
         model_type: str = self._config["model"]
         mixed_precision: bool = self._config["mixed_precision"]
         return OpenNmtModelTrainer(
-            model_type, model_config, corpus, mixed_precision=mixed_precision, use_temp_dir=False
+            model_type, model_config, corpus, mixed_precision=mixed_precision, replace_on_save=False, resume=True
         )
 
     def create_source_tokenizer(self, engine_id: str) -> Tokenizer[str, int, str]:
@@ -59,9 +59,6 @@ class OpenNmtModelFactory(NmtModelFactory):
             model_prefix=str(src_sp_model_prefix),
             normalization_rule_name="nmt_nfkc_cf",
         )
-
-    def create_target_tokenizer(self, engine_id: str) -> Tokenizer[str, int, str]:
-        return SentencePieceTokenizer(self._get_engine_dir(engine_id) / "trg-sp.model")
 
     def create_target_tokenizer_trainer(self, engine_id: str, corpus: TextCorpus) -> Trainer:
         trg_sp_model_prefix = self._get_engine_dir(engine_id) / "trg-sp"
@@ -77,6 +74,9 @@ class OpenNmtModelFactory(NmtModelFactory):
 
     def cleanup(self, engine_id: str) -> None:
         shutil.rmtree(self._get_engine_dir(engine_id))
+
+    def _create_target_tokenizer(self, engine_id: str) -> Tokenizer[str, int, str]:
+        return SentencePieceTokenizer(self._get_engine_dir(engine_id) / "trg-sp.model")
 
     def _create_model_config(self, engine_id: str) -> dict:
         return {

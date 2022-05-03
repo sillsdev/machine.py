@@ -1,0 +1,40 @@
+from contextlib import AbstractContextManager
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import Any
+
+from testutils.corpora_test_helpers import create_test_paratext_backup
+
+from machine.corpora import ParatextBackupTextCorpus
+
+
+def test_texts() -> None:
+    with _TestEnvironment() as env:
+        assert [t.id for t in env.corpus.texts] == ["MAT", "MRK"]
+
+
+def test_get_text() -> None:
+    with _TestEnvironment() as env:
+        mat = env.corpus.get_text("MAT")
+        assert mat is not None
+        assert any(mat.get_rows())
+
+        luk = env.corpus.get_text("LUK")
+        assert luk is None
+
+
+class _TestEnvironment(AbstractContextManager):
+    def __init__(self) -> None:
+        self._temp_dir = TemporaryDirectory()
+        archive_filename = create_test_paratext_backup(Path(self._temp_dir.name))
+        self._corpus = ParatextBackupTextCorpus(archive_filename)
+
+    @property
+    def corpus(self) -> ParatextBackupTextCorpus:
+        return self._corpus
+
+    def __enter__(self) -> "_TestEnvironment":
+        return self
+
+    def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
+        self._temp_dir.cleanup()

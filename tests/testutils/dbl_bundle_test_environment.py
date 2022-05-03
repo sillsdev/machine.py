@@ -1,3 +1,4 @@
+from contextlib import AbstractContextManager
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
@@ -7,7 +8,7 @@ from machine.corpora import DblBundleTextCorpus
 from .corpora_test_helpers import create_test_dbl_bundle
 
 
-class DblBundleTestEnvironment:
+class DblBundleTestEnvironment(AbstractContextManager):
     def __init__(self) -> None:
         self._temp_dir = TemporaryDirectory()
         bundle_filename = create_test_dbl_bundle(Path(self._temp_dir.name))

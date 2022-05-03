@@ -15,6 +15,11 @@ def create_test_dbl_bundle(temp_dir: Path) -> Path:
     return temp_dir / "Tes.zip"
 
 
+def create_test_paratext_backup(temp_dir: Path) -> Path:
+    shutil.make_archive(str(temp_dir / "Tes"), "zip", USFM_TEST_PROJECT_PATH)
+    return temp_dir / "Tes.zip"
+
+
 def verse_ref(segment: TextRow) -> VerseRef:
     assert isinstance(segment.ref, VerseRef)
     return segment.ref

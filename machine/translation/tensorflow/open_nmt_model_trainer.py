@@ -38,11 +38,11 @@ class OpenNmtModelTrainer(Trainer):
         mixed_precision: bool = False,
         resume: bool = False,
         val_size: int = 250,
-        use_temp_dir: bool = True,
+        replace_on_save: bool = True,
     ):
         self._config = config
-        self._use_temp_dir = use_temp_dir
-        if self._use_temp_dir:
+        self._replace_on_save = replace_on_save
+        if self._replace_on_save:
             runner_config: dict = copy.deepcopy(self._config)
             runner_config["data"] = cast(dict, try_prefix_paths(runner_config["model_dir"], runner_config["data"]))
             runner_config["model_dir"] = os.path.join(runner_config["model_dir"], "train.tmp")
@@ -157,7 +157,7 @@ class OpenNmtModelTrainer(Trainer):
 
     def save(self) -> None:
         delete_train_summary_files(self._runner.model_dir)
-        if self._use_temp_dir:
+        if self._replace_on_save:
             model_dir = self._config["model_dir"]
             delete_model(model_dir)
             move_model(self._runner.model_dir, model_dir)

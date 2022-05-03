@@ -6,7 +6,7 @@ from zipfile import ZipFile
 
 from ..scripture.verse_ref import Versification, VersificationType
 from ..utils.typeshed import StrPath
-from .dbl_bundle_text import DblBundleText
+from .usx_zip_text import UsxZipText
 from .scripture_text_corpus import ScriptureTextCorpus
 
 
@@ -34,9 +34,7 @@ class DblBundleTextCorpus(ScriptureTextCorpus):
             else:
                 versification = Versification.get_builtin(VersificationType.ENGLISH)
 
-        texts: List[DblBundleText] = []
+        texts: List[UsxZipText] = []
         for content_elem in doc.getroot().findall("./publications/publication[@default='true']/structure/content"):
-            texts.append(
-                DblBundleText(content_elem.get("role", ""), filename, content_elem.get("src", ""), versification)
-            )
+            texts.append(UsxZipText(content_elem.get("role", ""), filename, content_elem.get("src", ""), versification))
         super().__init__(versification, texts)

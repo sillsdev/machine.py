@@ -4,6 +4,7 @@ from glob import glob
 from pathlib import Path
 from random import Random
 from typing import Any, Generator, Iterable, List, Optional, Sequence, Set, Tuple, TypeVar
+from zipfile import ZipFile, ZipInfo
 
 import regex as re
 
@@ -157,3 +158,36 @@ def _get_verse_num(verse_str: str) -> int:
             break
         v_num = v_num * 10 + int(ch)
     return v_num
+
+
+_ENCODINGS = {
+    936: "gb2313",
+    1200: "utf_16",
+    1201: "utf_16_be",
+    1252: "cp1252",
+    12000: "utf_32",
+    12001: "utf_32_be",
+    20127: "ascii",
+    20936: "gb2312",
+    28591: "latin_1",
+    28598: "iso8859_8",
+    50220: "iso2022_jp",
+    50225: "iso2022_kr",
+    51932: "euc_jp",
+    51949: "euc_kr",
+    52936: "hz",
+    65000: "utf_7",
+    65001: "utf_8_sig",
+}
+
+
+def get_encoding(code_page: int) -> Optional[str]:
+    return _ENCODINGS.get(code_page)
+
+
+def get_entry(archive: ZipFile, entry_name: str) -> Optional[ZipInfo]:
+    return next((zi for zi in archive.filelist if zi.filename == entry_name), None)
+
+
+def find_entry(archive: ZipFile, predicate: Callable[[ZipInfo], bool]) -> Optional[ZipInfo]:
+    return next((zi for zi in archive.filelist if predicate(zi)), None)

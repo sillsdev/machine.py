@@ -74,7 +74,7 @@ class NmtEngineBuildJob:
         if check_canceled is not None:
             check_canceled()
 
-        corpora_translate_text_ids = self._data_file_service.get_translate_text_ids(engine_id)
+        corpora_translate_text_ids = self._data_file_service.get_texts_to_translate(engine_id)
         source_tokenizer = self._nmt_model_factory.create_source_tokenizer(engine_id)
         target_detokenizer = self._nmt_model_factory.create_target_detokenizer(engine_id)
         with self._nmt_model_factory.create_model(engine_id) as model, model.create_engine() as translation_engine:
@@ -88,7 +88,7 @@ class NmtEngineBuildJob:
                 with corpus.get_rows() as rows:
                     buffer: List[Translation] = []
                     for row, translation in zip(rows, translations):
-                        refs = list(row.source_refs)
+                        refs = [str(r) for r in row.source_refs]
                         text = target_detokenizer.detokenize(translation.target_segment)
                         buffer.append(
                             {

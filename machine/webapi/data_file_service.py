@@ -1,9 +1,11 @@
-import os
 from itertools import groupby
+from pathlib import Path
 from typing import Dict, Set
 
+from bson.objectid import ObjectId
+
 from ..corpora.dictionary_text_corpus import DictionaryTextCorpus
-from ..corpora.paratext_text_corpus import ParatextTextCorpus
+from ..corpora.paratext_backup_text_corpus import ParatextBackupTextCorpus
 from ..corpora.text_corpus import TextCorpus
 from ..corpora.text_file_text import TextFileText
 from .models import CORPUS_TYPE_SOURCE, DATA_TYPE_TEXT_CORPUS, FILE_FORMAT_PARATEXT, FILE_FORMAT_TEXT, DataFile
@@ -18,7 +20,7 @@ class DataFileService:
     def create_text_corpora(self, engine_id: str, corpus_type: str) -> Dict[str, TextCorpus]:
         cursor = self._data_files.get_all(
             {
-                "engineRef": engine_id,
+                "engineRef": ObjectId(engine_id),
                 "dataType": DATA_TYPE_TEXT_CORPUS,
                 "corpusType": corpus_type,
                 "corpusId": {"$ne": None},
@@ -35,7 +37,7 @@ class DataFileService:
                     TextFileText(f["name"], self._get_data_file_path(f)) for f in corpus_data_files
                 )
             elif format == FILE_FORMAT_PARATEXT:
-                corpus = ParatextTextCorpus(self._get_data_file_path(corpus_data_files[0]))
+                corpus = ParatextBackupTextCorpus(self._get_data_file_path(corpus_data_files[0]))
             else:
                 raise RuntimeError(f"Unknown format: {format}")
 
@@ -43,10 +45,10 @@ class DataFileService:
 
         return corpora
 
-    def get_translate_text_ids(self, engine_id: str) -> Dict[str, Set[str]]:
+    def get_texts_to_translate(self, engine_id: str) -> Dict[str, Set[str]]:
         cursor = self._data_files.get_all(
             {
-                "engineRef": engine_id,
+                "engineRef": ObjectId(engine_id),
                 "dataType": DATA_TYPE_TEXT_CORPUS,
                 "corpusType": CORPUS_TYPE_SOURCE,
                 "corpusId": {"$ne": None},
@@ -54,13 +56,21 @@ class DataFileService:
             }
         )
 
-        corpus_translate_text_ids: Dict[str, Set[str]] = {}
+        corpora_translate_text_ids: Dict[str, Set[str]] = {}
         data_files = sorted(cursor, key=lambda data_file: data_file.get("corpusId", ""))
         for key, grouping in groupby(data_files, lambda data_file: data_file.get("corpusId", "")):
             corpus_data_files = list(grouping)
-            corpus_translate_text_ids[key] = {f["name"] for f in corpus_data_files}
+            format = corpus_data_files[0]["format"]
+            if format == FILE_FORMAT_TEXT:
+                translate_text_ids = {f["name"] for f in corpus_data_files}
+            elif format == FILE_FORMAT_PARATEXT:
+                corpus = ParatextBackupTextCorpus(self._get_data_file_path(corpus_data_files[0]))
+                translate_text_ids = {t.id for t in corpus.texts}
+            else:
+                raise RuntimeError(f"Unknown format: {format}")
+            corpora_translate_text_ids[key] = translate_text_ids
 
-        return corpus_translate_text_ids
+        return corpora_translate_text_ids
 
-    def _get_data_file_path(self, data_file: DataFile) -> str:
-        return os.path.join(self._config["data_files_dir"], data_file["filename"])
+    def _get_data_file_path(self, data_file: DataFile) -> Path:
+        return Path(self._config["data_files_dir"], data_file["filename"])

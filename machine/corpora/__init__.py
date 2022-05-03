@@ -4,7 +4,6 @@ from .alignment_corpus import AlignmentCorpus
 from .alignment_row import AlignmentRow
 from .corpora_utils import batch
 from .corpus import Corpus
-from .dbl_bundle_text import DblBundleText
 from .dbl_bundle_text_corpus import DblBundleTextCorpus
 from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .dictionary_text_corpus import DictionaryTextCorpus
@@ -13,6 +12,7 @@ from .memory_alignment_collection import MemoryAlignmentCollection
 from .memory_text import MemoryText
 from .parallel_text_corpus import ParallelTextCorpus, flatten_parallel_text_corpora
 from .parallel_text_row import ParallelTextRow
+from .paratext_backup_text_corpus import ParatextBackupTextCorpus
 from .paratext_text_corpus import ParatextTextCorpus
 from .scripture_text_corpus import ScriptureTextCorpus
 from .standard_parallel_text_corpus import StandardParallelTextCorpus
@@ -47,6 +47,7 @@ from .usx_file_alignment_collection import UsxFileAlignmentCollection
 from .usx_file_alignment_corpus import UsxFileAlignmentCorpus
 from .usx_file_text import UsxFileText
 from .usx_file_text_corpus import UsxFileTextCorpus
+from .usx_zip_text import UsxZipText
 
 __all__ = [
     "AlignedWordPair",
@@ -54,7 +55,6 @@ __all__ = [
     "AlignmentCorpus",
     "AlignmentRow",
     "Corpus",
-    "DblBundleText",
     "DblBundleTextCorpus",
     "DictionaryAlignmentCorpus",
     "DictionaryTextCorpus",
@@ -62,6 +62,7 @@ __all__ = [
     "MemoryText",
     "ParallelTextCorpus",
     "ParallelTextRow",
+    "ParatextBackupTextCorpus",
     "ParatextTextCorpus",
     "ScriptureTextCorpus",
     "StandardParallelTextCorpus",
@@ -95,6 +96,7 @@ __all__ = [
     "UsxFileAlignmentCorpus",
     "UsxFileText",
     "UsxFileTextCorpus",
+    "UsxZipText",
     "batch",
     "escape_spaces",
     "flatten",
