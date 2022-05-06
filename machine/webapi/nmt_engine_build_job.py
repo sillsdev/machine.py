@@ -1,7 +1,7 @@
 import argparse
 import os
 import sys
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Set
 
 from bson.objectid import ObjectId
 from pymongo.mongo_client import MongoClient
@@ -11,8 +11,8 @@ from ..corpora.parallel_text_corpus import ParallelTextCorpus, flatten_parallel_
 from ..corpora.text_corpus import TextCorpus, flatten_text_corpora
 from ..utils.canceled_error import CanceledError
 from ..utils.progress_status import ProgressStatus
-from .data_file_service import DataFileService
-from .models import BUILD_STATE_ACTIVE, CORPUS_TYPE_SOURCE, CORPUS_TYPE_TARGET, Build, DataFile, Engine, Translation
+from .corpus_service import CorpusService
+from .models import BUILD_STATE_ACTIVE, Build, Corpus, Pretranslation, TranslationEngine
 from .nmt_model_factory import NmtModelFactory
 from .open_nmt_model_factory import OpenNmtModelFactory
 from .repository import Repository
@@ -23,27 +23,46 @@ _TRANSLATION_INSERT_BUFFER_SIZE = 100
 class NmtEngineBuildJob:
     def __init__(
         self,
-        engines: Repository[Engine],
+        engines: Repository[TranslationEngine],
         builds: Repository[Build],
-        translations: Repository[Translation],
-        data_file_service: DataFileService,
+        pretranslations: Repository[Pretranslation],
+        corpus_service: CorpusService,
         nmt_model_factory: NmtModelFactory,
     ) -> None:
         self._engines = engines
         self._builds = builds
-        self._translations = translations
-        self._data_file_service = data_file_service
+        self._pretranslations = pretranslations
+        self._corpus_service = corpus_service
         self._nmt_model_factory = nmt_model_factory
 
     def run(self, engine_id: str, build_id: str, check_canceled: Optional[Callable[[], None]] = None) -> None:
+        engine = self._engines.get(engine_id)
+        if engine is None:
+            return
+
         self._nmt_model_factory.init(engine_id)
 
-        source_corpora = self._data_file_service.create_text_corpora(engine_id, CORPUS_TYPE_SOURCE)
-        target_corpora = self._data_file_service.create_text_corpora(engine_id, CORPUS_TYPE_TARGET)
-        parallel_corpora = _create_parallel_corpora(source_corpora, target_corpora)
+        source_corpora: List[TextCorpus] = []
+        target_corpora: List[TextCorpus] = []
+        parallel_corpora: Dict[str, ParallelTextCorpus] = {}
+        pretranslate_corpora: Set[str] = set()
+        for corpus in engine["corpora"]:
+            corpus_id = str(corpus["corpusRef"])
+            sc = self._corpus_service.create_text_corpus(corpus_id, engine["sourceLanguageTag"])
+            if sc is not None:
+                source_corpora.append(sc)
+            tc = self._corpus_service.create_text_corpus(corpus_id, engine["targetLanguageTag"])
+            if tc is not None:
+                target_corpora.append(tc)
 
-        source_corpus = flatten_text_corpora(source_corpora.values())
-        target_corpus = flatten_text_corpora(target_corpora.values())
+            if sc is not None and tc is not None:
+                parallel_corpora[corpus_id] = sc.align_rows(tc)
+
+            if corpus["pretranslate"]:
+                pretranslate_corpora.add(corpus_id)
+
+        source_corpus = flatten_text_corpora(source_corpora)
+        target_corpus = flatten_text_corpora(target_corpora)
         parallel_corpus = flatten_parallel_text_corpora(parallel_corpora.values())
 
         source_tokenizer_trainer = self._nmt_model_factory.create_source_tokenizer_trainer(engine_id, source_corpus)
@@ -74,36 +93,36 @@ class NmtEngineBuildJob:
         if check_canceled is not None:
             check_canceled()
 
-        corpora_translate_text_ids = self._data_file_service.get_texts_to_translate(engine_id)
         source_tokenizer = self._nmt_model_factory.create_source_tokenizer(engine_id)
         target_detokenizer = self._nmt_model_factory.create_target_detokenizer(engine_id)
         with self._nmt_model_factory.create_model(engine_id) as model, model.create_engine() as translation_engine:
             for corpus_id, corpus in parallel_corpora.items():
+                if corpus_id not in pretranslate_corpora:
+                    continue
                 if check_canceled is not None:
                     check_canceled()
-                translate_text_ids = corpora_translate_text_ids.get(corpus_id, set())
-                corpus = corpus.filter(lambda r: len(r.target_segment) == 0 and r.text_id in translate_text_ids)
+                corpus = corpus.filter(lambda r: len(r.target_segment) == 0)
                 with corpus.tokenize(source_tokenizer).get_rows() as rows:
                     translations = translation_engine.translate_batch(r.source_segment for r in rows)
                 with corpus.get_rows() as rows:
-                    buffer: List[Translation] = []
+                    buffer: List[Pretranslation] = []
                     for row, translation in zip(rows, translations):
                         refs = [str(r) for r in row.source_refs]
                         text = target_detokenizer.detokenize(translation.target_segment)
                         buffer.append(
                             {
-                                "engineRef": ObjectId(engine_id),
-                                "corpusId": corpus_id,
+                                "translationEngineRef": ObjectId(engine_id),
+                                "corpusRef": ObjectId(corpus_id),
                                 "textId": row.text_id,
                                 "refs": refs,
                                 "text": text,
                             }
                         )
                         if len(buffer) == _TRANSLATION_INSERT_BUFFER_SIZE:
-                            self._translations.insert_many(buffer)
+                            self._pretranslations.insert_many(buffer)
                             buffer.clear()
                     if len(buffer) > 0:
-                        self._translations.insert_many(buffer)
+                        self._pretranslations.insert_many(buffer)
                         buffer.clear()
         # TODO: save model to S3
 
@@ -151,13 +170,13 @@ def main() -> int:
     config = vars(args)
     client = MongoClient(f"mongodb://{args.mongo}")
     database = client.get_database(args.database)
-    engines: Repository[Engine] = Repository(database.engines)
+    engines: Repository[TranslationEngine] = Repository(database.engines)
     builds: Repository[Build] = Repository(database.builds, is_subscribable=True)
-    data_files: Repository[DataFile] = Repository(database.files)
-    translations: Repository[Translation] = Repository(database.translations)
-    data_file_service = DataFileService(data_files, config)
+    corpora: Repository[Corpus] = Repository(database.corpora)
+    pretranslations: Repository[Pretranslation] = Repository(database.pretranslations)
+    corpus_service = CorpusService(corpora, config)
     nmt_model_factory = OpenNmtModelFactory(config)
-    job = NmtEngineBuildJob(engines, builds, translations, data_file_service, nmt_model_factory)
+    job = NmtEngineBuildJob(engines, builds, pretranslations, corpus_service, nmt_model_factory)
     cancellation_token_file: Optional[str] = args.cancellation_token_file
 
     def check_canceled() -> None:

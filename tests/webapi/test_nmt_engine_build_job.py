@@ -1,9 +1,11 @@
 from typing import Type, TypeVar, cast
 
 import pytest
-from mockito import ANY, mock, when
+from bson.objectid import ObjectId
+from mockito import ANY, mock, verify, when
 from mongomock.mongo_client import MongoClient
 
+import machine.webapi.models as m
 from machine.annotations import Range
 from machine.corpora import DictionaryTextCorpus, MemoryText, TextFileRef, TextRow
 from machine.tokenization import LatinWordDetokenizer, WhitespaceTokenizer
@@ -18,16 +20,7 @@ from machine.translation import (
 )
 from machine.translation.word_alignment_matrix import WordAlignmentMatrix
 from machine.utils import CanceledError
-from machine.webapi import DataFileService, NmtEngineBuildJob, NmtModelFactory, Repository
-from machine.webapi.models import (
-    BUILD_STATE_PENDING,
-    CORPUS_TYPE_SOURCE,
-    CORPUS_TYPE_TARGET,
-    ENGINE_TYPE_NMT,
-    Build,
-    Engine,
-    Translation,
-)
+from machine.webapi import CorpusService, NmtEngineBuildJob, NmtModelFactory, Repository
 
 
 def test_run() -> None:
@@ -39,9 +32,10 @@ def test_run() -> None:
     assert engine["confidence"] == 30.0
     assert engine["trainedSegmentCount"] == 3
 
-    translations = list(env.translations.get_all({"engineRef": env.engine_id}))
-    assert len(translations) == 1
-    assert translations[0]["text"] == "Please, I have booked a room."
+    verify(env.engine, times=1).translate_batch(...)
+    pretranslations = list(env.pretranslations.get_all({"translationEngineRef": env.engine_id}))
+    assert len(pretranslations) == 1
+    assert pretranslations[0]["text"] == "Please, I have booked a room."
 
 
 def test_cancel() -> None:
@@ -55,76 +49,83 @@ def test_cancel() -> None:
     assert engine["confidence"] == 0
     assert engine["trainedSegmentCount"] == 0
 
-    translations = list(env.translations.get_all({"engineRef": env.engine_id}))
-    assert len(translations) == 0
+    pretranslations = list(env.pretranslations.get_all({"translationEngineRef": env.engine_id}))
+    assert len(pretranslations) == 0
 
 
 class _TestEnvironment:
     def __init__(self) -> None:
         client = MongoClient()
-        self.engines: Repository[Engine] = Repository(client.machine.engines)
+        self.engines: Repository[m.TranslationEngine] = Repository(client.machine.engines)
+        corpus1_id = ObjectId()
+        corpus2_id = ObjectId()
         self.engine_id = self.engines.insert(
-            Engine(
+            m.TranslationEngine(
                 sourceLanguageTag="es",
                 targetLanguageTag="en",
-                type=ENGINE_TYPE_NMT,
+                type=m.ENGINE_TYPE_NMT,
                 owner="app1",
+                corpora=[
+                    m.TranslationEngineCorpus(corpusRef=corpus1_id, pretranslate=False),
+                    m.TranslationEngineCorpus(corpusRef=corpus2_id, pretranslate=True),
+                ],
                 isBuilding=False,
                 modelRevision=0,
                 confidence=0,
                 trainedSegmentCount=0,
             )
         )
-        self.builds: Repository[Build] = Repository(client.machine.builds)
+        self.builds: Repository[m.Build] = Repository(client.machine.builds)
         self.build_id = self.builds.insert(
-            Build(engineRef=self.engine_id, jobId="job1", step=0, state=BUILD_STATE_PENDING)
+            m.Build(parentRef=self.engine_id, jobId="job1", step=0, state=m.BUILD_STATE_PENDING)
         )
-        self.translations: Repository[Translation] = Repository(client.machine.translations)
+        self.pretranslations: Repository[m.Pretranslation] = Repository(client.machine.pretranslations)
 
-        self.data_file_service = _mock(DataFileService)
-        when(self.data_file_service).create_text_corpora(ANY, CORPUS_TYPE_SOURCE).thenReturn(
-            {
-                "corpus1": DictionaryTextCorpus(
-                    MemoryText(
-                        "text1",
-                        [
-                            _row("text1", 1, "¿ Le importaría darnos las llaves de la habitación , por favor ?"),
-                            _row(
-                                "text1",
-                                2,
-                                "He hecho la reserva de una habitación tranquila doble con teléfono y televisión a "
-                                "nombre de Rosario Cabedo .",
-                            ),
-                            _row("text1", 3, "¿ Le importaría cambiarme a otra habitación más tranquila ?"),
-                            _row("text1", 4, "Me parece que existe un problema ."),
-                        ],
-                    ),
-                    MemoryText("text2", [_row("text2", 1, "Por favor , tengo reservada una habitación .")]),
+        self.corpus_service = _mock(CorpusService)
+        when(self.corpus_service).create_text_corpus(str(corpus1_id), "es").thenReturn(
+            DictionaryTextCorpus(
+                MemoryText(
+                    "text1",
+                    [
+                        _row("text1", 1, "¿ Le importaría darnos las llaves de la habitación , por favor ?"),
+                        _row(
+                            "text1",
+                            2,
+                            "He hecho la reserva de una habitación tranquila doble con teléfono y televisión a "
+                            "nombre de Rosario Cabedo .",
+                        ),
+                        _row("text1", 3, "¿ Le importaría cambiarme a otra habitación más tranquila ?"),
+                        _row("text1", 4, "Me parece que existe un problema ."),
+                    ],
                 )
-            }
+            )
         )
-        when(self.data_file_service).create_text_corpora(ANY, CORPUS_TYPE_TARGET).thenReturn(
-            {
-                "corpus1": DictionaryTextCorpus(
-                    MemoryText(
-                        "text1",
-                        [
-                            _row("text1", 1, "Would you mind giving us the keys to the room , please ?"),
-                            _row(
-                                "text1",
-                                2,
-                                "I have made a reservation for a quiet , double room with a telephone and a tv for "
-                                "Rosario Cabedo .",
-                            ),
-                            _row("text1", 3, "Would you mind moving me to a quieter room ?"),
-                            _row("text1", 4, ""),
-                        ],
-                    ),
-                    MemoryText("text2", [_row("text2", 1, "")]),
-                )
-            }
+        when(self.corpus_service).create_text_corpus(str(corpus2_id), "es").thenReturn(
+            DictionaryTextCorpus(
+                MemoryText("text2", [_row("text2", 1, "Por favor , tengo reservada una habitación .")]),
+            )
         )
-        when(self.data_file_service).get_texts_to_translate(ANY).thenReturn({"corpus1": {"text2"}})
+        when(self.corpus_service).create_text_corpus(str(corpus1_id), "en").thenReturn(
+            DictionaryTextCorpus(
+                MemoryText(
+                    "text1",
+                    [
+                        _row("text1", 1, "Would you mind giving us the keys to the room , please ?"),
+                        _row(
+                            "text1",
+                            2,
+                            "I have made a reservation for a quiet , double room with a telephone and a tv for "
+                            "Rosario Cabedo .",
+                        ),
+                        _row("text1", 3, "Would you mind moving me to a quieter room ?"),
+                        _row("text1", 4, ""),
+                    ],
+                ),
+            )
+        )
+        when(self.corpus_service).create_text_corpus(str(corpus2_id), "en").thenReturn(
+            DictionaryTextCorpus(MemoryText("text2", [_row("text2", 1, "")]))
+        )
 
         self.source_tokenizer_trainer = _mock(Trainer)
         when(self.source_tokenizer_trainer).train().thenReturn()
@@ -181,7 +182,7 @@ class _TestEnvironment:
         when(self.nmt_model_factory).cleanup(ANY).thenReturn()
 
         self.job = NmtEngineBuildJob(
-            self.engines, self.builds, self.translations, self.data_file_service, self.nmt_model_factory
+            self.engines, self.builds, self.pretranslations, self.corpus_service, self.nmt_model_factory
         )
 
 

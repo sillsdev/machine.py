@@ -10,11 +10,7 @@ else:
     from typing_extensions import NotRequired, TypedDict
 
 
-DATA_TYPE_TEXT_CORPUS = "TextCorpus"
-
-CORPUS_TYPE_SOURCE = "Source"
-CORPUS_TYPE_TARGET = "Target"
-CORPUS_TYPE_BOTH = "Both"
+CORPUS_TYPE_TEXT = "Text"
 
 FILE_FORMAT_TEXT = "Text"
 FILE_FORMAT_PARATEXT = "Paratext"
@@ -46,7 +42,7 @@ class Entity(TypedDict):
 
 
 class Build(Entity):
-    engineRef: ObjectId
+    parentRef: ObjectId
     jobId: NotRequired[str]
     step: int
     percentCompleted: NotRequired[float]
@@ -55,31 +51,42 @@ class Build(Entity):
     dateFinished: NotRequired[datetime]
 
 
-class DataFile(Entity):
-    engineRef: ObjectId
-    dataType: str
+class DataFile(TypedDict):
+    _id: ObjectId
+    languageTag: str
     name: str
-    format: str
     filename: str
-    corpusType: NotRequired[str]
-    corpusId: NotRequired[str]
-    translate: NotRequired[bool]
+    textId: NotRequired[str]
 
 
-class Engine(Entity):
+class Corpus(Entity):
+    owner: str
+    name: str
+    type: str
+    format: str
+    files: List[DataFile]
+
+
+class TranslationEngineCorpus(TypedDict):
+    corpusRef: ObjectId
+    pretranslate: bool
+
+
+class TranslationEngine(Entity):
     sourceLanguageTag: str
     targetLanguageTag: str
     type: str
     owner: str
+    corpora: List[TranslationEngineCorpus]
     isBuilding: bool
     modelRevision: int
     confidence: float
     trainedSegmentCount: int
 
 
-class Translation(Entity):
-    engineRef: ObjectId
-    corpusId: str
+class Pretranslation(Entity):
+    translationEngineRef: ObjectId
+    corpusRef: ObjectId
     textId: str
     refs: List[str]
     text: str
