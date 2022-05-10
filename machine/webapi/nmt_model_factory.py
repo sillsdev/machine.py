@@ -18,7 +18,9 @@ class NmtModelFactory(ABC):
         ...
 
     @abstractmethod
-    def create_model_trainer(self, engine_id: str, corpus: ParallelTextCorpus) -> Trainer:
+    def create_model_trainer(
+        self, engine_id: str, source_language_tag: str, target_language_tag: str, corpus: ParallelTextCorpus
+    ) -> Trainer:
         ...
 
     @abstractmethod
@@ -35,6 +37,10 @@ class NmtModelFactory(ABC):
 
     @abstractmethod
     def create_target_detokenizer(self, engine_id: str) -> Detokenizer[str, str]:
+        ...
+
+    @abstractmethod
+    def save_model(self, engine_id: str) -> None:
         ...
 
     @abstractmethod

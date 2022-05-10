@@ -1,8 +1,8 @@
 import shutil
 from pathlib import Path
-from typing import Set
+from typing import Optional, Set
 
-from opennmt import END_OF_SENTENCE_TOKEN, PADDING_TOKEN, START_OF_SENTENCE_TOKEN
+from opennmt import END_OF_SENTENCE_TOKEN, PADDING_TOKEN, START_OF_SENTENCE_TOKEN, load_config
 from opennmt.data import Vocab
 
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
@@ -33,7 +33,9 @@ class OpenNmtModelFactory(NmtModelFactory):
         mixed_precision: bool = self._config["mixed_precision"]
         return OpenNmtModel(model_type, model_config, mixed_precision=mixed_precision)
 
-    def create_model_trainer(self, engine_id: str, corpus: ParallelTextCorpus) -> Trainer:
+    def create_model_trainer(
+        self, engine_id: str, source_language_tag: str, target_language_tag: str, corpus: ParallelTextCorpus
+    ) -> Trainer:
         engine_dir = self._get_engine_dir(engine_id)
         _convert_vocab(engine_dir / "src-sp.vocab", engine_dir / "src.vocab")
         _convert_vocab(engine_dir / "trg-sp.vocab", engine_dir / "trg.vocab")
@@ -44,8 +46,15 @@ class OpenNmtModelFactory(NmtModelFactory):
         model_config = self._create_model_config(engine_id)
         model_type: str = self._config["model"]
         mixed_precision: bool = self._config["mixed_precision"]
+        parent_config = self._get_parent_config(source_language_tag, target_language_tag)
         return OpenNmtModelTrainer(
-            model_type, model_config, corpus, mixed_precision=mixed_precision, replace_on_save=False, resume=True
+            model_type,
+            model_config,
+            corpus,
+            parent_config,
+            mixed_precision,
+            resume=True,
+            replace_on_save=False,
         )
 
     def create_source_tokenizer(self, engine_id: str) -> Tokenizer[str, int, str]:
@@ -72,6 +81,10 @@ class OpenNmtModelFactory(NmtModelFactory):
     def create_target_detokenizer(self, engine_id: str) -> Detokenizer[str, str]:
         return SentencePieceDetokenizer()
 
+    def save_model(self, engine_id: str) -> None:
+        # TODO: save model to store
+        pass
+
     def cleanup(self, engine_id: str) -> None:
         shutil.rmtree(self._get_engine_dir(engine_id))
 
@@ -94,6 +107,13 @@ class OpenNmtModelFactory(NmtModelFactory):
 
     def _get_engine_dir(self, engine_id: str) -> Path:
         return Path(self._config["engines_dir"]) / engine_id
+
+    def _get_parent_config(self, source_language_tag: str, target_language_tag: str) -> Optional[dict]:
+        parents_dir = Path(self._config["parent_models_dir"])
+        parent_model_dir = parents_dir / target_language_tag
+        if not parent_model_dir.is_dir():
+            return None
+        return load_config(str(parent_model_dir / "config.yml"))
 
 
 def _convert_vocab(sp_vocab_path: Path, onmt_vocab_path: Path, tags: Set[str] = set()) -> None:

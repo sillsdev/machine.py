@@ -6,7 +6,6 @@ from typing import Callable, Dict, List, Optional, Set
 from bson.objectid import ObjectId
 from pymongo.mongo_client import MongoClient
 
-from ..corpora.dictionary_text_corpus import DictionaryTextCorpus
 from ..corpora.parallel_text_corpus import ParallelTextCorpus, flatten_parallel_text_corpora
 from ..corpora.text_corpus import TextCorpus, flatten_text_corpora
 from ..utils.canceled_error import CanceledError
@@ -79,7 +78,9 @@ class NmtEngineBuildJob:
         if check_canceled is not None:
             check_canceled()
 
-        model_trainer = self._nmt_model_factory.create_model_trainer(engine_id, parallel_corpus)
+        model_trainer = self._nmt_model_factory.create_model_trainer(
+            engine_id, engine["sourceLanguageTag"], engine["targetLanguageTag"], parallel_corpus
+        )
 
         def update_progress(status: ProgressStatus) -> None:
             self._builds.update(
@@ -124,32 +125,19 @@ class NmtEngineBuildJob:
                     if len(buffer) > 0:
                         self._pretranslations.insert_many(buffer)
                         buffer.clear()
-        # TODO: save model to S3
 
+        self._nmt_model_factory.save_model(engine_id)
         self._engines.update(
             engine_id,
             {
                 "$set": {
                     "confidence": round(model_trainer.stats.metrics["bleu"], 2),
-                    "trainedSegmentCount": model_trainer.stats.train_size,
+                    "trainSize": model_trainer.stats.train_size,
                 }
             },
         )
 
         self._nmt_model_factory.cleanup(engine_id)
-
-
-def _create_parallel_corpora(
-    source_corpora: Dict[str, TextCorpus], target_corpora: Dict[str, TextCorpus]
-) -> Dict[str, ParallelTextCorpus]:
-    parallel_corpora: Dict[str, ParallelTextCorpus] = {}
-    for source_id, source_corpus in source_corpora.items():
-        target_corpus = target_corpora.get(source_id)
-        if target_corpus is None:
-            target_corpus = DictionaryTextCorpus()
-        parallel_corpora[source_id] = source_corpus.align_rows(target_corpus, all_source_rows=True)
-
-    return parallel_corpora
 
 
 def main() -> int:
@@ -158,6 +146,7 @@ def main() -> int:
     parser.add_argument("--build", required=True, type=str, help="Build Id")
     parser.add_argument("--engines-dir", required=True, type=str, help="Engines directory")
     parser.add_argument("--data-files-dir", required=True, type=str, help="Data files directory")
+    parser.add_argument("--parent-models-dir", required=True, type=str, help="Parent models directory")
     parser.add_argument("--mongo", required=True, type=str, help="Mongo server address")
     parser.add_argument("--database", required=True, type=str, help="Mongo database name")
     parser.add_argument("--cancellation-token-file", type=str, help="The cancellation token file")

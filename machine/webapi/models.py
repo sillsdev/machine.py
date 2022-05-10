@@ -81,7 +81,7 @@ class TranslationEngine(Entity):
     isBuilding: bool
     modelRevision: int
     confidence: float
-    trainedSegmentCount: int
+    trainSize: int
 
 
 class Pretranslation(Entity):

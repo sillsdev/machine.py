@@ -30,7 +30,7 @@ def test_run() -> None:
     engine = env.engines.get(env.engine_id)
     assert engine is not None
     assert engine["confidence"] == 30.0
-    assert engine["trainedSegmentCount"] == 3
+    assert engine["trainSize"] == 3
 
     verify(env.engine, times=1).translate_batch(...)
     pretranslations = list(env.pretranslations.get_all({"translationEngineRef": env.engine_id}))
@@ -47,7 +47,7 @@ def test_cancel() -> None:
     engine = env.engines.get(env.engine_id)
     assert engine is not None
     assert engine["confidence"] == 0
-    assert engine["trainedSegmentCount"] == 0
+    assert engine["trainSize"] == 0
 
     pretranslations = list(env.pretranslations.get_all({"translationEngineRef": env.engine_id}))
     assert len(pretranslations) == 0
@@ -72,7 +72,7 @@ class _TestEnvironment:
                 isBuilding=False,
                 modelRevision=0,
                 confidence=0,
-                trainedSegmentCount=0,
+                trainSize=0,
             )
         )
         self.builds: Repository[m.Build] = Repository(client.machine.builds)
@@ -175,10 +175,11 @@ class _TestEnvironment:
         when(self.nmt_model_factory).init(ANY).thenReturn()
         when(self.nmt_model_factory).create_source_tokenizer_trainer(ANY, ANY).thenReturn(self.source_tokenizer_trainer)
         when(self.nmt_model_factory).create_target_tokenizer_trainer(ANY, ANY).thenReturn(self.target_tokenizer_trainer)
-        when(self.nmt_model_factory).create_model_trainer(ANY, ANY).thenReturn(self.model_trainer)
+        when(self.nmt_model_factory).create_model_trainer(ANY, ANY, ANY, ANY).thenReturn(self.model_trainer)
         when(self.nmt_model_factory).create_source_tokenizer(ANY).thenReturn(WhitespaceTokenizer())
         when(self.nmt_model_factory).create_target_detokenizer(ANY).thenReturn(LatinWordDetokenizer())
         when(self.nmt_model_factory).create_model(ANY).thenReturn(self.model)
+        when(self.nmt_model_factory).save_model(ANY).thenReturn()
         when(self.nmt_model_factory).cleanup(ANY).thenReturn()
 
         self.job = NmtEngineBuildJob(
