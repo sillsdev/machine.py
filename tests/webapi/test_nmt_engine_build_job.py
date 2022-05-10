@@ -17,10 +17,13 @@ from machine.translation import (
     TranslationModel,
     TranslationResult,
     TranslationSources,
+    WordAlignmentMatrix,
 )
-from machine.translation.word_alignment_matrix import WordAlignmentMatrix
 from machine.utils import CanceledError
-from machine.webapi import CorpusService, NmtEngineBuildJob, NmtModelFactory, Repository
+from machine.webapi.corpus_service import CorpusService
+from machine.webapi.nmt_engine_build_job import NmtEngineBuildJob
+from machine.webapi.nmt_model_factory import NmtModelFactory
+from machine.webapi.repository import Repository
 
 
 def test_run() -> None:

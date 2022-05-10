@@ -7,8 +7,9 @@ from bson.objectid import ObjectId
 from mongomock.mongo_client import MongoClient
 from testutils.corpora_test_helpers import create_test_paratext_backup
 
-from machine.webapi import CorpusService, Repository
+from machine.webapi.corpus_service import CorpusService
 from machine.webapi.models import CORPUS_TYPE_TEXT, FILE_FORMAT_PARATEXT, FILE_FORMAT_TEXT, Corpus, DataFile
+from machine.webapi.repository import Repository
 
 
 def test_create_text_corpus() -> None:
