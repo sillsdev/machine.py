@@ -16,7 +16,7 @@ from .nmt_model_factory import NmtModelFactory
 from .open_nmt_model_factory import OpenNmtModelFactory
 from .repository import Repository
 
-_TRANSLATION_INSERT_BUFFER_SIZE = 100
+_PRETRANSLATION_INSERT_BUFFER_SIZE = 100
 
 
 class NmtEngineBuildJob:
@@ -55,7 +55,7 @@ class NmtEngineBuildJob:
                 target_corpora.append(tc)
 
             if sc is not None and tc is not None:
-                parallel_corpora[corpus_id] = sc.align_rows(tc)
+                parallel_corpora[corpus_id] = sc.align_rows(tc, all_source_rows=True)
 
             if corpus["pretranslate"]:
                 pretranslate_corpora.add(corpus_id)
@@ -102,29 +102,24 @@ class NmtEngineBuildJob:
                     continue
                 if check_canceled is not None:
                     check_canceled()
-                corpus = corpus.filter(lambda r: len(r.target_segment) == 0)
-                with corpus.tokenize(source_tokenizer).get_rows() as rows:
-                    translations = translation_engine.translate_batch(r.source_segment for r in rows)
-                with corpus.get_rows() as rows:
-                    buffer: List[Pretranslation] = []
-                    for row, translation in zip(rows, translations):
-                        refs = [str(r) for r in row.source_refs]
-                        text = target_detokenizer.detokenize(translation.target_segment)
-                        buffer.append(
-                            {
-                                "translationEngineRef": ObjectId(engine_id),
-                                "corpusRef": ObjectId(corpus_id),
-                                "textId": row.text_id,
-                                "refs": refs,
-                                "text": text,
-                            }
+                corpus = corpus.filter(lambda r: len(r.target_refs) > 0 and len(r.target_segment) == 0)
+                corpus = corpus.tokenize_source(source_tokenizer)
+                corpus = corpus.translate(translation_engine)
+                corpus = corpus.detokenize_target(target_detokenizer)
+                with corpus.batch(_PRETRANSLATION_INSERT_BUFFER_SIZE) as batches:
+                    for batch in batches:
+                        self._pretranslations.insert_many(
+                            [
+                                {
+                                    "translationEngineRef": ObjectId(engine_id),
+                                    "corpusRef": ObjectId(corpus_id),
+                                    "textId": row.text_id,
+                                    "refs": [str(r) for r in row.target_refs],
+                                    "text": row.target_text,
+                                }
+                                for row in batch
+                            ]
                         )
-                        if len(buffer) == _TRANSLATION_INSERT_BUFFER_SIZE:
-                            self._pretranslations.insert_many(buffer)
-                            buffer.clear()
-                    if len(buffer) > 0:
-                        self._pretranslations.insert_many(buffer)
-                        buffer.clear()
 
         self._nmt_model_factory.save_model(engine_id)
         self._engines.update(

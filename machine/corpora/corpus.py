@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from itertools import islice
-from typing import Any, Callable, Generator, Generic, Iterable, Optional, Sequence, Tuple, TypeVar
+from typing import Any, Callable, Generator, Generic, Iterable, List, Optional, Sequence, Tuple, TypeVar
 
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .alignment_row import AlignmentRow

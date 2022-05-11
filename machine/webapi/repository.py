@@ -34,7 +34,7 @@ class Repository(Generic[TEntity]):
     def exists(self, filter: Mapping[str, Any]) -> bool:
         return self._collection.count_documents(filter) > 0
 
-    def insert_many(self, entities: Sequence[TEntity]) -> List[ObjectId]:
+    def insert_many(self, entities: Sequence[TEntity]) -> Sequence[ObjectId]:
         for entity in entities:
             entity["revision"] = 1
         res = self._collection.insert_many(cast(List[MutableMapping[str, Any]], entities))
