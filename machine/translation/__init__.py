@@ -8,7 +8,7 @@ from .symmetrized_word_aligner import SymmetrizedWordAligner
 from .symmetrized_word_alignment_model import SymmetrizedWordAlignmentModel
 from .symmetrized_word_alignment_model_trainer import SymmetrizedWordAlignmentModelTrainer
 from .trainer import Trainer, TrainStats
-from .translation_engine import TranslationEngine
+from .translation_engine import TranslationEngine, translate_corpus
 from .translation_model import TranslationModel
 from .translation_result import TranslationResult
 from .translation_result_builder import TranslationResultBuilder
@@ -37,4 +37,5 @@ __all__ = [
     "WordAligner",
     "WordAlignmentMatrix",
     "WordAlignmentModel",
+    "translate_corpus",
 ]

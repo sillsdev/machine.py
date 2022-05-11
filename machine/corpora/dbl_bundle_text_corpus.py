@@ -6,8 +6,8 @@ from zipfile import ZipFile
 
 from ..scripture.verse_ref import Versification, VersificationType
 from ..utils.typeshed import StrPath
-from .usx_zip_text import UsxZipText
 from .scripture_text_corpus import ScriptureTextCorpus
+from .usx_zip_text import UsxZipText
 
 
 class DblBundleTextCorpus(ScriptureTextCorpus):

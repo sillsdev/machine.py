@@ -8,6 +8,7 @@ from pymongo.mongo_client import MongoClient
 
 from ..corpora.parallel_text_corpus import ParallelTextCorpus, flatten_parallel_text_corpora
 from ..corpora.text_corpus import TextCorpus, flatten_text_corpora
+from ..translation.translation_engine import translate_corpus
 from ..utils.canceled_error import CanceledError
 from ..utils.progress_status import ProgressStatus
 from .corpus_service import CorpusService
@@ -104,7 +105,7 @@ class NmtEngineBuildJob:
                     check_canceled()
                 corpus = corpus.filter(lambda r: len(r.target_refs) > 0 and len(r.target_segment) == 0)
                 corpus = corpus.tokenize_source(source_tokenizer)
-                corpus = corpus.translate(translation_engine)
+                corpus = translate_corpus(translation_engine, corpus)
                 corpus = corpus.detokenize_target(target_detokenizer)
                 with corpus.batch(_PRETRANSLATION_INSERT_BUFFER_SIZE) as batches:
                     for batch in batches:

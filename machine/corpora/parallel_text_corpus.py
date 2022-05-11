@@ -3,7 +3,6 @@ from typing import Any, Callable, Generator, Iterable, List, Optional, Tuple
 
 from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
-from ..translation.translation_engine import TranslationEngine
 from .corpora_utils import get_split_indices
 from .corpus import Corpus
 from .parallel_text_row import ParallelTextRow
@@ -149,9 +148,6 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
         return main_corpus, split_corpus, corpus_size - len(split_indices), len(split_indices)
 
-    def translate(self, translation_engine: TranslationEngine, buffer_size: int = 1024) -> "ParallelTextCorpus":
-        return _TranslateParallelTextCorpus(self, translation_engine, buffer_size)
-
     def to_tuples(self) -> Iterable[Tuple[Sequence[str], Sequence[str]]]:
         return self.map(lambda r: (r.source_segment, r.target_segment))
 
@@ -216,28 +212,3 @@ class _FlattenParallelTextCorpus(ParallelTextCorpus):
         for corpus in self._corpora:
             with corpus.get_rows() as rows:
                 yield from rows
-
-
-class _TranslateParallelTextCorpus(ParallelTextCorpus):
-    def __init__(self, corpus: ParallelTextCorpus, translation_engine: TranslationEngine, buffer_size: int) -> None:
-        self._corpus = corpus
-        self._translation_engine = translation_engine
-        self._buffer_size = buffer_size
-
-    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
-        buffer: List[ParallelTextRow] = []
-        with self._corpus.get_rows() as rows:
-            for row in rows:
-                buffer.append(row)
-                if len(buffer) == self._buffer_size:
-                    self._translate(buffer)
-                    yield from buffer
-                    buffer.clear()
-            if len(buffer) > 0:
-                self._translate(buffer)
-                yield from buffer
-
-    def _translate(self, buffer: List[ParallelTextRow]) -> None:
-        translations = self._translation_engine.translate_batch(r.source_segment for r in buffer)
-        for row, translation in zip(buffer, translations):
-            row.target_segment = translation.target_segment
