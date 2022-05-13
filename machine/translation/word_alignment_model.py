@@ -1,5 +1,6 @@
 from abc import abstractmethod
-from typing import Collection, Dict, Iterable, Optional, Sequence, Tuple, Union
+from statistics import mean
+from typing import Collection, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 from ..corpora.aligned_word_pair import AlignedWordPair
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
@@ -42,18 +43,6 @@ class WordAlignmentModel(WordAligner):
     ) -> float:
         ...
 
-    @abstractmethod
-    def get_alignment_score(
-        self,
-        source_length: int,
-        prev_source_index: int,
-        source_index: int,
-        target_length: int,
-        prev_target_index: int,
-        target_index: int,
-    ) -> float:
-        ...
-
     def get_translation_table(self, threshold: float = 0) -> Dict[str, Dict[str, float]]:
         results: Dict[str, Dict[str, float]] = {}
         source_words = list(self.source_words)
@@ -66,25 +55,35 @@ class WordAlignmentModel(WordAligner):
         return results
 
     def get_aligned_word_pairs(
-        self, source_segment: Sequence[str], target_segment: Sequence[str], wa_matrix: WordAlignmentMatrix
+        self,
+        source_segment: Sequence[str],
+        target_segment: Sequence[str],
+        wa_matrix: WordAlignmentMatrix,
+        include_null: bool = False,
     ) -> Collection[AlignedWordPair]:
-        word_pairs, source_indices, target_indices = wa_matrix.get_asymmetric_alignments()
-        for word_pair in word_pairs:
-            source_word = source_segment[word_pair.source_index]
-            target_word = target_segment[word_pair.target_index]
-            word_pair.translation_score = self.get_translation_score(source_word, target_word)
-
-            prev_source_index = -1 if word_pair.target_index == 0 else source_indices[word_pair.target_index - 1]
-            prev_target_index = -1 if word_pair.source_index == 0 else target_indices[word_pair.source_index - 1]
-            word_pair.alignment_score = self.get_alignment_score(
-                len(source_segment),
-                prev_source_index,
-                word_pair.source_index,
-                len(target_segment),
-                prev_target_index,
-                word_pair.target_index,
-            )
+        word_pairs = wa_matrix.to_aligned_word_pairs(include_null)
+        self.compute_aligned_word_pair_scores(source_segment, target_segment, word_pairs)
         return word_pairs
+
+    def compute_aligned_word_pair_scores(
+        self, source_segment: Sequence[str], target_segment: Sequence[str], word_pairs: Collection[AlignedWordPair]
+    ) -> None:
+        alignment_score = 1.0 / (len(source_segment) + 1)
+        for word_pair in word_pairs:
+            source_word = None if word_pair.source_index == -1 else source_segment[word_pair.source_index]
+            target_word = None if word_pair.target_index == -1 else target_segment[word_pair.target_index]
+            word_pair.translation_score = self.get_translation_score(source_word, target_word)
+            word_pair.alignment_score = alignment_score
+
+    def get_avg_translation_score(
+        self, source_segment: Sequence[str], target_segment: Sequence[str], wa_matrix: WordAlignmentMatrix
+    ) -> float:
+        scores: List[float] = []
+        for word_pair in wa_matrix.to_aligned_word_pairs(include_null=True):
+            source_word = None if word_pair.source_index == -1 else source_segment[word_pair.source_index]
+            target_word = None if word_pair.target_index == -1 else target_segment[word_pair.target_index]
+            scores.append(self.get_translation_score(source_word, target_word))
+        return mean(scores) if len(scores) > 0 else 0
 
     def get_alignment_string(
         self,

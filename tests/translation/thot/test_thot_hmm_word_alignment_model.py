@@ -29,6 +29,53 @@ def test_get_best_alignments() -> None:
     ]
 
 
+def test_get_avg_translation_score() -> None:
+    model = ThotHmmWordAlignmentModel(DIRECT_MODEL_PATH)
+    source_segment = "por favor , ¿ podríamos ver otra habitación ?".split()
+    target_segment = "could we see another room , please ?".split()
+    matrix = model.get_best_alignment(source_segment, target_segment)
+    score = model.get_avg_translation_score(source_segment, target_segment, matrix)
+    assert score == approx(0.40, abs=0.01)
+
+
+def test_get_aligned_word_pairs() -> None:
+    model = ThotHmmWordAlignmentModel(DIRECT_MODEL_PATH)
+    source_segment = "hablé hasta cinco en punto .".split()
+    target_segment = "i am staying until five o ' clock .".split()
+    matrix = model.get_best_alignment(source_segment, target_segment)
+    pairs = list(model.get_aligned_word_pairs(source_segment, target_segment, matrix))
+    assert len(pairs) == 8
+
+    assert pairs[0].source_index == 1
+    assert pairs[0].target_index == 3
+    assert pairs[0].translation_score == approx(0.78, abs=0.01)
+    assert pairs[0].alignment_score == approx(0.18, abs=0.01)
+
+
+def test_get_aligned_word_pairs_include_null() -> None:
+    model = ThotHmmWordAlignmentModel(DIRECT_MODEL_PATH)
+    source_segment = "hablé hasta cinco en punto .".split()
+    target_segment = "i am staying until five o ' clock .".split()
+    matrix = model.get_best_alignment(source_segment, target_segment)
+    pairs = list(model.get_aligned_word_pairs(source_segment, target_segment, matrix, include_null=True))
+    assert len(pairs) == 11
+
+    assert pairs[0].source_index == -1
+    assert pairs[0].target_index == 0
+    assert pairs[0].translation_score == approx(0.34, abs=0.01)
+    assert pairs[0].alignment_score == approx(0.08, abs=0.01)
+
+    assert pairs[1].source_index == 0
+    assert pairs[1].target_index == -1
+    assert pairs[1].translation_score == 0
+    assert pairs[1].alignment_score == 0
+
+    assert pairs[2].source_index == 1
+    assert pairs[2].target_index == 3
+    assert pairs[2].translation_score == approx(0.78, abs=0.01)
+    assert pairs[2].alignment_score == approx(0.18, abs=0.01)
+
+
 def test_get_translation_probability() -> None:
     model = ThotHmmWordAlignmentModel(DIRECT_MODEL_PATH)
     assert model.get_translation_probability("esto", "this") == approx(0.0, abs=0.01)
@@ -87,6 +134,59 @@ def test_get_translation_table_symmetrized_threshold() -> None:
     table = model.get_translation_table(0.2)
     assert len(table) == 513
     assert len(table["es"]) == 9
+
+
+def test_get_avg_translation_score_symmetrized() -> None:
+    model = ThotSymmetrizedWordAlignmentModel(
+        ThotHmmWordAlignmentModel(DIRECT_MODEL_PATH), ThotHmmWordAlignmentModel(INVERSE_MODEL_PATH)
+    )
+    source_segment = "por favor , ¿ podríamos ver otra habitación ?".split()
+    target_segment = "could we see another room , please ?".split()
+    matrix = model.get_best_alignment(source_segment, target_segment)
+    score = model.get_avg_translation_score(source_segment, target_segment, matrix)
+    assert score == approx(0.46, abs=0.01)
+
+
+def test_get_aligned_word_pairs_symmetrized() -> None:
+    model = ThotSymmetrizedWordAlignmentModel(
+        ThotHmmWordAlignmentModel(DIRECT_MODEL_PATH), ThotHmmWordAlignmentModel(INVERSE_MODEL_PATH)
+    )
+    source_segment = "hablé hasta cinco en punto .".split()
+    target_segment = "i am staying until five o ' clock .".split()
+    matrix = model.get_best_alignment(source_segment, target_segment)
+    pairs = list(model.get_aligned_word_pairs(source_segment, target_segment, matrix))
+    assert len(pairs) == 8
+
+    assert pairs[0].source_index == 0
+    assert pairs[0].target_index == 1
+    assert pairs[0].translation_score == approx(0.01, abs=0.01)
+    assert pairs[0].alignment_score == approx(0.26, abs=0.01)
+
+
+def test_get_aligned_word_pairs_symmetrized_include_null() -> None:
+    model = ThotSymmetrizedWordAlignmentModel(
+        ThotHmmWordAlignmentModel(DIRECT_MODEL_PATH), ThotHmmWordAlignmentModel(INVERSE_MODEL_PATH)
+    )
+    source_segment = "hablé hasta cinco en punto .".split()
+    target_segment = "i am staying until five o ' clock .".split()
+    matrix = model.get_best_alignment(source_segment, target_segment)
+    pairs = list(model.get_aligned_word_pairs(source_segment, target_segment, matrix, include_null=True))
+    assert len(pairs) == 10
+
+    assert pairs[0].source_index == -1
+    assert pairs[0].target_index == 0
+    assert pairs[0].translation_score == approx(0.34, abs=0.01)
+    assert pairs[0].alignment_score == approx(0.08, abs=0.01)
+
+    assert pairs[1].source_index == -1
+    assert pairs[1].target_index == 2
+    assert pairs[1].translation_score == approx(0.01, abs=0.01)
+    assert pairs[1].alignment_score == approx(0.11, abs=0.01)
+
+    assert pairs[2].source_index == 0
+    assert pairs[2].target_index == 1
+    assert pairs[2].translation_score == approx(0.01, abs=0.01)
+    assert pairs[2].alignment_score == approx(0.26, abs=0.01)
 
 
 def test_create_trainer() -> None:

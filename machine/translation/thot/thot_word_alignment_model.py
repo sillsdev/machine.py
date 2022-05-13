@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from math import exp
 from pathlib import Path
 from typing import Collection, Iterable, Iterator, Optional, Sequence, Tuple, Union
 
@@ -92,15 +93,26 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
     def get_translation_probability(
         self, source_word: Optional[Union[str, int]], target_word: Optional[Union[str, int]]
     ) -> float:
+        return exp(self.get_translation_log_probability(source_word, target_word))
+
+    def get_translation_log_probability(
+        self, source_word: Optional[Union[str, int]], target_word: Optional[Union[str, int]]
+    ) -> float:
         if source_word is None:
             source_word = 0
         elif isinstance(source_word, str):
             source_word = self._model.get_src_word_index(source_word)
-        if target_word is None:
-            target_word = 0
+        if target_word is None or target_word == 0:
+            return -99999
         elif isinstance(target_word, str):
             target_word = self._model.get_trg_word_index(target_word)
-        return self._model.translation_prob(source_word, target_word)
+        return self._model.translation_log_prob(source_word, target_word)
+
+    def get_sentence_length_probability(self, source_length: int, target_length: int) -> float:
+        return exp(self.get_sentence_length_log_probability(source_length, target_length))
+
+    def get_sentence_length_log_probability(self, source_length: int, target_length: int) -> float:
+        return self._model.sentence_length_log_prob(source_length, target_length)
 
     def get_translations(
         self, source_word: Optional[Union[str, int]], threshold: float = 0

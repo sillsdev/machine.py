@@ -23,8 +23,17 @@ def test_get_best_alignments() -> None:
     matrices = model.get_best_alignments(source_segments, target_segments)
     assert matrices == [
         WordAlignmentMatrix.from_word_pairs(8, 8, {(0, 0), (0, 1), (2, 2), (3, 3), (6, 4), (5, 5), (6, 6), (7, 7)}),
-        WordAlignmentMatrix.from_word_pairs(6, 9, {(3, 1), (1, 3), (2, 4), (4, 5), (4, 6), (4, 7), (5, 8)}),
+        WordAlignmentMatrix.from_word_pairs(6, 9, {(0, 1), (1, 2), (1, 3), (2, 4), (4, 5), (4, 6), (4, 7), (5, 8)}),
     ]
+
+
+def test_get_avg_translation_score() -> None:
+    model = ThotFastAlignWordAlignmentModel(DIRECT_MODEL_PATH)
+    source_segment = "por favor , ¿ podríamos ver otra habitación ?".split()
+    target_segment = "could we see another room , please ?".split()
+    matrix = model.get_best_alignment(source_segment, target_segment)
+    score = model.get_avg_translation_score(source_segment, target_segment, matrix)
+    assert score == approx(0.34, abs=0.01)
 
 
 def test_get_translation_probability() -> None:
@@ -85,3 +94,14 @@ def test_get_translation_table_symmetrized_threshold() -> None:
     table = model.get_translation_table(0.2)
     assert len(table) == 500
     assert len(table["es"]) == 2
+
+
+def test_get_avg_translation_score_symmetrized() -> None:
+    model = ThotSymmetrizedWordAlignmentModel(
+        ThotFastAlignWordAlignmentModel(DIRECT_MODEL_PATH), ThotFastAlignWordAlignmentModel(INVERSE_MODEL_PATH)
+    )
+    source_segment = "por favor , ¿ podríamos ver otra habitación ?".split()
+    target_segment = "could we see another room , please ?".split()
+    matrix = model.get_best_alignment(source_segment, target_segment)
+    score = model.get_avg_translation_score(source_segment, target_segment, matrix)
+    assert score == approx(0.36, abs=0.01)

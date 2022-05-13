@@ -109,13 +109,13 @@ class UsxFileAlignmentCollection(AlignmentCollection):
         src_links = _get_links(self._src_word_tokenizer, src_tokens)
         trg_links = _get_links(self._trg_word_tokenizer, trg_tokens)
 
-        word_pairs: Set[AlignedWordPair] = set()
+        word_pairs: List[AlignedWordPair] = []
         for link_id, src_indices in src_links.items():
             trg_indices = trg_links.get(link_id)
             if trg_indices is not None:
                 for src_index in src_indices:
                     for trg_index in trg_indices:
-                        word_pairs.add(AlignedWordPair(src_index, trg_index))
+                        word_pairs.append(AlignedWordPair(src_index, trg_index))
         return AlignmentRow(verse_ref, word_pairs)
 
 

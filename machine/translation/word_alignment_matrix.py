@@ -208,40 +208,29 @@ class WordAlignmentMatrix:
     def transpose(self) -> None:
         self._matrix = np.transpose(self._matrix)
 
-    def get_aligned_word_pairs(self) -> Collection[AlignedWordPair]:
-        word_pairs, _, _ = self.get_asymmetric_alignments()
-        return word_pairs
-
-    def get_asymmetric_alignments(self) -> Tuple[Collection[AlignedWordPair], Sequence[int], Sequence[int]]:
-        source = [0] * self.column_count
-        target = [-2] * self.row_count
+    def to_aligned_word_pairs(self, include_null: bool = False) -> Collection[AlignedWordPair]:
         word_pairs: List[AlignedWordPair] = []
-        prev = -1
-        for j in range(self.column_count):
+        null_aligned_target_indices = set(range(self.column_count))
+        for i in range(self.row_count):
             found = False
-            for i in range(self.row_count):
+            for j in range(self.column_count):
                 if self[i, j]:
-                    if not found:
-                        source[j] = i
-                    if target[i] == -2:
-                        target[i] = j
                     word_pairs.append(AlignedWordPair(i, j))
-                    prev = i
                     found = True
+                    if j in null_aligned_target_indices:
+                        null_aligned_target_indices.remove(j)
 
             # unaligned indices
-            if not found:
-                source[j] = -1 if prev == -1 else self.row_count + prev
+            if include_null and not found:
+                word_pairs.append(AlignedWordPair(i, -1))
 
         # all remaining target indices are unaligned, so fill them in
-        prev = -1
-        for i in range(self.row_count):
-            if target[i] == -2:
-                target[i] = -1 if prev == -1 else self.column_count + prev
-            else:
-                prev = target[i]
+        if include_null and len(null_aligned_target_indices) > 0:
+            null_aligned_target_word_pairs = [AlignedWordPair(-1, j) for j in sorted(null_aligned_target_indices)]
+            null_aligned_target_word_pairs.extend(word_pairs)
+            word_pairs = null_aligned_target_word_pairs
 
-        return word_pairs, source, target
+        return word_pairs
 
     def to_giza_format(self, source_segment: Sequence[str], target_segment: Sequence[str]) -> str:
         target_str = " ".join(target_segment)
@@ -286,7 +275,7 @@ class WordAlignmentMatrix:
         return np.array_equal(self._matrix, other._matrix)
 
     def __repr__(self) -> str:
-        return " ".join(str(wp) for wp in self.get_aligned_word_pairs())
+        return " ".join(str(wp) for wp in self.to_aligned_word_pairs())
 
     def _get_safe(self, i: int, j: int) -> bool:
         if i >= 0 and j >= 0 and i < self.row_count and j < self.column_count:

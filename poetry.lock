@@ -956,11 +956,11 @@ python-versions = "*"
 
 [[package]]
 name = "sil-thot"
-version = "3.3.5"
+version = "3.3.6"
 description = "A toolkit for statistical word alignment and machine translation"
 category = "main"
 optional = false
-python-versions = ">=3.6, <4.0"
+python-versions = ">=3.7, <4.0"
 
 [package.extras]
 test = ["pytest", "numpy"]
@@ -1221,15 +1221,15 @@ docs = ["sphinx", "jaraco.packaging (>=8.2)", "rst.linker (>=1.9)"]
 testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-cov", "pytest-enabler (>=1.0.1)", "jaraco.itertools", "func-timeout", "pytest-black (>=0.3.7)", "pytest-mypy"]
 
 [extras]
-all = ["sentencepiece", "sil-thot", "libclang", "tensorflow"]
+all = ["sentencepiece", "sil-thot", "libclang", "tensorflow", "OpenNMT-tf"]
 sentencepiece = ["sentencepiece"]
-tensorflow = ["libclang", "tensorflow"]
+tensorflow = ["libclang", "tensorflow", "OpenNMT-tf"]
 thot = ["sil-thot"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.11"
-content-hash = "d2b8fe8ade0f118a8928486505aea72b3a93ce0b6a7818da35fe5268db715a9b"
+content-hash = "1f16bc054433ad6004df1a9687a346b6efc96628fad065236cf15ec4a8cb8261"
 
 [metadata.files]
 absl-py = [
@@ -1954,23 +1954,27 @@ sentencepiece = [
     {file = "sentencepiece-0.1.96.tar.gz", hash = "sha256:9bdf097d5bd1d8ce42dfee51f6ff05f5578b96e48c6f6006aa4eff69edfa3639"},
 ]
 sil-thot = [
-    {file = "sil-thot-3.3.5.tar.gz", hash = "sha256:4694edb0469c2fe6b4655d41e8cfdde69c2ddf8022bd90916d7ca4b1593197f2"},
-    {file = "sil_thot-3.3.5-cp36-cp36m-macosx_10_13_x86_64.whl", hash = "sha256:1adafdd777845ee56bf68c89a1ee2558d71b876ac894e6649dec914a628e3e2e"},
-    {file = "sil_thot-3.3.5-cp36-cp36m-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:23f1341a56b270e524aa129dd86260dc72998ca0b6692297793819f071243a84"},
-    {file = "sil_thot-3.3.5-cp36-cp36m-win32.whl", hash = "sha256:891cc67371c3e8147068a43b45b26f5cf2d288ea04d6e90280a12082c0c74458"},
-    {file = "sil_thot-3.3.5-cp36-cp36m-win_amd64.whl", hash = "sha256:07e7e9af6f5632ff52368f53d4e769133abda28d58c5b3b7c6a41f240cb21b57"},
-    {file = "sil_thot-3.3.5-cp37-cp37m-macosx_10_13_x86_64.whl", hash = "sha256:2575dc21b5faffdf4e81766353bd2b8db7e0cd0f62b752e19576456c93b2e169"},
-    {file = "sil_thot-3.3.5-cp37-cp37m-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:f52c44096edee7fed31ee6159c368036ba629d85cfcd1c31bd38ef14868393f3"},
-    {file = "sil_thot-3.3.5-cp37-cp37m-win32.whl", hash = "sha256:0f47bedb0971cad7d2ad6899929853356cb0222d21562e8703588bdfc2e90743"},
-    {file = "sil_thot-3.3.5-cp37-cp37m-win_amd64.whl", hash = "sha256:db3207d4417c962659c275d0e6ee6c4f2278ddee09cdaa2441a940251ca9f3b1"},
-    {file = "sil_thot-3.3.5-cp38-cp38-macosx_10_13_x86_64.whl", hash = "sha256:aa0d0b1488434c69c2b4e5633fd259fa0c1070539ffe003549a38e592dd182e0"},
-    {file = "sil_thot-3.3.5-cp38-cp38-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:35f345871a2807eac3d671cf4bc47740da92b3f5874534a951278ed80e344663"},
-    {file = "sil_thot-3.3.5-cp38-cp38-win32.whl", hash = "sha256:3b756822e6fd4cd144f4ddfe6b837d76d189a8b40673f0835c9e9e8204d99918"},
-    {file = "sil_thot-3.3.5-cp38-cp38-win_amd64.whl", hash = "sha256:c824f05dd258af458e78a371ee4f5d5be8dc5e47b62a5040acfad79abfe26ccb"},
-    {file = "sil_thot-3.3.5-cp39-cp39-macosx_10_13_x86_64.whl", hash = "sha256:ad22e7dd222c18cd93b32adb7303e47811867cf0b8390edb246c6430510f3f15"},
-    {file = "sil_thot-3.3.5-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:fb3e34d76d202ebc22693e5f7ea82b02de120da91e42dc9421931b2d74872287"},
-    {file = "sil_thot-3.3.5-cp39-cp39-win32.whl", hash = "sha256:7fefd93db344c762fc339d855fa4bf5ad3fc1fade9bf11c4eea775f32c921509"},
-    {file = "sil_thot-3.3.5-cp39-cp39-win_amd64.whl", hash = "sha256:2d6a19fa5fa2621581bebddc15df3be456b92a7351f2714f9ac6d0739b8fc984"},
+    {file = "sil-thot-3.3.6.tar.gz", hash = "sha256:afe9767efb2d53633add9277e4746cd239cfe18be439acadf19c8011495e584e"},
+    {file = "sil_thot-3.3.6-cp310-cp310-macosx_10_13_x86_64.whl", hash = "sha256:c57b97cd59f3f6f9c8b0b14d5e7852214385df9590a882761f9ed53171893309"},
+    {file = "sil_thot-3.3.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e24238a8fd09208d05ef5c64ee13eb827e5c270bf49c7ca7eaaaeba2d84f02c5"},
+    {file = "sil_thot-3.3.6-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:515c48db5f4108530b4d82d80aa69d5c2f587a9f1c6f604b61b6400632bbf3ae"},
+    {file = "sil_thot-3.3.6-cp310-cp310-win32.whl", hash = "sha256:f0b7b94e97f6bcbc06601478b6f7dbb1f8097a22f0a4e85c410374c30fe0faca"},
+    {file = "sil_thot-3.3.6-cp310-cp310-win_amd64.whl", hash = "sha256:7da96d5133cbbc5e2f5833669d32fd3ada4432532c489cf9d9db3561fcd64050"},
+    {file = "sil_thot-3.3.6-cp37-cp37m-macosx_10_13_x86_64.whl", hash = "sha256:9403c55f404753c27d3309c82c79a6adf591ebfdcac884e1063aac52aa72c4f4"},
+    {file = "sil_thot-3.3.6-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:82a3f026f62a59d5491515de9141364e1575878cb94919ab4d3cb3680fbbb5eb"},
+    {file = "sil_thot-3.3.6-cp37-cp37m-musllinux_1_1_x86_64.whl", hash = "sha256:99e6b95c4b5e3f095b097c64d2f8d90986e4c25a9e5524c0d9ef4d0546b96a3d"},
+    {file = "sil_thot-3.3.6-cp37-cp37m-win32.whl", hash = "sha256:840682fcad07588a81f201748bc7224f59600bdc4fb6517526dfaa72070ec3db"},
+    {file = "sil_thot-3.3.6-cp37-cp37m-win_amd64.whl", hash = "sha256:3988374415cfdd3b33d6ca2ed5f2138d692b510512decba7f35553a49f102bca"},
+    {file = "sil_thot-3.3.6-cp38-cp38-macosx_10_13_x86_64.whl", hash = "sha256:0ae08bfb7c8fbe9a7fd7d88ecb9ffa45900b3fd2f0799fef60171370987fd362"},
+    {file = "sil_thot-3.3.6-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5b0974bd0c04e7db1bef29794fdd21757e05f620489ca6dd68b5d6d92bce9a01"},
+    {file = "sil_thot-3.3.6-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:49ada476c2e0edf03dcffb49a1d9d89f79ecf00fbc3c7796701bdbeba6f15ecb"},
+    {file = "sil_thot-3.3.6-cp38-cp38-win32.whl", hash = "sha256:1fdfada48bb0f055608a30082b43db114fd02dc02e149316d4a9e61552d164b1"},
+    {file = "sil_thot-3.3.6-cp38-cp38-win_amd64.whl", hash = "sha256:0e1a03f108680058e90646fe6fea8223880407d41e5ceae999e13bb1be6cedf4"},
+    {file = "sil_thot-3.3.6-cp39-cp39-macosx_10_13_x86_64.whl", hash = "sha256:4d380aa93640cf8f124025bd67daacc81cd5128683576cc6dc076291a21c8bba"},
+    {file = "sil_thot-3.3.6-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ea655bf964713a4d1a4700b9961a8ff0b72b224449dc3a20027e268f637520d3"},
+    {file = "sil_thot-3.3.6-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:7bdfaa5cdc584dd076368ed57f3d4063e6d34d537a5bb25e643c5be8a3b62843"},
+    {file = "sil_thot-3.3.6-cp39-cp39-win32.whl", hash = "sha256:995a8deffd218a479e423e316cf6fa01183a937f5d7809e1a74dd55da7d1f12a"},
+    {file = "sil_thot-3.3.6-cp39-cp39-win_amd64.whl", hash = "sha256:26be32c65e9431ba805703c95ceb93860a8e8b147c75a1239a00f04b20c00239"},
 ]
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},

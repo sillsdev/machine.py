@@ -1,9 +1,11 @@
 from typing import Collection, Iterable, Optional, Sequence, Tuple, Union
 
+from ..corpora.aligned_word_pair import AlignedWordPair
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from .symmetrized_word_aligner import SymmetrizedWordAligner
 from .symmetrized_word_alignment_model_trainer import SymmetrizedWordAlignmentModelTrainer
 from .trainer import Trainer
+from .word_alignment_matrix import WordAlignmentMatrix
 from .word_alignment_model import WordAlignmentModel
 
 
@@ -51,25 +53,26 @@ class SymmetrizedWordAlignmentModel(SymmetrizedWordAligner, WordAlignmentModel):
         inv_score = self._inverse_word_alignment_model.get_translation_score(target_word, source_word)
         return max(dir_score, inv_score)
 
-    def get_alignment_score(
-        self,
-        source_length: int,
-        prev_source_index: int,
-        source_index: int,
-        target_length: int,
-        prev_target_index: int,
-        target_index: int,
-    ) -> float:
-        dir_score = self._direct_word_alignment_model.get_alignment_score(
-            source_length, prev_source_index, source_index, target_length, prev_target_index, target_index
-        )
-        inv_score = self._inverse_word_alignment_model.get_alignment_score(
-            target_length, prev_target_index, target_index, source_length, prev_source_index, source_index
-        )
-        return max(dir_score, inv_score)
-
     def create_trainer(self, corpus: ParallelTextCorpus) -> Trainer:
         direct_trainer = self._direct_word_alignment_model.create_trainer(corpus)
         inverse_trainer = self._inverse_word_alignment_model.create_trainer(corpus.invert())
 
         return SymmetrizedWordAlignmentModelTrainer(direct_trainer, inverse_trainer)
+
+    def get_aligned_word_pairs(
+        self,
+        source_segment: Sequence[str],
+        target_segment: Sequence[str],
+        wa_matrix: WordAlignmentMatrix,
+        include_null: bool = False,
+    ) -> Collection[AlignedWordPair]:
+        word_pairs = wa_matrix.to_aligned_word_pairs(include_null)
+        inverse_word_pairs = [wp.invert() for wp in word_pairs]
+        self.direct_word_alignment_model.compute_aligned_word_pair_scores(source_segment, target_segment, word_pairs)
+        self.inverse_word_alignment_model.compute_aligned_word_pair_scores(
+            target_segment, source_segment, inverse_word_pairs
+        )
+        for word_pair, inverse_word_pair in zip(word_pairs, inverse_word_pairs):
+            word_pair.translation_score = max(word_pair.translation_score, inverse_word_pair.translation_score)
+            word_pair.alignment_score = max(word_pair.alignment_score, inverse_word_pair.alignment_score)
+        return word_pairs

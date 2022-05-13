@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, cast
 
 import thot.alignment as ta
 
@@ -21,6 +21,14 @@ class ThotSymmetrizedWordAlignmentModel(SymmetrizedWordAlignmentModel):
     @property
     def heuristic(self) -> SymmetrizationHeuristic:
         return self._heuristic
+
+    @property
+    def direct_word_alignment_model(self) -> ThotWordAlignmentModel:
+        return cast(ThotWordAlignmentModel, self._direct_word_alignment_model)
+
+    @property
+    def inverse_word_alignment_model(self) -> ThotWordAlignmentModel:
+        return cast(ThotWordAlignmentModel, self._inverse_word_alignment_model)
 
     @heuristic.setter
     def heuristic(self, value: SymmetrizationHeuristic) -> None:
