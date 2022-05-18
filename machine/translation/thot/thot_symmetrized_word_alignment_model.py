@@ -1,10 +1,11 @@
-from typing import Sequence, cast
+from typing import Iterable, Sequence, Tuple, cast
 
 import thot.alignment as ta
 
 from ..symmetrization_heuristic import SymmetrizationHeuristic
 from ..symmetrized_word_alignment_model import SymmetrizedWordAlignmentModel
 from ..word_alignment_matrix import WordAlignmentMatrix
+from .thot_utils import batch
 from .thot_word_alignment_model import ThotWordAlignmentModel
 
 
@@ -39,15 +40,13 @@ class ThotSymmetrizedWordAlignmentModel(SymmetrizedWordAlignmentModel):
         _, matrix = self._aligner.get_best_alignment(source_segment, target_segment)
         return WordAlignmentMatrix(matrix.to_numpy())
 
-    def get_best_alignments(
-        self, source_segments: Sequence[Sequence[str]], target_segments: Sequence[Sequence[str]]
-    ) -> Sequence[WordAlignmentMatrix]:
-        if len(source_segments) != len(target_segments):
-            raise ValueError("The number of source and target segments must be equal.")
-        return [
-            WordAlignmentMatrix(matrix.to_numpy())
-            for _, matrix in self._aligner.get_best_alignments(source_segments, target_segments)
-        ]
+    def get_best_alignment_batch(
+        self, segments: Iterable[Tuple[Sequence[str], Sequence[str]]]
+    ) -> Iterable[Tuple[Sequence[str], Sequence[str], WordAlignmentMatrix]]:
+        for source_segments, target_segments in batch(segments, self.batch_size):
+            results = self._aligner.get_best_alignments(source_segments, target_segments)
+            for source_segment, target_segment, (_, matrix) in zip(source_segments, target_segments, results):
+                yield source_segment, target_segment, WordAlignmentMatrix(matrix.to_numpy())
 
 
 def _convert_heuristic(machine_heuristic: SymmetrizationHeuristic) -> ta.SymmetrizationHeuristic:

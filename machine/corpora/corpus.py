@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 from itertools import islice
-from typing import Any, Callable, Generator, Generic, Iterable, Optional, Tuple, TypeVar
+from typing import Any, Callable, Generator, Generic, Iterable, Optional, Sequence, Tuple, TypeVar
 
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .alignment_row import AlignmentRow
-from .corpora_utils import get_split_indices
+from .corpora_utils import batch, get_split_indices
 from .parallel_text_row import ParallelTextRow
 from .text_row import TextRow
 
@@ -80,3 +80,10 @@ class Corpus(ABC, Generic[Row], Iterable[Row]):
                 yield from (selector(row, i) for i, row in enumerate(rows))
 
         return ContextManagedGenerator(_map_rows())
+
+    def batch(self, batch_size: int) -> ContextManagedGenerator[Sequence[Row], None, None]:
+        def _batch() -> Generator[Sequence[Row], None, None]:
+            with self.get_rows() as rows:
+                yield from batch(rows, batch_size)
+
+        return ContextManagedGenerator(_batch())

@@ -11,6 +11,7 @@ from ..ibm1_word_alignment_model import Ibm1WordAlignmentModel
 from ..trainer import Trainer
 from ..word_alignment_matrix import WordAlignmentMatrix
 from ..word_vocabulary import WordVocabulary
+from .thot_utils import batch
 from .thot_word_alignment_model_trainer import ThotWordAlignmentModelTrainer
 from .thot_word_alignment_model_type import ThotWordAlignmentModelType
 from .thot_word_alignment_parameters import ThotWordAlignmentParameters
@@ -30,6 +31,7 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
         else:
             self._prefix_filename = None
         self.parameters = ThotWordAlignmentParameters()
+        self.batch_size = 1024
 
     @property
     def source_words(self) -> WordVocabulary:
@@ -75,15 +77,13 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
         _, matrix = self._model.get_best_alignment(source_segment, target_segment)
         return WordAlignmentMatrix(matrix.to_numpy())
 
-    def get_best_alignments(
-        self, source_segments: Sequence[Sequence[str]], target_segments: Sequence[Sequence[str]]
-    ) -> Sequence[WordAlignmentMatrix]:
-        if len(source_segments) != len(target_segments):
-            raise ValueError("The number of source and target segments must be equal.")
-        return [
-            WordAlignmentMatrix(matrix.to_numpy())
-            for _, matrix in self._model.get_best_alignments(source_segments, target_segments)
-        ]
+    def get_best_alignment_batch(
+        self, segments: Iterable[Tuple[Sequence[str], Sequence[str]]]
+    ) -> Iterable[Tuple[Sequence[str], Sequence[str], WordAlignmentMatrix]]:
+        for source_segments, target_segments in batch(segments, self.batch_size):
+            results = self._model.get_best_alignments(source_segments, target_segments)
+            for source_segment, target_segment, (_, matrix) in zip(source_segments, target_segments, results):
+                yield source_segment, target_segment, WordAlignmentMatrix(matrix.to_numpy())
 
     def get_translation_score(
         self, source_word: Optional[Union[str, int]], target_word: Optional[Union[str, int]]

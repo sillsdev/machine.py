@@ -16,11 +16,13 @@ def test_get_best_alignment() -> None:
     assert matrix == WordAlignmentMatrix.from_word_pairs(9, 8, {(0, 0), (4, 1), (5, 2), (6, 3), (7, 4), (8, 6), (8, 7)})
 
 
-def test_get_best_alignments() -> None:
+def test_get_best_alignment_batch() -> None:
     model = ThotFastAlignWordAlignmentModel(DIRECT_MODEL_PATH)
-    source_segments = ["voy a marcharme hoy por la tarde .".split(), "hablé hasta cinco en punto .".split()]
-    target_segments = ["i am leaving today in the afternoon .".split(), "i am staying until five o ' clock .".split()]
-    matrices = model.get_best_alignments(source_segments, target_segments)
+    segments = [
+        ("voy a marcharme hoy por la tarde .".split(), "i am leaving today in the afternoon .".split()),
+        ("hablé hasta cinco en punto .".split(), "i am staying until five o ' clock .".split()),
+    ]
+    matrices = [matrix for _, _, matrix in model.get_best_alignment_batch(segments)]
     assert matrices == [
         WordAlignmentMatrix.from_word_pairs(8, 8, {(0, 0), (0, 1), (2, 2), (3, 3), (6, 4), (5, 5), (6, 6), (7, 7)}),
         WordAlignmentMatrix.from_word_pairs(6, 9, {(0, 1), (1, 2), (1, 3), (2, 4), (4, 5), (4, 6), (4, 7), (5, 8)}),

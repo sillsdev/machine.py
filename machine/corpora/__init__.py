@@ -2,6 +2,7 @@ from .aligned_word_pair import AlignedWordPair
 from .alignment_collection import AlignmentCollection
 from .alignment_corpus import AlignmentCorpus
 from .alignment_row import AlignmentRow
+from .corpora_utils import batch
 from .corpus import Corpus
 from .dbl_bundle_text import DblBundleText
 from .dbl_bundle_text_corpus import DblBundleTextCorpus
@@ -94,6 +95,7 @@ __all__ = [
     "UsxFileAlignmentCorpus",
     "UsxFileText",
     "UsxFileTextCorpus",
+    "batch",
     "escape_spaces",
     "flatten",
     "lowercase",

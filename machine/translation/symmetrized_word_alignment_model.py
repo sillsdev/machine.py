@@ -5,7 +5,6 @@ from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from .symmetrized_word_aligner import SymmetrizedWordAligner
 from .symmetrized_word_alignment_model_trainer import SymmetrizedWordAlignmentModelTrainer
 from .trainer import Trainer
-from .word_alignment_matrix import WordAlignmentMatrix
 from .word_alignment_model import WordAlignmentModel
 
 
@@ -59,14 +58,9 @@ class SymmetrizedWordAlignmentModel(SymmetrizedWordAligner, WordAlignmentModel):
 
         return SymmetrizedWordAlignmentModelTrainer(direct_trainer, inverse_trainer)
 
-    def get_aligned_word_pairs(
-        self,
-        source_segment: Sequence[str],
-        target_segment: Sequence[str],
-        wa_matrix: WordAlignmentMatrix,
-        include_null: bool = False,
-    ) -> Collection[AlignedWordPair]:
-        word_pairs = wa_matrix.to_aligned_word_pairs(include_null)
+    def compute_aligned_word_pair_scores(
+        self, source_segment: Sequence[str], target_segment: Sequence[str], word_pairs: Collection[AlignedWordPair]
+    ) -> None:
         inverse_word_pairs = [wp.invert() for wp in word_pairs]
         self.direct_word_alignment_model.compute_aligned_word_pair_scores(source_segment, target_segment, word_pairs)
         self.inverse_word_alignment_model.compute_aligned_word_pair_scores(
@@ -75,4 +69,3 @@ class SymmetrizedWordAlignmentModel(SymmetrizedWordAligner, WordAlignmentModel):
         for word_pair, inverse_word_pair in zip(word_pairs, inverse_word_pairs):
             word_pair.translation_score = max(word_pair.translation_score, inverse_word_pair.translation_score)
             word_pair.alignment_score = max(word_pair.alignment_score, inverse_word_pair.alignment_score)
-        return word_pairs

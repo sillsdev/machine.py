@@ -18,11 +18,13 @@ def test_get_best_alignment() -> None:
     )
 
 
-def test_get_best_alignments() -> None:
+def test_get_best_alignment_batch() -> None:
     model = ThotHmmWordAlignmentModel(DIRECT_MODEL_PATH)
-    source_segments = ["voy a marcharme hoy por la tarde .".split(), "hablé hasta cinco en punto .".split()]
-    target_segments = ["i am leaving today in the afternoon .".split(), "i am staying until five o ' clock .".split()]
-    matrices = model.get_best_alignments(source_segments, target_segments)
+    segments = [
+        ("voy a marcharme hoy por la tarde .".split(), "i am leaving today in the afternoon .".split()),
+        ("hablé hasta cinco en punto .".split(), "i am staying until five o ' clock .".split()),
+    ]
+    matrices = [matrix for _, _, matrix in model.get_best_alignment_batch(segments)]
     assert matrices == [
         WordAlignmentMatrix.from_word_pairs(8, 8, {(0, 0), (0, 1), (0, 2), (3, 3), (6, 4), (5, 5), (6, 6), (7, 7)}),
         WordAlignmentMatrix.from_word_pairs(6, 9, {(4, 1), (5, 2), (1, 3), (2, 4), (4, 5), (4, 6), (4, 7), (5, 8)}),
@@ -38,12 +40,11 @@ def test_get_avg_translation_score() -> None:
     assert score == approx(0.40, abs=0.01)
 
 
-def test_get_aligned_word_pairs() -> None:
+def test_get_best_aligned_word_pairs() -> None:
     model = ThotHmmWordAlignmentModel(DIRECT_MODEL_PATH)
     source_segment = "hablé hasta cinco en punto .".split()
     target_segment = "i am staying until five o ' clock .".split()
-    matrix = model.get_best_alignment(source_segment, target_segment)
-    pairs = list(model.get_aligned_word_pairs(source_segment, target_segment, matrix))
+    pairs = list(model.get_best_aligned_word_pairs(source_segment, target_segment))
     assert len(pairs) == 8
 
     assert pairs[0].source_index == 1
@@ -52,12 +53,13 @@ def test_get_aligned_word_pairs() -> None:
     assert pairs[0].alignment_score == approx(0.18, abs=0.01)
 
 
-def test_get_aligned_word_pairs_include_null() -> None:
+def test_compute_aligned_word_pair_scores() -> None:
     model = ThotHmmWordAlignmentModel(DIRECT_MODEL_PATH)
     source_segment = "hablé hasta cinco en punto .".split()
     target_segment = "i am staying until five o ' clock .".split()
     matrix = model.get_best_alignment(source_segment, target_segment)
-    pairs = list(model.get_aligned_word_pairs(source_segment, target_segment, matrix, include_null=True))
+    pairs = list(matrix.to_aligned_word_pairs(include_null=True))
+    model.compute_aligned_word_pair_scores(source_segment, target_segment, pairs)
     assert len(pairs) == 11
 
     assert pairs[0].source_index == -1
@@ -147,14 +149,13 @@ def test_get_avg_translation_score_symmetrized() -> None:
     assert score == approx(0.46, abs=0.01)
 
 
-def test_get_aligned_word_pairs_symmetrized() -> None:
+def test_get_best_aligned_word_pairs_symmetrized() -> None:
     model = ThotSymmetrizedWordAlignmentModel(
         ThotHmmWordAlignmentModel(DIRECT_MODEL_PATH), ThotHmmWordAlignmentModel(INVERSE_MODEL_PATH)
     )
     source_segment = "hablé hasta cinco en punto .".split()
     target_segment = "i am staying until five o ' clock .".split()
-    matrix = model.get_best_alignment(source_segment, target_segment)
-    pairs = list(model.get_aligned_word_pairs(source_segment, target_segment, matrix))
+    pairs = list(model.get_best_aligned_word_pairs(source_segment, target_segment))
     assert len(pairs) == 8
 
     assert pairs[0].source_index == 0
@@ -163,14 +164,15 @@ def test_get_aligned_word_pairs_symmetrized() -> None:
     assert pairs[0].alignment_score == approx(0.26, abs=0.01)
 
 
-def test_get_aligned_word_pairs_symmetrized_include_null() -> None:
+def test_compute_aligned_word_pair_scores_symmetrized() -> None:
     model = ThotSymmetrizedWordAlignmentModel(
         ThotHmmWordAlignmentModel(DIRECT_MODEL_PATH), ThotHmmWordAlignmentModel(INVERSE_MODEL_PATH)
     )
     source_segment = "hablé hasta cinco en punto .".split()
     target_segment = "i am staying until five o ' clock .".split()
     matrix = model.get_best_alignment(source_segment, target_segment)
-    pairs = list(model.get_aligned_word_pairs(source_segment, target_segment, matrix, include_null=True))
+    pairs = list(matrix.to_aligned_word_pairs(include_null=True))
+    model.compute_aligned_word_pair_scores(source_segment, target_segment, pairs)
     assert len(pairs) == 10
 
     assert pairs[0].source_index == -1

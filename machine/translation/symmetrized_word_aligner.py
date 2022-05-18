@@ -1,5 +1,6 @@
-from typing import Sequence
+from typing import Iterable, Sequence, Tuple
 
+from ..corpora.corpora_utils import batch
 from .symmetrization_heuristic import SymmetrizationHeuristic
 from .word_aligner import WordAligner
 from .word_alignment_matrix import WordAlignmentMatrix
@@ -10,6 +11,7 @@ class SymmetrizedWordAligner(WordAligner):
         self._src_trg_aligner = src_trg_aligner
         self._trg_src_aligner = trg_src_aligner
         self._heuristic = SymmetrizationHeuristic.OCH
+        self.batch_size = 1024
 
     @property
     def heuristic(self) -> SymmetrizationHeuristic:
@@ -27,13 +29,18 @@ class SymmetrizedWordAligner(WordAligner):
             matrix.symmetrize_with(inv_matrix, self.heuristic)
         return matrix
 
-    def get_best_alignments(
-        self, source_segments: Sequence[Sequence[str]], target_segments: Sequence[Sequence[str]]
-    ) -> Sequence[WordAlignmentMatrix]:
-        matrices = self._src_trg_aligner.get_best_alignments(source_segments, target_segments)
-        if self.heuristic is not SymmetrizationHeuristic.NONE:
-            inv_matrices = self._trg_src_aligner.get_best_alignments(target_segments, source_segments)
-            for i in range(len(matrices)):
-                inv_matrices[i].transpose()
-                matrices[i].symmetrize_with(inv_matrices[i], self.heuristic)
-        return matrices
+    def get_best_alignment_batch(
+        self, segments: Iterable[Tuple[Sequence[str], Sequence[str]]]
+    ) -> Iterable[Tuple[Sequence[str], Sequence[str], WordAlignmentMatrix]]:
+        if self.heuristic is SymmetrizationHeuristic.NONE:
+            yield from self._src_trg_aligner.get_best_alignment_batch(segments)
+        else:
+            for segments_batch in batch(segments, self.batch_size):
+                results = self._src_trg_aligner.get_best_alignment_batch(segments_batch)
+                inv_results = self._trg_src_aligner.get_best_alignment_batch(
+                    (target_segment, source_segment) for source_segment, target_segment in segments_batch
+                )
+                for (source_segment, target_segment, matrix), (_, _, inv_matrix) in zip(results, inv_results):
+                    inv_matrix.transpose()
+                    matrix.symmetrize_with(inv_matrix, self.heuristic)
+                    yield source_segment, target_segment, matrix

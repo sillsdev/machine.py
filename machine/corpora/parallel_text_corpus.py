@@ -1,5 +1,5 @@
 from itertools import islice
-from typing import Any, Callable, Generator, Optional, Tuple
+from typing import Any, Callable, Generator, Iterable, Optional, Sequence, Tuple
 
 from ..tokenization.tokenizer import Tokenizer
 from .corpora_utils import get_split_indices
@@ -97,6 +97,9 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
         split_corpus = self.filter_by_index(lambda r, i: i in split_indices and (include_empty or not r.is_empty))
 
         return main_corpus, split_corpus, corpus_size - len(split_indices), len(split_indices)
+
+    def to_tuples(self) -> Iterable[Tuple[Sequence[str], Sequence[str]]]:
+        return self.map(lambda r: (r.source_segment, r.target_segment))
 
 
 class _TransformParallelTextCorpus(ParallelTextCorpus):

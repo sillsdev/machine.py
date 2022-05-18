@@ -3,12 +3,25 @@ import platform
 from glob import glob
 from pathlib import Path
 from random import Random
-from typing import Any, Generator, Iterable, Optional, Set, Tuple, TypeVar
+from typing import Any, Generator, Iterable, List, Optional, Sequence, Set, Tuple, TypeVar
 
 import regex as re
 
 from ..scripture.canon import book_id_to_number
 from ..scripture.verse_ref import VERSE_RANGE_SEPARATOR, VERSE_SEQUENCE_INDICATOR, Versification, VersificationType
+
+T = TypeVar("T")
+
+
+def batch(iterable: Iterable[T], batch_size: int) -> Iterable[Sequence[T]]:
+    batch: List[T] = []
+    for item in iterable:
+        batch.append(item)
+        if len(batch) == batch_size:
+            yield batch
+            batch = []
+    if len(batch) > 0:
+        yield batch
 
 
 def get_split_indices(
@@ -65,9 +78,6 @@ def get_files(file_patterns: Iterable[str]) -> Iterable[Tuple[str, str]]:
                     if len(updated_id) > 0:
                         id = updated_id
                 yield (id, filename)
-
-
-T = TypeVar("T")
 
 
 def gen(iterable: Iterable[T] = []) -> Generator[T, None, None]:

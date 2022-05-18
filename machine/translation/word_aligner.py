@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Sequence
+from typing import Iterable, Optional, Sequence, Tuple
 
 from .word_alignment_matrix import WordAlignmentMatrix
 
@@ -10,9 +10,9 @@ class WordAligner(ABC):
         ...
 
     @abstractmethod
-    def get_best_alignments(
-        self, source_segments: Sequence[Sequence[str]], target_segments: Sequence[Sequence[str]]
-    ) -> Sequence[WordAlignmentMatrix]:
+    def get_best_alignment_batch(
+        self, segments: Iterable[Tuple[Sequence[str], Sequence[str]]]
+    ) -> Iterable[Tuple[Sequence[str], Sequence[str], WordAlignmentMatrix]]:
         ...
 
     def get_best_alignment_from_known(
