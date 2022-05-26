@@ -3,7 +3,7 @@ import platform
 from glob import glob
 from pathlib import Path
 from random import Random
-from typing import Any, Generator, Iterable, List, Optional, Sequence, Set, Tuple, TypeVar
+from typing import Any, Callable, Generator, Iterable, List, Optional, Sequence, Set, Tuple, TypeVar
 from zipfile import ZipFile, ZipInfo
 
 import regex as re

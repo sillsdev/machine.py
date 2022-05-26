@@ -1,5 +1,5 @@
 from itertools import islice
-from typing import Any, Callable, Generator, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Generator, Iterable, List, Optional, Sequence, Tuple
 
 from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
