@@ -304,6 +304,7 @@ class _RangeInfo:
             is_target_range_start=False,
             is_empty=self.is_source_empty or self.is_target_empty,
         )
+        self.text_id = ""
         self.source_refs.clear()
         self.target_refs.clear()
         self.source_segment.clear()

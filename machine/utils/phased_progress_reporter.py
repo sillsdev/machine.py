@@ -13,7 +13,7 @@ class Phase:
     report_steps: bool = True
 
 
-class PhaseProgress(AbstractContextManager):
+class PhaseProgress(AbstractContextManager["PhaseProgress"]):
     def __init__(self, reporter: "PhasedProgressReporter", phase: Phase) -> None:
         self._reporter = reporter
         self._phase = phase

@@ -109,14 +109,14 @@ class NmtEngineBuildJob:
                 corpus = corpus.detokenize_target(target_detokenizer)
                 with corpus.batch(_PRETRANSLATION_INSERT_BUFFER_SIZE) as batches:
                     for batch in batches:
-                        self._pretranslations.insert_many(
+                        self._pretranslations.insert_all(
                             [
                                 {
                                     "translationEngineRef": ObjectId(engine_id),
                                     "corpusRef": ObjectId(corpus_id),
                                     "textId": row.text_id,
                                     "refs": [str(r) for r in row.target_refs],
-                                    "text": row.target_text,
+                                    "translation": row.target_text,
                                 }
                                 for row in batch
                             ]
@@ -140,7 +140,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Trains an NMT model.")
     parser.add_argument("--engine", required=True, type=str, help="Engine Id")
     parser.add_argument("--build", required=True, type=str, help="Build Id")
-    parser.add_argument("--engines-dir", required=True, type=str, help="Engines directory")
+    parser.add_argument("--models-dir", required=True, type=str, help="Models directory")
     parser.add_argument("--data-files-dir", required=True, type=str, help="Data files directory")
     parser.add_argument("--parent-models-dir", required=True, type=str, help="Parent models directory")
     parser.add_argument("--mongo", required=True, type=str, help="Mongo server address")

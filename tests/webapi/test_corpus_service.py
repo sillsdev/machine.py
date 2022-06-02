@@ -37,7 +37,7 @@ class _TestEnvironment(AbstractContextManager):
         self._temp_dir = TemporaryDirectory()
         create_test_paratext_backup(Path(self._temp_dir.name))
         self.corpora: Repository[Corpus] = Repository(client.machine.files)
-        corpus_ids = self.corpora.insert_many(
+        corpus_ids = self.corpora.insert_all(
             [
                 Corpus(
                     owner="owner",

@@ -23,27 +23,27 @@ class OpenNmtModelFactory(NmtModelFactory):
     def __init__(self, config: dict) -> None:
         self._config = config
 
-    def init(self, engine_id: str) -> None:
-        engine_dir = self._get_engine_dir(engine_id)
+    def init(self, key: str) -> None:
+        engine_dir = self._get_model_dir(key)
         engine_dir.mkdir(exist_ok=True)
 
-    def create_model(self, engine_id: str) -> TranslationModel:
-        model_config = self._create_model_config(engine_id)
+    def create_model(self, key: str) -> TranslationModel:
+        model_config = self._create_model_config(key)
         model_type: str = self._config["model"]
         mixed_precision: bool = self._config["mixed_precision"]
         return OpenNmtModel(model_type, model_config, mixed_precision=mixed_precision)
 
     def create_model_trainer(
-        self, engine_id: str, source_language_tag: str, target_language_tag: str, corpus: ParallelTextCorpus
+        self, key: str, source_language_tag: str, target_language_tag: str, corpus: ParallelTextCorpus
     ) -> Trainer:
-        engine_dir = self._get_engine_dir(engine_id)
+        engine_dir = self._get_model_dir(key)
         _convert_vocab(engine_dir / "src-sp.vocab", engine_dir / "src.vocab")
         _convert_vocab(engine_dir / "trg-sp.vocab", engine_dir / "trg.vocab")
 
-        corpus = corpus.tokenize(self.create_source_tokenizer(engine_id), self._create_target_tokenizer(engine_id))
+        corpus = corpus.tokenize(self.create_source_tokenizer(key), self._create_target_tokenizer(key))
 
         # TODO: Add support for parent models
-        model_config = self._create_model_config(engine_id)
+        model_config = self._create_model_config(key)
         model_type: str = self._config["model"]
         mixed_precision: bool = self._config["mixed_precision"]
         parent_config = self._get_parent_config(source_language_tag, target_language_tag)
@@ -57,11 +57,11 @@ class OpenNmtModelFactory(NmtModelFactory):
             replace_on_save=False,
         )
 
-    def create_source_tokenizer(self, engine_id: str) -> Tokenizer[str, int, str]:
-        return SentencePieceTokenizer(self._get_engine_dir(engine_id) / "src-sp.model")
+    def create_source_tokenizer(self, key: str) -> Tokenizer[str, int, str]:
+        return SentencePieceTokenizer(self._get_model_dir(key) / "src-sp.model")
 
-    def create_source_tokenizer_trainer(self, engine_id: str, corpus: TextCorpus) -> Trainer:
-        src_sp_model_prefix = self._get_engine_dir(engine_id) / "src-sp"
+    def create_source_tokenizer_trainer(self, key: str, corpus: TextCorpus) -> Trainer:
+        src_sp_model_prefix = self._get_model_dir(key) / "src-sp"
         return SentencePieceTrainer(
             corpus,
             vocab_size=8000,
@@ -69,8 +69,8 @@ class OpenNmtModelFactory(NmtModelFactory):
             normalization_rule_name="nmt_nfkc_cf",
         )
 
-    def create_target_tokenizer_trainer(self, engine_id: str, corpus: TextCorpus) -> Trainer:
-        trg_sp_model_prefix = self._get_engine_dir(engine_id) / "trg-sp"
+    def create_target_tokenizer_trainer(self, key: str, corpus: TextCorpus) -> Trainer:
+        trg_sp_model_prefix = self._get_model_dir(key) / "trg-sp"
         return SentencePieceTrainer(
             corpus,
             vocab_size=8000,
@@ -78,23 +78,23 @@ class OpenNmtModelFactory(NmtModelFactory):
             normalization_rule_name="nmt_nfkc",
         )
 
-    def create_target_detokenizer(self, engine_id: str) -> Detokenizer[str, str]:
+    def create_target_detokenizer(self, key: str) -> Detokenizer[str, str]:
         return SentencePieceDetokenizer()
 
-    def save_model(self, engine_id: str) -> None:
+    def save_model(self, key: str) -> None:
         # TODO: save model to store
         pass
 
-    def cleanup(self, engine_id: str) -> None:
-        shutil.rmtree(self._get_engine_dir(engine_id))
+    def cleanup(self, key: str) -> None:
+        shutil.rmtree(self._get_model_dir(key))
 
-    def _create_target_tokenizer(self, engine_id: str) -> Tokenizer[str, int, str]:
-        return SentencePieceTokenizer(self._get_engine_dir(engine_id) / "trg-sp.model")
+    def _create_target_tokenizer(self, key: str) -> Tokenizer[str, int, str]:
+        return SentencePieceTokenizer(self._get_model_dir(key) / "trg-sp.model")
 
-    def _create_model_config(self, engine_id: str) -> dict:
+    def _create_model_config(self, key: str) -> dict:
         return {
             "auto_config": True,
-            "model_dir": str(self._get_engine_dir(engine_id)),
+            "model_dir": str(self._get_model_dir(key)),
             "data": {
                 "source_vocabulary": "src.vocab",
                 "target_vocabulary": "trg.vocab",
@@ -105,8 +105,8 @@ class OpenNmtModelFactory(NmtModelFactory):
             },
         }
 
-    def _get_engine_dir(self, engine_id: str) -> Path:
-        return Path(self._config["engines_dir"]) / engine_id
+    def _get_model_dir(self, key: str) -> Path:
+        return Path(self._config["models_dir"]) / key
 
     def _get_parent_config(self, source_language_tag: str, target_language_tag: str) -> Optional[dict]:
         parents_dir = Path(self._config["parent_models_dir"])

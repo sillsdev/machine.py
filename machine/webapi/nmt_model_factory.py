@@ -10,39 +10,39 @@ from ..translation.translation_model import TranslationModel
 
 class NmtModelFactory(ABC):
     @abstractmethod
-    def init(self, engine_id: str) -> None:
+    def init(self, key: str) -> None:
         ...
 
     @abstractmethod
-    def create_model(self, engine_id: str) -> TranslationModel:
+    def create_model(self, key: str) -> TranslationModel:
         ...
 
     @abstractmethod
     def create_model_trainer(
-        self, engine_id: str, source_language_tag: str, target_language_tag: str, corpus: ParallelTextCorpus
+        self, key: str, source_language_tag: str, target_language_tag: str, corpus: ParallelTextCorpus
     ) -> Trainer:
         ...
 
     @abstractmethod
-    def create_source_tokenizer(self, engine_id: str) -> Tokenizer[str, int, str]:
+    def create_source_tokenizer(self, key: str) -> Tokenizer[str, int, str]:
         ...
 
     @abstractmethod
-    def create_source_tokenizer_trainer(self, engine_id: str, corpus: TextCorpus) -> Trainer:
+    def create_source_tokenizer_trainer(self, key: str, corpus: TextCorpus) -> Trainer:
         ...
 
     @abstractmethod
-    def create_target_tokenizer_trainer(self, engine_id: str, corpus: TextCorpus) -> Trainer:
+    def create_target_tokenizer_trainer(self, key: str, corpus: TextCorpus) -> Trainer:
         ...
 
     @abstractmethod
-    def create_target_detokenizer(self, engine_id: str) -> Detokenizer[str, str]:
+    def create_target_detokenizer(self, key: str) -> Detokenizer[str, str]:
         ...
 
     @abstractmethod
-    def save_model(self, engine_id: str) -> None:
+    def save_model(self, key: str) -> None:
         ...
 
     @abstractmethod
-    def cleanup(self, engine_id: str) -> None:
+    def cleanup(self, key: str) -> None:
         ...

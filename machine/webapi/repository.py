@@ -34,20 +34,19 @@ class Repository(Generic[TEntity]):
     def exists(self, filter: Mapping[str, Any]) -> bool:
         return self._collection.count_documents(filter) > 0
 
-    def insert_many(self, entities: Sequence[TEntity]) -> Sequence[ObjectId]:
+    def insert_all(self, entities: Sequence[TEntity]) -> Sequence[ObjectId]:
         for entity in entities:
             entity["revision"] = 1
         res = self._collection.insert_many(cast(List[MutableMapping[str, Any]], entities))
         if res.acknowledged and self._is_subscribable:
-            for entity in entities:
-                self._change_events.insert_many(
-                    {
-                        "entityRef": entity.get("_id"),
-                        "changeType": ENTITY_CHANGE_INSERT,
-                        "revision": entity.get("revision"),
-                    }
-                    for entity in entities
-                )
+            self._change_events.insert_many(
+                {
+                    "entityRef": entity.get("_id"),
+                    "changeType": ENTITY_CHANGE_INSERT,
+                    "revision": entity.get("revision"),
+                }
+                for entity in entities
+            )
         return res.inserted_ids
 
     def insert(self, entity: TEntity) -> ObjectId:

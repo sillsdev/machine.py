@@ -89,4 +89,4 @@ class Pretranslation(Entity):
     corpusRef: ObjectId
     textId: str
     refs: List[str]
-    text: str
+    translation: str

@@ -8,7 +8,7 @@ from ..corpora.parallel_text_row import ParallelTextRow
 from .translation_result import TranslationResult
 
 
-class TranslationEngine(AbstractContextManager):
+class TranslationEngine(AbstractContextManager["TranslationEngine"]):
     @overload
     @abstractmethod
     def translate(self, segment: Sequence[str]) -> TranslationResult:

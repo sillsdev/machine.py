@@ -8,7 +8,7 @@ from .trainer import Trainer
 from .translation_engine import TranslationEngine
 
 
-class TranslationModel(AbstractContextManager):
+class TranslationModel(AbstractContextManager["TranslationModel"]):
     @abstractmethod
     def create_engine(self) -> TranslationEngine:
         ...
