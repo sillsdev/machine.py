@@ -12,6 +12,7 @@ from ..corpora.text_file_text_corpus import TextFileTextCorpus
 from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
 from ..translation.translation_engine import TranslationEngine
+from ..utils.canceled_error import CanceledError
 from .nmt_model_factory import NmtModelFactory
 from .open_nmt_model_factory import OpenNmtModelFactory
 
@@ -25,6 +26,10 @@ class ClearMLNmtEngineBuildJob:
 
     def run(self) -> None:
         task = Task.init()
+
+        def check_canceled() -> None:
+            if task.get_status() in {"stopped", "stopping"}:
+                raise CanceledError
 
         print("NMT Engine Build Job started")
         print("Config:", self._config)
@@ -42,22 +47,31 @@ class ClearMLNmtEngineBuildJob:
             target_corpus = TextFileTextCorpus(trg_train_path)
             parallel_corpus = source_corpus.align_rows(target_corpus)
 
+            check_canceled()
+
             print("Training source tokenizer")
             source_tokenizer_trainer = self._nmt_model_factory.create_source_tokenizer_trainer(task.name, source_corpus)
             source_tokenizer_trainer.train()
             source_tokenizer_trainer.save()
+
+            check_canceled()
 
             print("Training target tokenizer")
             target_tokenizer_trainer = self._nmt_model_factory.create_target_tokenizer_trainer(task.name, target_corpus)
             target_tokenizer_trainer.train()
             target_tokenizer_trainer.save()
 
+            check_canceled()
+
             print("Training NMT model")
             model_trainer = self._nmt_model_factory.create_model_trainer(
                 task.name, self._config["src_lang"], self._config["trg_lang"], parallel_corpus
             )
-            model_trainer.train()
+
+            model_trainer.train(check_canceled=check_canceled)
             model_trainer.save()
+
+            check_canceled()
 
             print("Pretranslating segments")
             source_tokenizer = self._nmt_model_factory.create_source_tokenizer(task.name)
@@ -76,12 +90,15 @@ class ClearMLNmtEngineBuildJob:
                 for pi in src_pretranslate:
                     batch.append(pi)
                     if len(batch) == _PRETRANSLATE_BATCH_SIZE:
+                        check_canceled()
                         _translate_batch(engine, batch, source_tokenizer, target_detokenizer, out_file)
                         batch.clear()
                 if len(batch) > 0:
                     _translate_batch(engine, batch, source_tokenizer, target_detokenizer, out_file)
                     batch.clear()
                 out_file.write("]\n")
+
+                check_canceled()
 
                 print("Uploading pretranslations")
                 StorageManager.upload_file(str(src_pretranslate_path), f"{build_uri}/src.pretranslate.json")
