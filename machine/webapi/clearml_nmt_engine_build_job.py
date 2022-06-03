@@ -32,7 +32,7 @@ class ClearMLNmtEngineBuildJob:
         self._nmt_model_factory.init(task.name)
 
         LOGGER.info("Downloading data files")
-        build_uri: str = self._config["build_uri"]
+        build_uri: str = self._config["build_uri_scheme"] + "://" + self._config["build_uri"]
         build_uri = build_uri.rstrip("/")
         build_data_dir = Path(self._config["data_dir"]) / task.name
         StorageManager.download_folder(build_uri, str(build_data_dir))
@@ -106,6 +106,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Trains an NMT model.")
     parser.add_argument("--src-lang", required=True, type=str, help="Source language tag")
     parser.add_argument("--trg-lang", required=True, type=str, help="Target language tag")
+    parser.add_argument("--build-uri-scheme", required=True, type=str, help="Build URI scheme")
     parser.add_argument("--build-uri", required=True, type=str, help="Build URI")
     args = parser.parse_args()
 
