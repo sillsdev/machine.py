@@ -89,7 +89,14 @@ class ClearMLNmtEngineBuildJob:
                 out_file.write("[\n")
                 batch: List[dict] = []
                 for pi in src_pretranslate:
-                    batch.append(dict(pi))
+                    batch.append(
+                        {
+                            "corpusId": pi["corpusId"],
+                            "textId": pi["textId"],
+                            "refs": list(pi["refs"]),
+                            "segment": pi["segment"],
+                        }
+                    )
                     if len(batch) == _PRETRANSLATE_BATCH_SIZE:
                         check_canceled()
                         _translate_batch(engine, batch, source_tokenizer, target_detokenizer, out_file)
@@ -102,7 +109,7 @@ class ClearMLNmtEngineBuildJob:
                 check_canceled()
 
                 print("Uploading pretranslations")
-                StorageManager.upload_file(str(src_pretranslate_path), f"{build_uri}/src.pretranslate.json")
+                StorageManager.upload_file(str(trg_pretranslate_path), f"{build_uri}/trg.pretranslate.json")
         finally:
             print("Cleaning up")
             self._nmt_model_factory.cleanup(task.name)
