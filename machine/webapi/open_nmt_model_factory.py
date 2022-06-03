@@ -70,6 +70,7 @@ class OpenNmtModelFactory(NmtModelFactory):
             corpus,
             vocab_size=8000,
             hard_vocab_limit=False,
+            character_coverage=1.0,
             model_prefix=str(src_sp_model_prefix),
             normalization_rule_name="nmt_nfkc_cf",
         )
@@ -80,6 +81,7 @@ class OpenNmtModelFactory(NmtModelFactory):
             corpus,
             vocab_size=8000,
             hard_vocab_limit=False,
+            character_coverage=1.0,
             model_prefix=str(trg_sp_model_prefix),
             normalization_rule_name="nmt_nfkc",
         )
