@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from io import BytesIO
 from typing import Any, BinaryIO
 from zipfile import ZipFile
@@ -11,7 +13,7 @@ class ZipEntryStreamContainer(StreamContainer):
         self._archive = ZipFile(archive_filename, "r")
         self._entry = self._archive.getinfo(entry_path)
 
-    def __enter__(self) -> "ZipEntryStreamContainer":
+    def __enter__(self) -> ZipEntryStreamContainer:
         return self
 
     def __exit__(self, type: Any, value: Any, traceback: Any) -> None:

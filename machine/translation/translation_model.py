@@ -1,14 +1,15 @@
+from __future__ import annotations
+
 from abc import abstractmethod
-from contextlib import AbstractContextManager
 from types import TracebackType
-from typing import Optional, Type
+from typing import ContextManager, Optional, Type
 
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from .trainer import Trainer
 from .translation_engine import TranslationEngine
 
 
-class TranslationModel(AbstractContextManager["TranslationModel"]):
+class TranslationModel(ContextManager["TranslationModel"]):
     @abstractmethod
     def create_engine(self) -> TranslationEngine:
         ...
@@ -17,7 +18,7 @@ class TranslationModel(AbstractContextManager["TranslationModel"]):
     def create_trainer(self, corpus: ParallelTextCorpus) -> Trainer:
         ...
 
-    def __enter__(self) -> "TranslationModel":
+    def __enter__(self) -> TranslationModel:
         return self
 
     def __exit__(

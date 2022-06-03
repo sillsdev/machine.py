@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Callable, Collection, Iterable, List, Optional, Sequence, Set, Tuple, cast
 
 import numpy as np
@@ -10,7 +12,7 @@ from .symmetrization_heuristic import SymmetrizationHeuristic
 
 class WordAlignmentMatrix:
     @classmethod
-    def from_parallel_text_corpus_row(cls, row: ParallelTextRow) -> Optional["WordAlignmentMatrix"]:
+    def from_parallel_text_corpus_row(cls, row: ParallelTextRow) -> Optional[WordAlignmentMatrix]:
         if row.aligned_word_pairs is None:
             return None
 
@@ -22,7 +24,7 @@ class WordAlignmentMatrix:
     @classmethod
     def from_word_pairs(
         cls, row_count: int, column_count: int, set_values: Set[Tuple[int, int]] = set()
-    ) -> "WordAlignmentMatrix":
+    ) -> WordAlignmentMatrix:
         matrix = np.full((row_count, column_count), False)
         for i, j in set_values:
             matrix[i, j] = True
@@ -82,20 +84,20 @@ class WordAlignmentMatrix:
                 return True
         return False
 
-    def union_with(self, other: "WordAlignmentMatrix") -> None:
+    def union_with(self, other: WordAlignmentMatrix) -> None:
         if self.row_count != other.row_count or self.column_count != other.column_count:
             raise ValueError("The matrices are not the same size.")
 
         np.logical_or(self._matrix, other._matrix, out=self._matrix)
 
-    def intersect_with(self, other: "WordAlignmentMatrix") -> None:
+    def intersect_with(self, other: WordAlignmentMatrix) -> None:
         if self.row_count != other.row_count or self.column_count != other.column_count:
             raise ValueError("The matrices are not the same size.")
 
         np.logical_and(self._matrix, other._matrix, out=self._matrix)
 
     def symmetrize_with(
-        self, other: "WordAlignmentMatrix", heuristic: SymmetrizationHeuristic = SymmetrizationHeuristic.OCH
+        self, other: WordAlignmentMatrix, heuristic: SymmetrizationHeuristic = SymmetrizationHeuristic.OCH
     ) -> None:
         if heuristic is SymmetrizationHeuristic.UNION:
             self.union_with(other)
@@ -112,7 +114,7 @@ class WordAlignmentMatrix:
         elif heuristic is SymmetrizationHeuristic.GROW_DIAG_FINAL_AND:
             self.grow_diag_final_and_symmetrize_with(other)
 
-    def och_symmetrize_with(self, other: "WordAlignmentMatrix") -> None:
+    def och_symmetrize_with(self, other: WordAlignmentMatrix) -> None:
         if self.row_count != other.row_count or self.column_count != other.column_count:
             raise ValueError("The matrices are not the same size.")
 
@@ -124,7 +126,7 @@ class WordAlignmentMatrix:
 
         self._och_grow(is_block_neighbor_aligned, orig, other)
 
-    def priority_symmetrize_with(self, other: "WordAlignmentMatrix") -> None:
+    def priority_symmetrize_with(self, other: WordAlignmentMatrix) -> None:
         if self.row_count != other.row_count or self.column_count != other.column_count:
             raise ValueError("The matrices are not the same size.")
 
@@ -133,7 +135,7 @@ class WordAlignmentMatrix:
 
         self._och_grow(is_priority_block_neighbor_aligned, self, other)
 
-    def grow_symmetrize_with(self, other: "WordAlignmentMatrix") -> None:
+    def grow_symmetrize_with(self, other: WordAlignmentMatrix) -> None:
         if self.row_count != other.row_count or self.column_count != other.column_count:
             raise ValueError("The matrices are not the same size.")
 
@@ -145,7 +147,7 @@ class WordAlignmentMatrix:
 
         self._koehn_grow(is_block_neighbor_aligned, orig, other)
 
-    def grow_diag_symmetrize_with(self, other: "WordAlignmentMatrix") -> None:
+    def grow_diag_symmetrize_with(self, other: WordAlignmentMatrix) -> None:
         if self.row_count != other.row_count or self.column_count != other.column_count:
             raise ValueError("The matrices are not the same size.")
 
@@ -161,7 +163,7 @@ class WordAlignmentMatrix:
 
         self._koehn_grow(is_block_or_diag_neighbor_aligned, orig, other)
 
-    def grow_diag_final_symmetrize_with(self, other: "WordAlignmentMatrix") -> None:
+    def grow_diag_final_symmetrize_with(self, other: WordAlignmentMatrix) -> None:
         if self.row_count != other.row_count or self.column_count != other.column_count:
             raise ValueError("The matrices are not the same size.")
 
@@ -183,7 +185,7 @@ class WordAlignmentMatrix:
         self._final(is_one_or_both_unaligned, orig)
         self._final(is_one_or_both_unaligned, other)
 
-    def grow_diag_final_and_symmetrize_with(self, other: "WordAlignmentMatrix") -> None:
+    def grow_diag_final_and_symmetrize_with(self, other: WordAlignmentMatrix) -> None:
         if self.row_count != other.row_count or self.column_count != other.column_count:
             raise ValueError("The matrices are not the same size.")
 
@@ -256,7 +258,7 @@ class WordAlignmentMatrix:
         text += "\n"
         return text
 
-    def copy(self) -> "WordAlignmentMatrix":
+    def copy(self) -> WordAlignmentMatrix:
         return WordAlignmentMatrix(np.copy(self._matrix))
 
     def resize(self, row_count: int, column_count: int) -> None:
@@ -283,7 +285,7 @@ class WordAlignmentMatrix:
         return False
 
     def _och_grow(
-        self, grow_condition: Callable[[int, int], bool], orig: "WordAlignmentMatrix", other: "WordAlignmentMatrix"
+        self, grow_condition: Callable[[int, int], bool], orig: WordAlignmentMatrix, other: WordAlignmentMatrix
     ) -> None:
         added = True
         while added:
@@ -299,7 +301,7 @@ class WordAlignmentMatrix:
                             added = True
 
     def _koehn_grow(
-        self, grow_condition: Callable[[int, int], bool], orig: "WordAlignmentMatrix", other: "WordAlignmentMatrix"
+        self, grow_condition: Callable[[int, int], bool], orig: WordAlignmentMatrix, other: WordAlignmentMatrix
     ) -> None:
         p = cast(Set[Tuple[int, int]], SortedSet())
         for i in range(self.row_count):
@@ -318,7 +320,7 @@ class WordAlignmentMatrix:
                     keep_going = True
             p.difference_update(added)
 
-    def _final(self, pred: Callable[[int, int], bool], adds: "WordAlignmentMatrix") -> None:
+    def _final(self, pred: Callable[[int, int], bool], adds: WordAlignmentMatrix) -> None:
         for i in range(self.row_count):
             for j in range(self.column_count):
                 if adds[i, j] and not self[i, j] and pred(i, j):

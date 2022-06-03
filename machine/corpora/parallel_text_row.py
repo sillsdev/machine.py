@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any, Collection, Optional, Sequence
 
 from .aligned_word_pair import AlignedWordPair
@@ -60,7 +61,7 @@ class ParallelTextRow:
     def target_text(self) -> str:
         return " ".join(self.target_segment)
 
-    def invert(self) -> "ParallelTextRow":
+    def invert(self) -> ParallelTextRow:
         return ParallelTextRow(
             self.text_id,
             self.target_refs,

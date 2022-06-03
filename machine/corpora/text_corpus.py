@@ -1,3 +1,4 @@
+from __future__ import annotations
 from abc import abstractmethod
 from itertools import chain, islice
 from typing import Any, Callable, Generator, Iterable, List, Optional, Tuple
@@ -37,7 +38,7 @@ class TextCorpus(Corpus[TextRow]):
     def count(self, include_empty: bool = True) -> int:
         return sum(t.count(include_empty) for t in self.texts)
 
-    def tokenize(self, tokenizer: Tokenizer[str, int, str]) -> "TextCorpus":
+    def tokenize(self, tokenizer: Tokenizer[str, int, str]) -> TextCorpus:
         def _tokenize(row: TextRow) -> TextRow:
             if len(row.segment) > 0:
                 row.segment = list(tokenizer.tokenize(row.text))
@@ -45,7 +46,7 @@ class TextCorpus(Corpus[TextRow]):
 
         return self.transform(_tokenize)
 
-    def detokenize(self, detokenizer: Detokenizer[str, str]) -> "TextCorpus":
+    def detokenize(self, detokenizer: Detokenizer[str, str]) -> TextCorpus:
         def _detokenize(row: TextRow) -> TextRow:
             if len(row.segment) > 1:
                 row.segment = [detokenizer.detokenize(row.segment)]
@@ -53,55 +54,55 @@ class TextCorpus(Corpus[TextRow]):
 
         return self.transform(_detokenize)
 
-    def normalize(self, normalization_form: str) -> "TextCorpus":
+    def normalize(self, normalization_form: str) -> TextCorpus:
         def _normalize(row: TextRow) -> TextRow:
             row.segment = normalize(normalization_form, row.segment)
             return row
 
         return self.transform(_normalize)
 
-    def nfc_normalize(self) -> "TextCorpus":
+    def nfc_normalize(self) -> TextCorpus:
         return self.normalize("NFC")
 
-    def nfd_normalize(self) -> "TextCorpus":
+    def nfd_normalize(self) -> TextCorpus:
         return self.normalize("NFD")
 
-    def nfkc_normalize(self) -> "TextCorpus":
+    def nfkc_normalize(self) -> TextCorpus:
         return self.normalize("NFKC")
 
-    def nfkd_normalize(self) -> "TextCorpus":
+    def nfkd_normalize(self) -> TextCorpus:
         return self.normalize("NFKD")
 
-    def lowercase(self) -> "TextCorpus":
+    def lowercase(self) -> TextCorpus:
         def _lowercase(row: TextRow) -> TextRow:
             row.segment = lowercase(row.segment)
             return row
 
         return self.transform(_lowercase)
 
-    def escape_spaces(self) -> "TextCorpus":
+    def escape_spaces(self) -> TextCorpus:
         def _escape_spaces(row: TextRow) -> TextRow:
             row.segment = escape_spaces(row.segment)
             return row
 
         return self.transform(_escape_spaces)
 
-    def unescape_spaces(self) -> "TextCorpus":
+    def unescape_spaces(self) -> TextCorpus:
         def _unescape_spaces(row: TextRow) -> TextRow:
             row.segment = unescape_spaces(row.segment)
             return row
 
         return self.transform(_unescape_spaces)
 
-    def filter_texts(self, predicate: Callable[[Text], bool]) -> "TextCorpus":
+    def filter_texts(self, predicate: Callable[[Text], bool]) -> TextCorpus:
         return _TextFilterTextCorpus(self, predicate)
 
-    def transform(self, transform: Callable[[TextRow], TextRow]) -> "TextCorpus":
+    def transform(self, transform: Callable[[TextRow], TextRow]) -> TextCorpus:
         return _TransformTextCorpus(self, transform)
 
     def align_rows(
         self,
-        other: "TextCorpus",
+        other: TextCorpus,
         alignment_corpus: Optional[AlignmentCorpus] = None,
         all_source_rows: bool = False,
         all_target_rows: bool = False,
@@ -110,21 +111,21 @@ class TextCorpus(Corpus[TextRow]):
 
         return StandardParallelTextCorpus(self, other, alignment_corpus, all_source_rows, all_target_rows)
 
-    def filter_nonempty(self) -> "TextCorpus":
+    def filter_nonempty(self) -> TextCorpus:
         return self.filter(lambda r: not r.is_empty)
 
-    def filter(self, predicate: Callable[[TextRow], bool]) -> "TextCorpus":
+    def filter(self, predicate: Callable[[TextRow], bool]) -> TextCorpus:
         return self.filter_by_index(lambda r, _: predicate(r))
 
-    def filter_by_index(self, predicate: Callable[[TextRow, int], bool]) -> "TextCorpus":
+    def filter_by_index(self, predicate: Callable[[TextRow, int], bool]) -> TextCorpus:
         return _FilterTextCorpus(self, predicate)
 
-    def take(self, count: int) -> "TextCorpus":
+    def take(self, count: int) -> TextCorpus:
         return _TakeTextCorpus(self, count)
 
     def split(
         self, percent: Optional[float] = None, size: Optional[int] = None, include_empty: bool = True, seed: Any = None
-    ) -> Tuple["TextCorpus", "TextCorpus", int, int]:
+    ) -> Tuple[TextCorpus, TextCorpus, int, int]:
         corpus_size = self.count(include_empty)
         split_indices = get_split_indices(corpus_size, percent, size, seed)
 

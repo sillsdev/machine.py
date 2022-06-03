@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import heapq
 from types import TracebackType
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type, Union, cast, overload
@@ -59,7 +61,7 @@ class OpenNmtModel(TranslationModel):
     def runner(self) -> OpenNmtRunner:
         return self._runner
 
-    def create_engine(self) -> "OpenNmtEngine":
+    def create_engine(self) -> OpenNmtEngine:
         engine = OpenNmtEngine(self)
         self._engines.add(engine)
         return engine
@@ -73,10 +75,10 @@ class OpenNmtModel(TranslationModel):
         checkpoint.restore(weights_only=True)
         return model, config
 
-    def remove_engine(self, engine: "OpenNmtEngine") -> None:
+    def remove_engine(self, engine: OpenNmtEngine) -> None:
         self._engines.remove(engine)
 
-    def __enter__(self) -> "OpenNmtModel":
+    def __enter__(self) -> OpenNmtModel:
         return self
 
 
@@ -198,7 +200,7 @@ class OpenNmtEngine(TranslationEngine):
                     yield result if n is not None else result[0]
                     next_index += 1
 
-    def __enter__(self) -> "OpenNmtEngine":
+    def __enter__(self) -> OpenNmtEngine:
         return self
 
     def __exit__(

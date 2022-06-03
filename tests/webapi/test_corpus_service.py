@@ -1,7 +1,8 @@
-from contextlib import AbstractContextManager
+from __future__ import annotations
+
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any
+from typing import Any, ContextManager
 
 from bson.objectid import ObjectId
 from mongomock.mongo_client import MongoClient
@@ -31,7 +32,7 @@ def test_create_text_corpus() -> None:
         assert trg_corpus2 is None
 
 
-class _TestEnvironment(AbstractContextManager):
+class _TestEnvironment(ContextManager["_TestEnvironment"]):
     def __init__(self) -> None:
         client = MongoClient()
         self._temp_dir = TemporaryDirectory()
@@ -72,7 +73,7 @@ class _TestEnvironment(AbstractContextManager):
         self.corpus2_id = str(corpus_ids[1])
         self.service = CorpusService(self.corpora, {"data_files_dir": self._temp_dir.name})
 
-    def __enter__(self) -> "_TestEnvironment":
+    def __enter__(self) -> _TestEnvironment:
         return self
 
     def __exit__(self, type: Any, value: Any, traceback: Any) -> None:

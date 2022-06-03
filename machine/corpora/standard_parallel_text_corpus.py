@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from contextlib import ExitStack
 from dataclasses import dataclass, field
 from queue import SimpleQueue
@@ -214,7 +216,7 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
 
     def _create_rows(
         self,
-        range_info: "_RangeInfo",
+        range_info: _RangeInfo,
         src_row: Optional[TextRow],
         trg_row: Optional[TextRow],
         aligned_word_pairs: Optional[Collection[AlignedWordPair]] = None,
@@ -245,7 +247,7 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
 
     def _create_source_rows(
         self,
-        range_info: "_RangeInfo",
+        range_info: _RangeInfo,
         source_row: TextRow,
         target_same_ref_rows: List[TextRow],
     ) -> Iterable[ParallelTextRow]:
@@ -259,7 +261,7 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
 
     def _create_target_rows(
         self,
-        range_info: "_RangeInfo",
+        range_info: _RangeInfo,
         target_row: TextRow,
         source_same_ref_rows: List[TextRow],
     ) -> Iterable[ParallelTextRow]:
@@ -359,7 +361,7 @@ class _TargetCorpusGenerator(ContextManager["_TargetCorpusGenerator"], Generator
         super().close()
         self._generator.close()
 
-    def __enter__(self) -> "_TargetCorpusGenerator":
+    def __enter__(self) -> _TargetCorpusGenerator:
         return self
 
     def __exit__(self, type: Any, value: Any, traceback: Any) -> None:

@@ -1,14 +1,15 @@
+from __future__ import annotations
+
 from abc import abstractmethod
-from contextlib import AbstractContextManager
 from types import TracebackType
-from typing import Generator, Iterable, List, Optional, Sequence, Type, Union, overload
+from typing import ContextManager, Generator, Iterable, List, Optional, Sequence, Type, Union, overload
 
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from ..corpora.parallel_text_row import ParallelTextRow
 from .translation_result import TranslationResult
 
 
-class TranslationEngine(AbstractContextManager["TranslationEngine"]):
+class TranslationEngine(ContextManager["TranslationEngine"]):
     @overload
     @abstractmethod
     def translate(self, segment: Sequence[str]) -> TranslationResult:
@@ -41,7 +42,7 @@ class TranslationEngine(AbstractContextManager["TranslationEngine"]):
     ) -> Union[Iterable[TranslationResult], Iterable[List[TranslationResult]]]:
         ...
 
-    def __enter__(self) -> "TranslationEngine":
+    def __enter__(self) -> TranslationEngine:
         return self
 
     def __exit__(

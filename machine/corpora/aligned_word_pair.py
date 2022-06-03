@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import Collection, List
 
@@ -5,7 +7,7 @@ from typing import Collection, List
 @dataclass(unsafe_hash=True)
 class AlignedWordPair:
     @classmethod
-    def parse(cls, alignments: str, invert: bool = False) -> Collection["AlignedWordPair"]:
+    def parse(cls, alignments: str, invert: bool = False) -> Collection[AlignedWordPair]:
         result: List[AlignedWordPair] = []
         for token in alignments.split():
             dash_index = token.index("-")
@@ -25,7 +27,7 @@ class AlignedWordPair:
     translation_score: float = field(default=-1, compare=False)
     alignment_score: float = field(default=-1, compare=False)
 
-    def invert(self) -> "AlignedWordPair":
+    def invert(self) -> AlignedWordPair:
         return AlignedWordPair(
             self.target_index, self.source_index, self.is_sure, self.translation_score, self.alignment_score
         )

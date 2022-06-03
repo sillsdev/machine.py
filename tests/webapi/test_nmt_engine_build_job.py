@@ -38,7 +38,7 @@ def test_run() -> None:
     verify(env.engine, times=1).translate_batch(...)
     pretranslations = list(env.pretranslations.get_all({"translationEngineRef": env.engine_id}))
     assert len(pretranslations) == 1
-    assert pretranslations[0]["text"] == "Please, I have booked a room."
+    assert pretranslations[0]["translation"] == "Please, I have booked a room."
 
 
 def test_cancel() -> None:

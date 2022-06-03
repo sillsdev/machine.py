@@ -1,7 +1,8 @@
-from contextlib import AbstractContextManager
+from __future__ import annotations
+
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Callable, Iterable, Optional, Sequence, Type
+from typing import Callable, ContextManager, Iterable, Optional, Sequence, Type
 
 from .progress_status import ProgressStatus
 
@@ -13,8 +14,8 @@ class Phase:
     report_steps: bool = True
 
 
-class PhaseProgress(AbstractContextManager["PhaseProgress"]):
-    def __init__(self, reporter: "PhasedProgressReporter", phase: Phase) -> None:
+class PhaseProgress(ContextManager[Callable[[ProgressStatus], None]]):
+    def __init__(self, reporter: PhasedProgressReporter, phase: Phase) -> None:
         self._reporter = reporter
         self._phase = phase
         self._percent_completed = 0.0

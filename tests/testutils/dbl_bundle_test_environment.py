@@ -1,14 +1,15 @@
-from contextlib import AbstractContextManager
+from __future__ import annotations
+
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any
+from typing import Any, ContextManager
 
 from machine.corpora import DblBundleTextCorpus
 
 from .corpora_test_helpers import create_test_dbl_bundle
 
 
-class DblBundleTestEnvironment(AbstractContextManager):
+class DblBundleTestEnvironment(ContextManager["DblBundleTestEnvironment"]):
     def __init__(self) -> None:
         self._temp_dir = TemporaryDirectory()
         bundle_filename = create_test_dbl_bundle(Path(self._temp_dir.name))
@@ -18,7 +19,7 @@ class DblBundleTestEnvironment(AbstractContextManager):
     def corpus(self) -> DblBundleTextCorpus:
         return self._corpus
 
-    def __enter__(self) -> "DblBundleTestEnvironment":
+    def __enter__(self) -> DblBundleTestEnvironment:
         return self
 
     def __exit__(self, type: Any, value: Any, traceback: Any) -> None:

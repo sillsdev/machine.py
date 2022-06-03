@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import xml.etree.ElementTree as etree
 from dataclasses import dataclass, field
 from typing import BinaryIO, Iterable, List, Optional
@@ -26,7 +28,7 @@ class UsxVerseParser:
         if ctxt.chapter is not None and ctxt.verse is not None:
             yield ctxt.create_verse()
 
-    def _parse_element(self, elem: etree.Element, ctxt: "_ParseContext") -> Iterable[UsxVerse]:
+    def _parse_element(self, elem: etree.Element, ctxt: _ParseContext) -> Iterable[UsxVerse]:
         if elem.text is not None and ctxt.chapter is not None and ctxt.verse is not None:
             ctxt.add_token(elem.text)
         for e in elem:

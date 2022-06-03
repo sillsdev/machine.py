@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Iterable, Optional, Tuple
 
@@ -55,7 +57,7 @@ class LatinWordTokenizer(WhitespaceTokenizer):
                     yield Range.create(ctxt.word_start, char_range.end)
 
     def _process_character(
-        self, data: str, data_range: Range[int], ctxt: "LatinWordTokenizer._TokenizeContext"
+        self, data: str, data_range: Range[int], ctxt: LatinWordTokenizer._TokenizeContext
     ) -> Tuple[Optional[Range[int]], Optional[Range[int]]]:
         token_ranges: Tuple[Optional[Range[int]], Optional[Range[int]]] = (None, None)
         c = data[ctxt.index]

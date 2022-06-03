@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, BinaryIO
 
 from ..utils.typeshed import StrPath
@@ -8,7 +10,7 @@ class FileStreamContainer(StreamContainer):
     def __init__(self, filename: StrPath) -> None:
         self._filename = filename
 
-    def __enter__(self) -> "FileStreamContainer":
+    def __enter__(self) -> FileStreamContainer:
         return self
 
     def __exit__(self, type: Any, value: Any, traceback: Any) -> None:

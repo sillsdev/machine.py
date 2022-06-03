@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import List, Optional, Sequence
@@ -107,7 +109,7 @@ class UsfmToken:
             self.attributes.append(UsfmAttribute(attr_match[0], attr_match[1], i))
         return text
 
-    def copy_attributes(self, source_token: "UsfmToken") -> None:
+    def copy_attributes(self, source_token: UsfmToken) -> None:
         self.attributes = source_token.attributes
         self._default_attribute_name = source_token._default_attribute_name
 

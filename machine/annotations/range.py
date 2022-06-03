@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Generic, Iterable, Iterator, Optional, Sized, TypeVar, cast
@@ -9,12 +11,12 @@ Offset = TypeVar("Offset")
 
 @dataclass(frozen=True)
 class Range(Generic[Offset], Sized, Iterable[Offset], Comparable):
-    _factory: "_RangeFactory[Offset]"
+    _factory: _RangeFactory[Offset]
     start: Offset
     end: Offset
 
     @classmethod
-    def create(cls, start: Offset, end: Optional[Offset] = None) -> "Range[Offset]":
+    def create(cls, start: Offset, end: Optional[Offset] = None) -> Range[Offset]:
         if isinstance(start, int):
             factory = cast(_RangeFactory[Offset], _INT_RANGE_FACTORY)
         else:
@@ -26,7 +28,7 @@ class Range(Generic[Offset], Sized, Iterable[Offset], Comparable):
     def length(self) -> int:
         return self._factory.get_length(self.start, self.end)
 
-    def overlaps(self, other: "Range[Offset]") -> bool:
+    def overlaps(self, other: Range[Offset]) -> bool:
         if self._factory.include_endpoint:
             return (
                 self._factory.offset_compare(self.start, other.end) <= 0
@@ -37,7 +39,7 @@ class Range(Generic[Offset], Sized, Iterable[Offset], Comparable):
             and self._factory.offset_compare(self.end, other.start) > 0
         )
 
-    def contains(self, other: "Range[Offset]") -> bool:
+    def contains(self, other: Range[Offset]) -> bool:
         return (
             self._factory.offset_compare(self.start, other.start) <= 0
             and self._factory.offset_compare(self.end, other.end) >= 0
@@ -93,7 +95,7 @@ class _IntRangeFactory(_RangeFactory[int]):
     def include_endpoint(self) -> bool:
         return False
 
-    def create(self, start: int, end: Optional[int]) -> "Range[int]":
+    def create(self, start: int, end: Optional[int]) -> Range[int]:
         if end is None:
             end = start + 1
         return Range(self, start, end)

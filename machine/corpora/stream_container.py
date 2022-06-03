@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Any, BinaryIO
 
 
 class StreamContainer(ABC):
     @abstractmethod
-    def __enter__(self) -> "StreamContainer":
+    def __enter__(self) -> StreamContainer:
         ...
 
     @abstractmethod

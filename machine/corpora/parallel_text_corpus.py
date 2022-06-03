@@ -1,3 +1,4 @@
+from __future__ import annotations
 from itertools import islice
 from typing import Any, Callable, Generator, Iterable, List, Optional, Sequence, Tuple
 
@@ -10,7 +11,7 @@ from .token_processors import escape_spaces, lowercase, normalize, unescape_spac
 
 
 class ParallelTextCorpus(Corpus[ParallelTextRow]):
-    def invert(self) -> "ParallelTextCorpus":
+    def invert(self) -> ParallelTextCorpus:
         def _invert(row: ParallelTextRow) -> ParallelTextRow:
             return row.invert()
 
@@ -18,7 +19,7 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
     def tokenize(
         self, source_tokenizer: Tokenizer[str, int, str], target_tokenizer: Optional[Tokenizer[str, int, str]] = None
-    ) -> "ParallelTextCorpus":
+    ) -> ParallelTextCorpus:
         if target_tokenizer is None:
             target_tokenizer = source_tokenizer
 
@@ -31,7 +32,7 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
         return self.transform(_tokenize)
 
-    def tokenize_source(self, tokenizer: Tokenizer[str, int, str]) -> "ParallelTextCorpus":
+    def tokenize_source(self, tokenizer: Tokenizer[str, int, str]) -> ParallelTextCorpus:
         def _tokenize(row: ParallelTextRow) -> ParallelTextRow:
             if len(row.source_segment) > 0:
                 row.source_segment = list(tokenizer.tokenize(row.source_text))
@@ -39,7 +40,7 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
         return self.transform(_tokenize)
 
-    def tokenize_target(self, tokenizer: Tokenizer[str, int, str]) -> "ParallelTextCorpus":
+    def tokenize_target(self, tokenizer: Tokenizer[str, int, str]) -> ParallelTextCorpus:
         def _tokenize(row: ParallelTextRow) -> ParallelTextRow:
             if len(row.target_segment) > 0:
                 row.target_segment = list(tokenizer.tokenize(row.target_text))
@@ -49,7 +50,7 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
     def detokenize(
         self, source_detokenizer: Detokenizer[str, str], target_detokenizer: Optional[Detokenizer[str, str]] = None
-    ) -> "ParallelTextCorpus":
+    ) -> ParallelTextCorpus:
         if target_detokenizer is None:
             target_detokenizer = source_detokenizer
 
@@ -62,7 +63,7 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
         return self.transform(_detokenize)
 
-    def detokenize_source(self, detokenizer: Detokenizer[str, str]) -> "ParallelTextCorpus":
+    def detokenize_source(self, detokenizer: Detokenizer[str, str]) -> ParallelTextCorpus:
         def _detokenize(row: ParallelTextRow) -> ParallelTextRow:
             if len(row.source_segment) > 1:
                 row.source_segment = [detokenizer.detokenize(row.source_segment)]
@@ -70,7 +71,7 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
         return self.transform(_detokenize)
 
-    def detokenize_target(self, detokenizer: Detokenizer[str, str]) -> "ParallelTextCorpus":
+    def detokenize_target(self, detokenizer: Detokenizer[str, str]) -> ParallelTextCorpus:
         def _detokenize(row: ParallelTextRow) -> ParallelTextRow:
             if len(row.target_segment) > 1:
                 row.target_segment = [detokenizer.detokenize(row.target_segment)]
@@ -78,7 +79,7 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
         return self.transform(_detokenize)
 
-    def normalize(self, normalization_form: str) -> "ParallelTextCorpus":
+    def normalize(self, normalization_form: str) -> ParallelTextCorpus:
         def _normalize(row: ParallelTextRow) -> ParallelTextRow:
             row.source_segment = normalize(normalization_form, row.source_segment)
             row.target_segment = normalize(normalization_form, row.target_segment)
@@ -86,19 +87,19 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
         return self.transform(_normalize)
 
-    def nfc_normalize(self) -> "ParallelTextCorpus":
+    def nfc_normalize(self) -> ParallelTextCorpus:
         return self.normalize("NFC")
 
-    def nfd_normalize(self) -> "ParallelTextCorpus":
+    def nfd_normalize(self) -> ParallelTextCorpus:
         return self.normalize("NFD")
 
-    def nfkc_normalize(self) -> "ParallelTextCorpus":
+    def nfkc_normalize(self) -> ParallelTextCorpus:
         return self.normalize("NFKC")
 
-    def nfkd_normalize(self) -> "ParallelTextCorpus":
+    def nfkd_normalize(self) -> ParallelTextCorpus:
         return self.normalize("NFKD")
 
-    def lowercase(self) -> "ParallelTextCorpus":
+    def lowercase(self) -> ParallelTextCorpus:
         def _lowercase(row: ParallelTextRow) -> ParallelTextRow:
             row.source_segment = lowercase(row.source_segment)
             row.target_segment = lowercase(row.target_segment)
@@ -106,7 +107,7 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
         return self.transform(_lowercase)
 
-    def escape_spaces(self) -> "ParallelTextCorpus":
+    def escape_spaces(self) -> ParallelTextCorpus:
         def _escape_spaces(row: ParallelTextRow) -> ParallelTextRow:
             row.source_segment = escape_spaces(row.source_segment)
             row.target_segment = escape_spaces(row.target_segment)
@@ -114,7 +115,7 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
         return self.transform(_escape_spaces)
 
-    def unescape_spaces(self) -> "ParallelTextCorpus":
+    def unescape_spaces(self) -> ParallelTextCorpus:
         def _unescape_spaces(row: ParallelTextRow) -> ParallelTextRow:
             row.source_segment = unescape_spaces(row.source_segment)
             row.target_segment = unescape_spaces(row.target_segment)
@@ -122,24 +123,24 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
         return self.transform(_unescape_spaces)
 
-    def transform(self, transform: Callable[[ParallelTextRow], ParallelTextRow]) -> "ParallelTextCorpus":
+    def transform(self, transform: Callable[[ParallelTextRow], ParallelTextRow]) -> ParallelTextCorpus:
         return _TransformParallelTextCorpus(self, transform)
 
-    def filter_nonempty(self) -> "ParallelTextCorpus":
+    def filter_nonempty(self) -> ParallelTextCorpus:
         return self.filter(lambda r: not r.is_empty)
 
-    def filter(self, predicate: Callable[[ParallelTextRow], bool]) -> "ParallelTextCorpus":
+    def filter(self, predicate: Callable[[ParallelTextRow], bool]) -> ParallelTextCorpus:
         return self.filter_by_index(lambda r, _: predicate(r))
 
-    def filter_by_index(self, predicate: Callable[[ParallelTextRow, int], bool]) -> "ParallelTextCorpus":
+    def filter_by_index(self, predicate: Callable[[ParallelTextRow, int], bool]) -> ParallelTextCorpus:
         return _FilterParallelTextCorpus(self, predicate)
 
-    def take(self, count: int) -> "ParallelTextCorpus":
+    def take(self, count: int) -> ParallelTextCorpus:
         return _TakeParallelTextCorpus(self, count)
 
     def split(
         self, percent: Optional[float] = None, size: Optional[int] = None, include_empty: bool = True, seed: Any = None
-    ) -> Tuple["ParallelTextCorpus", "ParallelTextCorpus", int, int]:
+    ) -> Tuple[ParallelTextCorpus, ParallelTextCorpus, int, int]:
         corpus_size = self.count(include_empty)
         split_indices = get_split_indices(corpus_size, percent, size, seed)
 

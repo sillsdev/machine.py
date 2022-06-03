@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum, IntEnum, auto
 from pathlib import Path
@@ -32,7 +33,7 @@ class VerseRef(Comparable):
         book: Union[str, int] = 0,
         chapter: Union[str, int] = 0,
         verse: Union[str, int] = 0,
-        versification: Optional["Versification"] = None,
+        versification: Optional[Versification] = None,
     ) -> None:
         if book == 0 and chapter == 0 and verse == 0 and versification is None:
             self._book_num = 0
@@ -63,7 +64,7 @@ class VerseRef(Comparable):
             )
 
     @classmethod
-    def from_string(cls, verse_str: str, versification: Optional["Versification"] = None) -> "VerseRef":
+    def from_string(cls, verse_str: str, versification: Optional[Versification] = None) -> VerseRef:
         verse_str = verse_str.replace("\u200f", "")
         if verse_str.find("/") >= 0:
             parts = verse_str.split("/")
@@ -92,7 +93,7 @@ class VerseRef(Comparable):
         return VerseRef(b_cv[0], c_v[0], c_v[1], versification)
 
     @classmethod
-    def from_range(cls, start: "VerseRef", end: "VerseRef") -> "VerseRef":
+    def from_range(cls, start: VerseRef, end: VerseRef) -> VerseRef:
         if start.book_num != end.book_num or start.chapter_num != end.chapter_num:
             raise ValueError("The start and end verses are not in the same chapter.")
         if start.has_multiple:
@@ -105,7 +106,7 @@ class VerseRef(Comparable):
         return VerseRef(start.book, start.chapter, f"{start.verse_num}-{end.verse_num}", start.versification)
 
     @classmethod
-    def from_bbbcccvvv(cls, bbbcccvvv: int, versification: Optional["Versification"] = None) -> "VerseRef":
+    def from_bbbcccvvv(cls, bbbcccvvv: int, versification: Optional[Versification] = None) -> VerseRef:
         book = bbbcccvvv // 1000000
         chapter = bbbcccvvv % 1000000 // 1000
         verse = bbbcccvvv % 1000
@@ -256,7 +257,7 @@ class VerseRef(Comparable):
     def simplify(self) -> None:
         self._verse = None
 
-    def all_verses(self) -> Iterable["VerseRef"]:
+    def all_verses(self) -> Iterable[VerseRef]:
         if self._verse is None or self.chapter_num <= 0:
             yield self.copy()
         else:
@@ -276,10 +277,10 @@ class VerseRef(Comparable):
                             yield verse_in_range
                     yield last_verse
 
-    def unbridge(self) -> "VerseRef":
+    def unbridge(self) -> VerseRef:
         return next(iter(self.all_verses()))
 
-    def get_ranges(self) -> Iterable["VerseRef"]:
+    def get_ranges(self) -> Iterable[VerseRef]:
         if self._verse is None or self.chapter_num <= 0:
             yield self.copy()
         else:
@@ -289,7 +290,7 @@ class VerseRef(Comparable):
                 vref.verse = range
                 yield vref
 
-    def copy(self) -> "VerseRef":
+    def copy(self) -> VerseRef:
         copy = VerseRef()
         copy._book_num = self._book_num
         copy._chapter_num = self._chapter_num
@@ -298,18 +299,18 @@ class VerseRef(Comparable):
         copy.versification = self.versification
         return copy
 
-    def copy_from(self, vref: "VerseRef") -> None:
+    def copy_from(self, vref: VerseRef) -> None:
         self._book_num = vref._book_num
         self._chapter_num = vref._chapter_num
         self._verse_num = vref._verse_num
         self._verse = vref._verse
         self.versification = vref.versification
 
-    def copy_verse_from(self, vref: "VerseRef") -> None:
+    def copy_verse_from(self, vref: VerseRef) -> None:
         self._verse_num = vref._verse_num
         self._verse = vref._verse
 
-    def change_versification(self, versification: "Versification") -> bool:
+    def change_versification(self, versification: Versification) -> bool:
         return versification.change_versification(self)
 
     def str_with_versification(self) -> str:
@@ -355,7 +356,7 @@ class VerseRef(Comparable):
             return 1
         return 0
 
-    def exact_equals(self, other: "VerseRef") -> bool:
+    def exact_equals(self, other: VerseRef) -> bool:
         return (
             self.book_num == other.book_num
             and self.chapter_num == other.chapter_num
@@ -372,7 +373,7 @@ class VerseRef(Comparable):
     def __repr__(self) -> str:
         return f"{self.book} {self.chapter}:{self.verse}"
 
-    def _compare_verses(self, other: "VerseRef", compare_segments: bool) -> int:
+    def _compare_verses(self, other: VerseRef, compare_segments: bool) -> int:
         verse_list = list(self.all_verses())
         other_verse_list = list(other.all_verses())
 
@@ -549,7 +550,7 @@ class Versification:
     _NON_CANONICAL_LAST_CHAPTER_OR_VERSE = 998
 
     @classmethod
-    def create(cls, name: str) -> "Versification":
+    def create(cls, name: str) -> Versification:
         type = cls._BUILTIN_VERSIFICATION_NAMES_TO_TYPES.get(name)
         if type is not None:
             return cls.get_builtin(type)
@@ -560,7 +561,7 @@ class Versification:
         return versification
 
     @classmethod
-    def get_builtin(cls, type: Union[VersificationType, int, str]) -> "Versification":
+    def get_builtin(cls, type: Union[VersificationType, int, str]) -> Versification:
         if isinstance(type, int):
             type = VersificationType(type)
         else:
@@ -588,9 +589,9 @@ class Versification:
     def load(
         cls,
         filename: StrPath,
-        base_versification: Optional["Versification"] = None,
+        base_versification: Optional[Versification] = None,
         fallback_name: Optional[str] = None,
-    ) -> "Versification":
+    ) -> Versification:
         try:
             return cls._load(filename, base_versification, fallback_name, "utf-8-sig")
         except UnicodeDecodeError:
@@ -601,10 +602,10 @@ class Versification:
     def _load(
         cls,
         filename: StrPath,
-        base_versification: Optional["Versification"],
+        base_versification: Optional[Versification],
         fallback_name: Optional[str],
         encoding: str,
-    ) -> "Versification":
+    ) -> Versification:
         with open(filename, "r", encoding=encoding) as file:
             versification = (
                 None
@@ -618,13 +619,13 @@ class Versification:
         cls,
         stream: TextIO,
         filename: Optional[StrPath] = None,
-        versification: Optional["Versification"] = None,
+        versification: Optional[Versification] = None,
         fallback_name: Optional[str] = None,
-    ) -> "Versification":
+    ) -> Versification:
         return _parse_versification(stream, filename, versification, fallback_name)
 
     def __init__(
-        self, name: str, filename: Optional[StrPath] = None, base_versification: Optional["Versification"] = None
+        self, name: str, filename: Optional[StrPath] = None, base_versification: Optional[Versification] = None
     ) -> None:
         self._name = name
         self._type = VersificationType.UNKNOWN
@@ -657,11 +658,11 @@ class Versification:
         return self._filename
 
     @property
-    def type(self) -> "VersificationType":
+    def type(self) -> VersificationType:
         return self._type
 
     @property
-    def base_versification(self) -> Optional["Versification"]:
+    def base_versification(self) -> Optional[Versification]:
         return self._base_versification
 
     def get_last_book(self) -> int:
@@ -759,7 +760,7 @@ class Versification:
         vref.versification = self
         return True
 
-    def __eq__(self, other: "Versification") -> bool:
+    def __eq__(self, other: Versification) -> bool:
         if self is other:
             return True
         return (
@@ -822,13 +823,13 @@ class VerseMappings:
     def get_standard(self, versification_ref: VerseRef) -> Optional[VerseRef]:
         return self._versification_to_standard.get(versification_ref)
 
-    def copy(self) -> "VerseMappings":
+    def copy(self) -> VerseMappings:
         copy = VerseMappings()
         copy._versification_to_standard = self._versification_to_standard.copy()
         copy._standard_to_versification = self._standard_to_versification.copy()
         return copy
 
-    def __eq__(self, other: "VerseMappings") -> bool:
+    def __eq__(self, other: VerseMappings) -> bool:
         return (
             self._versification_to_standard == other._versification_to_standard
             and self._standard_to_versification == other._standard_to_versification
@@ -878,7 +879,7 @@ def _syntax_error(message: str, line_num: int) -> RuntimeError:
 def _parse_versification(
     stream: TextIO,
     filename: Optional[StrPath] = None,
-    versification: Optional["Versification"] = None,
+    versification: Optional[Versification] = None,
     fallback_name: Optional[str] = None,
 ) -> Versification:
     line_num = 1

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from abc import abstractmethod
 from itertools import islice
 from typing import Callable, Generator, Iterable, Optional
@@ -31,25 +32,25 @@ class AlignmentCorpus(Corpus[AlignmentRow]):
     def count(self, include_empty: bool = True) -> int:
         return sum(ac.count(include_empty) for ac in self.alignment_collections)
 
-    def invert(self) -> "AlignmentCorpus":
+    def invert(self) -> AlignmentCorpus:
         def _invert(row: AlignmentRow) -> AlignmentRow:
             return row.invert()
 
         return self.transform(_invert)
 
-    def transform(self, transform: Callable[[AlignmentRow], AlignmentRow]) -> "AlignmentCorpus":
+    def transform(self, transform: Callable[[AlignmentRow], AlignmentRow]) -> AlignmentCorpus:
         return _TransformAlignmentCorpus(self, transform)
 
-    def filter_nonempty(self) -> "AlignmentCorpus":
+    def filter_nonempty(self) -> AlignmentCorpus:
         return self.filter(lambda r: not r.is_empty)
 
-    def filter(self, predicate: Callable[[AlignmentRow], bool]) -> "AlignmentCorpus":
+    def filter(self, predicate: Callable[[AlignmentRow], bool]) -> AlignmentCorpus:
         return self.filter_by_index(lambda r, _: predicate(r))
 
-    def filter_by_index(self, predicate: Callable[[AlignmentRow, int], bool]) -> "AlignmentCorpus":
+    def filter_by_index(self, predicate: Callable[[AlignmentRow, int], bool]) -> AlignmentCorpus:
         return _FilterAlignmentCorpus(self, predicate)
 
-    def take(self, count: int) -> "AlignmentCorpus":
+    def take(self, count: int) -> AlignmentCorpus:
         return _TakeAlignmentCorpus(self, count)
 
 

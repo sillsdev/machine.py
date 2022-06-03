@@ -1,7 +1,8 @@
-from contextlib import AbstractContextManager
+from __future__ import annotations
+
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any
+from typing import Any, ContextManager
 
 from testutils.corpora_test_helpers import create_test_paratext_backup
 
@@ -23,7 +24,7 @@ def test_get_text() -> None:
         assert luk is None
 
 
-class _TestEnvironment(AbstractContextManager):
+class _TestEnvironment(ContextManager["_TestEnvironment"]):
     def __init__(self) -> None:
         self._temp_dir = TemporaryDirectory()
         archive_filename = create_test_paratext_backup(Path(self._temp_dir.name))
@@ -33,7 +34,7 @@ class _TestEnvironment(AbstractContextManager):
     def corpus(self) -> ParatextBackupTextCorpus:
         return self._corpus
 
-    def __enter__(self) -> "_TestEnvironment":
+    def __enter__(self) -> _TestEnvironment:
         return self
 
     def __exit__(self, type: Any, value: Any, traceback: Any) -> None:

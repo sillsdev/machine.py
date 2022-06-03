@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Collection
 
 from .aligned_word_pair import AlignedWordPair
@@ -21,5 +23,5 @@ class AlignmentRow:
     def is_empty(self) -> bool:
         return len(self.aligned_word_pairs) == 0
 
-    def invert(self) -> "AlignmentRow":
+    def invert(self) -> AlignmentRow:
         return AlignmentRow(self.text_id, self.ref, {ta.invert() for ta in self.aligned_word_pairs})
