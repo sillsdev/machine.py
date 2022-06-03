@@ -31,19 +31,6 @@ class Corpus(ABC, Generic[Row], Iterable[Row]):
         with self.get_rows() as rows:
             return sum(1 for row in rows if include_empty or not row.is_empty)
 
-    def filter_nonempty(self) -> ContextManagedGenerator[Row, None, None]:
-        return self.filter(lambda r: not r.is_empty)
-
-    def filter(self, predicate: Callable[[Row], bool]) -> ContextManagedGenerator[Row, None, None]:
-        return self.filter_by_index(lambda r, _: predicate(r))
-
-    def filter_by_index(self, predicate: Callable[[Row, int], bool]) -> ContextManagedGenerator[Row, None, None]:
-        def _get_rows() -> Generator[Row, None, None]:
-            with self.get_rows() as rows:
-                yield from (row for i, row in enumerate(rows) if predicate(row, i))
-
-        return ContextManagedGenerator(_get_rows())
-
     def interleaved_split(
         self, percent: Optional[float] = None, size: Optional[int] = None, include_empty: bool = True, seed: Any = None
     ) -> Tuple[ContextManagedGenerator[Tuple[Row, bool], None, None], int, int]:
@@ -51,12 +38,10 @@ class Corpus(ABC, Generic[Row], Iterable[Row]):
         split_indices = get_split_indices(corpus_size, percent, size, seed)
 
         def _get_rows() -> Generator[Tuple[Row, bool], None, None]:
-            if include_empty:
-                corpus = self.get_rows()
-            else:
-                corpus = self.filter_nonempty()
-            with corpus as rows:
-                yield from ((row, i in split_indices) for i, row in enumerate(rows))
+            with self.get_rows() as rows:
+                yield from (
+                    (row, i in split_indices) for i, row in enumerate(rows) if include_empty or not row.is_empty
+                )
 
         return (
             ContextManagedGenerator(_get_rows()),

@@ -1,9 +1,8 @@
 import argparse
 import json
-import logging
-import shutil
 from contextlib import ExitStack
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import List, TextIO
 
 import json_stream
@@ -16,8 +15,6 @@ from ..translation.translation_engine import TranslationEngine
 from .nmt_model_factory import NmtModelFactory
 from .open_nmt_model_factory import OpenNmtModelFactory
 
-LOGGER = logging.getLogger(__package__ + ".clearml_nmt_engine_build_job")
-
 _PRETRANSLATE_BATCH_SIZE = 128
 
 
@@ -29,64 +26,68 @@ class ClearMLNmtEngineBuildJob:
     def run(self) -> None:
         task = Task.init()
 
-        self._nmt_model_factory.init(task.name)
+        print("NMT Engine Build Job started")
+        print("Config:", self._config)
 
-        LOGGER.info("Downloading data files")
-        build_uri: str = self._config["build_uri_scheme"] + "://" + self._config["build_uri"]
-        build_uri = build_uri.rstrip("/")
-        build_data_dir = Path(self._config["data_dir"]) / task.name
-        StorageManager.download_folder(build_uri, str(build_data_dir))
-        source_corpus = TextFileTextCorpus(build_data_dir / "src.train.txt")
-        target_corpus = TextFileTextCorpus(build_data_dir / "trg.train.txt")
-        parallel_corpus = source_corpus.align_rows(target_corpus)
+        try:
+            self._nmt_model_factory.init(task.name)
 
-        LOGGER.info("Training source tokenizer")
-        source_tokenizer_trainer = self._nmt_model_factory.create_source_tokenizer_trainer(task.name, source_corpus)
-        source_tokenizer_trainer.train()
-        source_tokenizer_trainer.save()
+            print("Downloading data files")
+            build_uri: str = self._config["build_uri_scheme"] + "://" + self._config["build_uri"]
+            build_uri = build_uri.rstrip("/")
+            src_train_path = Path(StorageManager.get_local_copy(f"{build_uri}/src.train.txt"))
+            trg_train_path = Path(StorageManager.get_local_copy(f"{build_uri}/trg.train.txt"))
+            src_pretranslate_path = Path(StorageManager.get_local_copy(f"{build_uri}/src.pretranslate.json"))
+            source_corpus = TextFileTextCorpus(src_train_path)
+            target_corpus = TextFileTextCorpus(trg_train_path)
+            parallel_corpus = source_corpus.align_rows(target_corpus)
 
-        LOGGER.info("Training target tokenizer")
-        target_tokenizer_trainer = self._nmt_model_factory.create_target_tokenizer_trainer(task.name, target_corpus)
-        target_tokenizer_trainer.train()
-        target_tokenizer_trainer.save()
+            print("Training source tokenizer")
+            source_tokenizer_trainer = self._nmt_model_factory.create_source_tokenizer_trainer(task.name, source_corpus)
+            source_tokenizer_trainer.train()
+            source_tokenizer_trainer.save()
 
-        LOGGER.info("Training NMT model")
-        model_trainer = self._nmt_model_factory.create_model_trainer(
-            task.name, self._config["src_lang"], self._config["trg_lang"], parallel_corpus
-        )
-        model_trainer.train()
-        model_trainer.save()
+            print("Training target tokenizer")
+            target_tokenizer_trainer = self._nmt_model_factory.create_target_tokenizer_trainer(task.name, target_corpus)
+            target_tokenizer_trainer.train()
+            target_tokenizer_trainer.save()
 
-        LOGGER.info("Pretranslating segments")
-        source_tokenizer = self._nmt_model_factory.create_source_tokenizer(task.name)
-        target_detokenizer = self._nmt_model_factory.create_target_detokenizer(task.name)
-        src_pretranslate_path = build_data_dir / "src.pretranslate.json"
-        trg_pretranslate_path = build_data_dir / "trg.pretranslate.json"
-        with ExitStack() as stack:
-            model = stack.enter_context(self._nmt_model_factory.create_model(task.name))
-            engine = stack.enter_context(model.create_engine())
-            in_file = stack.enter_context(src_pretranslate_path.open("r", encoding="utf-8-sig"))
-            out_file = stack.enter_context(trg_pretranslate_path.open("w", encoding="utf-8", newline="\n"))
-            src_pretranslate = json_stream.load(in_file)
-            out_file.write("[\n")
-            batch: List[dict] = []
-            pi: dict
-            for pi in src_pretranslate:
-                batch.append(pi)
-                if len(batch) == _PRETRANSLATE_BATCH_SIZE:
+            print("Training NMT model")
+            model_trainer = self._nmt_model_factory.create_model_trainer(
+                task.name, self._config["src_lang"], self._config["trg_lang"], parallel_corpus
+            )
+            model_trainer.train()
+            model_trainer.save()
+
+            print("Pretranslating segments")
+            source_tokenizer = self._nmt_model_factory.create_source_tokenizer(task.name)
+            target_detokenizer = self._nmt_model_factory.create_target_detokenizer(task.name)
+            with ExitStack() as stack:
+                temp_dir = Path(stack.enter_context(TemporaryDirectory()))
+                trg_pretranslate_path = temp_dir / "trg.pretranslate.json"
+                model = stack.enter_context(self._nmt_model_factory.create_model(task.name))
+                engine = stack.enter_context(model.create_engine())
+                in_file = stack.enter_context(src_pretranslate_path.open("r", encoding="utf-8-sig"))
+                out_file = stack.enter_context(trg_pretranslate_path.open("w", encoding="utf-8", newline="\n"))
+                src_pretranslate = json_stream.load(in_file)
+                out_file.write("[\n")
+                batch: List[dict] = []
+                pi: dict
+                for pi in src_pretranslate:
+                    batch.append(pi)
+                    if len(batch) == _PRETRANSLATE_BATCH_SIZE:
+                        _translate_batch(engine, batch, source_tokenizer, target_detokenizer, out_file)
+                        batch.clear()
+                if len(batch) > 0:
                     _translate_batch(engine, batch, source_tokenizer, target_detokenizer, out_file)
                     batch.clear()
-            if len(batch) > 0:
-                _translate_batch(engine, batch, source_tokenizer, target_detokenizer, out_file)
-                batch.clear()
-            out_file.write("]\n")
+                out_file.write("]\n")
 
-        LOGGER.info("Uploading pretranslations")
-        StorageManager.upload_file(str(src_pretranslate_path), f"{build_uri}/src.pretranslate.json")
-
-        LOGGER.info("Cleaning up")
-        self._nmt_model_factory.cleanup(task.name)
-        shutil.rmtree(build_data_dir)
+                print("Uploading pretranslations")
+                StorageManager.upload_file(str(src_pretranslate_path), f"{build_uri}/src.pretranslate.json")
+        finally:
+            print("Cleaning up")
+            self._nmt_model_factory.cleanup(task.name)
 
 
 def _translate_batch(
@@ -117,8 +118,6 @@ def main() -> None:
     config["model"] = "TransformerBase"
     config["mixed_precision"] = True
 
-    LOGGER.info("NMT Engine Build Job started")
-    LOGGER.info("Config: %s", config)
     nmt_model_factory = OpenNmtModelFactory(config)
     job = ClearMLNmtEngineBuildJob(config, nmt_model_factory)
     job.run()

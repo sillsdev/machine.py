@@ -1,7 +1,10 @@
+import logging
+import os
 import shutil
 from pathlib import Path
 from typing import Optional, Set
 
+import tensorflow as tf
 from opennmt import END_OF_SENTENCE_TOKEN, PADDING_TOKEN, START_OF_SENTENCE_TOKEN, load_config
 from opennmt.data import Vocab
 
@@ -24,6 +27,7 @@ class OpenNmtModelFactory(NmtModelFactory):
         self._config = config
 
     def init(self, key: str) -> None:
+        _set_tf_log_level()
         engine_dir = self._get_model_dir(key)
         engine_dir.mkdir(exist_ok=True)
 
@@ -65,6 +69,7 @@ class OpenNmtModelFactory(NmtModelFactory):
         return SentencePieceTrainer(
             corpus,
             vocab_size=8000,
+            hard_vocab_limit=False,
             model_prefix=str(src_sp_model_prefix),
             normalization_rule_name="nmt_nfkc_cf",
         )
@@ -74,6 +79,7 @@ class OpenNmtModelFactory(NmtModelFactory):
         return SentencePieceTrainer(
             corpus,
             vocab_size=8000,
+            hard_vocab_limit=False,
             model_prefix=str(trg_sp_model_prefix),
             normalization_rule_name="nmt_nfkc",
         )
@@ -114,6 +120,13 @@ class OpenNmtModelFactory(NmtModelFactory):
         if not parent_model_dir.is_dir():
             return None
         return load_config(str(parent_model_dir / "config.yml"))
+
+
+def _set_tf_log_level(log_level: int = logging.INFO) -> None:
+    tf.get_logger().setLevel(log_level)
+    # Do not display warnings from TensorFlow C++, because of spurious "PredictCost()" errors.
+    # See https://github.com/tensorflow/tensorflow/issues/50575.
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 
 def _convert_vocab(sp_vocab_path: Path, onmt_vocab_path: Path, tags: Set[str] = set()) -> None:

@@ -20,7 +20,7 @@ class SentencePieceTrainer(Trainer):
     ) -> None:
         if self._corpus is not None:
             with self._corpus.filter_nonempty().get_rows() as rows:
-                sp.SentencePieceTrainer.Train(sentence_iterator=rows, **self._kwargs)
+                sp.SentencePieceTrainer.Train(sentence_iterator=(row.text for row in rows), **self._kwargs)
         else:
             sp.SentencePieceTrainer.Train(**self._kwargs)
 
