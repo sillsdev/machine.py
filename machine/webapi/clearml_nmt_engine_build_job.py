@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import shutil
 from contextlib import ExitStack
 from pathlib import Path
@@ -15,6 +16,8 @@ from ..translation.translation_engine import TranslationEngine
 from .nmt_model_factory import NmtModelFactory
 from .open_nmt_model_factory import OpenNmtModelFactory
 
+LOGGER = logging.getLogger(__package__ + ".clearml_nmt_engine_build_job")
+
 _PRETRANSLATE_BATCH_SIZE = 128
 
 
@@ -28,6 +31,7 @@ class ClearMLNmtEngineBuildJob:
 
         self._nmt_model_factory.init(task.name)
 
+        LOGGER.info("Downloading data files")
         build_uri: str = self._config["build_uri"]
         build_uri = build_uri.rstrip("/")
         build_data_dir = Path(self._config["data_dir"]) / task.name
@@ -36,21 +40,24 @@ class ClearMLNmtEngineBuildJob:
         target_corpus = TextFileTextCorpus(build_data_dir / "trg.train.txt")
         parallel_corpus = source_corpus.align_rows(target_corpus)
 
+        LOGGER.info("Training source tokenizer")
         source_tokenizer_trainer = self._nmt_model_factory.create_source_tokenizer_trainer(task.name, source_corpus)
         source_tokenizer_trainer.train()
         source_tokenizer_trainer.save()
 
+        LOGGER.info("Training target tokenizer")
         target_tokenizer_trainer = self._nmt_model_factory.create_target_tokenizer_trainer(task.name, target_corpus)
         target_tokenizer_trainer.train()
         target_tokenizer_trainer.save()
 
+        LOGGER.info("Training NMT model")
         model_trainer = self._nmt_model_factory.create_model_trainer(
             task.name, self._config["src_lang"], self._config["trg_lang"], parallel_corpus
         )
-
         model_trainer.train()
         model_trainer.save()
 
+        LOGGER.info("Pretranslating segments")
         source_tokenizer = self._nmt_model_factory.create_source_tokenizer(task.name)
         target_detokenizer = self._nmt_model_factory.create_target_detokenizer(task.name)
         src_pretranslate_path = build_data_dir / "src.pretranslate.json"
@@ -74,8 +81,10 @@ class ClearMLNmtEngineBuildJob:
                 batch.clear()
             out_file.write("]\n")
 
+        LOGGER.info("Uploading pretranslations")
         StorageManager.upload_file(str(src_pretranslate_path), f"{build_uri}/src.pretranslate.json")
 
+        LOGGER.info("Cleaning up")
         self._nmt_model_factory.cleanup(task.name)
         shutil.rmtree(build_data_dir)
 
@@ -106,6 +115,9 @@ def main() -> None:
     config["data_dir"] = "/var/lib/machine/data"
     config["model"] = "TransformerBase"
     config["mixed_precision"] = True
+
+    LOGGER.info("NMT Engine Build Job started")
+    LOGGER.info("Config: %s", config)
     nmt_model_factory = OpenNmtModelFactory(config)
     job = ClearMLNmtEngineBuildJob(config, nmt_model_factory)
     job.run()
