@@ -114,7 +114,15 @@ class OpenNmtModelFactory(NmtModelFactory):
                 "steps": 1000,
                 "early_stopping": {"metric": "bleu", "min_improvement": 0.2, "steps": 4},
             },
-            "train": {"max_step": 500},
+            "train": {
+                "max_step": 500,
+                "average_last_checkpoints": 0,
+                "maximum_features_length": 150,
+                "maximum_labels_length": 150,
+            },
+            "params": {
+                "length_penalty": 0.2,
+            },
         }
 
     def _get_model_dir(self, key: str) -> Path:

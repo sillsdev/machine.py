@@ -31,6 +31,8 @@ class ClearMLNmtEngineBuildJob:
             if task.get_status() in {"stopped", "stopping"}:
                 raise CanceledError
 
+        check_canceled()
+
         print("NMT Engine Build Job started")
         print("Config:", self._config)
 
@@ -86,9 +88,8 @@ class ClearMLNmtEngineBuildJob:
                 src_pretranslate = json_stream.load(in_file)
                 out_file.write("[\n")
                 batch: List[dict] = []
-                pi: dict
                 for pi in src_pretranslate:
-                    batch.append(pi)
+                    batch.append(dict(pi))
                     if len(batch) == _PRETRANSLATE_BATCH_SIZE:
                         check_canceled()
                         _translate_batch(engine, batch, source_tokenizer, target_detokenizer, out_file)
