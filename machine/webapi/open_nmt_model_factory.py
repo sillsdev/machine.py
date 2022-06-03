@@ -109,6 +109,12 @@ class OpenNmtModelFactory(NmtModelFactory):
                 "eval_features_file": "val.src.txt",
                 "eval_labels_file": "val.trg.txt",
             },
+            "eval": {
+                "external_evaluators": "bleu",
+                "steps": 1000,
+                "early_stopping": {"metric": "bleu", "min_improvement": 0.2, "steps": 4},
+            },
+            "train": {"max_step": 500},
         }
 
     def _get_model_dir(self, key: str) -> Path:
