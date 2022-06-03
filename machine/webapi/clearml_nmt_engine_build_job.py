@@ -88,6 +88,7 @@ class ClearMLNmtEngineBuildJob:
                     src_pretranslate = json_stream.load(in_file)
                     out_file.write("[\n")
                     batch: List[dict] = []
+                    first_batch = True
                     for pi in src_pretranslate:
                         batch.append(
                             {
@@ -99,12 +100,19 @@ class ClearMLNmtEngineBuildJob:
                         )
                         if len(batch) == _PRETRANSLATE_BATCH_SIZE:
                             check_canceled()
+                            if not first_batch:
+                                out_file.write(",\n")
                             _translate_batch(engine, batch, source_tokenizer, target_detokenizer, out_file)
+                            first_batch = False
                             batch.clear()
                     if len(batch) > 0:
+                        check_canceled()
+                        if not first_batch:
+                            out_file.write(",\n")
                         _translate_batch(engine, batch, source_tokenizer, target_detokenizer, out_file)
+                        first_batch = False
                         batch.clear()
-                    out_file.write("]\n")
+                    out_file.write("\n]\n")
 
                 check_canceled()
 
@@ -125,7 +133,9 @@ def _translate_batch(
     source_segments = (list(source_tokenizer.tokenize(pi["segment"])) for pi in batch)
     for i, result in enumerate(engine.translate_batch(source_segments)):
         batch[i]["segment"] = target_detokenizer.detokenize(result.target_segment)
-        out_file.write("    " + json.dumps(batch[i]) + ",\n")
+        out_file.write("    " + json.dumps(batch[i]))
+        if i < len(batch) - 1:
+            out_file.write(",\n")
 
 
 def main() -> None:
