@@ -1,0 +1,7 @@
+{
+    "model": "TransformerBase",
+    "mixed_precision": true,
+    "models_dir": "/var/lib/machine/models",
+    "data_dir": "/var/lib/machine/data",
+    "parent_models_dir": "/var/lib/machine/parent_models"
+}

@@ -10,39 +10,35 @@ from ..translation.translation_model import TranslationModel
 
 class NmtModelFactory(ABC):
     @abstractmethod
-    def init(self, key: str) -> None:
+    def init(self) -> None:
         ...
 
     @abstractmethod
-    def create_model(self, key: str) -> TranslationModel:
+    def create_model(self) -> TranslationModel:
         ...
 
     @abstractmethod
     def create_model_trainer(
-        self, key: str, source_language_tag: str, target_language_tag: str, corpus: ParallelTextCorpus
+        self, source_language_tag: str, target_language_tag: str, corpus: ParallelTextCorpus
     ) -> Trainer:
         ...
 
     @abstractmethod
-    def create_source_tokenizer(self, key: str) -> Tokenizer[str, int, str]:
+    def create_source_tokenizer(self) -> Tokenizer[str, int, str]:
         ...
 
     @abstractmethod
-    def create_source_tokenizer_trainer(self, key: str, corpus: TextCorpus) -> Trainer:
+    def create_source_tokenizer_trainer(self, corpus: TextCorpus) -> Trainer:
         ...
 
     @abstractmethod
-    def create_target_tokenizer_trainer(self, key: str, corpus: TextCorpus) -> Trainer:
+    def create_target_tokenizer_trainer(self, corpus: TextCorpus) -> Trainer:
         ...
 
     @abstractmethod
-    def create_target_detokenizer(self, key: str) -> Detokenizer[str, str]:
+    def create_target_detokenizer(self) -> Detokenizer[str, str]:
         ...
 
     @abstractmethod
-    def save_model(self, key: str) -> None:
-        ...
-
-    @abstractmethod
-    def cleanup(self, key: str) -> None:
+    def cleanup(self) -> None:
         ...
