@@ -151,8 +151,7 @@ def main() -> None:
     with config_path.open("r", encoding="utf-8-sig") as f:
         config = json.load(f)
 
-    merge_dict()
-    config = vars(args)
+    merge_dict(config, vars(args))
     config["build_id"] = task.name
 
     shared_file_service = SharedFileService(config)

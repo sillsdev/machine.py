@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from abc import abstractmethod
 from itertools import chain, islice
 from typing import Any, Callable, Generator, Iterable, List, Optional, Tuple

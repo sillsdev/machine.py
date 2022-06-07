@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import Any, Collection, Optional, Sequence
 
 from .aligned_word_pair import AlignedWordPair
