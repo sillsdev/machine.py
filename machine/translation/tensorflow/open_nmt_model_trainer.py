@@ -316,7 +316,7 @@ class _Trainer(onmt_training.Trainer):
                     self._save_checkpoint(step, moving_average=moving_average)
                     reset_throughput = True
                 if eval_steps is not None and step % eval_steps == 0:
-                    early_stop = self._evaluate(evaluator, step, moving_average=moving_average)
+                    early_stop = self._evaluate(evaluator, step.item(), moving_average=moving_average)
                     reset_throughput = True
                     if early_stop:
                         tf.get_logger().warning("Early stopping conditions are met. Exiting.")
