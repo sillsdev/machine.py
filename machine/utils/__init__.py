@@ -1,8 +1,16 @@
 from .canceled_error import CanceledError
+from .context_managed_generator import ContextManagedGenerator
 from .phased_progress_reporter import Phase, PhasedProgressReporter, PhaseProgress
 from .progress_status import ProgressStatus
 
-__all__ = ["CanceledError", "Phase", "PhasedProgressReporter", "PhaseProgress", "ProgressStatus"]
+__all__ = [
+    "CanceledError",
+    "ContextManagedGenerator",
+    "Phase",
+    "PhasedProgressReporter",
+    "PhaseProgress",
+    "ProgressStatus",
+]
 
 
 def merge_dict(dict1: dict, dict2: dict, override_keys=None) -> dict:
