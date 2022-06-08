@@ -38,7 +38,3 @@ class NmtModelFactory(ABC):
     @abstractmethod
     def create_target_detokenizer(self) -> Detokenizer[str, str]:
         ...
-
-    @abstractmethod
-    def cleanup(self) -> None:
-        ...

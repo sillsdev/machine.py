@@ -1,6 +1,5 @@
 import logging
 import os
-import shutil
 from pathlib import Path
 from typing import Optional, Set
 
@@ -28,8 +27,7 @@ class OpenNmtModelFactory(NmtModelFactory):
 
     def init(self) -> None:
         _set_tf_log_level()
-        engine_dir = self._model_dir
-        engine_dir.mkdir(exist_ok=True)
+        self._model_dir.mkdir(exist_ok=True)
 
     def create_model(self) -> TranslationModel:
         model_config = self._create_model_config()
@@ -88,9 +86,6 @@ class OpenNmtModelFactory(NmtModelFactory):
 
     def create_target_detokenizer(self) -> Detokenizer[str, str]:
         return SentencePieceDetokenizer()
-
-    def cleanup(self) -> None:
-        shutil.rmtree(self._model_dir)
 
     @property
     def _model_dir(self) -> Path:
