@@ -112,6 +112,7 @@ def main() -> None:
     parser.add_argument("--trg-lang", required=True, type=str, help="Target language tag")
     parser.add_argument("--build-uri-scheme", required=True, type=str, help="Build URI scheme")
     parser.add_argument("--build-uri", required=True, type=str, help="Build URI")
+    parser.add_argument("--max-step", type=int, help="Maximum number of steps")
     args = parser.parse_args()
 
     task = Task.init()

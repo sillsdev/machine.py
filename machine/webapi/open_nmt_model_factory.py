@@ -95,7 +95,7 @@ class OpenNmtModelFactory(NmtModelFactory):
         return SentencePieceTokenizer(self._model_dir / "trg-sp.model")
 
     def _create_model_config(self) -> dict:
-        return {
+        config = {
             "auto_config": True,
             "model_dir": str(self._model_dir),
             "data": {
@@ -120,6 +120,10 @@ class OpenNmtModelFactory(NmtModelFactory):
                 "length_penalty": 0.2,
             },
         }
+        if "max_step" in self._config:
+            config["train"]["max_step"] = self._config["max_step"]
+
+        return config
 
     def _get_parent_config(self, source_language_tag: str, target_language_tag: str) -> Optional[dict]:
         parents_dir = Path(self._config["parent_models_dir"])
