@@ -343,5 +343,5 @@ class _Trainer(onmt_training.Trainer):
                 message = f"Last step = {last_step} ; Last loss = {last_loss} ; Avg loss = {avg_loss}"
                 self._progress(ProgressStatus(last_step, message=message))
             self._save_checkpoint(step, moving_average=moving_average)
-            self._evaluate(evaluator, step, moving_average=moving_average)
+            self._evaluate(evaluator, step.item(), moving_average=moving_average)
             return summary
