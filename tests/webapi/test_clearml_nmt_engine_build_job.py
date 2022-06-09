@@ -60,7 +60,7 @@ class _TestEnvironment:
         when(self.model_trainer).train(check_canceled=ANY).thenReturn()
         when(self.model_trainer).save().thenReturn()
         stats = TrainStats()
-        stats.train_size = 3
+        stats.train_corpus_size = 3
         stats.metrics["bleu"] = 30.0
         setattr(self.model_trainer, "stats", stats)
 

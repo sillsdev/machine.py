@@ -6,7 +6,7 @@ from ..utils.progress_status import ProgressStatus
 
 class TrainStats:
     def __init__(self) -> None:
-        self.train_size: int = 0
+        self.train_corpus_size: int = 0
         self._metrics: Dict[str, float] = {}
 
     @property

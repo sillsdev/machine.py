@@ -83,7 +83,7 @@ class OpenNmtModelTrainer(Trainer):
         train_config: dict = config["train"]
         eval_config: dict = config["eval"]
 
-        train_corpus_size = self._create_corpus_files(data_config, model)
+        train_corpus_size = self._create_corpus_files(train_config, data_config, model)
         parent_checkpoint_path = self._create_parent_checkpoint(data_config)
 
         checkpoint = Checkpoint.from_config(config, model, optimizer=optimizer)
@@ -150,7 +150,7 @@ class OpenNmtModelTrainer(Trainer):
         if mixed_precision:
             disable_mixed_precision()
 
-        self._stats.train_size = train_corpus_size
+        self._stats.train_corpus_size = train_corpus_size
         if evaluator.metrics_history is not None:
             for name, value in evaluator.metrics_history[-1][1].items():
                 self._stats.metrics[name] = value
@@ -170,7 +170,7 @@ class OpenNmtModelTrainer(Trainer):
     def stats(self) -> TrainStats:
         return self._stats
 
-    def _create_corpus_files(self, data_config: dict, model: Model) -> int:
+    def _create_corpus_files(self, train_config: dict, data_config: dict, model: Model) -> int:
         train_src_path = Path(data_config["train_features_file"])
         train_trg_path = Path(data_config["train_labels_file"])
 
@@ -186,7 +186,10 @@ class OpenNmtModelTrainer(Trainer):
             or not eval_src_path.is_file()
             or not eval_trg_path.is_file()
         ):
-            corpus, train_size, _ = self._corpus.interleaved_split(size=self.val_size, include_empty=False, seed=31415)
+            max_src_length: int = train_config["maximum_features_length"]
+            max_trg_length: int = train_config["maximum_labels_length"]
+            corpus, _, _ = self._corpus.interleaved_split(size=self.val_size, include_empty=False, seed=31415)
+            train_corpus_size = 0
             with ExitStack() as stack:
                 train_src_path.parent.mkdir(parents=True, exist_ok=True)
                 train_src_file = stack.enter_context(train_src_path.open("w", encoding="utf-8", newline="\n"))
@@ -202,11 +205,12 @@ class OpenNmtModelTrainer(Trainer):
                     if is_test_row:
                         eval_src_file.write(row.source_text + "\n")
                         eval_trg_file.write(row.target_text + "\n")
-                    else:
+                    elif len(row.source_segment) <= max_src_length and len(row.target_segment) <= max_trg_length:
                         train_src_file.write(row.source_text + "\n")
                         train_trg_file.write(row.target_text + "\n")
+                        train_corpus_size += 1
 
-            return train_size
+            return train_corpus_size
         else:
             return model.examples_inputter.get_dataset_size([str(train_src_path), str(train_trg_path)])
 

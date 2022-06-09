@@ -166,7 +166,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
                 if check_canceled is not None:
                     check_canceled()
             model.end_training()
-        self._stats.train_size = trained_segment_count
+        self._stats.train_corpus_size = trained_segment_count
 
     def save(self) -> None:
         if self._prefix_filename is not None:
