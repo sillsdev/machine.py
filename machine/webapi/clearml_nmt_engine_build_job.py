@@ -106,15 +106,7 @@ def _translate_batch(
         writer.write(batch[i])
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Trains an NMT model.")
-    parser.add_argument("--src-lang", required=True, type=str, help="Source language tag")
-    parser.add_argument("--trg-lang", required=True, type=str, help="Target language tag")
-    parser.add_argument("--build-uri-scheme", required=True, type=str, help="Build URI scheme")
-    parser.add_argument("--build-uri", required=True, type=str, help="Build URI")
-    parser.add_argument("--max-step", type=int, help="Maximum number of steps")
-    args = parser.parse_args()
-
+def run(args: dict) -> None:
     task = Task.init()
 
     def check_canceled() -> None:
@@ -125,13 +117,25 @@ def main() -> None:
     with config_path.open("r", encoding="utf-8-sig") as f:
         config = json.load(f)
 
-    merge_dict(config, vars(args))
+    merge_dict(config, args)
     config["build_id"] = task.name
 
     shared_file_service = SharedFileService(config)
     nmt_model_factory = OpenNmtModelFactory(config)
     job = ClearMLNmtEngineBuildJob(config, nmt_model_factory, shared_file_service)
     job.run(check_canceled)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Trains an NMT model.")
+    parser.add_argument("--src-lang", required=True, type=str, help="Source language tag")
+    parser.add_argument("--trg-lang", required=True, type=str, help="Target language tag")
+    parser.add_argument("--build-uri-scheme", required=True, type=str, help="Build URI scheme")
+    parser.add_argument("--build-uri", required=True, type=str, help="Build URI")
+    parser.add_argument("--max-step", type=int, help="Maximum number of steps")
+    args = parser.parse_args()
+
+    run(vars(args))
 
 
 if __name__ == "__main__":
