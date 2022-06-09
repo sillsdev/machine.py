@@ -76,7 +76,7 @@ class SharedFileService:
 
     @property
     def _build_uri(self) -> str:
-        build_uri: str = self._config["build_uri_scheme"] + "://" + self._config["build_uri"]
+        build_uri: str = self._config["build_uri"]
         build_uri = build_uri.rstrip("/")
         return build_uri
 
