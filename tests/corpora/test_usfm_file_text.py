@@ -66,7 +66,7 @@ def test_get_rows_sentence_start() -> None:
     assert len(rows) == 17
 
     assert verse_ref(rows[3]).exact_equals(VerseRef.from_string("MAT 1:4", corpus.versification))
-    assert rows[3].text == "Chapter one, verse four,"
+    assert rows[3].text == "Chapter one, verse four,"
     assert rows[3].is_sentence_start
 
     assert verse_ref(rows[4]).exact_equals(VerseRef.from_string("MAT 1:5", corpus.versification))

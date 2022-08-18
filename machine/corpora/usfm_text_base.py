@@ -188,7 +188,7 @@ class _TextRowCollector(UsfmParserHandler):
         assert state.token is not None
 
         if state.is_verse_para:
-            if len(self._verse_text) > 0:
+            if len(self._verse_text) > 0 and not self._verse_text[-1].isspace():
                 self._verse_text += " "
             self._next_para_tokens.append(state.token)
             self._next_para_text_started = False
