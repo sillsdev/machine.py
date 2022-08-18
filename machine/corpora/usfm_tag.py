@@ -85,7 +85,7 @@ class UsfmTag:
         self.subscript: bool = False
         self.superscript: bool = False
         self.text_properties: UsfmTextProperties = UsfmTextProperties.NONE
-        self.text_type: UsfmTextType = UsfmTextType.TITLE
+        self.text_type: UsfmTextType = UsfmTextType.NOT_SPECIFIED
         self.underline: bool = False
         self.xml_tag: Optional[str] = None
         self.regular: bool = False

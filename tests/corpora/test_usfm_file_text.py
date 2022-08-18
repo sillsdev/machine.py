@@ -99,7 +99,7 @@ def test_get_rows_include_markers() -> None:
     )
 
     assert verse_ref(rows[1]).exact_equals(VerseRef.from_string("MAT 1:2", corpus.versification))
-    assert rows[1].text == "Chapter one, \\li2 verse\\f + \\fr 1:2: \\ft This is a footnote.\\f* two."
+    assert rows[1].text == "\\bd C\\bd*hapter one, \\li2 verse\\f + \\fr 1:2: \\ft This is a footnote.\\f* two."
 
     assert verse_ref(rows[4]).exact_equals(VerseRef.from_string("MAT 1:5", corpus.versification))
     assert rows[4].text == 'Chapter one, \\li2 verse \\fig Figure 1|src="image1.png" size="col" ref="1:5"\\fig* five.'

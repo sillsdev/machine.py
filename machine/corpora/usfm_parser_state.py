@@ -97,7 +97,11 @@ class UsfmParserState:
         # If the user enters no markers except just \c and \v we want the text to be considered verse text. This is
         # covered by the empty stack that makes para_tag=None. Not specified text type is verse text
         para_tag = self.para_tag
-        return para_tag is None or para_tag.text_type == UsfmTextType.VERSE_TEXT or para_tag.text_type == 0
+        return (
+            para_tag is None
+            or para_tag.text_type == UsfmTextType.VERSE_TEXT
+            or para_tag.text_type == UsfmTextType.NOT_SPECIFIED
+        )
 
     @property
     def is_verse_text(self) -> bool:
@@ -111,7 +115,7 @@ class UsfmParserState:
         # All character tags must be verse text
         for char_tag in self.char_tags:
             # Not specified text type is verse text
-            if char_tag.text_type != UsfmTextType.VERSE_TEXT and char_tag.text_type != 0:
+            if char_tag.text_type != UsfmTextType.VERSE_TEXT and char_tag.text_type != UsfmTextType.NOT_SPECIFIED:
                 return False
 
         return True
