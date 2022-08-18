@@ -70,7 +70,7 @@ class UsfmToken:
 
         # for figures, convert 2.0 format to 3.0 format. Will need to write this as the 2.0 format
         # if the project is not upgrated.
-        if self.nestless_marker == "fig" and sum(1 for c in attributes_value if c == "|") == 5:
+        if self.nestless_marker == "fig" and sum(1 for c in attributes_value if c == "|") == 6:
             attribute_list: List[UsfmAttribute] = []
             parts = attributes_value.split("|")
             _append_attribute(attribute_list, "alt", text)
