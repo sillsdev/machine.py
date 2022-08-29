@@ -88,21 +88,73 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
         return self.transform(_normalize)
 
+    def normalize_source(self, normalization_form: str) -> ParallelTextCorpus:
+        def _normalize(row: ParallelTextRow) -> ParallelTextRow:
+            row.source_segment = normalize(normalization_form, row.source_segment)
+            return row
+
+        return self.transform(_normalize)
+
+    def normalize_target(self, normalization_form: str) -> ParallelTextCorpus:
+        def _normalize(row: ParallelTextRow) -> ParallelTextRow:
+            row.target_segment = normalize(normalization_form, row.target_segment)
+            return row
+
+        return self.transform(_normalize)
+
     def nfc_normalize(self) -> ParallelTextCorpus:
         return self.normalize("NFC")
+
+    def nfc_normalize_source(self) -> ParallelTextCorpus:
+        return self.normalize_source("NFC")
+
+    def nfc_normalize_target(self) -> ParallelTextCorpus:
+        return self.normalize_target("NFC")
 
     def nfd_normalize(self) -> ParallelTextCorpus:
         return self.normalize("NFD")
 
+    def nfd_normalize_source(self) -> ParallelTextCorpus:
+        return self.normalize_source("NFD")
+
+    def nfd_normalize_target(self) -> ParallelTextCorpus:
+        return self.normalize_target("NFD")
+
     def nfkc_normalize(self) -> ParallelTextCorpus:
         return self.normalize("NFKC")
+
+    def nfkc_normalize_source(self) -> ParallelTextCorpus:
+        return self.normalize_source("NFKC")
+
+    def nfkc_normalize_target(self) -> ParallelTextCorpus:
+        return self.normalize_target("NFKC")
 
     def nfkd_normalize(self) -> ParallelTextCorpus:
         return self.normalize("NFKD")
 
+    def nfkd_normalize_source(self) -> ParallelTextCorpus:
+        return self.normalize_source("NFKD")
+
+    def nfkd_normalize_target(self) -> ParallelTextCorpus:
+        return self.normalize_target("NFKD")
+
     def lowercase(self) -> ParallelTextCorpus:
         def _lowercase(row: ParallelTextRow) -> ParallelTextRow:
             row.source_segment = lowercase(row.source_segment)
+            row.target_segment = lowercase(row.target_segment)
+            return row
+
+        return self.transform(_lowercase)
+
+    def lowercase_source(self) -> ParallelTextCorpus:
+        def _lowercase(row: ParallelTextRow) -> ParallelTextRow:
+            row.source_segment = lowercase(row.source_segment)
+            return row
+
+        return self.transform(_lowercase)
+
+    def lowercase_target(self) -> ParallelTextCorpus:
+        def _lowercase(row: ParallelTextRow) -> ParallelTextRow:
             row.target_segment = lowercase(row.target_segment)
             return row
 
