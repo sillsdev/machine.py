@@ -26,7 +26,15 @@ class TextBase(Text):
         is_range_start: bool = False,
     ) -> TextRow:
         text = text.strip()
-        return TextRow(self.id, ref, [text], is_sentence_start, is_in_range, is_range_start, is_empty=len(text) == 0)
+        return TextRow(
+            self.id,
+            ref,
+            [text] if len(text) > 0 else [],
+            is_sentence_start,
+            is_in_range,
+            is_range_start,
+            is_empty=len(text) == 0,
+        )
 
     def _create_empty_row(self, ref: Any, is_in_range: bool = False) -> TextRow:
         return TextRow(self.id, ref, is_in_range=is_in_range)

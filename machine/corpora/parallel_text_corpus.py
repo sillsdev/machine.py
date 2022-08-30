@@ -1,17 +1,33 @@
 from __future__ import annotations
 
 from itertools import islice
-from typing import Any, Callable, Generator, Iterable, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Collection, Generator, Iterable, List, Optional, Sequence, Tuple, cast
 
 from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
+from .aligned_word_pair import AlignedWordPair
 from .corpora_utils import get_split_indices
 from .corpus import Corpus
 from .parallel_text_row import ParallelTextRow
 from .token_processors import escape_spaces, lowercase, normalize, unescape_spaces
 
+if TYPE_CHECKING:
+    import pandas as pd
+
 
 class ParallelTextCorpus(Corpus[ParallelTextRow]):
+    @classmethod
+    def from_pandas(
+        cls,
+        df: pd.DataFrame,
+        text_id_column: Optional[str] = "text",
+        ref_column: Optional[str] = "ref",
+        source_column: str = "source",
+        target_column: str = "target",
+        alignment_column: Optional[str] = "alignment",
+    ) -> ParallelTextCorpus:
+        return _PandasParallelTextCorpus(df, text_id_column, ref_column, source_column, target_column, alignment_column)
+
     def invert(self) -> ParallelTextCorpus:
         def _invert(row: ParallelTextRow) -> ParallelTextRow:
             return row.invert()
@@ -205,6 +221,55 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
     def to_tuples(self) -> Iterable[Tuple[Sequence[str], Sequence[str]]]:
         return self.map(lambda r: (r.source_segment, r.target_segment))
 
+    def to_pandas(
+        self,
+        text_id_column: Optional[str] = "text",
+        ref_column: Optional[str] = "ref",
+        source_column: Optional[str] = "source",
+        target_column: Optional[str] = "target",
+        alignment_column: Optional[str] = "alignment",
+    ) -> pd.DataFrame:
+        try:
+            import pandas as pd
+        except ImportError:
+            raise RuntimeError("pandas is not installed.")
+
+        text_ids: Optional[List[str]] = None if text_id_column is None else []
+        refs: Optional[List[Any]] = None if ref_column is None else []
+        source: Optional[List[str]] = None if source_column is None else []
+        target: Optional[List[str]] = None if target_column is None else []
+        alignments: Optional[List[str]] = None if alignment_column is None else []
+        has_alignments = False
+        with self.get_rows() as rows:
+            for row in rows:
+                if text_ids is not None:
+                    text_ids.append(row.text_id)
+                if refs is not None:
+                    refs.append(row.ref)
+                if source is not None:
+                    source.append(row.source_text)
+                if target is not None:
+                    target.append(row.target_text)
+                if alignments is not None:
+                    alignment = ""
+                    if row.aligned_word_pairs is not None:
+                        alignment = " ".join(f"{r.source_index}-{r.target_index}" for r in row.aligned_word_pairs)
+                        has_alignments = True
+                    alignments.append(alignment)
+
+        data = {}
+        if text_ids is not None:
+            data[text_id_column] = text_ids
+        if refs is not None:
+            data[ref_column] = refs
+        if source is not None:
+            data[source_column] = source
+        if target is not None:
+            data[target_column] = target
+        if alignments is not None and has_alignments:
+            data[alignment_column] = alignments
+        return pd.DataFrame(data)
+
 
 def flatten_parallel_text_corpora(corpora: Iterable[ParallelTextCorpus]) -> ParallelTextCorpus:
     corpus_list = list(corpora)
@@ -266,3 +331,54 @@ class _FlattenParallelTextCorpus(ParallelTextCorpus):
         for corpus in self._corpora:
             with corpus.get_rows() as rows:
                 yield from rows
+
+
+class _PandasParallelTextCorpus(ParallelTextCorpus):
+    def __init__(
+        self,
+        df: pd.DataFrame,
+        text_id_column: Optional[str],
+        ref_column: Optional[str],
+        source_column: str,
+        target_column: str,
+        alignment_column: Optional[str],
+    ) -> None:
+        self._df = df
+        self._text_id_column = text_id_column
+        self._ref_column = ref_column
+        self._source_column = source_column
+        self._target_column = target_column
+        self._alignment_column = alignment_column
+
+    @property
+    def missing_rows_allowed(self) -> bool:
+        return False
+
+    def count(self, include_empty: bool = True) -> int:
+        if include_empty:
+            return len(self._df)
+        return len(self._df[(self._df[self._source_column] != "") & (self._df[self._target_column] != "")])
+
+    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
+        for index, row in self._df.iterrows():
+            text_id = "*all*"
+            if self._text_id_column is not None and self._text_id_column in self._df:
+                text_id = cast(str, row[self._text_id_column])
+            ref = index
+            if self._ref_column is not None and self._ref_column in self._df:
+                ref = row[self._ref_column]
+            source = cast(str, row[self._source_column])
+            target = cast(str, row[self._target_column])
+            alignment: Optional[Collection[AlignedWordPair]] = None
+            if self._alignment_column is not None and self._alignment_column in self._df:
+                v = row[self._alignment_column]
+                alignment = AlignedWordPair.parse(v) if isinstance(v, str) else v
+            yield ParallelTextRow(
+                text_id,
+                [ref],
+                [ref],
+                [source] if len(source) > 0 else [],
+                [target] if len(target) > 0 else [],
+                alignment,
+                is_empty=len(source) == 0 or len(target) == 0,
+            )

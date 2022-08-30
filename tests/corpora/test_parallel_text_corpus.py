@@ -1,5 +1,7 @@
 from io import StringIO
-from typing import Any
+from typing import Any, Iterable, Optional
+
+import pandas as pd
 
 from machine.corpora import (
     AlignedWordPair,
@@ -11,6 +13,7 @@ from machine.corpora import (
     StandardParallelTextCorpus,
     TextRow,
 )
+from machine.corpora.parallel_text_corpus import ParallelTextCorpus
 from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, VerseRef, Versification
 
 
@@ -62,14 +65,14 @@ def test_get_rows_no_missing_rows() -> None:
     assert rows[0].target_segment == "target segment 1 .".split()
     assert not rows[0].is_source_sentence_start
     assert rows[0].is_target_sentence_start
-    assert rows[0].aligned_word_pairs == {AlignedWordPair(0, 0)}
+    assert set_equals(rows[0].aligned_word_pairs, [AlignedWordPair(0, 0)])
     assert rows[2].source_refs == [3]
     assert rows[2].target_refs == [3]
     assert rows[2].source_segment == "source segment 3 .".split()
     assert rows[2].target_segment == "target segment 3 .".split()
     assert rows[2].is_source_sentence_start
     assert not rows[2].is_target_sentence_start
-    assert rows[2].aligned_word_pairs == {AlignedWordPair(2, 2)}
+    assert set_equals(rows[2].aligned_word_pairs, [AlignedWordPair(2, 2)])
 
 
 def test_get_rows_missing_middle_target_rows() -> None:
@@ -109,12 +112,12 @@ def test_get_rows_missing_middle_target_rows() -> None:
     assert rows[0].target_refs == [1]
     assert rows[0].source_segment == "source segment 1 .".split()
     assert rows[0].target_segment == "target segment 1 .".split()
-    assert rows[0].aligned_word_pairs == {AlignedWordPair(0, 0)}
+    assert set_equals(rows[0].aligned_word_pairs, [AlignedWordPair(0, 0)])
     assert rows[1].source_refs == [3]
     assert rows[1].target_refs == [3]
     assert rows[1].source_segment == "source segment 3 .".split()
     assert rows[1].target_segment == "target segment 3 .".split()
-    assert rows[1].aligned_word_pairs == {AlignedWordPair(2, 2)}
+    assert set_equals(rows[1].aligned_word_pairs, [AlignedWordPair(2, 2)])
 
 
 def test_get_rows_missing_middle_source_row() -> None:
@@ -154,12 +157,12 @@ def test_get_rows_missing_middle_source_row() -> None:
     assert rows[0].target_refs == [1]
     assert rows[0].source_segment == "source segment 1 .".split()
     assert rows[0].target_segment == "target segment 1 .".split()
-    assert rows[0].aligned_word_pairs == {AlignedWordPair(0, 0)}
+    assert set_equals(rows[0].aligned_word_pairs, [AlignedWordPair(0, 0)])
     assert rows[1].source_refs == [3]
     assert rows[1].target_refs == [3]
     assert rows[1].source_segment == "source segment 3 .".split()
     assert rows[1].target_segment == "target segment 3 .".split()
-    assert rows[1].aligned_word_pairs == {AlignedWordPair(2, 2)}
+    assert set_equals(rows[1].aligned_word_pairs, [AlignedWordPair(2, 2)])
 
 
 def test_get_rows_missing_last_target_row() -> None:
@@ -199,12 +202,12 @@ def test_get_rows_missing_last_target_row() -> None:
     assert rows[0].target_refs == [1]
     assert rows[0].source_segment == "source segment 1 .".split()
     assert rows[0].target_segment == "target segment 1 .".split()
-    assert rows[0].aligned_word_pairs == {AlignedWordPair(0, 0)}
+    assert set_equals(rows[0].aligned_word_pairs, [AlignedWordPair(0, 0)])
     assert rows[1].source_refs == [2]
     assert rows[1].target_refs == [2]
     assert rows[1].source_segment == "source segment 2 .".split()
     assert rows[1].target_segment == "target segment 2 .".split()
-    assert rows[1].aligned_word_pairs == {AlignedWordPair(1, 1)}
+    assert set_equals(rows[1].aligned_word_pairs, [AlignedWordPair(1, 1)])
 
 
 def test_get_rows_missing_last_source_row() -> None:
@@ -244,12 +247,12 @@ def test_get_rows_missing_last_source_row() -> None:
     assert rows[0].target_refs == [1]
     assert rows[0].source_segment == "source segment 1 .".split()
     assert rows[0].target_segment == "target segment 1 .".split()
-    assert rows[0].aligned_word_pairs == {AlignedWordPair(0, 0)}
+    assert set_equals(rows[0].aligned_word_pairs, [AlignedWordPair(0, 0)])
     assert rows[1].source_refs == [2]
     assert rows[1].target_refs == [2]
     assert rows[1].source_segment == "source segment 2 .".split()
     assert rows[1].target_segment == "target segment 2 .".split()
-    assert rows[1].aligned_word_pairs == {AlignedWordPair(1, 1)}
+    assert set_equals(rows[1].aligned_word_pairs, [AlignedWordPair(1, 1)])
 
 
 def test_get_rows_missing_first_target_row() -> None:
@@ -289,12 +292,12 @@ def test_get_rows_missing_first_target_row() -> None:
     assert rows[0].target_refs == [2]
     assert rows[0].source_segment == "source segment 2 .".split()
     assert rows[0].target_segment == "target segment 2 .".split()
-    assert rows[0].aligned_word_pairs == {AlignedWordPair(1, 1)}
+    assert set_equals(rows[0].aligned_word_pairs, [AlignedWordPair(1, 1)])
     assert rows[1].source_refs == [3]
     assert rows[1].target_refs == [3]
     assert rows[1].source_segment == "source segment 3 .".split()
     assert rows[1].target_segment == "target segment 3 .".split()
-    assert rows[1].aligned_word_pairs == {AlignedWordPair(2, 2)}
+    assert set_equals(rows[1].aligned_word_pairs, [AlignedWordPair(2, 2)])
 
 
 def test_get_rows_missing_first_source_row() -> None:
@@ -334,12 +337,12 @@ def test_get_rows_missing_first_source_row() -> None:
     assert rows[0].target_refs == [2]
     assert rows[0].source_segment == "source segment 2 .".split()
     assert rows[0].target_segment == "target segment 2 .".split()
-    assert rows[0].aligned_word_pairs == {AlignedWordPair(1, 1)}
+    assert set_equals(rows[0].aligned_word_pairs, [AlignedWordPair(1, 1)])
     assert rows[1].source_refs == [3]
     assert rows[1].target_refs == [3]
     assert rows[1].source_segment == "source segment 3 .".split()
     assert rows[1].target_segment == "target segment 3 .".split()
-    assert rows[1].aligned_word_pairs == {AlignedWordPair(2, 2)}
+    assert set_equals(rows[1].aligned_word_pairs, [AlignedWordPair(2, 2)])
 
 
 def test_get_rows_range() -> None:
@@ -938,6 +941,98 @@ def test_get_rows_verse_ref_out_of_order() -> None:
     assert rows[3].target_segment == "target chapter one, verse four . target chapter one, verse five .".split()
 
 
+def test_to_pandas() -> None:
+    source_corpus = DictionaryTextCorpus(
+        MemoryText(
+            "text1",
+            [
+                text_row("text1", 1, "source segment 1 .", is_sentence_start=False),
+                text_row("text1", 2, "source segment 2 ."),
+                text_row("text1", 3, "source segment 3 ."),
+            ],
+        )
+    )
+    target_corpus = DictionaryTextCorpus(
+        MemoryText(
+            "text1",
+            [
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 2),
+                text_row("text1", 3, "target segment 3 .", is_sentence_start=False),
+            ],
+        )
+    )
+    alignment_corpus = DictionaryAlignmentCorpus(
+        MemoryAlignmentCollection(
+            "text1",
+            [
+                alignment_row("text1", 1, AlignedWordPair(0, 0)),
+                alignment_row("text1", 2),
+                alignment_row("text1", 3, AlignedWordPair(2, 2)),
+            ],
+        )
+    )
+
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus, alignment_corpus)
+    df = parallel_corpus.to_pandas()
+
+    assert len(df) == 3
+    assert df.at[0, "text"] == "text1"
+    assert df.at[0, "ref"] == 1
+    assert df.at[0, "source"] == "source segment 1 ."
+    assert df.at[0, "target"] == "target segment 1 ."
+    assert df.at[0, "alignment"] == "0-0"
+    assert df.at[1, "text"] == "text1"
+    assert df.at[1, "ref"] == 2
+    assert df.at[1, "source"] == "source segment 2 ."
+    assert df.at[1, "target"] == ""
+    assert df.at[1, "alignment"] == ""
+    assert df.at[2, "text"] == "text1"
+    assert df.at[2, "ref"] == 3
+    assert df.at[2, "source"] == "source segment 3 ."
+    assert df.at[2, "target"] == "target segment 3 ."
+    assert df.at[2, "alignment"] == "2-2"
+
+
+def test_from_pandas() -> None:
+    df = pd.DataFrame(
+        {
+            "text": ["text1", "text1", "text1"],
+            "ref": [1, 2, 3],
+            "source": ["source segment 1 .", "source segment 2 .", "source segment 3 ."],
+            "target": ["target segment 1 .", "", "target segment 3 ."],
+            "alignment": ["0-0", "", "2-2"],
+        }
+    )
+    parallel_corpus = ParallelTextCorpus.from_pandas(df)
+    rows = list(parallel_corpus)
+    assert len(rows) == 3
+    assert rows[0].text_id == "text1"
+    assert rows[0].source_refs == [1]
+    assert rows[0].target_refs == [1]
+    assert rows[0].source_segment == ["source segment 1 ."]
+    assert rows[0].target_segment == ["target segment 1 ."]
+    assert rows[0].is_source_sentence_start
+    assert rows[0].is_target_sentence_start
+    assert set_equals(rows[0].aligned_word_pairs, [AlignedWordPair(0, 0)])
+    assert rows[1].text_id == "text1"
+    assert rows[1].source_refs == [2]
+    assert rows[1].target_refs == [2]
+    assert rows[1].source_segment == ["source segment 2 ."]
+    assert rows[1].target_segment == []
+    assert rows[1].is_source_sentence_start
+    assert rows[1].is_target_sentence_start
+    assert set_equals(rows[1].aligned_word_pairs, [])
+    assert rows[2].text_id == "text1"
+    assert rows[2].source_refs == [3]
+    assert rows[2].target_refs == [3]
+    assert rows[2].source_segment == ["source segment 3 ."]
+    assert rows[2].target_segment == ["target segment 3 ."]
+    assert rows[2].is_source_sentence_start
+    assert rows[2].is_target_sentence_start
+    assert set_equals(rows[2].aligned_word_pairs, [AlignedWordPair(2, 2)])
+
+
 def text_row(
     text_id: str,
     ref: Any,
@@ -958,4 +1053,12 @@ def text_row(
 
 
 def alignment_row(text_id: str, ref: int, *pairs: AlignedWordPair) -> AlignmentRow:
-    return AlignmentRow(text_id, ref, set(pairs))
+    return AlignmentRow(text_id, ref, list(pairs))
+
+
+def set_equals(x: Optional[Iterable], y: Optional[Iterable]) -> bool:
+    if x is None:
+        return y is None
+    if y is None:
+        return False
+    return set(x) == set(y)
