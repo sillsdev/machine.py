@@ -55,6 +55,10 @@ class ParallelTextRow:
         return self.target_refs[0] if len(self.source_refs) == 0 else self.source_refs[0]
 
     @property
+    def refs(self) -> Sequence[Any]:
+        return self.target_refs if len(self.source_refs) == 0 else self.source_refs
+
+    @property
     def source_text(self) -> str:
         return " ".join(self.source_segment)
 

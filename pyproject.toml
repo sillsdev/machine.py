@@ -76,6 +76,7 @@ isort = "^5.9.3"
 pytest-mockito = "^0.0.4"
 ipykernel = "^6.7.0"
 pandas = "1.1.5"
+datasets = "^2.4.0"
 
 [tool.poetry.extras]
 sentencepiece = ["sentencepiece"]

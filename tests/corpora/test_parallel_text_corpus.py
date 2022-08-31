@@ -2,6 +2,7 @@ from io import StringIO
 from typing import Any, Iterable, Optional
 
 import pandas as pd
+from datasets.arrow_dataset import Dataset
 
 from machine.corpora import (
     AlignedWordPair,
@@ -981,30 +982,31 @@ def test_to_pandas() -> None:
     assert df.at[0, "ref"] == 1
     assert df.at[0, "source"] == "source segment 1 ."
     assert df.at[0, "target"] == "target segment 1 ."
-    assert df.at[0, "alignment"] == "0-0"
+    assert set_equals(df.at[0, "alignment"], [(0, 0)])
     assert df.at[1, "text"] == "text1"
     assert df.at[1, "ref"] == 2
     assert df.at[1, "source"] == "source segment 2 ."
     assert df.at[1, "target"] == ""
-    assert df.at[1, "alignment"] == ""
+    assert set_equals(df.at[1, "alignment"], [])
     assert df.at[2, "text"] == "text1"
     assert df.at[2, "ref"] == 3
     assert df.at[2, "source"] == "source segment 3 ."
     assert df.at[2, "target"] == "target segment 3 ."
-    assert df.at[2, "alignment"] == "2-2"
+    assert set_equals(df.at[2, "alignment"], [(2, 2)])
 
 
 def test_from_pandas() -> None:
     df = pd.DataFrame(
         {
-            "text": ["text1", "text1", "text1"],
             "ref": [1, 2, 3],
             "source": ["source segment 1 .", "source segment 2 .", "source segment 3 ."],
             "target": ["target segment 1 .", "", "target segment 3 ."],
-            "alignment": ["0-0", "", "2-2"],
+            "alignment": [[(0, 0)], [], [(2, 2)]],
         }
     )
-    parallel_corpus = ParallelTextCorpus.from_pandas(df)
+    parallel_corpus = ParallelTextCorpus.from_pandas(df, default_text_id="text1")
+    assert parallel_corpus.count() == 3
+    assert parallel_corpus.count(include_empty=False) == 2
     rows = list(parallel_corpus)
     assert len(rows) == 3
     assert rows[0].text_id == "text1"
@@ -1024,6 +1026,107 @@ def test_from_pandas() -> None:
     assert rows[1].is_target_sentence_start
     assert set_equals(rows[1].aligned_word_pairs, [])
     assert rows[2].text_id == "text1"
+    assert rows[2].source_refs == [3]
+    assert rows[2].target_refs == [3]
+    assert rows[2].source_segment == ["source segment 3 ."]
+    assert rows[2].target_segment == ["target segment 3 ."]
+    assert rows[2].is_source_sentence_start
+    assert rows[2].is_target_sentence_start
+    assert set_equals(rows[2].aligned_word_pairs, [AlignedWordPair(2, 2)])
+
+
+def test_to_hf_dataset() -> None:
+    source_corpus = DictionaryTextCorpus(
+        MemoryText(
+            "text1",
+            [
+                text_row("text1", 1, "source segment 1 .", is_sentence_start=False),
+                text_row("text1", 2, "source segment 2 ."),
+                text_row("text1", 3, "source segment 3 ."),
+            ],
+        )
+    )
+    target_corpus = DictionaryTextCorpus(
+        MemoryText(
+            "text1",
+            [
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 2),
+                text_row("text1", 3, "target segment 3 .", is_sentence_start=False),
+            ],
+        )
+    )
+    alignment_corpus = DictionaryAlignmentCorpus(
+        MemoryAlignmentCollection(
+            "text1",
+            [
+                alignment_row("text1", 1, AlignedWordPair(0, 0)),
+                alignment_row("text1", 2),
+                alignment_row("text1", 3, AlignedWordPair(2, 2)),
+            ],
+        )
+    )
+
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus, alignment_corpus)
+    ds = parallel_corpus.to_hf_dataset("src", "trg")
+    examples = list(ds)
+
+    assert len(examples) == 3
+    assert examples[0]["text"] == "text1"
+    assert examples[0]["ref"] == ["1"]
+    assert examples[0]["translation"]["src"] == "source segment 1 ."
+    assert examples[0]["translation"]["trg"] == "target segment 1 ."
+    assert examples[0]["alignment"]["src"] == [0]
+    assert examples[0]["alignment"]["trg"] == [0]
+    assert examples[1]["text"] == "text1"
+    assert examples[1]["ref"] == ["2"]
+    assert examples[1]["translation"]["src"] == "source segment 2 ."
+    assert examples[1]["translation"]["trg"] == ""
+    assert examples[1]["alignment"]["src"] == []
+    assert examples[1]["alignment"]["trg"] == []
+    assert examples[2]["text"] == "text1"
+    assert examples[2]["ref"] == ["3"]
+    assert examples[2]["translation"]["src"] == "source segment 3 ."
+    assert examples[2]["translation"]["trg"] == "target segment 3 ."
+    assert examples[2]["alignment"]["src"] == [2]
+    assert examples[2]["alignment"]["trg"] == [2]
+
+
+def test_from_hf_dataset() -> None:
+    ds = Dataset.from_dict(
+        {
+            "text": ["text1", "text2", "text3"],
+            "ref": [1, 2, 3],
+            "translation": [
+                {"src": "source segment 1 .", "trg": "target segment 1 ."},
+                {"src": "source segment 2 .", "trg": ""},
+                {"src": "source segment 3 .", "trg": "target segment 3 ."},
+            ],
+            "alignment": [{"src": [0], "trg": [0]}, {"src": [], "trg": []}, {"src": [2], "trg": [2]}],
+        }
+    )
+    parallel_corpus = ParallelTextCorpus.from_hf_dataset(ds, "src", "trg")
+    assert parallel_corpus.count() == 3
+    assert parallel_corpus.count(include_empty=False) == 2
+    rows = list(parallel_corpus)
+    assert len(rows) == 3
+    assert rows[0].text_id == "text1"
+    assert rows[0].source_refs == [1]
+    assert rows[0].target_refs == [1]
+    assert rows[0].source_segment == ["source segment 1 ."]
+    assert rows[0].target_segment == ["target segment 1 ."]
+    assert rows[0].is_source_sentence_start
+    assert rows[0].is_target_sentence_start
+    assert set_equals(rows[0].aligned_word_pairs, [AlignedWordPair(0, 0)])
+    assert rows[1].text_id == "text2"
+    assert rows[1].source_refs == [2]
+    assert rows[1].target_refs == [2]
+    assert rows[1].source_segment == ["source segment 2 ."]
+    assert rows[1].target_segment == []
+    assert rows[1].is_source_sentence_start
+    assert rows[1].is_target_sentence_start
+    assert set_equals(rows[1].aligned_word_pairs, [])
+    assert rows[2].text_id == "text3"
     assert rows[2].source_refs == [3]
     assert rows[2].target_refs == [3]
     assert rows[2].source_segment == ["source segment 3 ."]
