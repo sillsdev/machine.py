@@ -496,7 +496,9 @@ class _PandasParallelTextCorpus(ParallelTextCorpus):
             alignment: Optional[Collection[AlignedWordPair]] = None
             if self._alignment_column is not None and self._alignment_column in self._df:
                 v = row[self._alignment_column]
-                alignment = AlignedWordPair.parse(v) if isinstance(v, str) else [AlignedWordPair(t[0], t[1]) for t in v]
+                alignment = (
+                    AlignedWordPair.from_string(v) if isinstance(v, str) else [AlignedWordPair(t[0], t[1]) for t in v]
+                )
             yield ParallelTextRow(
                 text_id,
                 refs,

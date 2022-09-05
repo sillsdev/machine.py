@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Collection, List
+from typing import Collection, Iterator, List
 
 
 @dataclass(unsafe_hash=True)
 class AlignedWordPair:
     @classmethod
-    def parse(cls, alignments: str, invert: bool = False) -> Collection[AlignedWordPair]:
+    def from_string(cls, alignments: str, invert: bool = False) -> Collection[AlignedWordPair]:
         result: List[AlignedWordPair] = []
         for token in alignments.split():
             dash_index = token.index("-")
@@ -21,6 +21,10 @@ class AlignedWordPair:
             result.append(AlignedWordPair(j, i) if invert else AlignedWordPair(i, j))
         return result
 
+    @classmethod
+    def to_string(cls, word_pairs: Collection[AlignedWordPair], include_scores: bool = True) -> str:
+        return " ".join(wp._repr(include_scores) for wp in word_pairs)
+
     source_index: int
     target_index: int
     is_sure: bool = field(default=True, compare=False)
@@ -32,14 +36,20 @@ class AlignedWordPair:
             self.target_index, self.source_index, self.is_sure, self.translation_score, self.alignment_score
         )
 
+    def __iter__(self) -> Iterator[int]:
+        return iter((self.source_index, self.target_index))
+
     def __repr__(self) -> str:
+        return self._repr()
+
+    def _repr(self, include_scores: bool = True) -> str:
         def format_score(score: float) -> str:
             return f"{score:.8f}".rstrip("0").rstrip(".")
 
         source_index = "NULL" if self.source_index < 0 else str(self.source_index)
         target_index = "NULL" if self.target_index < 0 else str(self.target_index)
         repr = f"{source_index}-{target_index}"
-        if self.translation_score >= 0:
+        if include_scores and self.translation_score >= 0:
             repr += f":{format_score(self.translation_score)}"
             if self.alignment_score >= 0:
                 repr += f":{format_score(self.alignment_score)}"

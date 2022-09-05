@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, List, Optional, Sequence
 
 import tensorflow as tf
 
@@ -64,3 +64,13 @@ class SavedModelNmtEngine(TranslationEngine):
 
             yield builder.to_result(segment)
             i += 1
+
+    def translate_batch(
+        self, segments: Iterable[Sequence[str]], batch_size: Optional[int] = None
+    ) -> Iterable[TranslationResult]:
+        return (results[0] for results in self.translate_n_batch(1, segments, batch_size))
+
+    def translate_n_batch(
+        self, n: int, segments: Iterable[Sequence[str]], batch_size: Optional[int] = None
+    ) -> Iterable[List[TranslationResult]]:
+        raise NotImplementedError

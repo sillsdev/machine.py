@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from statistics import mean
-from typing import Collection, Dict, Generator, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Collection, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 from ..corpora.aligned_word_pair import AlignedWordPair
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
@@ -97,46 +97,19 @@ class WordAlignmentModel(WordAligner):
         include_scores: bool = True,
     ) -> str:
         alignment = self.get_best_alignment_from_known(
-            row.source_segment, row.target_segment, WordAlignmentMatrix.from_parallel_text_corpus_row(row)
+            row.source_segment, row.target_segment, WordAlignmentMatrix.from_parallel_text_row(row)
         )
         if not include_scores:
             return str(alignment)
         word_pairs = alignment.to_aligned_word_pairs()
         self.compute_aligned_word_pair_scores(row.source_segment, row.target_segment, word_pairs)
-        return " ".join(str(wp) for wp in word_pairs)
+        return AlignedWordPair.to_string(word_pairs)
 
     def get_giza_format_string(
         self,
         row: ParallelTextRow,
     ) -> str:
         alignment = self.get_best_alignment_from_known(
-            row.source_segment, row.target_segment, WordAlignmentMatrix.from_parallel_text_corpus_row(row)
+            row.source_segment, row.target_segment, WordAlignmentMatrix.from_parallel_text_row(row)
         )
         return alignment.to_giza_format(row.source_segment, row.target_segment)
-
-
-def align_corpus(model: WordAlignmentModel, corpus: ParallelTextCorpus, batch_size: int = 1024) -> ParallelTextCorpus:
-    return _AlignParallelTextCorpus(corpus, model, batch_size)
-
-
-class _AlignParallelTextCorpus(ParallelTextCorpus):
-    def __init__(self, corpus: ParallelTextCorpus, model: WordAlignmentModel, batch_size: int) -> None:
-        self._corpus = corpus
-        self._model = model
-        self._batch_size = batch_size
-
-    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
-        with self._corpus.batch(self._batch_size) as batches:
-            for row_batch in batches:
-                alignments = self._model.get_best_alignment_batch(
-                    (r.source_segment, r.target_segment) for r in row_batch
-                )
-                for row, (_, _, alignment) in zip(row_batch, alignments):
-                    known_alignment = WordAlignmentMatrix.from_parallel_text_corpus_row(row)
-                    if known_alignment is not None:
-                        known_alignment.priority_symmetrize_with(alignment)
-                        alignment = known_alignment
-                    word_pairs = alignment.to_aligned_word_pairs()
-                    self._model.compute_aligned_word_pair_scores(row.source_segment, row.target_segment, word_pairs)
-                    row.aligned_word_pairs = word_pairs
-                    yield row

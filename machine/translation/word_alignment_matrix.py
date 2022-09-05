@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Collection, Iterable, List, Optional, Sequence, Set, Tuple, cast
+from typing import Callable, Collection, Iterable, List, Optional, Sequence, Set, Tuple, Union, cast
 
 import numpy as np
 from sortedcontainers import SortedSet
@@ -12,18 +12,15 @@ from .symmetrization_heuristic import SymmetrizationHeuristic
 
 class WordAlignmentMatrix:
     @classmethod
-    def from_parallel_text_corpus_row(cls, row: ParallelTextRow) -> Optional[WordAlignmentMatrix]:
+    def from_parallel_text_row(cls, row: ParallelTextRow) -> Optional[WordAlignmentMatrix]:
         if row.aligned_word_pairs is None:
             return None
 
-        matrix = cls.from_word_pairs(len(row.source_segment), len(row.target_segment))
-        for word_pair in row.aligned_word_pairs:
-            matrix[word_pair.source_index, word_pair.target_index] = True
-        return matrix
+        return cls.from_word_pairs(len(row.source_segment), len(row.target_segment), row.aligned_word_pairs)
 
     @classmethod
     def from_word_pairs(
-        cls, row_count: int, column_count: int, set_values: Set[Tuple[int, int]] = set()
+        cls, row_count: int, column_count: int, set_values: Collection[Union[AlignedWordPair, Tuple[int, int]]] = set()
     ) -> WordAlignmentMatrix:
         matrix = np.full((row_count, column_count), False)
         for i, j in set_values:

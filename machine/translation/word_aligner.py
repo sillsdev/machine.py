@@ -11,7 +11,9 @@ class WordAligner(ABC):
 
     @abstractmethod
     def get_best_alignment_batch(
-        self, segments: Iterable[Tuple[Sequence[str], Sequence[str]]]
+        self,
+        segments: Iterable[Tuple[Sequence[str], Sequence[str]]],
+        batch_size: Optional[int] = None,
     ) -> Iterable[Tuple[Sequence[str], Sequence[str], WordAlignmentMatrix]]:
         ...
 

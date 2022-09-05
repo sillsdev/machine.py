@@ -78,9 +78,9 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
         return WordAlignmentMatrix(matrix.to_numpy())
 
     def get_best_alignment_batch(
-        self, segments: Iterable[Tuple[Sequence[str], Sequence[str]]]
+        self, segments: Iterable[Tuple[Sequence[str], Sequence[str]]], batch_size: Optional[int] = None
     ) -> Iterable[Tuple[Sequence[str], Sequence[str], WordAlignmentMatrix]]:
-        for source_segments, target_segments in batch(segments, self.batch_size):
+        for source_segments, target_segments in batch(segments, self.batch_size if batch_size is None else batch_size):
             results = self._model.get_best_alignments(source_segments, target_segments)
             for source_segment, target_segment, (_, matrix) in zip(source_segments, target_segments, results):
                 yield source_segment, target_segment, WordAlignmentMatrix(matrix.to_numpy())
