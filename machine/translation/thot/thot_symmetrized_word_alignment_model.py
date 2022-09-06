@@ -2,8 +2,11 @@ from typing import Iterable, Optional, Sequence, Tuple, cast
 
 import thot.alignment as ta
 
+from ...corpora.parallel_text_corpus import ParallelTextCorpus
 from ..symmetrization_heuristic import SymmetrizationHeuristic
 from ..symmetrized_word_alignment_model import SymmetrizedWordAlignmentModel
+from ..symmetrized_word_alignment_model_trainer import SymmetrizedWordAlignmentModelTrainer
+from ..trainer import Trainer
 from ..word_alignment_matrix import WordAlignmentMatrix
 from .thot_utils import batch
 from .thot_word_alignment_model import ThotWordAlignmentModel
@@ -14,10 +17,7 @@ class ThotSymmetrizedWordAlignmentModel(SymmetrizedWordAlignmentModel):
         self, direct_word_alignment_model: ThotWordAlignmentModel, inverse_word_alignment_model: ThotWordAlignmentModel
     ) -> None:
         super().__init__(direct_word_alignment_model, inverse_word_alignment_model)
-        self._aligner = ta.SymmetrizedAligner(
-            direct_word_alignment_model.thot_model, inverse_word_alignment_model.thot_model
-        )
-        self._aligner.heuristic = _convert_heuristic(self._heuristic)
+        self._reset_aligner()
 
     @property
     def heuristic(self) -> SymmetrizationHeuristic:
@@ -48,6 +48,18 @@ class ThotSymmetrizedWordAlignmentModel(SymmetrizedWordAlignmentModel):
             for source_segment, target_segment, (_, matrix) in zip(source_segments, target_segments, results):
                 yield source_segment, target_segment, WordAlignmentMatrix(matrix.to_numpy())
 
+    def create_trainer(self, corpus: ParallelTextCorpus) -> Trainer:
+        direct_trainer = self._direct_word_alignment_model.create_trainer(corpus)
+        inverse_trainer = self._inverse_word_alignment_model.create_trainer(corpus.invert())
+
+        return _Trainer(self, direct_trainer, inverse_trainer)
+
+    def _reset_aligner(self) -> None:
+        self._aligner = ta.SymmetrizedAligner(
+            self.direct_word_alignment_model.thot_model, self.inverse_word_alignment_model.thot_model
+        )
+        self._aligner.heuristic = _convert_heuristic(self._heuristic)
+
 
 def _convert_heuristic(machine_heuristic: SymmetrizationHeuristic) -> ta.SymmetrizationHeuristic:
     if machine_heuristic is SymmetrizationHeuristic.NONE:
@@ -67,3 +79,15 @@ def _convert_heuristic(machine_heuristic: SymmetrizationHeuristic) -> ta.Symmetr
     if machine_heuristic is SymmetrizationHeuristic.GROW_DIAG_FINAL_AND:
         return ta.SymmetrizationHeuristic.GROW_DIAG_FINAL_AND
     return ta.SymmetrizationHeuristic.NONE
+
+
+class _Trainer(SymmetrizedWordAlignmentModelTrainer):
+    def __init__(
+        self, model: ThotSymmetrizedWordAlignmentModel, direct_trainer: Trainer, inverse_trainer: Trainer
+    ) -> None:
+        super().__init__(direct_trainer, inverse_trainer)
+        self._model = model
+
+    def save(self) -> None:
+        super().save()
+        self._model._reset_aligner()
