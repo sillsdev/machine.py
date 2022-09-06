@@ -11,8 +11,8 @@ from .word_alignment_model import WordAlignmentModel
 
 
 def align_corpus(
-    aligner: Union[WordAligner, int, str],
     corpus: ParallelTextCorpus,
+    aligner: Union[WordAligner, int, str] = "fast_align",
     batch_size: int = 1024,
     symmetrization_heuristic: SymmetrizationHeuristic = SymmetrizationHeuristic.GROW_DIAG_FINAL_AND,
     progress: Optional[Callable[[ProgressStatus], None]] = None,
@@ -33,7 +33,7 @@ def align_corpus(
 
 
 def translate_corpus(
-    translation_engine: TranslationEngine, corpus: ParallelTextCorpus, batch_size: int = 1024
+    corpus: ParallelTextCorpus, translation_engine: TranslationEngine, batch_size: int = 1024
 ) -> ParallelTextCorpus:
     return _TranslateParallelTextCorpus(corpus, translation_engine, batch_size)
 
