@@ -51,6 +51,9 @@ def get_files(file_patterns: Iterable[str]) -> Iterable[Tuple[str, str]]:
         yield ("*all*", file_patterns[0])
     else:
         for file_pattern in file_patterns:
+            if "*" not in file_pattern and "?" not in file_pattern and not os.path.exists(file_pattern):
+                raise FileNotFoundError(f"The specified path does not exist: {file_pattern}.")
+
             path = file_pattern
             search_pattern = "*"
             if not file_pattern.endswith(os.sep) and not os.path.isdir(file_pattern):
