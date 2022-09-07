@@ -30,7 +30,7 @@ typeCheckingMode = "basic"
 
 [tool.poetry]
 name = "sil-machine"
-version = "0.7.2"
+version = "0.7.3"
 description = "A natural language processing library that is focused on providing tools for resource-poor languages."
 license = "MIT"
 authors = ["SIL International"]
