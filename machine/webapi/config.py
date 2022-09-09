@@ -1,10 +1,13 @@
+from pathlib import Path
 from typing import cast
 
 from dynaconf import Dynaconf
 from dynaconf.base import Settings
 
-settings = cast(
-    Settings, Dynaconf(envvar_prefix="DYNACONF", settings_files=["machine/webapi/settings.yaml"], environments=True)
+CONFIG_DIR = Path(__file__).parent
+
+SETTINGS = cast(
+    Settings, Dynaconf(envvar_prefix="MACHINE", settings_files=[str(CONFIG_DIR / "settings.yaml")], environments=True)
 )
 
 # `envvar_prefix` = export envvars with `export DYNACONF_FOO=bar`.

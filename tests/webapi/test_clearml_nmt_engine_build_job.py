@@ -21,7 +21,7 @@ from machine.translation import (
 )
 from machine.utils import CanceledError, ContextManagedGenerator
 from machine.webapi.clearml_nmt_engine_build_job import ClearMLNmtEngineBuildJob
-from machine.webapi.config import settings
+from machine.webapi.config import SETTINGS
 from machine.webapi.nmt_model_factory import NmtModelFactory
 from machine.webapi.shared_file_service import PretranslationInfo, PretranslationWriter, SharedFileService
 
@@ -48,7 +48,7 @@ def test_cancel() -> None:
 class _TestEnvironment:
     def __init__(self) -> None:
         config = {"src_lang": "es", "trg_lang": "en"}
-        settings.update(config)
+        SETTINGS.update(config)
         self.source_tokenizer_trainer = _mock(Trainer)
         when(self.source_tokenizer_trainer).train().thenReturn()
         when(self.source_tokenizer_trainer).save().thenReturn()
@@ -136,7 +136,7 @@ class _TestEnvironment:
             open_target_pretranslation_writer(self)
         )
 
-        self.job = ClearMLNmtEngineBuildJob(settings, self.nmt_model_factory, self.shared_file_service)
+        self.job = ClearMLNmtEngineBuildJob(SETTINGS, self.nmt_model_factory, self.shared_file_service)
 
 
 T = TypeVar("T")

@@ -8,7 +8,7 @@ from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
 from ..translation.translation_engine import TranslationEngine
 from ..utils.canceled_error import CanceledError
-from .config import settings
+from .config import SETTINGS
 from .nmt_model_factory import NmtModelFactory
 from .open_nmt_model_factory import OpenNmtModelFactory
 from .shared_file_service import PretranslationInfo, PretranslationWriter, SharedFileService
@@ -112,11 +112,11 @@ def run(args: dict) -> None:
             raise CanceledError
 
     args["build_id"] = task.name
-    settings.update(args)
+    SETTINGS.update(args)
 
-    shared_file_service = SharedFileService(settings)
-    nmt_model_factory = OpenNmtModelFactory(settings, shared_file_service)
-    job = ClearMLNmtEngineBuildJob(settings, nmt_model_factory, shared_file_service)
+    shared_file_service = SharedFileService(SETTINGS)
+    nmt_model_factory = OpenNmtModelFactory(SETTINGS, shared_file_service)
+    job = ClearMLNmtEngineBuildJob(SETTINGS, nmt_model_factory, shared_file_service)
     job.run(check_canceled)
 
 
