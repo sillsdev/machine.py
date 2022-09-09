@@ -129,3 +129,6 @@ dmypy.json
 .pyre/
 
 out/
+
+# Ignore dynaconf secret files
+.secrets.*

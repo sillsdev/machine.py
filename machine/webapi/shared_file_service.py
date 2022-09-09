@@ -2,7 +2,7 @@ import json
 import sys
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Generator, Iterator, List, TextIO
+from typing import Any, Generator, Iterator, List, TextIO
 
 import json_stream
 from clearml import StorageManager
@@ -37,20 +37,17 @@ class PretranslationWriter:
 
 
 class SharedFileService:
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: Any) -> None:
         self._config = config
 
-    def init(self) -> None:
-        self._data_dir.mkdir(exist_ok=True)
-
     def create_source_corpus(self) -> TextCorpus:
-        return TextFileTextCorpus(self._download_file("train.src.txt"))
+        return TextFileTextCorpus(self._download_file(f"builds/{self._build_id}/train.src.txt"))
 
     def create_target_corpus(self) -> TextCorpus:
-        return TextFileTextCorpus(self._download_file("train.trg.txt"))
+        return TextFileTextCorpus(self._download_file(f"builds/{self._build_id}/train.trg.txt"))
 
     def get_source_pretranslations(self) -> ContextManagedGenerator[PretranslationInfo, None, None]:
-        src_pretranslate_path = self._download_file("pretranslate.src.json")
+        src_pretranslate_path = self._download_file(f"builds/{self._build_id}/pretranslate.src.json")
 
         def generator() -> Generator[PretranslationInfo, None, None]:
             with src_pretranslate_path.open("r", encoding="utf-8-sig") as file:
@@ -63,30 +60,55 @@ class SharedFileService:
 
     @contextmanager
     def open_target_pretranslation_writer(self) -> Iterator[PretranslationWriter]:
-        target_pretranslate_path = self._data_dir / "pretranslate.trg.json"
+        build_id: str = self._config.build_id
+        build_dir = self._data_dir / build_id
+        build_dir.mkdir(parents=True, exist_ok=True)
+        target_pretranslate_path = build_dir / "pretranslate.trg.json"
         with target_pretranslate_path.open("w", encoding="utf-8", newline="\n") as file:
             file.write("[\n")
             yield PretranslationWriter(file)
             file.write("\n]\n")
-        self._upload_file("pretranslate.trg.json")
+        self._upload_file(f"builds/{self._build_id}/pretranslate.trg.json", target_pretranslate_path)
+
+    def get_parent_model(self, language_tag: str) -> Path:
+        return self._download_folder(f"parent_models/{language_tag}")
+
+    def save_model(self, model_dir: Path) -> None:
+        self._upload_folder(f"models/{self._engine_id}", model_dir)
 
     @property
     def _data_dir(self) -> Path:
-        return Path(self._config["data_dir"], self._config["build_id"])
+        return Path(self._config.data_dir)
 
     @property
-    def _build_uri(self) -> str:
-        build_uri: str = self._config["build_uri"]
-        build_uri = build_uri.rstrip("/")
-        return build_uri
+    def _build_id(self) -> str:
+        return self._config.build_id
 
-    def _download_file(self, filename: str) -> Path:
-        uri = f"{self._build_uri}/{filename}"
-        file_path = StorageManager.download_file(uri, str(self._data_dir))
+    @property
+    def _engine_id(self) -> str:
+        return self._config.engine_id
+
+    @property
+    def _shared_file_uri(self) -> str:
+        shared_file_uri: str = self._config.shared_file_uri
+        return shared_file_uri.rstrip("/")
+
+    def _download_file(self, path: str) -> Path:
+        uri = f"{self._shared_file_uri}/{path}"
+        file_path = StorageManager.download_file(uri)
         if file_path is None:
             raise RuntimeError(f"Failed to download file: {uri}")
         return Path(file_path)
 
-    def _upload_file(self, filename: str) -> None:
-        file_path = self._data_dir / filename
-        StorageManager.upload_file(str(file_path), f"{self._build_uri}/{filename}")
+    def _download_folder(self, path: str) -> Path:
+        uri = f"{self._shared_file_uri}/{path}"
+        folder_path = StorageManager.download_folder(uri)
+        if folder_path is None:
+            raise RuntimeError(f"Failed to download folder: {uri}")
+        return Path(folder_path)
+
+    def _upload_file(self, path: str, local_file_path: Path) -> None:
+        StorageManager.upload_file(str(local_file_path), f"{self._shared_file_uri}/{path}")
+
+    def _upload_folder(self, path: str, local_folder_path: Path) -> None:
+        StorageManager.upload_folder(str(local_folder_path), f"{self._shared_file_uri}/{path}")

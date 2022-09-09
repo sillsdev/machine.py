@@ -21,6 +21,7 @@ from machine.translation import (
 )
 from machine.utils import CanceledError, ContextManagedGenerator
 from machine.webapi.clearml_nmt_engine_build_job import ClearMLNmtEngineBuildJob
+from machine.webapi.config import settings
 from machine.webapi.nmt_model_factory import NmtModelFactory
 from machine.webapi.shared_file_service import PretranslationInfo, PretranslationWriter, SharedFileService
 
@@ -47,7 +48,7 @@ def test_cancel() -> None:
 class _TestEnvironment:
     def __init__(self) -> None:
         config = {"src_lang": "es", "trg_lang": "en"}
-
+        settings.update(config)
         self.source_tokenizer_trainer = _mock(Trainer)
         when(self.source_tokenizer_trainer).train().thenReturn()
         when(self.source_tokenizer_trainer).save().thenReturn()
@@ -100,9 +101,9 @@ class _TestEnvironment:
         when(self.nmt_model_factory).create_source_tokenizer().thenReturn(WhitespaceTokenizer())
         when(self.nmt_model_factory).create_target_detokenizer().thenReturn(LatinWordDetokenizer())
         when(self.nmt_model_factory).create_model().thenReturn(self.model)
+        when(self.nmt_model_factory).save_model().thenReturn()
 
         self.shared_file_service = _mock(SharedFileService)
-        when(self.shared_file_service).init().thenReturn()
         when(self.shared_file_service).create_source_corpus().thenReturn(DictionaryTextCorpus())
         when(self.shared_file_service).create_target_corpus().thenReturn(DictionaryTextCorpus())
         when(self.shared_file_service).get_source_pretranslations().thenReturn(
@@ -135,7 +136,7 @@ class _TestEnvironment:
             open_target_pretranslation_writer(self)
         )
 
-        self.job = ClearMLNmtEngineBuildJob(config, self.nmt_model_factory, self.shared_file_service)
+        self.job = ClearMLNmtEngineBuildJob(settings, self.nmt_model_factory, self.shared_file_service)
 
 
 T = TypeVar("T")

@@ -1,7 +1,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import Optional, Set
+from typing import Any, Optional, Set
 
 import tensorflow as tf
 from opennmt import END_OF_SENTENCE_TOKEN, PADDING_TOKEN, START_OF_SENTENCE_TOKEN, load_config
@@ -19,20 +19,22 @@ from ..translation.tensorflow.open_nmt_model_trainer import OpenNmtModelTrainer
 from ..translation.trainer import Trainer
 from ..translation.translation_model import TranslationModel
 from .nmt_model_factory import NmtModelFactory
+from .shared_file_service import SharedFileService
 
 
 class OpenNmtModelFactory(NmtModelFactory):
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: Any, shared_file_service: SharedFileService) -> None:
         self._config = config
+        self._shared_file_service = shared_file_service
 
     def init(self) -> None:
         _set_tf_log_level()
-        self._model_dir.mkdir(exist_ok=True)
+        self._model_dir.mkdir(parents=True, exist_ok=True)
 
     def create_model(self) -> TranslationModel:
         model_config = self._create_model_config()
-        model_type: str = self._config["model"]
-        mixed_precision: bool = self._config["mixed_precision"]
+        model_type: str = self._config.model
+        mixed_precision: bool = self._config.mixed_precision
         return OpenNmtModel(model_type, model_config, mixed_precision=mixed_precision)
 
     def create_model_trainer(
@@ -44,10 +46,9 @@ class OpenNmtModelFactory(NmtModelFactory):
 
         corpus = corpus.tokenize(self.create_source_tokenizer(), self._create_target_tokenizer())
 
-        # TODO: Add support for parent models
         model_config = self._create_model_config()
-        model_type: str = self._config["model"]
-        mixed_precision: bool = self._config["mixed_precision"]
+        model_type: str = self._config.model
+        mixed_precision: bool = self._config.mixed_precision
         parent_config = self._get_parent_config(source_language_tag, target_language_tag)
         return OpenNmtModelTrainer(
             model_type,
@@ -87,9 +88,12 @@ class OpenNmtModelFactory(NmtModelFactory):
     def create_target_detokenizer(self) -> Detokenizer[str, str]:
         return SentencePieceDetokenizer()
 
+    def save_model(self) -> None:
+        self._shared_file_service.save_model(self._model_dir)
+
     @property
     def _model_dir(self) -> Path:
-        return Path(self._config["models_dir"], self._config["build_id"])
+        return Path(self._config.data_dir, self._config.build_id, "model")
 
     def _create_target_tokenizer(self) -> Tokenizer[str, int, str]:
         return SentencePieceTokenizer(self._model_dir / "trg-sp.model")
@@ -121,15 +125,12 @@ class OpenNmtModelFactory(NmtModelFactory):
             },
         }
         if "max_step" in self._config:
-            config["train"]["max_step"] = self._config["max_step"]
+            config["train"]["max_step"] = self._config.max_step
 
         return config
 
     def _get_parent_config(self, source_language_tag: str, target_language_tag: str) -> Optional[dict]:
-        parents_dir = Path(self._config["parent_models_dir"])
-        parent_model_dir = parents_dir / target_language_tag
-        if not parent_model_dir.is_dir():
-            return None
+        parent_model_dir = self._shared_file_service.get_parent_model(target_language_tag)
         return load_config(str(parent_model_dir / "config.yml"))
 
 

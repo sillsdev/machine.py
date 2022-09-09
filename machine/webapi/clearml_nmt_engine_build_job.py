@@ -1,16 +1,14 @@
 import argparse
-import json
 from contextlib import ExitStack
-from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Any, Callable, List, Optional
 
 from clearml import Task
 
 from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
 from ..translation.translation_engine import TranslationEngine
-from ..utils import merge_dict
 from ..utils.canceled_error import CanceledError
+from .config import settings
 from .nmt_model_factory import NmtModelFactory
 from .open_nmt_model_factory import OpenNmtModelFactory
 from .shared_file_service import PretranslationInfo, PretranslationWriter, SharedFileService
@@ -19,9 +17,7 @@ _PRETRANSLATE_BATCH_SIZE = 128
 
 
 class ClearMLNmtEngineBuildJob:
-    def __init__(
-        self, config: dict, nmt_model_factory: NmtModelFactory, shared_file_service: SharedFileService
-    ) -> None:
+    def __init__(self, config: Any, nmt_model_factory: NmtModelFactory, shared_file_service: SharedFileService) -> None:
         self._config = config
         self._nmt_model_factory = nmt_model_factory
         self._shared_file_service = shared_file_service
@@ -34,7 +30,6 @@ class ClearMLNmtEngineBuildJob:
         print("Config:", self._config)
 
         self._nmt_model_factory.init()
-        self._shared_file_service.init()
 
         print("Downloading data files")
         source_corpus = self._shared_file_service.create_source_corpus()
@@ -62,7 +57,7 @@ class ClearMLNmtEngineBuildJob:
 
         print("Training NMT model")
         model_trainer = self._nmt_model_factory.create_model_trainer(
-            self._config["src_lang"], self._config["trg_lang"], parallel_corpus
+            self._config.src_lang, self._config.trg_lang, parallel_corpus
         )
 
         model_trainer.train(check_canceled=check_canceled)
@@ -92,6 +87,9 @@ class ClearMLNmtEngineBuildJob:
                     check_canceled()
                 _translate_batch(engine, batch, source_tokenizer, target_detokenizer, writer)
 
+        print("Saving NMT model")
+        self._nmt_model_factory.save_model()
+
 
 def _translate_batch(
     engine: TranslationEngine,
@@ -113,24 +111,20 @@ def run(args: dict) -> None:
         if task.get_status() in {"stopped", "stopping"}:
             raise CanceledError
 
-    config_path = Path(__file__).parent / "config.json"
-    with config_path.open("r", encoding="utf-8-sig") as f:
-        config = json.load(f)
+    args["build_id"] = task.name
+    settings.update(args)
 
-    merge_dict(config, args)
-    config["build_id"] = task.name
-
-    shared_file_service = SharedFileService(config)
-    nmt_model_factory = OpenNmtModelFactory(config)
-    job = ClearMLNmtEngineBuildJob(config, nmt_model_factory, shared_file_service)
+    shared_file_service = SharedFileService(settings)
+    nmt_model_factory = OpenNmtModelFactory(settings, shared_file_service)
+    job = ClearMLNmtEngineBuildJob(settings, nmt_model_factory, shared_file_service)
     job.run(check_canceled)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Trains an NMT model.")
+    parser.add_argument("--engine-id", required=True, type=str, help="Engine id")
     parser.add_argument("--src-lang", required=True, type=str, help="Source language tag")
     parser.add_argument("--trg-lang", required=True, type=str, help="Target language tag")
-    parser.add_argument("--build-uri", required=True, type=str, help="Build URI")
     parser.add_argument("--max-step", type=int, help="Maximum number of steps")
     args = parser.parse_args()
 
