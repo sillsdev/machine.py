@@ -1779,12 +1779,12 @@ all = ["sentencepiece", "sil-thot", "libclang", "tensorflow", "OpenNMT-tf", "cle
 sentencepiece = ["sentencepiece"]
 tensorflow = ["libclang", "tensorflow", "OpenNMT-tf"]
 thot = ["sil-thot"]
-webapi = ["clearml", "json-stream"]
+webapi = ["clearml", "json-stream", "dynaconf", "typing-extensions"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.11"
-content-hash = "02d977cc210d66ad32490274c4308ea385dc4f49f8f8a09b695981488a44777a"
+content-hash = "3c3cd49097a6b0dddd5d69bd6b554dcd2d1030ba5bdc49b5a56dbf7edded5de0"
 
 [metadata.files]
 absl-py = [
