@@ -2,7 +2,7 @@ import json
 import sys
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Generator, Iterator, List, TextIO
+from typing import Any, Generator, Iterator, List, Optional, TextIO
 
 import json_stream
 from clearml import StorageManager
@@ -61,7 +61,7 @@ class SharedFileService:
     @contextmanager
     def open_target_pretranslation_writer(self) -> Iterator[PretranslationWriter]:
         build_id: str = self._config.build_id
-        build_dir = self._data_dir / build_id
+        build_dir = self._data_dir / "builds" / build_id
         build_dir.mkdir(parents=True, exist_ok=True)
         target_pretranslate_path = build_dir / "pretranslate.trg.json"
         with target_pretranslate_path.open("w", encoding="utf-8", newline="\n") as file:
@@ -71,7 +71,7 @@ class SharedFileService:
         self._upload_file(f"builds/{self._build_id}/pretranslate.trg.json", target_pretranslate_path)
 
     def get_parent_model(self, language_tag: str) -> Path:
-        return self._download_folder(f"parent_models/{language_tag}")
+        return self._download_folder(f"parent_models/{language_tag}", cache=True)
 
     def save_model(self, model_dir: Path) -> None:
         self._upload_folder(f"models/{self._engine_id}", model_dir)
@@ -93,19 +93,25 @@ class SharedFileService:
         shared_file_uri: str = self._config.shared_file_uri
         return shared_file_uri.rstrip("/")
 
-    def _download_file(self, path: str) -> Path:
+    def _download_file(self, path: str, cache: bool = False) -> Path:
         uri = f"{self._shared_file_uri}/{path}"
-        file_path = StorageManager.download_file(uri)
+        local_folder: Optional[str] = None
+        if not cache:
+            local_folder = str(self._data_dir)
+        file_path = StorageManager.download_file(uri, local_folder)
         if file_path is None:
             raise RuntimeError(f"Failed to download file: {uri}")
         return Path(file_path)
 
-    def _download_folder(self, path: str) -> Path:
+    def _download_folder(self, path: str, cache: bool = False) -> Path:
         uri = f"{self._shared_file_uri}/{path}"
-        folder_path = StorageManager.download_folder(uri)
+        local_folder: Optional[str] = None
+        if not cache:
+            local_folder = str(self._data_dir)
+        folder_path = StorageManager.download_folder(uri, local_folder)
         if folder_path is None:
             raise RuntimeError(f"Failed to download folder: {uri}")
-        return Path(folder_path)
+        return Path(folder_path) / path
 
     def _upload_file(self, path: str, local_file_path: Path) -> None:
         StorageManager.upload_file(str(local_file_path), f"{self._shared_file_uri}/{path}")

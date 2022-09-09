@@ -1,6 +1,7 @@
 import argparse
+import os
 from contextlib import ExitStack
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, cast
 
 from clearml import Task
 
@@ -60,8 +61,11 @@ class ClearMLNmtEngineBuildJob:
             self._config.src_lang, self._config.trg_lang, parallel_corpus
         )
 
-        model_trainer.train(check_canceled=check_canceled)
-        model_trainer.save()
+        try:
+            model_trainer.train(check_canceled=check_canceled)
+            model_trainer.save()
+        except RuntimeError:
+            print("Training already completed")
 
         if check_canceled is not None:
             check_canceled()
@@ -89,6 +93,7 @@ class ClearMLNmtEngineBuildJob:
 
         print("Saving NMT model")
         self._nmt_model_factory.save_model()
+        print("Finished")
 
 
 def _translate_batch(
@@ -111,8 +116,8 @@ def run(args: dict) -> None:
         if task.get_status() in {"stopped", "stopping"}:
             raise CanceledError
 
-    args["build_id"] = task.name
     SETTINGS.update(args)
+    SETTINGS.data_dir = os.path.expanduser(cast(str, SETTINGS.data_dir))
 
     shared_file_service = SharedFileService(SETTINGS)
     nmt_model_factory = OpenNmtModelFactory(SETTINGS, shared_file_service)
@@ -123,6 +128,7 @@ def run(args: dict) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Trains an NMT model.")
     parser.add_argument("--engine-id", required=True, type=str, help="Engine id")
+    parser.add_argument("--build-id", required=True, type=str, help="Build id")
     parser.add_argument("--src-lang", required=True, type=str, help="Source language tag")
     parser.add_argument("--trg-lang", required=True, type=str, help="Target language tag")
     parser.add_argument("--max-step", type=int, help="Maximum number of steps")

@@ -1,10 +1,11 @@
 import logging
 import os
+import shutil
 from pathlib import Path
-from typing import Any, Optional, Set
+from typing import Any, Set
 
 import tensorflow as tf
-from opennmt import END_OF_SENTENCE_TOKEN, PADDING_TOKEN, START_OF_SENTENCE_TOKEN, load_config
+from opennmt import END_OF_SENTENCE_TOKEN, PADDING_TOKEN, START_OF_SENTENCE_TOKEN
 from opennmt.data import Vocab
 
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
@@ -89,11 +90,12 @@ class OpenNmtModelFactory(NmtModelFactory):
         return SentencePieceDetokenizer()
 
     def save_model(self) -> None:
+        shutil.rmtree(self._model_dir / "parent", ignore_errors=True)
         self._shared_file_service.save_model(self._model_dir)
 
     @property
     def _model_dir(self) -> Path:
-        return Path(self._config.data_dir, self._config.build_id, "model")
+        return Path(self._config.data_dir, "builds", self._config.build_id, "model")
 
     def _create_target_tokenizer(self) -> Tokenizer[str, int, str]:
         return SentencePieceTokenizer(self._model_dir / "trg-sp.model")
@@ -129,9 +131,13 @@ class OpenNmtModelFactory(NmtModelFactory):
 
         return config
 
-    def _get_parent_config(self, source_language_tag: str, target_language_tag: str) -> Optional[dict]:
+    def _get_parent_config(self, source_language_tag: str, target_language_tag: str) -> dict:
         parent_model_dir = self._shared_file_service.get_parent_model(target_language_tag)
-        return load_config(str(parent_model_dir / "config.yml"))
+        return {
+            "auto_config": True,
+            "model_dir": str(parent_model_dir),
+            "data": {"source_vocabulary": "src-onmt.vocab", "target_vocabulary": "trg-onmt.vocab"},
+        }
 
 
 def _set_tf_log_level(log_level: int = logging.INFO) -> None:
