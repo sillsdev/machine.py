@@ -83,8 +83,8 @@ datasets = "^2.4.0"
 sentencepiece = ["sentencepiece"]
 thot = ["sil-thot"]
 tensorflow = ["libclang", "tensorflow", "OpenNMT-tf"]
-webapi = ["clearml", "json-stream", "dynaconf", "typing-extensions"]
-all = ["sentencepiece", "sil-thot", "libclang", "tensorflow", "OpenNMT-tf", "clearml", "json-stream"]
+webapi = ["clearml", "json-stream", "dynaconf", "typing-extensions", "libclang", "tensorflow", "OpenNMT-tf", "sentencepiece"]
+all = ["sentencepiece", "sil-thot", "libclang", "tensorflow", "OpenNMT-tf", "clearml", "json-stream", "dynaconf", "typing-extensions"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

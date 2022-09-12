@@ -1775,16 +1775,16 @@ docs = ["jaraco.packaging (>=8.2)", "rst.linker (>=1.9)", "sphinx"]
 testing = ["func-timeout", "jaraco.itertools", "pytest (>=4.6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.0.1)", "pytest-flake8", "pytest-mypy"]
 
 [extras]
-all = ["sentencepiece", "sil-thot", "libclang", "tensorflow", "OpenNMT-tf", "clearml", "json-stream"]
+all = ["sentencepiece", "sil-thot", "libclang", "tensorflow", "OpenNMT-tf", "clearml", "json-stream", "dynaconf", "typing-extensions"]
 sentencepiece = ["sentencepiece"]
 tensorflow = ["libclang", "tensorflow", "OpenNMT-tf"]
 thot = ["sil-thot"]
-webapi = ["clearml", "json-stream", "dynaconf", "typing-extensions"]
+webapi = ["clearml", "json-stream", "dynaconf", "typing-extensions", "libclang", "tensorflow", "OpenNMT-tf", "sentencepiece"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.11"
-content-hash = "3c3cd49097a6b0dddd5d69bd6b554dcd2d1030ba5bdc49b5a56dbf7edded5de0"
+content-hash = "4979032c6755d31a4a0c1669e295c999353b2977b838e62083351deb803a2408"
 
 [metadata.files]
 absl-py = [
