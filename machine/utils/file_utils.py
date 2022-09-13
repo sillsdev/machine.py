@@ -1,4 +1,5 @@
-from typing import IO, BinaryIO, cast
+from os import PathLike
+from typing import IO, Any, BinaryIO, cast
 
 from charset_normalizer import from_fp, from_path
 
@@ -6,7 +7,7 @@ from .typeshed import StrPath
 
 
 def detect_encoding(filename: StrPath) -> str:
-    match = from_path(filename).best()
+    match = from_path(cast(PathLike[Any], filename)).best()
     if match is None:
         return "utf-8"
     return match.encoding
