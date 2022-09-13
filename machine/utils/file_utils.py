@@ -1,19 +1,19 @@
-from typing import IO
+from typing import IO, BinaryIO, cast
 
-from chardet import UniversalDetector
+from charset_normalizer import from_fp, from_path
 
 from .typeshed import StrPath
 
 
 def detect_encoding(filename: StrPath) -> str:
-    with open(filename, "rb") as file:
-        return detect_encoding_from_stream(file)
+    match = from_path(filename).best()
+    if match is None:
+        return "utf-8"
+    return match.encoding
 
 
 def detect_encoding_from_stream(stream: IO[bytes]) -> str:
-    detector = UniversalDetector()
-    for line in stream:
-        detector.feed(line)
-        if detector.done:
-            break
-    return detector.close()["encoding"]
+    match = from_fp(cast(BinaryIO, stream)).best()
+    if match is None:
+        return "utf-8"
+    return match.encoding
