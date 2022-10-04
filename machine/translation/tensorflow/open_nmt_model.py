@@ -113,24 +113,20 @@ class OpenNmtEngine(TranslationEngine):
         self._checkpoint_model, self._config = self._model.restore_checkpoint()
 
     def translate(self, segment: Sequence[str]) -> TranslationResult:
-        return next(iter(self.translate_batch([segment])))
+        return self.translate_batch([segment])[0]
 
-    def translate_n(self, n: int, segment: Sequence[str]) -> List[TranslationResult]:
-        return next(iter(self.translate_n_batch(n, [segment])))
+    def translate_n(self, n: int, segment: Sequence[str]) -> Sequence[TranslationResult]:
+        return self.translate_n_batch(n, [segment])[0]
 
-    def translate_batch(
-        self, segments: Iterable[Sequence[str]], batch_size: Optional[int] = None
-    ) -> Iterable[TranslationResult]:
-        return (results[0] for results in self.translate_n_batch(1, segments, batch_size))
+    def translate_batch(self, segments: Sequence[Sequence[str]]) -> Sequence[TranslationResult]:
+        return [results[0] for results in self.translate_n_batch(1, segments)]
 
-    def translate_n_batch(
-        self, n: int, segments: Iterable[Sequence[str]], batch_size: Optional[int] = None
-    ) -> Iterable[List[TranslationResult]]:
+    def translate_n_batch(self, n: int, segments: Sequence[Sequence[str]]) -> Sequence[Sequence[TranslationResult]]:
         infer_config = self._config["infer"]
         features = (" ".join(segment) for segment in segments)
         dataset = self._make_inference_dataset(
             [features],
-            infer_config["batch_size"] if batch_size is None else min(infer_config["batch_size"], batch_size),
+            infer_config["batch_size"],
             length_bucket_width=infer_config["length_bucket_width"],
             prefetch_buffer_size=infer_config.get("prefetch_buffer_size"),
         )
@@ -144,6 +140,7 @@ class OpenNmtEngine(TranslationEngine):
         queued_results: Dict[int, List[TranslationResult]] = {}
         next_index = 0
         heap: List[int] = []
+        results: List[Sequence[TranslationResult]] = []
         for source in cast(Iterable[dict], dataset):
             predictions = self._infer_fn(source)
             predictions["src_tokens"] = source["tokens"]
@@ -183,9 +180,9 @@ class OpenNmtEngine(TranslationEngine):
                 heapq.heappush(heap, index)
                 while len(heap) > 0 and heap[0] == next_index:
                     i = heapq.heappop(heap)
-                    result = queued_results.pop(i)
-                    yield result
+                    results.append(queued_results.pop(i))
                     next_index += 1
+        return results
 
     def __enter__(self) -> OpenNmtEngine:
         return self

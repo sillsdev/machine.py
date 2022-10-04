@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from types import TracebackType
-from typing import ContextManager, Iterable, List, Optional, Sequence, Type
+from typing import ContextManager, Optional, Sequence, Type
 
 from .translation_result import TranslationResult
 
@@ -13,19 +13,15 @@ class TranslationEngine(ContextManager["TranslationEngine"]):
         ...
 
     @abstractmethod
-    def translate_n(self, n: int, segment: Sequence[str]) -> List[TranslationResult]:
+    def translate_n(self, n: int, segment: Sequence[str]) -> Sequence[TranslationResult]:
         ...
 
     @abstractmethod
-    def translate_batch(
-        self, segments: Iterable[Sequence[str]], batch_size: Optional[int] = None
-    ) -> Iterable[TranslationResult]:
+    def translate_batch(self, segments: Sequence[Sequence[str]]) -> Sequence[TranslationResult]:
         ...
 
     @abstractmethod
-    def translate_n_batch(
-        self, n: int, segments: Iterable[Sequence[str]], batch_size: Optional[int] = None
-    ) -> Iterable[List[TranslationResult]]:
+    def translate_n_batch(self, n: int, segments: Sequence[Sequence[str]]) -> Sequence[Sequence[TranslationResult]]:
         ...
 
     def __enter__(self) -> TranslationEngine:

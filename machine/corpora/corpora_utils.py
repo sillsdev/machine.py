@@ -15,6 +15,9 @@ T = TypeVar("T")
 
 
 def batch(iterable: Iterable[T], batch_size: int) -> Iterable[Sequence[T]]:
+    if isinstance(iterable, Sequence) and len(iterable) <= batch_size:
+        yield iterable
+
     batch: List[T] = []
     for item in iterable:
         batch.append(item)

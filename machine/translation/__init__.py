@@ -1,4 +1,4 @@
-from .corpus_ops import align_corpus, translate_corpus
+from .corpus_ops import translate_corpus, word_align_corpus
 from .edit_operation import EditOperation
 from .hmm_word_alignment_model import HmmWordAlignmentModel
 from .ibm1_word_alignment_model import Ibm1WordAlignmentModel
@@ -28,16 +28,16 @@ __all__ = [
     "SymmetrizedWordAligner",
     "SymmetrizedWordAlignmentModel",
     "SymmetrizedWordAlignmentModelTrainer",
-    "TrainStats",
     "Trainer",
+    "TrainStats",
+    "translate_corpus",
     "TranslationEngine",
     "TranslationModel",
     "TranslationResult",
     "TranslationResultBuilder",
     "TranslationSources",
+    "word_align_corpus",
     "WordAligner",
     "WordAlignmentMatrix",
     "WordAlignmentModel",
-    "align_corpus",
-    "translate_corpus",
 ]

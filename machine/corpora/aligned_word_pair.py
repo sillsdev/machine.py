@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Collection, Iterator, List
+from typing import Collection, Iterator, List, Optional
 
 
 @dataclass(unsafe_hash=True)
@@ -22,7 +22,9 @@ class AlignedWordPair:
         return result
 
     @classmethod
-    def to_string(cls, word_pairs: Collection[AlignedWordPair], include_scores: bool = True) -> str:
+    def to_string(cls, word_pairs: Optional[Collection[AlignedWordPair]], include_scores: bool = True) -> str:
+        if word_pairs is None:
+            return ""
         return " ".join(wp._repr(include_scores) for wp in word_pairs)
 
     source_index: int

@@ -1,6 +1,5 @@
-from typing import Iterable, Optional, Sequence, Tuple
+from typing import Sequence, Tuple
 
-from ..corpora.corpora_utils import batch
 from .symmetrization_heuristic import SymmetrizationHeuristic
 from .word_aligner import WordAligner
 from .word_alignment_matrix import WordAlignmentMatrix
@@ -11,7 +10,6 @@ class SymmetrizedWordAligner(WordAligner):
         self._src_trg_aligner = src_trg_aligner
         self._trg_src_aligner = trg_src_aligner
         self._heuristic = SymmetrizationHeuristic.OCH
-        self.batch_size = 1024
 
     @property
     def heuristic(self) -> SymmetrizationHeuristic:
@@ -30,19 +28,16 @@ class SymmetrizedWordAligner(WordAligner):
         return matrix
 
     def get_best_alignment_batch(
-        self, segments: Iterable[Tuple[Sequence[str], Sequence[str]]], batch_size: Optional[int] = None
-    ) -> Iterable[Tuple[Sequence[str], Sequence[str], WordAlignmentMatrix]]:
+        self, segments: Sequence[Tuple[Sequence[str], Sequence[str]]]
+    ) -> Sequence[WordAlignmentMatrix]:
         if self.heuristic is SymmetrizationHeuristic.NONE:
-            yield from self._src_trg_aligner.get_best_alignment_batch(segments, batch_size)
+            return self._src_trg_aligner.get_best_alignment_batch(segments)
         else:
-            if batch_size is None:
-                batch_size = self.batch_size
-            for segments_batch in batch(segments, batch_size):
-                results = self._src_trg_aligner.get_best_alignment_batch(segments_batch, batch_size)
-                inv_results = self._trg_src_aligner.get_best_alignment_batch(
-                    ((target_segment, source_segment) for source_segment, target_segment in segments_batch), batch_size
-                )
-                for (source_segment, target_segment, matrix), (_, _, inv_matrix) in zip(results, inv_results):
-                    inv_matrix.transpose()
-                    matrix.symmetrize_with(inv_matrix, self.heuristic)
-                    yield source_segment, target_segment, matrix
+            results = self._src_trg_aligner.get_best_alignment_batch(segments)
+            inv_results = self._trg_src_aligner.get_best_alignment_batch(
+                [(target_segment, source_segment) for source_segment, target_segment in segments]
+            )
+            for matrix, inv_matrix in zip(results, inv_results):
+                inv_matrix.transpose()
+                matrix.symmetrize_with(inv_matrix, self.heuristic)
+            return results

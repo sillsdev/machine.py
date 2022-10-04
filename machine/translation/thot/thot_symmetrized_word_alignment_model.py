@@ -1,4 +1,4 @@
-from typing import Iterable, Optional, Sequence, Tuple, cast
+from typing import List, Sequence, Tuple, cast
 
 import thot.alignment as ta
 
@@ -10,6 +10,8 @@ from ..trainer import Trainer
 from ..word_alignment_matrix import WordAlignmentMatrix
 from .thot_utils import batch
 from .thot_word_alignment_model import ThotWordAlignmentModel
+
+_MAX_BATCH_SIZE = 10240
 
 
 class ThotSymmetrizedWordAlignmentModel(SymmetrizedWordAlignmentModel):
@@ -41,12 +43,14 @@ class ThotSymmetrizedWordAlignmentModel(SymmetrizedWordAlignmentModel):
         return WordAlignmentMatrix(matrix.to_numpy())
 
     def get_best_alignment_batch(
-        self, segments: Iterable[Tuple[Sequence[str], Sequence[str]]], batch_size: Optional[int] = None
-    ) -> Iterable[Tuple[Sequence[str], Sequence[str], WordAlignmentMatrix]]:
-        for source_segments, target_segments in batch(segments, self.batch_size if batch_size is None else batch_size):
-            results = self._aligner.get_best_alignments(source_segments, target_segments)
-            for source_segment, target_segment, (_, matrix) in zip(source_segments, target_segments, results):
-                yield source_segment, target_segment, WordAlignmentMatrix(matrix.to_numpy())
+        self, segments: Sequence[Tuple[Sequence[str], Sequence[str]]]
+    ) -> Sequence[WordAlignmentMatrix]:
+        results: List[WordAlignmentMatrix] = []
+        for source_segments, target_segments in batch(segments, _MAX_BATCH_SIZE):
+            alignments = self._aligner.get_best_alignments(source_segments, target_segments)
+            for (_, matrix) in alignments:
+                results.append(WordAlignmentMatrix(matrix.to_numpy()))
+        return results
 
     def create_trainer(self, corpus: ParallelTextCorpus) -> Trainer:
         direct_trainer = self._direct_word_alignment_model.create_trainer(corpus)

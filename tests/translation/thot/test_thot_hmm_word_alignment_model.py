@@ -24,7 +24,7 @@ def test_get_best_alignment_batch() -> None:
         ("voy a marcharme hoy por la tarde .".split(), "i am leaving today in the afternoon .".split()),
         ("hablé hasta cinco en punto .".split(), "i am staying until five o ' clock .".split()),
     ]
-    matrices = [matrix for _, _, matrix in model.get_best_alignment_batch(segments)]
+    matrices = model.get_best_alignment_batch(segments)
     assert matrices == [
         WordAlignmentMatrix.from_word_pairs(8, 8, {(0, 0), (0, 1), (0, 2), (3, 3), (6, 4), (5, 5), (6, 6), (7, 7)}),
         WordAlignmentMatrix.from_word_pairs(6, 9, {(4, 1), (5, 2), (1, 3), (2, 4), (4, 5), (4, 6), (4, 7), (5, 8)}),

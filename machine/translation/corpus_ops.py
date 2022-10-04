@@ -10,7 +10,7 @@ from .word_alignment_matrix import WordAlignmentMatrix
 from .word_alignment_model import WordAlignmentModel
 
 
-def align_corpus(
+def word_align_corpus(
     corpus: ParallelTextCorpus,
     aligner: Union[WordAligner, int, str] = "fast_align",
     batch_size: int = 1024,
@@ -48,9 +48,9 @@ class _AlignParallelTextCorpus(ParallelTextCorpus):
         with self._corpus.batch(self._batch_size) as batches:
             for batch in batches:
                 alignments = self._aligner.get_best_alignment_batch(
-                    ((r.source_segment, r.target_segment) for r in batch), self._batch_size
+                    [(r.source_segment, r.target_segment) for r in batch]
                 )
-                for row, (_, _, alignment) in zip(batch, alignments):
+                for row, alignment in zip(batch, alignments):
                     known_alignment = WordAlignmentMatrix.from_parallel_text_row(row)
                     if known_alignment is not None:
                         known_alignment.priority_symmetrize_with(alignment)
@@ -73,9 +73,7 @@ class _TranslateParallelTextCorpus(ParallelTextCorpus):
     def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
         with self._corpus.batch(self._batch_size) as batches:
             for batch in batches:
-                translations = self._translation_engine.translate_batch(
-                    (r.source_segment for r in batch), self._batch_size
-                )
+                translations = self._translation_engine.translate_batch([r.source_segment for r in batch])
                 for row, translation in zip(batch, translations):
                     row.target_segment = translation.target_segment
                     yield row

@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from math import exp
 from pathlib import Path
-from typing import Collection, Iterable, Iterator, Optional, Sequence, Tuple, Union
+from typing import Collection, Iterable, Iterator, List, Optional, Sequence, Tuple, Union
 
 import thot.alignment as ta
 
@@ -17,6 +17,7 @@ from .thot_word_alignment_model_type import ThotWordAlignmentModelType
 from .thot_word_alignment_parameters import ThotWordAlignmentParameters
 
 _SPECIAL_SYMBOL_INDICES = {0, 1, 2}
+_MAX_BATCH_SIZE = 10240
 
 
 class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
@@ -31,7 +32,6 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
         else:
             self._prefix_filename = None
         self.parameters = ThotWordAlignmentParameters()
-        self.batch_size = 1024
 
     @property
     def source_words(self) -> WordVocabulary:
@@ -78,12 +78,14 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
         return WordAlignmentMatrix(matrix.to_numpy())
 
     def get_best_alignment_batch(
-        self, segments: Iterable[Tuple[Sequence[str], Sequence[str]]], batch_size: Optional[int] = None
-    ) -> Iterable[Tuple[Sequence[str], Sequence[str], WordAlignmentMatrix]]:
-        for source_segments, target_segments in batch(segments, self.batch_size if batch_size is None else batch_size):
-            results = self._model.get_best_alignments(source_segments, target_segments)
-            for source_segment, target_segment, (_, matrix) in zip(source_segments, target_segments, results):
-                yield source_segment, target_segment, WordAlignmentMatrix(matrix.to_numpy())
+        self, segments: Sequence[Tuple[Sequence[str], Sequence[str]]]
+    ) -> Sequence[WordAlignmentMatrix]:
+        results: List[WordAlignmentMatrix] = []
+        for source_segments, target_segments in batch(segments, _MAX_BATCH_SIZE):
+            alignments = self._model.get_best_alignments(source_segments, target_segments)
+            for (_, matrix) in alignments:
+                results.append(WordAlignmentMatrix(matrix.to_numpy()))
+        return results
 
     def get_translation_score(
         self, source_word: Optional[Union[str, int]], target_word: Optional[Union[str, int]]

@@ -63,13 +63,15 @@ class WordAlignmentModel(WordAligner):
         return word_pairs
 
     def get_best_aligned_word_pairs_batch(
-        self, segments: Iterable[Tuple[Sequence[str], Sequence[str]]]
-    ) -> Iterable[Tuple[Sequence[str], Sequence[str], Collection[AlignedWordPair]]]:
-        results = self.get_best_alignment_batch(segments)
-        for source_segment, target_segment, wa_matrix in results:
-            word_pairs = wa_matrix.to_aligned_word_pairs()
+        self, segments: Sequence[Tuple[Sequence[str], Sequence[str]]]
+    ) -> Sequence[Collection[AlignedWordPair]]:
+        results: List[Collection[AlignedWordPair]] = []
+        alignments = self.get_best_alignment_batch(segments)
+        for (source_segment, target_segment), matrix in zip(segments, alignments):
+            word_pairs = matrix.to_aligned_word_pairs()
             self.compute_aligned_word_pair_scores(source_segment, target_segment, word_pairs)
-            yield source_segment, target_segment, word_pairs
+            results.append(word_pairs)
+        return results
 
     def compute_aligned_word_pair_scores(
         self, source_segment: Sequence[str], target_segment: Sequence[str], word_pairs: Collection[AlignedWordPair]

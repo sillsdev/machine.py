@@ -47,6 +47,8 @@ def create_thot_symmetrized_word_alignment_model(type: Union[int, str]) -> Optio
 
 
 __all__ = [
+    "create_thot_symmetrized_word_alignment_model",
+    "create_thot_word_alignment_model",
     "ThotFastAlignWordAlignmentModel",
     "ThotHmmWordAlignmentModel",
     "ThotIbm1WordAlignmentModel",
@@ -58,6 +60,4 @@ __all__ = [
     "ThotWordAlignmentModelTrainer",
     "ThotWordAlignmentModelType",
     "ThotWordAlignmentParameters",
-    "create_thot_symmetrized_word_alignment_model",
-    "create_thot_word_alignment_model",
 ]

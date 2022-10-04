@@ -1,10 +1,11 @@
 import argparse
 import os
 from contextlib import ExitStack
-from typing import Any, Callable, List, Optional, cast
+from typing import Any, Callable, Optional, Sequence, cast
 
 from clearml import Task
 
+from ..corpora.corpora_utils import batch
 from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
 from ..translation.translation_engine import TranslationEngine
@@ -78,18 +79,10 @@ class ClearMLNmtEngineBuildJob:
             engine = stack.enter_context(model.create_engine())
             src_pretranslations = stack.enter_context(self._shared_file_service.get_source_pretranslations())
             writer = stack.enter_context(self._shared_file_service.open_target_pretranslation_writer())
-            batch: List[PretranslationInfo] = []
-            for pi in src_pretranslations:
-                batch.append(pi)
-                if len(batch) == _PRETRANSLATE_BATCH_SIZE:
-                    if check_canceled is not None:
-                        check_canceled()
-                    _translate_batch(engine, batch, source_tokenizer, target_detokenizer, writer)
-                    batch.clear()
-            if len(batch) > 0:
+            for pi_batch in batch(src_pretranslations, _PRETRANSLATE_BATCH_SIZE):
                 if check_canceled is not None:
                     check_canceled()
-                _translate_batch(engine, batch, source_tokenizer, target_detokenizer, writer)
+                _translate_batch(engine, pi_batch, source_tokenizer, target_detokenizer, writer)
 
         print("Saving NMT model")
         self._nmt_model_factory.save_model()
@@ -98,12 +91,12 @@ class ClearMLNmtEngineBuildJob:
 
 def _translate_batch(
     engine: TranslationEngine,
-    batch: List[PretranslationInfo],
+    batch: Sequence[PretranslationInfo],
     source_tokenizer: Tokenizer[str, int, str],
     target_detokenizer: Detokenizer[str, str],
     writer: PretranslationWriter,
 ) -> None:
-    source_segments = (list(source_tokenizer.tokenize(pi["segment"])) for pi in batch)
+    source_segments = [list(source_tokenizer.tokenize(pi["segment"])) for pi in batch]
     for i, result in enumerate(engine.translate_batch(source_segments)):
         batch[i]["segment"] = target_detokenizer.detokenize(result.target_segment)
         writer.write(batch[i])
