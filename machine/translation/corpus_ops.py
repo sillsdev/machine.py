@@ -29,7 +29,7 @@ def word_align_corpus(
         trainer.save()
         aligner = model
 
-    return _AlignParallelTextCorpus(corpus, aligner, batch_size)
+    return _WordAlignParallelTextCorpus(corpus, aligner, batch_size)
 
 
 def translate_corpus(
@@ -38,7 +38,7 @@ def translate_corpus(
     return _TranslateParallelTextCorpus(corpus, translation_engine, batch_size)
 
 
-class _AlignParallelTextCorpus(ParallelTextCorpus):
+class _WordAlignParallelTextCorpus(ParallelTextCorpus):
     def __init__(self, corpus: ParallelTextCorpus, aligner: WordAligner, batch_size: int) -> None:
         self._corpus = corpus
         self._aligner = aligner
