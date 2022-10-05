@@ -12,7 +12,7 @@ def test_get_best_alignment() -> None:
     model = ThotFastAlignWordAlignmentModel(DIRECT_MODEL_PATH)
     source_segment = "por favor , ¿ podríamos ver otra habitación ?".split()
     target_segment = "could we see another room , please ?".split()
-    matrix = model.get_best_alignment(source_segment, target_segment)
+    matrix = model.align(source_segment, target_segment)
     assert matrix == WordAlignmentMatrix.from_word_pairs(9, 8, {(0, 0), (4, 1), (5, 2), (6, 3), (7, 4), (8, 6), (8, 7)})
 
 
@@ -22,7 +22,7 @@ def test_get_best_alignment_batch() -> None:
         ("voy a marcharme hoy por la tarde .".split(), "i am leaving today in the afternoon .".split()),
         ("hablé hasta cinco en punto .".split(), "i am staying until five o ' clock .".split()),
     ]
-    matrices = model.get_best_alignment_batch(segments)
+    matrices = model.align_batch(segments)
     assert matrices == [
         WordAlignmentMatrix.from_word_pairs(8, 8, {(0, 0), (0, 1), (2, 2), (3, 3), (6, 4), (5, 5), (6, 6), (7, 7)}),
         WordAlignmentMatrix.from_word_pairs(6, 9, {(0, 1), (1, 2), (1, 3), (2, 4), (4, 5), (4, 6), (4, 7), (5, 8)}),
@@ -33,7 +33,7 @@ def test_get_avg_translation_score() -> None:
     model = ThotFastAlignWordAlignmentModel(DIRECT_MODEL_PATH)
     source_segment = "por favor , ¿ podríamos ver otra habitación ?".split()
     target_segment = "could we see another room , please ?".split()
-    matrix = model.get_best_alignment(source_segment, target_segment)
+    matrix = model.align(source_segment, target_segment)
     score = model.get_avg_translation_score(source_segment, target_segment, matrix)
     assert score == approx(0.34, abs=0.01)
 
@@ -104,6 +104,6 @@ def test_get_avg_translation_score_symmetrized() -> None:
     )
     source_segment = "por favor , ¿ podríamos ver otra habitación ?".split()
     target_segment = "could we see another room , please ?".split()
-    matrix = model.get_best_alignment(source_segment, target_segment)
+    matrix = model.align(source_segment, target_segment)
     score = model.get_avg_translation_score(source_segment, target_segment, matrix)
     assert score == approx(0.36, abs=0.01)

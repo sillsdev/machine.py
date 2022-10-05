@@ -52,13 +52,13 @@ def test_create_trainer() -> None:
     trainer.train()
     trainer.save()
 
-    matrix = model.get_best_alignment("isthay isyay ayay esttay-N .".split(), "this is a test N .".split())
+    matrix = model.align("isthay isyay ayay esttay-N .".split(), "this is a test N .".split())
     assert matrix == WordAlignmentMatrix.from_word_pairs(5, 6, {(0, 0), (1, 1), (2, 2), (3, 3), (3, 4), (4, 5)})
 
-    matrix = model.get_best_alignment("isthay isyay otnay ayay esttay-N .".split(), "this is not a test N .".split())
+    matrix = model.align("isthay isyay otnay ayay esttay-N .".split(), "this is not a test N .".split())
     assert matrix == WordAlignmentMatrix.from_word_pairs(6, 7, {(0, 0), (1, 1), (3, 3), (4, 4), (4, 5), (5, 6)})
 
-    matrix = model.get_best_alignment("isthay isyay ayay esttay-N ardhay .".split(), "this is a hard test N .".split())
+    matrix = model.align("isthay isyay ayay esttay-N ardhay .".split(), "this is a hard test N .".split())
     assert matrix == WordAlignmentMatrix.from_word_pairs(6, 7, {(0, 0), (1, 1), (2, 2), (4, 3), (3, 4), (3, 5), (5, 6)})
 
 

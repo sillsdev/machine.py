@@ -38,13 +38,11 @@ class ThotSymmetrizedWordAlignmentModel(SymmetrizedWordAlignmentModel):
         self._heuristic = value
         self._aligner.heuristic = _convert_heuristic(self._heuristic)
 
-    def get_best_alignment(self, source_segment: Sequence[str], target_segment: Sequence[str]) -> WordAlignmentMatrix:
+    def align(self, source_segment: Sequence[str], target_segment: Sequence[str]) -> WordAlignmentMatrix:
         _, matrix = self._aligner.get_best_alignment(source_segment, target_segment)
         return WordAlignmentMatrix(matrix.to_numpy())
 
-    def get_best_alignment_batch(
-        self, segments: Sequence[Tuple[Sequence[str], Sequence[str]]]
-    ) -> Sequence[WordAlignmentMatrix]:
+    def align_batch(self, segments: Sequence[Tuple[Sequence[str], Sequence[str]]]) -> Sequence[WordAlignmentMatrix]:
         results: List[WordAlignmentMatrix] = []
         for source_segments, target_segments in batch(segments, _MAX_BATCH_SIZE):
             alignments = self._aligner.get_best_alignments(source_segments, target_segments)

@@ -19,22 +19,20 @@ class SymmetrizedWordAligner(WordAligner):
     def heuristic(self, value: SymmetrizationHeuristic) -> None:
         self._heuristic = value
 
-    def get_best_alignment(self, source_segment: Sequence[str], target_segment: Sequence[str]) -> WordAlignmentMatrix:
-        matrix = self._src_trg_aligner.get_best_alignment(source_segment, target_segment)
+    def align(self, source_segment: Sequence[str], target_segment: Sequence[str]) -> WordAlignmentMatrix:
+        matrix = self._src_trg_aligner.align(source_segment, target_segment)
         if self.heuristic is not SymmetrizationHeuristic.NONE:
-            inv_matrix = self._trg_src_aligner.get_best_alignment(target_segment, source_segment)
+            inv_matrix = self._trg_src_aligner.align(target_segment, source_segment)
             inv_matrix.transpose()
             matrix.symmetrize_with(inv_matrix, self.heuristic)
         return matrix
 
-    def get_best_alignment_batch(
-        self, segments: Sequence[Tuple[Sequence[str], Sequence[str]]]
-    ) -> Sequence[WordAlignmentMatrix]:
+    def align_batch(self, segments: Sequence[Tuple[Sequence[str], Sequence[str]]]) -> Sequence[WordAlignmentMatrix]:
         if self.heuristic is SymmetrizationHeuristic.NONE:
-            return self._src_trg_aligner.get_best_alignment_batch(segments)
+            return self._src_trg_aligner.align_batch(segments)
         else:
-            results = self._src_trg_aligner.get_best_alignment_batch(segments)
-            inv_results = self._trg_src_aligner.get_best_alignment_batch(
+            results = self._src_trg_aligner.align_batch(segments)
+            inv_results = self._trg_src_aligner.align_batch(
                 [(target_segment, source_segment) for source_segment, target_segment in segments]
             )
             for matrix, inv_matrix in zip(results, inv_results):

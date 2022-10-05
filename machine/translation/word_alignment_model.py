@@ -57,7 +57,7 @@ class WordAlignmentModel(WordAligner):
     def get_best_aligned_word_pairs(
         self, source_segment: Sequence[str], target_segment: Sequence[str]
     ) -> Collection[AlignedWordPair]:
-        wa_matrix = self.get_best_alignment(source_segment, target_segment)
+        wa_matrix = self.align(source_segment, target_segment)
         word_pairs = wa_matrix.to_aligned_word_pairs()
         self.compute_aligned_word_pair_scores(source_segment, target_segment, word_pairs)
         return word_pairs
@@ -66,7 +66,7 @@ class WordAlignmentModel(WordAligner):
         self, segments: Sequence[Tuple[Sequence[str], Sequence[str]]]
     ) -> Sequence[Collection[AlignedWordPair]]:
         results: List[Collection[AlignedWordPair]] = []
-        alignments = self.get_best_alignment_batch(segments)
+        alignments = self.align_batch(segments)
         for (source_segment, target_segment), matrix in zip(segments, alignments):
             word_pairs = matrix.to_aligned_word_pairs()
             self.compute_aligned_word_pair_scores(source_segment, target_segment, word_pairs)
@@ -98,9 +98,7 @@ class WordAlignmentModel(WordAligner):
         row: ParallelTextRow,
         include_scores: bool = True,
     ) -> str:
-        alignment = self.get_best_alignment_from_known(
-            row.source_segment, row.target_segment, WordAlignmentMatrix.from_parallel_text_row(row)
-        )
+        alignment = self.align_parallel_text_row(row)
         if not include_scores:
             return str(alignment)
         word_pairs = alignment.to_aligned_word_pairs()
@@ -111,7 +109,5 @@ class WordAlignmentModel(WordAligner):
         self,
         row: ParallelTextRow,
     ) -> str:
-        alignment = self.get_best_alignment_from_known(
-            row.source_segment, row.target_segment, WordAlignmentMatrix.from_parallel_text_row(row)
-        )
+        alignment = self.align_parallel_text_row(row)
         return alignment.to_giza_format(row.source_segment, row.target_segment)

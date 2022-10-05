@@ -73,13 +73,11 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
     def create_trainer(self, corpus: ParallelTextCorpus) -> Trainer:
         return _Trainer(self, corpus, self._prefix_filename)
 
-    def get_best_alignment(self, source_segment: Sequence[str], target_segment: Sequence[str]) -> WordAlignmentMatrix:
+    def align(self, source_segment: Sequence[str], target_segment: Sequence[str]) -> WordAlignmentMatrix:
         _, matrix = self._model.get_best_alignment(source_segment, target_segment)
         return WordAlignmentMatrix(matrix.to_numpy())
 
-    def get_best_alignment_batch(
-        self, segments: Sequence[Tuple[Sequence[str], Sequence[str]]]
-    ) -> Sequence[WordAlignmentMatrix]:
+    def align_batch(self, segments: Sequence[Tuple[Sequence[str], Sequence[str]]]) -> Sequence[WordAlignmentMatrix]:
         results: List[WordAlignmentMatrix] = []
         for source_segments, target_segments in batch(segments, _MAX_BATCH_SIZE):
             alignments = self._model.get_best_alignments(source_segments, target_segments)
