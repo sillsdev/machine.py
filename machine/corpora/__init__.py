@@ -10,6 +10,7 @@ from .dictionary_text_corpus import DictionaryTextCorpus
 from .flatten import flatten
 from .memory_alignment_collection import MemoryAlignmentCollection
 from .memory_text import MemoryText
+from .multi_key_ref import MultiKeyRef
 from .parallel_text_corpus import ParallelTextCorpus, flatten_parallel_text_corpora
 from .parallel_text_row import ParallelTextRow
 from .paratext_backup_text_corpus import ParatextBackupTextCorpus
@@ -20,7 +21,6 @@ from .text import Text
 from .text_corpus import TextCorpus, flatten_text_corpora
 from .text_file_alignment_collection import TextFileAlignmentCollection
 from .text_file_alignment_corpus import TextFileAlignmentCorpus
-from .text_file_ref import TextFileRef
 from .text_file_text import TextFileText
 from .text_file_text_corpus import TextFileTextCorpus
 from .text_row import TextRow
@@ -66,6 +66,7 @@ __all__ = [
     "lowercase",
     "MemoryAlignmentCollection",
     "MemoryText",
+    "MultiKeyRef",
     "nfc_normalize",
     "nfd_normalize",
     "nfkc_normalize",
@@ -82,7 +83,6 @@ __all__ = [
     "TextCorpus",
     "TextFileAlignmentCollection",
     "TextFileAlignmentCorpus",
-    "TextFileRef",
     "TextFileText",
     "TextFileTextCorpus",
     "TextRow",

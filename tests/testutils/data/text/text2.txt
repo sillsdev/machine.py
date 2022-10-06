@@ -1,2 +1,0 @@
-Text 2, line 1.
-Text 2, line 2.

@@ -1,10 +1,12 @@
+import re
 from typing import Generator
 
+from ..utils.string_utils import parse_integer
 from ..utils.typeshed import StrPath
 from .aligned_word_pair import AlignedWordPair
 from .alignment_collection import AlignmentCollection
 from .alignment_row import AlignmentRow
-from .text_file_ref import TextFileRef
+from .multi_key_ref import MultiKeyRef
 
 
 class TextFileAlignmentCollection(AlignmentCollection):
@@ -25,7 +27,18 @@ class TextFileAlignmentCollection(AlignmentCollection):
             line_num = 1
             for line in file:
                 line = line.rstrip("\r\n")
-                yield AlignmentRow(self.id, TextFileRef(self.id, line_num), AlignedWordPair.from_string(line))
+                index = line.find("\t")
+                if index >= 0:
+                    key_strs = re.split(r"[-_]", line[:index].strip())
+                    keys = []
+                    for key_str in key_strs:
+                        key_int = parse_integer(key_str)
+                        keys.append(key_int if key_int is not None else key_str)
+                    row_ref = MultiKeyRef(self.id, keys)
+                    line = line[index + 1 :]
+                else:
+                    row_ref = MultiKeyRef(self.id, [line_num])
+                yield AlignmentRow(self.id, row_ref, AlignedWordPair.from_string(line))
                 line_num += 1
 
     @property
