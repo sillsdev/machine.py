@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from types import TracebackType
-from typing import ContextManager, Optional, Sequence, Type
+from typing import Optional, Sequence, Type
 
 from .translation_result import TranslationResult
 
 
-class TranslationEngine(ContextManager["TranslationEngine"]):
+class TranslationEngine:
     @abstractmethod
     def translate(self, segment: Sequence[str]) -> TranslationResult:
         ...

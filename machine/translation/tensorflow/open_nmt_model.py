@@ -1,20 +1,18 @@
 from __future__ import annotations
 
 import heapq
-from types import TracebackType
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type, cast
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, cast
 
 import numpy as np
 import tensorflow as tf
 from opennmt.data import inference_pipeline
-from opennmt.inputters import Inputter
-from opennmt.models import SequenceToSequence
+from opennmt.inputters import TextInputter
+from opennmt.models import Model
 from opennmt.utils.checkpoint import Checkpoint
 from opennmt.utils.misc import extract_batches, item_or_tuple
 
 from ...annotations.range import Range
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
-from ..translation_engine import TranslationEngine
 from ..translation_model import TranslationModel
 from ..translation_result import TranslationResult
 from ..translation_result_builder import TranslationResultBuilder
@@ -35,7 +33,9 @@ class OpenNmtModel(TranslationModel):
         self._config = config
         self._parent_config = parent_config
         self._runner = OpenNmtRunner(model_type, config, mixed_precision, prefix_corpus_paths=True)
-        self._engines: Set[OpenNmtEngine] = set()
+        self._finalized_config: Optional[dict] = None
+        self._checkpoint_model: Optional[Model] = None
+        self._infer_fn: Any = None
 
     @property
     def model_dir(self) -> str:
@@ -61,57 +61,6 @@ class OpenNmtModel(TranslationModel):
     def runner(self) -> OpenNmtRunner:
         return self._runner
 
-    def create_engine(self) -> OpenNmtEngine:
-        engine = OpenNmtEngine(self)
-        self._engines.add(engine)
-        return engine
-
-    def create_trainer(self, corpus: Optional[ParallelTextCorpus] = None) -> OpenNmtModelTrainer:
-        return _Trainer(self, corpus)
-
-    def restore_checkpoint(self) -> Tuple[SequenceToSequence, dict]:
-        config, model = self._runner.load()
-        checkpoint = Checkpoint.from_config(config, model)
-        checkpoint.restore(weights_only=True)
-        return model, config
-
-    def remove_engine(self, engine: OpenNmtEngine) -> None:
-        self._engines.remove(engine)
-
-    def __enter__(self) -> OpenNmtModel:
-        return self
-
-
-class _Trainer(OpenNmtModelTrainer):
-    def __init__(self, model: OpenNmtModel, corpus: Optional[ParallelTextCorpus]):
-        self._model = model
-        super().__init__(
-            self._model.model_type, self._model.config, corpus, self._model.parent_config, self._model.mixed_precision
-        )
-
-    def save(self) -> None:
-        super().save()
-        for engine in self._model._engines:
-            engine.restore()
-
-
-class OpenNmtEngine(TranslationEngine):
-    def __init__(self, model: OpenNmtModel):
-        self._model = model
-        self._infer_fn: Any = None
-        self.restore()
-
-    @property
-    def _features_inputter(self) -> Inputter:
-        return cast(Inputter, self._checkpoint_model.features_inputter)
-
-    @property
-    def _labels_inputter(self) -> Inputter:
-        return cast(Inputter, self._checkpoint_model.labels_inputter)
-
-    def restore(self) -> None:
-        self._checkpoint_model, self._config = self._model.restore_checkpoint()
-
     def translate(self, segment: Sequence[str]) -> TranslationResult:
         return self.translate_batch([segment])[0]
 
@@ -122,9 +71,16 @@ class OpenNmtEngine(TranslationEngine):
         return [results[0] for results in self.translate_n_batch(1, segments)]
 
     def translate_n_batch(self, n: int, segments: Sequence[Sequence[str]]) -> Sequence[Sequence[TranslationResult]]:
-        infer_config = self._config["infer"]
+        finalized_config, checkpoint_model = self._get_checkpoint()
+        features_inputter = cast(TextInputter, checkpoint_model.features_inputter)
+        assert features_inputter.tokenizer is not None
+        labels_inputter = cast(TextInputter, checkpoint_model.labels_inputter)
+        assert labels_inputter.tokenizer is not None
+
+        infer_config = finalized_config["infer"]
         features = (" ".join(segment) for segment in segments)
         dataset = self._make_inference_dataset(
+            features_inputter,
             [features],
             infer_config["batch_size"],
             length_bucket_width=infer_config["length_bucket_width"],
@@ -132,7 +88,7 @@ class OpenNmtEngine(TranslationEngine):
         )
 
         if self._infer_fn is None:
-            self._infer_fn = tf.function(self._checkpoint_model.infer, input_signature=(dataset.element_spec,))
+            self._infer_fn = tf.function(checkpoint_model.infer, input_signature=(dataset.element_spec,))
             if not tf.config.functions_run_eagerly():
                 tf.get_logger().info("Tracing and optimizing the inference graph...")
                 self._infer_fn.get_concrete_function()  # Trace the function now.
@@ -151,14 +107,14 @@ class OpenNmtEngine(TranslationEngine):
 
                 src_length = prediction["src_length"]
                 src_tokens = prediction["src_tokens"][:src_length]
-                src_segment = self._features_inputter.tokenizer.detokenize(src_tokens)
+                src_segment = cast(str, features_inputter.tokenizer.detokenize(src_tokens))
 
                 num_hypotheses = min(n or 1, len(prediction["log_probs"]))
                 hypotheses: List[TranslationResult] = []
                 for i in range(num_hypotheses):
                     trg_length = prediction["length"][i]
                     trg_tokens = prediction["tokens"][i][:trg_length]
-                    trg_segment = self._labels_inputter.tokenizer.detokenize(trg_tokens)
+                    trg_segment = cast(str, labels_inputter.tokenizer.detokenize(trg_tokens))
 
                     builder = TranslationResultBuilder()
 
@@ -184,20 +140,24 @@ class OpenNmtEngine(TranslationEngine):
                     next_index += 1
         return results
 
-    def __enter__(self) -> OpenNmtEngine:
-        return self
+    def create_trainer(self, corpus: Optional[ParallelTextCorpus] = None) -> OpenNmtModelTrainer:
+        return _Trainer(self, corpus)
 
-    def __exit__(
-        self,
-        __exc_type: Optional[Type[BaseException]],
-        __exc_value: Optional[BaseException],
-        __traceback: Optional[TracebackType],
-    ) -> Optional[bool]:
-        self._model.remove_engine(self)
-        return None
+    def reset_checkpoint(self) -> None:
+        self._finalized_config = None
+        self._checkpoint_model = None
+        self._infer_fn = None
+
+    def _get_checkpoint(self) -> Tuple[dict, Model]:
+        if self._finalized_config is None or self._checkpoint_model is None:
+            self._finalized_config, self._checkpoint_model = self._runner.load()
+            checkpoint = Checkpoint.from_config(self._finalized_config, self._checkpoint_model)
+            checkpoint.restore(weights_only=True)
+        return self._finalized_config, self._checkpoint_model
 
     def _make_inference_dataset(
         self,
+        features_inputter: TextInputter,
         features_list: List[Iterable[str]],
         batch_size: int,
         batch_type: str = "examples",
@@ -206,7 +166,7 @@ class OpenNmtEngine(TranslationEngine):
         prefetch_buffer_size: Optional[int] = None,
     ):
         def _map_fn(*arg):
-            features = self._features_inputter.make_features(element=item_or_tuple(arg), training=False)
+            features = features_inputter.make_features(element=item_or_tuple(arg), training=False)
             if isinstance(features, (list, tuple)):
                 # Special case for unsupervised inputters that always return a
                 # tuple (features, labels).
@@ -234,9 +194,24 @@ class OpenNmtEngine(TranslationEngine):
                 batch_type=batch_type,
                 transform_fns=transform_fns,
                 length_bucket_width=length_bucket_width,
-                length_fn=self._features_inputter.get_length,
+                length_fn=features_inputter.get_length,
                 num_threads=num_threads,
                 prefetch_buffer_size=prefetch_buffer_size,
             )
         )
         return dataset
+
+    def __enter__(self) -> OpenNmtModel:
+        return self
+
+
+class _Trainer(OpenNmtModelTrainer):
+    def __init__(self, model: OpenNmtModel, corpus: Optional[ParallelTextCorpus]):
+        self._model = model
+        super().__init__(
+            self._model.model_type, self._model.config, corpus, self._model.parent_config, self._model.mixed_precision
+        )
+
+    def save(self) -> None:
+        super().save()
+        self._model.reset_checkpoint()

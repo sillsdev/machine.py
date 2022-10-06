@@ -13,7 +13,6 @@ from machine.translation import (
     Phrase,
     Trainer,
     TrainStats,
-    TranslationEngine,
     TranslationModel,
     TranslationResult,
     TranslationSources,
@@ -30,7 +29,7 @@ def test_run() -> None:
     env = _TestEnvironment()
     env.job.run()
 
-    verify(env.engine, times=1).translate_batch(...)
+    verify(env.model, times=1).translate_batch(...)
     pretranslations = json.loads(env.target_pretranslations)
     assert len(pretranslations) == 1
     assert pretranslations[0]["segment"] == "Please, I have booked a room."
@@ -65,8 +64,8 @@ class _TestEnvironment:
         stats.metrics["bleu"] = 30.0
         setattr(self.model_trainer, "stats", stats)
 
-        self.engine = _mock(TranslationEngine)
-        when(self.engine).translate_batch(ANY).thenReturn(
+        self.model = _mock(TranslationModel)
+        when(self.model).translate_batch(ANY).thenReturn(
             [
                 TranslationResult(
                     source_segment_length=8,
@@ -89,9 +88,6 @@ class _TestEnvironment:
                 )
             ]
         )
-
-        self.model = _mock(TranslationModel)
-        when(self.model).create_engine().thenReturn(self.engine)
 
         self.nmt_model_factory = _mock(NmtModelFactory)
         when(self.nmt_model_factory).init().thenReturn()

@@ -6,8 +6,8 @@ except ImportError:
         + " package."
     )
 
-from .open_nmt_model import OpenNmtEngine, OpenNmtModel
+from .open_nmt_model import OpenNmtModel
 from .open_nmt_model_trainer import OpenNmtModelTrainer
 from .saved_model_nmt_engine import SavedModelNmtEngine
 
-__all__ = ["OpenNmtEngine", "OpenNmtModel", "OpenNmtModelTrainer", "SavedModelNmtEngine"]
+__all__ = ["OpenNmtModel", "OpenNmtModelTrainer", "SavedModelNmtEngine"]

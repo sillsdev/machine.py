@@ -76,13 +76,12 @@ class ClearMLNmtEngineBuildJob:
         target_detokenizer = self._nmt_model_factory.create_target_detokenizer()
         with ExitStack() as stack:
             model = stack.enter_context(self._nmt_model_factory.create_model())
-            engine = stack.enter_context(model.create_engine())
             src_pretranslations = stack.enter_context(self._shared_file_service.get_source_pretranslations())
             writer = stack.enter_context(self._shared_file_service.open_target_pretranslation_writer())
             for pi_batch in batch(src_pretranslations, _PRETRANSLATE_BATCH_SIZE):
                 if check_canceled is not None:
                     check_canceled()
-                _translate_batch(engine, pi_batch, source_tokenizer, target_detokenizer, writer)
+                _translate_batch(model, pi_batch, source_tokenizer, target_detokenizer, writer)
 
         print("Saving NMT model")
         self._nmt_model_factory.save_model()
