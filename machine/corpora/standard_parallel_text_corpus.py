@@ -15,7 +15,7 @@ from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .parallel_text_corpus import ParallelTextCorpus
 from .parallel_text_row import ParallelTextRow
 from .text_corpus import TextCorpus
-from .text_row import TextRow
+from .text_row import TextRow, TextRowFlags
 
 
 class StandardParallelTextCorpus(ParallelTextCorpus):
@@ -236,13 +236,8 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
             [] if src_row is None else src_row.segment,
             [] if trg_row is None else trg_row.segment,
             aligned_word_pairs,
-            src_row is not None and src_row.is_sentence_start,
-            src_row is not None and src_row.is_in_range,
-            src_row is not None and src_row.is_range_start,
-            trg_row is not None and trg_row.is_sentence_start,
-            trg_row is not None and trg_row.is_in_range,
-            trg_row is not None and trg_row.is_range_start,
-            src_row is None or src_row.is_empty or trg_row is None or trg_row.is_empty,
+            TextRowFlags.NONE if src_row is None else src_row.flags,
+            TextRowFlags.NONE if trg_row is None else trg_row.flags,
         )
 
     def _create_source_rows(
@@ -298,13 +293,8 @@ class _RangeInfo:
             self.source_segment.copy(),
             self.target_segment.copy(),
             aligned_word_pairs=None,
-            is_source_sentence_start=self.is_source_sentence_start,
-            is_source_in_range=False,
-            is_source_range_start=False,
-            is_target_sentence_start=self.is_target_sentence_start,
-            is_target_in_range=False,
-            is_target_range_start=False,
-            is_empty=self.is_source_empty or self.is_target_empty,
+            source_flags=TextRowFlags.SENTENCE_START if self.is_source_sentence_start else TextRowFlags.NONE,
+            target_flags=TextRowFlags.SENTENCE_START if self.is_target_sentence_start else TextRowFlags.NONE,
         )
         self.text_id = ""
         self.source_refs.clear()
@@ -381,22 +371,21 @@ class _TargetCorpusGenerator(ContextManager["_TargetCorpusGenerator"], Generator
             # convert one-to-many mapping to a verse range
             if verse_ref == prev_verse_ref:
                 range_start_verse_ref, range_start_row = seg_list[range_start_offset]
-                is_range_start = False
-                if range_start_offset == -1:
-                    is_range_start = range_start_row.is_range_start if range_start_row.is_in_range else True
+                flags = TextRowFlags.IN_RANGE
+                if range_start_row.is_sentence_start:
+                    flags |= TextRowFlags.SENTENCE_START
+                if range_start_offset == -1 and (not range_start_row.is_in_range or range_start_row.is_range_start):
+                    flags |= TextRowFlags.RANGE_START
                 seg_list[range_start_offset] = (
                     range_start_verse_ref,
                     TextRow(
                         range_start_row.text_id,
                         range_start_row.ref,
                         list(range_start_row.segment) + list(row.segment),
-                        range_start_row.is_sentence_start,
-                        is_in_range=True,
-                        is_range_start=is_range_start,
-                        is_empty=range_start_row.is_empty and row.is_empty,
+                        flags,
                     ),
                 )
-                row = TextRow(row.text_id, row.ref, is_in_range=True)
+                row = TextRow(row.text_id, row.ref, flags=TextRowFlags.IN_RANGE)
                 range_start_offset -= 1
             else:
                 range_start_offset = -1

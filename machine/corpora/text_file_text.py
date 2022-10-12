@@ -6,7 +6,7 @@ from ..utils.string_utils import parse_integer
 from ..utils.typeshed import StrPath
 from .multi_key_ref import MultiKeyRef
 from .text_base import TextBase
-from .text_row import TextRow
+from .text_row import TextRow, TextRowFlags
 
 
 class TextFileText(TextBase):
@@ -23,18 +23,29 @@ class TextFileText(TextBase):
             line_num = 1
             for line in file:
                 line = line.rstrip("\r\n")
-                index = line.find("\t")
-                if index >= 0:
-                    key_strs = re.split(r"[-_]", line[:index].strip())
+                columns = line.split("\t")
+                flags = TextRowFlags.SENTENCE_START
+                if len(columns) > 1:
+                    key_strs = re.split(r"[-_]", columns[0].strip())
                     keys = []
                     for key_str in key_strs:
                         key_int = parse_integer(key_str)
                         keys.append(key_int if key_int is not None else key_str)
                     row_ref = MultiKeyRef(self.id, keys)
-                    line = line[index + 1 :]
+                    line = columns[1]
+                    if len(columns) == 3:
+                        flags = TextRowFlags.NONE
+                        for flag_str in columns[2].split(","):
+                            flag_str = flag_str.strip().lower()
+                            if flag_str in {"sentence_start", "ss"}:
+                                flags |= TextRowFlags.SENTENCE_START
+                            elif flag_str in {"in_range", "ir"}:
+                                flags |= TextRowFlags.IN_RANGE
+                            elif flag_str in {"range_start", "rs"}:
+                                flags |= TextRowFlags.RANGE_START
                 else:
                     row_ref = MultiKeyRef(self.id, [line_num])
-                yield self._create_row(line, row_ref)
+                yield self._create_row(line, row_ref, flags)
                 line_num += 1
 
     @property

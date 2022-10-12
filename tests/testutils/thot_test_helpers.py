@@ -46,12 +46,4 @@ def create_test_parallel_corpus() -> StandardParallelTextCorpus:
 
 
 def _segment(ref: int, segment: str) -> TextRow:
-    return TextRow(
-        "text1",
-        ref,
-        segment.split(),
-        is_sentence_start=True,
-        is_in_range=False,
-        is_range_start=False,
-        is_empty=False,
-    )
+    return TextRow("text1", ref, segment.split())

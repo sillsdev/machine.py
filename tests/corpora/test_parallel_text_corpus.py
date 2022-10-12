@@ -11,10 +11,11 @@ from machine.corpora import (
     DictionaryTextCorpus,
     MemoryAlignmentCollection,
     MemoryText,
+    ParallelTextCorpus,
     StandardParallelTextCorpus,
     TextRow,
+    TextRowFlags,
 )
-from machine.corpora.parallel_text_corpus import ParallelTextCorpus
 from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, VerseRef, Versification
 
 
@@ -30,7 +31,7 @@ def test_get_rows_no_missing_rows() -> None:
         MemoryText(
             "text1",
             [
-                text_row("text1", 1, "source segment 1 .", is_sentence_start=False),
+                text_row("text1", 1, "source segment 1 .", TextRowFlags.NONE),
                 text_row("text1", 2, "source segment 2 ."),
                 text_row("text1", 3, "source segment 3 ."),
             ],
@@ -42,7 +43,7 @@ def test_get_rows_no_missing_rows() -> None:
             [
                 text_row("text1", 1, "target segment 1 ."),
                 text_row("text1", 2, "target segment 2 ."),
-                text_row("text1", 3, "target segment 3 .", is_sentence_start=False),
+                text_row("text1", 3, "target segment 3 .", TextRowFlags.NONE),
             ],
         )
     )
@@ -356,11 +357,9 @@ def test_get_rows_range() -> None:
                     "text1",
                     2,
                     "source segment 2 . source segment 3 .",
-                    is_sentence_start=False,
-                    is_in_range=True,
-                    is_range_start=True,
+                    TextRowFlags.IN_RANGE | TextRowFlags.RANGE_START,
                 ),
-                text_row("text1", 3, is_in_range=True),
+                text_row("text1", 3, flags=TextRowFlags.IN_RANGE),
                 text_row("text1", 4, "source segment 4 ."),
             ],
         )
@@ -394,8 +393,13 @@ def test_get_rows_overlapping_ranges() -> None:
             "text1",
             [
                 text_row("text1", 1, "source segment 1 ."),
-                text_row("text1", 2, "source segment 2 . source segment 3 .", is_in_range=True, is_range_start=True),
-                text_row("text1", 3, is_in_range=True),
+                text_row(
+                    "text1",
+                    2,
+                    "source segment 2 . source segment 3 .",
+                    TextRowFlags.SENTENCE_START | TextRowFlags.IN_RANGE | TextRowFlags.RANGE_START,
+                ),
+                text_row("text1", 3, flags=TextRowFlags.IN_RANGE),
             ],
         )
     )
@@ -403,8 +407,13 @@ def test_get_rows_overlapping_ranges() -> None:
         MemoryText(
             "text1",
             [
-                text_row("text1", 1, "target segment 1 . target segment 2 .", is_in_range=True, is_range_start=True),
-                text_row("text1", 2, is_in_range=True),
+                text_row(
+                    "text1",
+                    1,
+                    "target segment 1 . target segment 2 .",
+                    TextRowFlags.SENTENCE_START | TextRowFlags.IN_RANGE | TextRowFlags.RANGE_START,
+                ),
+                text_row("text1", 2, flags=TextRowFlags.IN_RANGE),
                 text_row("text1", 3, "target segment 3 ."),
             ],
         )
@@ -430,13 +439,16 @@ def test_get_rows_adjacent_ranges_same_text() -> None:
                     "text1",
                     1,
                     "source segment 1 . source segment 2 .",
-                    is_sentence_start=False,
-                    is_in_range=True,
-                    is_range_start=True,
+                    TextRowFlags.IN_RANGE | TextRowFlags.RANGE_START,
                 ),
-                text_row("text1", 2, is_in_range=True),
-                text_row("text1", 3, "source segment 3 . source segment 4 .", is_in_range=True, is_range_start=True),
-                text_row("text1", 4, is_in_range=True),
+                text_row("text1", 2, flags=TextRowFlags.IN_RANGE),
+                text_row(
+                    "text1",
+                    3,
+                    "source segment 3 . source segment 4 .",
+                    TextRowFlags.SENTENCE_START | TextRowFlags.IN_RANGE | TextRowFlags.RANGE_START,
+                ),
+                text_row("text1", 4, flags=TextRowFlags.IN_RANGE),
             ],
         )
     )
@@ -444,7 +456,7 @@ def test_get_rows_adjacent_ranges_same_text() -> None:
         MemoryText(
             "text1",
             [
-                text_row("text1", 1, "target segment 1 .", is_sentence_start=False),
+                text_row("text1", 1, "target segment 1 .", TextRowFlags.NONE),
                 text_row("text1", 2, "target segment 2 ."),
                 text_row("text1", 3, "target segment 3 ."),
                 text_row("text1", 4, "target segment 4 ."),
@@ -474,8 +486,13 @@ def test_get_rows_adjacent_ranges_different_texts() -> None:
         MemoryText(
             "text1",
             [
-                text_row("text1", 1, "source segment 1 . source segment 2 .", is_in_range=True, is_range_start=True),
-                text_row("text1", 2, is_in_range=True),
+                text_row(
+                    "text1",
+                    1,
+                    "source segment 1 . source segment 2 .",
+                    TextRowFlags.SENTENCE_START | TextRowFlags.IN_RANGE | TextRowFlags.RANGE_START,
+                ),
+                text_row("text1", 2, flags=TextRowFlags.IN_RANGE),
                 text_row("text1", 3, "source segment 3 ."),
                 text_row("text1", 4, "source segment 4 ."),
             ],
@@ -487,8 +504,13 @@ def test_get_rows_adjacent_ranges_different_texts() -> None:
             [
                 text_row("text1", 1, "target segment 1 ."),
                 text_row("text1", 2, "target segment 2 ."),
-                text_row("text1", 3, "target segment 3 . target segment 4 .", is_in_range=True, is_range_start=True),
-                text_row("text1", 4, is_in_range=True),
+                text_row(
+                    "text1",
+                    3,
+                    "target segment 3 . target segment 4 .",
+                    TextRowFlags.SENTENCE_START | TextRowFlags.IN_RANGE | TextRowFlags.RANGE_START,
+                ),
+                text_row("text1", 4, flags=TextRowFlags.IN_RANGE),
             ],
         )
     )
@@ -609,8 +631,13 @@ def test_get_segments_range_all_target_rows() -> None:
             "text1",
             [
                 text_row("text1", 1, "source segment 1 ."),
-                text_row("text1", 2, "source segment 2 . source segment 3 .", is_in_range=True, is_range_start=True),
-                text_row("text1", 3, is_in_range=True),
+                text_row(
+                    "text1",
+                    2,
+                    "source segment 2 . source segment 3 .",
+                    TextRowFlags.SENTENCE_START | TextRowFlags.IN_RANGE | TextRowFlags.RANGE_START,
+                ),
+                text_row("text1", 3, flags=TextRowFlags.IN_RANGE),
                 text_row("text1", 4, "source segment 4 ."),
             ],
         )
@@ -861,10 +888,9 @@ def test_get_segments_same_verse_ref_one_to_many() -> None:
                     "MAT",
                     VerseRef.from_string("MAT 1:2", versification),
                     "target chapter one, verse two . target chapter one, verse three .",
-                    is_in_range=True,
-                    is_range_start=True,
+                    TextRowFlags.SENTENCE_START | TextRowFlags.IN_RANGE | TextRowFlags.RANGE_START,
                 ),
-                text_row("MAT", VerseRef.from_string("MAT 1:3", versification), is_in_range=True),
+                text_row("MAT", VerseRef.from_string("MAT 1:3", versification), flags=TextRowFlags.IN_RANGE),
                 text_row("MAT", VerseRef.from_string("MAT 1:4", versification), "target chapter one, verse four ."),
             ],
         )
@@ -947,7 +973,7 @@ def test_to_pandas() -> None:
         MemoryText(
             "text1",
             [
-                text_row("text1", 1, "source segment 1 .", is_sentence_start=False),
+                text_row("text1", 1, "source segment 1 .", TextRowFlags.NONE),
                 text_row("text1", 2, "source segment 2 ."),
                 text_row("text1", 3, "source segment 3 ."),
             ],
@@ -959,7 +985,7 @@ def test_to_pandas() -> None:
             [
                 text_row("text1", 1, "target segment 1 ."),
                 text_row("text1", 2),
-                text_row("text1", 3, "target segment 3 .", is_sentence_start=False),
+                text_row("text1", 3, "target segment 3 .", TextRowFlags.NONE),
             ],
         )
     )
@@ -1040,7 +1066,7 @@ def test_to_hf_dataset() -> None:
         MemoryText(
             "text1",
             [
-                text_row("text1", 1, "source segment 1 .", is_sentence_start=False),
+                text_row("text1", 1, "source segment 1 .", TextRowFlags.NONE),
                 text_row("text1", 2, "source segment 2 ."),
                 text_row("text1", 3, "source segment 3 ."),
             ],
@@ -1052,7 +1078,7 @@ def test_to_hf_dataset() -> None:
             [
                 text_row("text1", 1, "target segment 1 ."),
                 text_row("text1", 2),
-                text_row("text1", 3, "target segment 3 .", is_sentence_start=False),
+                text_row("text1", 3, "target segment 3 .", TextRowFlags.NONE),
             ],
         )
     )
@@ -1136,23 +1162,8 @@ def test_from_hf_dataset() -> None:
     assert set_equals(rows[2].aligned_word_pairs, [AlignedWordPair(2, 2)])
 
 
-def text_row(
-    text_id: str,
-    ref: Any,
-    text: str = "",
-    is_sentence_start: bool = True,
-    is_in_range: bool = False,
-    is_range_start: bool = False,
-) -> TextRow:
-    return TextRow(
-        text_id,
-        ref,
-        [] if len(text) == 0 else text.split(),
-        is_sentence_start=is_sentence_start,
-        is_in_range=is_in_range,
-        is_range_start=is_range_start,
-        is_empty=len(text) == 0,
-    )
+def text_row(text_id: str, ref: Any, text: str = "", flags: TextRowFlags = TextRowFlags.SENTENCE_START) -> TextRow:
+    return TextRow(text_id, ref, [] if len(text) == 0 else text.split(), flags)
 
 
 def alignment_row(text_id: str, ref: int, *pairs: AlignedWordPair) -> AlignmentRow:

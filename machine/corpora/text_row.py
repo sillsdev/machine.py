@@ -1,25 +1,23 @@
+from enum import Flag, auto
 from typing import Any, Sequence
+
+
+class TextRowFlags(Flag):
+    NONE = 0
+    SENTENCE_START = auto()
+    IN_RANGE = auto()
+    RANGE_START = auto()
 
 
 class TextRow:
     def __init__(
-        self,
-        text_id: str,
-        ref: Any,
-        segment: Sequence[str] = [],
-        is_sentence_start: bool = True,
-        is_in_range: bool = False,
-        is_range_start: bool = False,
-        is_empty: bool = True,
+        self, text_id: str, ref: Any, segment: Sequence[str] = [], flags: TextRowFlags = TextRowFlags.SENTENCE_START
     ) -> None:
         self._text_id = text_id
         self._ref = ref
 
         self.segment = segment
-        self.is_sentence_start = is_sentence_start
-        self.is_in_range = is_in_range
-        self.is_range_start = is_range_start
-        self.is_empty = is_empty
+        self.flags = flags
 
     @property
     def text_id(self) -> str:
@@ -32,6 +30,22 @@ class TextRow:
     @property
     def text(self) -> str:
         return " ".join(self.segment)
+
+    @property
+    def is_sentence_start(self) -> bool:
+        return TextRowFlags.SENTENCE_START in self.flags
+
+    @property
+    def is_in_range(self) -> bool:
+        return TextRowFlags.IN_RANGE in self.flags
+
+    @property
+    def is_range_start(self) -> bool:
+        return TextRowFlags.RANGE_START in self.flags
+
+    @property
+    def is_empty(self) -> bool:
+        return len(self.segment) == 0
 
     def __repr__(self) -> str:
         if self.is_empty:

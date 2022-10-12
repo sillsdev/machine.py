@@ -23,7 +23,7 @@ from .text_file_alignment_collection import TextFileAlignmentCollection
 from .text_file_alignment_corpus import TextFileAlignmentCorpus
 from .text_file_text import TextFileText
 from .text_file_text_corpus import TextFileTextCorpus
-from .text_row import TextRow
+from .text_row import TextRow, TextRowFlags
 from .token_processors import (
     escape_spaces,
     lowercase,
@@ -86,6 +86,7 @@ __all__ = [
     "TextFileText",
     "TextFileTextCorpus",
     "TextRow",
+    "TextRowFlags",
     "unescape_spaces",
     "UsfmAttribute",
     "UsfmElementType",

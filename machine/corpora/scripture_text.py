@@ -4,7 +4,7 @@ from ..scripture.verse_ref import VerseRef, Versification, VersificationType
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .corpora_utils import gen, get_scripture_text_sort_key
 from .text_base import TextBase
-from .text_row import TextRow
+from .text_row import TextRow, TextRowFlags
 
 
 class ScriptureText(TextBase):
@@ -40,12 +40,17 @@ class ScriptureText(TextBase):
             first_verse = True
             for vref in verse_ref.all_verses():
                 if first_verse:
-                    yield self._create_row(text, vref, is_sentence_start, is_in_range=True, is_range_start=True)
+                    flags = TextRowFlags.IN_RANGE | TextRowFlags.RANGE_START
+                    if is_sentence_start:
+                        flags |= TextRowFlags.SENTENCE_START
+                    yield self._create_row(text, vref, flags)
                     first_verse = False
                 else:
-                    yield self._create_empty_row(vref, is_in_range=True)
+                    yield self._create_empty_row(vref, TextRowFlags.IN_RANGE)
         else:
-            yield self._create_row(text, verse_ref, is_sentence_start)
+            yield self._create_row(
+                text, verse_ref, TextRowFlags.SENTENCE_START if is_sentence_start else TextRowFlags.NONE
+            )
 
     def _create_verse_ref(self, chapter: str, verse: str) -> VerseRef:
         return VerseRef(self.id, chapter, verse, self._versification)

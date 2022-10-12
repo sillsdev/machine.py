@@ -500,13 +500,7 @@ class _PandasParallelTextCorpus(ParallelTextCorpus):
                     AlignedWordPair.from_string(v) if isinstance(v, str) else [AlignedWordPair(t[0], t[1]) for t in v]
                 )
             yield ParallelTextRow(
-                text_id,
-                refs,
-                refs,
-                [source] if len(source) > 0 else [],
-                [target] if len(target) > 0 else [],
-                alignment,
-                is_empty=len(source) == 0 or len(target) == 0,
+                text_id, refs, refs, [source] if len(source) > 0 else [], [target] if len(target) > 0 else [], alignment
             )
 
 
@@ -578,13 +572,7 @@ class _DatasetParallelTextCorpus(ParallelTextCorpus):
                 alignment = [AlignedWordPair(si, ti) for (si, ti) in zip(src_indices, trg_indices)]
 
             yield ParallelTextRow(
-                text_id,
-                refs,
-                refs,
-                [source] if len(source) > 0 else [],
-                [target] if len(target) > 0 else [],
-                alignment,
-                is_empty=len(source) == 0 or len(target) == 0,
+                text_id, refs, refs, [source] if len(source) > 0 else [], [target] if len(target) > 0 else [], alignment
             )
             index += 1
 

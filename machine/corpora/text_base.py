@@ -1,7 +1,7 @@
 from typing import Any
 
 from .text import Text
-from .text_row import TextRow
+from .text_row import TextRow, TextRowFlags
 
 
 class TextBase(Text):
@@ -17,24 +17,9 @@ class TextBase(Text):
     def sort_key(self) -> str:
         return self._sort_key
 
-    def _create_row(
-        self,
-        text: str,
-        ref: Any,
-        is_sentence_start: bool = True,
-        is_in_range: bool = False,
-        is_range_start: bool = False,
-    ) -> TextRow:
+    def _create_row(self, text: str, ref: Any, flags: TextRowFlags = TextRowFlags.SENTENCE_START) -> TextRow:
         text = text.strip()
-        return TextRow(
-            self.id,
-            ref,
-            [text] if len(text) > 0 else [],
-            is_sentence_start,
-            is_in_range,
-            is_range_start,
-            is_empty=len(text) == 0,
-        )
+        return TextRow(self.id, ref, [text] if len(text) > 0 else [], flags)
 
-    def _create_empty_row(self, ref: Any, is_in_range: bool = False) -> TextRow:
-        return TextRow(self.id, ref, is_in_range=is_in_range)
+    def _create_empty_row(self, ref: Any, flags: TextRowFlags = TextRowFlags.NONE) -> TextRow:
+        return TextRow(self.id, ref, flags=flags)
