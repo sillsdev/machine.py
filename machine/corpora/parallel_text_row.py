@@ -6,7 +6,7 @@ from .aligned_word_pair import AlignedWordPair
 from .text_row import TextRowFlags
 
 
-class ParallelTextRow:
+class ParallelTextRow(Sequence[Sequence[str]]):
     def __init__(
         self,
         text_id: str,
@@ -84,6 +84,16 @@ class ParallelTextRow:
     @property
     def target_text(self) -> str:
         return " ".join(self.target_segment)
+
+    def __len__(self) -> int:
+        return 2
+
+    def __getitem__(self, i: int) -> Sequence[str]:
+        if i >= 2:
+            raise IndexError
+        if i == 0:
+            return self.source_segment
+        return self.target_segment
 
     def invert(self) -> ParallelTextRow:
         return ParallelTextRow(

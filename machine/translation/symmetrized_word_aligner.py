@@ -1,4 +1,4 @@
-from typing import Sequence, Tuple
+from typing import Sequence
 
 from .symmetrization_heuristic import SymmetrizationHeuristic
 from .word_aligner import WordAligner
@@ -27,7 +27,7 @@ class SymmetrizedWordAligner(WordAligner):
             matrix.symmetrize_with(inv_matrix, self.heuristic)
         return matrix
 
-    def align_batch(self, segments: Sequence[Tuple[Sequence[str], Sequence[str]]]) -> Sequence[WordAlignmentMatrix]:
+    def align_batch(self, segments: Sequence[Sequence[Sequence[str]]]) -> Sequence[WordAlignmentMatrix]:
         if self.heuristic is SymmetrizationHeuristic.NONE:
             return self._src_trg_aligner.align_batch(segments)
         else:

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Sequence, Tuple
+from typing import Sequence
 
 from ..corpora.parallel_text_row import ParallelTextRow
 from .word_alignment_matrix import WordAlignmentMatrix
@@ -11,7 +11,7 @@ class WordAligner(ABC):
         ...
 
     @abstractmethod
-    def align_batch(self, segments: Sequence[Tuple[Sequence[str], Sequence[str]]]) -> Sequence[WordAlignmentMatrix]:
+    def align_batch(self, segments: Sequence[Sequence[Sequence[str]]]) -> Sequence[WordAlignmentMatrix]:
         ...
 
     def align_parallel_text_row(self, row: ParallelTextRow) -> WordAlignmentMatrix:

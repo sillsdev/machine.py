@@ -63,7 +63,7 @@ class WordAlignmentModel(WordAligner):
         return word_pairs
 
     def get_best_aligned_word_pairs_batch(
-        self, segments: Sequence[Tuple[Sequence[str], Sequence[str]]]
+        self, segments: Sequence[Sequence[Sequence[str]]]
     ) -> Sequence[Collection[AlignedWordPair]]:
         results: List[Collection[AlignedWordPair]] = []
         alignments = self.align_batch(segments)

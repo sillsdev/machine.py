@@ -20,6 +20,7 @@ from typing import (
 from ..scripture.verse_ref import VerseRef
 from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
+from ..utils.context_managed_generator import ContextManagedGenerator
 from .aligned_word_pair import AlignedWordPair
 from .corpora_utils import get_split_indices
 from .corpus import Corpus
@@ -273,7 +274,7 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
         return main_corpus, split_corpus, corpus_size - len(split_indices), len(split_indices)
 
-    def to_tuples(self) -> Iterable[Tuple[Sequence[str], Sequence[str]]]:
+    def to_tuples(self) -> ContextManagedGenerator[Tuple[Sequence[str], Sequence[str]], None, None]:
         return self.map(lambda r: (r.source_segment, r.target_segment))
 
     def to_pandas(

@@ -2,7 +2,7 @@ from typing import Iterable, List, Sequence, Tuple
 
 
 def batch(
-    segments: Iterable[Tuple[Sequence[str], Sequence[str]]], batch_size: int
+    segments: Iterable[Sequence[Sequence[str]]], batch_size: int
 ) -> Iterable[Tuple[List[Sequence[str]], List[Sequence[str]]]]:
     src_segments: List[Sequence[str]] = []
     trg_segments: List[Sequence[str]] = []

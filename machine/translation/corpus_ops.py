@@ -47,7 +47,7 @@ class _WordAlignParallelTextCorpus(ParallelTextCorpus):
     def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
         with self._corpus.batch(self._batch_size) as batches:
             for batch in batches:
-                alignments = self._aligner.align_batch([(r.source_segment, r.target_segment) for r in batch])
+                alignments = self._aligner.align_batch(batch)
                 for row, alignment in zip(batch, alignments):
                     known_alignment = WordAlignmentMatrix.from_parallel_text_row(row)
                     if known_alignment is not None:
