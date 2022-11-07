@@ -9,7 +9,7 @@ class TextRowFlags(Flag):
     RANGE_START = auto()
 
 
-class TextRow:
+class TextRow(Sequence[str]):
     def __init__(
         self, text_id: str, ref: Any, segment: Sequence[str] = [], flags: TextRowFlags = TextRowFlags.SENTENCE_START
     ) -> None:
@@ -46,6 +46,12 @@ class TextRow:
     @property
     def is_empty(self) -> bool:
         return len(self.segment) == 0
+
+    def __len__(self) -> int:
+        return len(self.segment)
+
+    def __getitem__(self, i: int) -> str:
+        return self.segment[i]
 
     def __repr__(self) -> str:
         if self.is_empty:
