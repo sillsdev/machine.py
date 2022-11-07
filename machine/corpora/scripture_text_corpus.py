@@ -6,6 +6,7 @@ from ..scripture.verse_ref import VerseRef, Versification
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .dictionary_text_corpus import DictionaryTextCorpus
 from .scripture_text import ScriptureText
+from .text_corpus import TextCorpus
 from .text_row import TextRow
 
 
@@ -32,7 +33,7 @@ class _VersificationRefCorpusText(ScriptureText):
                     yield from self._create_rows(vref, "")
 
 
-def _create_versification_ref_corpus(versification: Versification) -> ScriptureTextCorpus:
+def create_versification_ref_corpus(versification: Versification = ORIGINAL_VERSIFICATION) -> ScriptureTextCorpus:
     return ScriptureTextCorpus(
         versification,
         (
@@ -43,14 +44,14 @@ def _create_versification_ref_corpus(versification: Versification) -> ScriptureT
     )
 
 
-def extract_to_vref_format(
-    corpus: ScriptureTextCorpus, versification: Versification = ORIGINAL_VERSIFICATION
-) -> ContextManagedGenerator[Tuple[str, Optional[VerseRef]], None, None]:
-    ref_corpus = _create_versification_ref_corpus(versification)
+def extract_scripture_corpus(
+    corpus: TextCorpus,
+    ref_corpus: TextCorpus = create_versification_ref_corpus(),
+) -> ContextManagedGenerator[Tuple[str, VerseRef, Optional[VerseRef]], None, None]:
     parallel_corpus = ref_corpus.align_rows(corpus, all_source_rows=True)
 
-    def extract() -> Generator[Tuple[str, Optional[VerseRef]], None, None]:
-        with parallel_corpus.get_rows() as rows, open("C:/develop/temp/vref.txt", "w", encoding="utf-8") as vref:
+    def extract() -> Generator[Tuple[str, VerseRef, Optional[VerseRef]], None, None]:
+        with parallel_corpus.get_rows() as rows:
             cur_ref: Optional[VerseRef] = None
             cur_trg_ref: Optional[VerseRef] = None
             cur_target_line = ""
@@ -58,8 +59,7 @@ def extract_to_vref_format(
             for row in rows:
                 ref: VerseRef = row.ref
                 if cur_ref is not None and ref.compare_to(cur_ref, compare_segments=False) != 0:
-                    yield "<range>" if cur_target_line_range else cur_target_line, cur_trg_ref
-                    vref.write(str(cur_ref) + "\n")
+                    yield "<range>" if cur_target_line_range else cur_target_line, cur_ref, cur_trg_ref
                     cur_target_line = ""
                     cur_target_line_range = True
                     cur_trg_ref = None
@@ -85,7 +85,7 @@ def extract_to_vref_format(
                             cur_target_line += " "
                         cur_target_line += row.target_text
                     cur_target_line_range = False
-            yield "<range>" if cur_target_line_range else cur_target_line, cur_trg_ref
-            vref.write(str(cur_ref) + "\n")
+            if cur_ref is not None:
+                yield "<range>" if cur_target_line_range else cur_target_line, cur_ref, cur_trg_ref
 
     return ContextManagedGenerator(extract())

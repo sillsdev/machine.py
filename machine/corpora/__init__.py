@@ -15,7 +15,7 @@ from .parallel_text_corpus import ParallelTextCorpus, flatten_parallel_text_corp
 from .parallel_text_row import ParallelTextRow
 from .paratext_backup_text_corpus import ParatextBackupTextCorpus
 from .paratext_text_corpus import ParatextTextCorpus
-from .scripture_text_corpus import ScriptureTextCorpus, extract_to_vref_format
+from .scripture_text_corpus import ScriptureTextCorpus, create_versification_ref_corpus, extract_scripture_corpus
 from .standard_parallel_text_corpus import StandardParallelTextCorpus
 from .text import Text
 from .text_corpus import TextCorpus, flatten_text_corpora
@@ -56,11 +56,12 @@ __all__ = [
     "AlignmentRow",
     "batch",
     "Corpus",
+    "create_versification_ref_corpus",
     "DblBundleTextCorpus",
     "DictionaryAlignmentCorpus",
     "DictionaryTextCorpus",
     "escape_spaces",
-    "extract_to_vref_format",
+    "extract_scripture_corpus",
     "flatten_parallel_text_corpora",
     "flatten_text_corpora",
     "flatten",
