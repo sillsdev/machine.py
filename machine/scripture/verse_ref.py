@@ -314,6 +314,14 @@ class VerseRef(Comparable):
     def change_versification(self, versification: Versification) -> bool:
         return versification.change_versification(self)
 
+    def to_versification(self, versification: Versification) -> VerseRef:
+        if self.versification == versification:
+            return self
+        new_verse_ref = self.copy()
+        if versification.change_versification(new_verse_ref):
+            return new_verse_ref
+        raise ValueError("The verse ref cannot be converted to the specified versification.")
+
     def str_with_versification(self) -> str:
         return f"{str(self)}/{int(self.versification.type)}"
 
