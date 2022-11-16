@@ -14,6 +14,6 @@ pip install sil-machine
 
 If you would like to find out more about how to use Machine, check out the tutorial Jupyter notebooks:
 
-- [Tokenization](samples/tokenization.ipynb)
-- [Text Corpora](samples/corpora.ipynb)
-- [Word Alignment](samples/word_alignment.ipynb)
+- [Tokenization](https://nbviewer.org/github/sillsdev/machine.py/blob/main/samples/tokenization.ipynb)
+- [Text Corpora](https://nbviewer.org/github/sillsdev/machine.py/blob/main/samples/corpora.ipynb)
+- [Word Alignment](https://nbviewer.org/github/sillsdev/machine.py/blob/main/samples/word_alignment.ipynb)
