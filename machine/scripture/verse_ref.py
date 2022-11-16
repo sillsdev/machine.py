@@ -285,7 +285,7 @@ class VerseRef(Comparable):
         if self._verse is None or self.chapter_num <= 0:
             yield self.copy()
         else:
-            ranges = self._verse.split(",")
+            ranges = self._verse.split(VERSE_SEQUENCE_INDICATOR)
             for range in ranges:
                 vref = self.copy()
                 vref.verse = range
@@ -796,13 +796,16 @@ class Versification:
         self.change_versification(new_vref)
         all_same_chapter = True
 
+        prev_verse = new_vref.verse
         for i in range(2, len(parts), 2):
             part_vref = vref.copy()
             part_vref.verse = parts[i]
             self.change_versification(part_vref)
             if new_vref.chapter_num != part_vref.chapter_num:
                 all_same_chapter = False
-            new_vref.verse = new_vref.verse + parts[i - 1] + part_vref.verse
+            if parts[i - 1] != VERSE_RANGE_SEPARATOR or prev_verse != part_vref.verse:
+                new_vref.verse = new_vref.verse + parts[i - 1] + part_vref.verse
+            prev_verse = part_vref.verse
 
         vref.copy_from(new_vref)
 

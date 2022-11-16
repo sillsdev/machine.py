@@ -556,6 +556,10 @@ def test_change_versification_with_ranges() -> None:
     assert not vref.change_versification(ORIGINAL_VERSIFICATION)
     assert vref == VerseRef.from_string("GEN 31:54-1", ORIGINAL_VERSIFICATION)
 
+    vref = VerseRef.from_string("ACT 19:40-41", ENGLISH_VERSIFICATION)
+    assert vref.change_versification(ORIGINAL_VERSIFICATION)
+    assert vref == VerseRef.from_string("ACT 19:40", ORIGINAL_VERSIFICATION)
+
 
 def test_compare_to_with_without_verse_bridges() -> None:
     vref_without_bridge = VerseRef(1, 1, 2)
