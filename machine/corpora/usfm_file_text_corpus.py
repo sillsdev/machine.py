@@ -11,9 +11,9 @@ from .usfm_stylesheet import UsfmStylesheet
 class UsfmFileTextCorpus(ScriptureTextCorpus):
     def __init__(
         self,
-        stylesheet_filename: StrPath,
-        encoding: str,
         project_dir: StrPath,
+        stylesheet_filename: StrPath = "usfm.sty",
+        encoding: str = "utf-8-sig",
         versification: Optional[Versification] = None,
         include_markers: bool = False,
         file_pattern: str = "*.SFM",

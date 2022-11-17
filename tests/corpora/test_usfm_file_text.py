@@ -5,7 +5,7 @@ from machine.scripture import VerseRef
 
 
 def test_get_rows_nonempty_text() -> None:
-    corpus = UsfmFileTextCorpus("usfm.sty", "utf-8-sig", USFM_TEST_PROJECT_PATH)
+    corpus = UsfmFileTextCorpus(USFM_TEST_PROJECT_PATH)
 
     text = corpus.get_text("MAT")
     assert text is not None
@@ -57,7 +57,7 @@ def test_get_rows_nonempty_text() -> None:
 
 
 def test_get_rows_sentence_start() -> None:
-    corpus = UsfmFileTextCorpus("usfm.sty", "utf-8-sig", USFM_TEST_PROJECT_PATH)
+    corpus = UsfmFileTextCorpus(USFM_TEST_PROJECT_PATH)
 
     text = corpus.get_text("MAT")
     assert text is not None
@@ -75,7 +75,7 @@ def test_get_rows_sentence_start() -> None:
 
 
 def test_get_rows_empty_text() -> None:
-    corpus = UsfmFileTextCorpus("usfm.sty", "utf-8-sig", USFM_TEST_PROJECT_PATH)
+    corpus = UsfmFileTextCorpus(USFM_TEST_PROJECT_PATH)
 
     text = corpus.get_text("MRK")
     assert text is not None
@@ -85,7 +85,7 @@ def test_get_rows_empty_text() -> None:
 
 
 def test_get_rows_include_markers() -> None:
-    corpus = UsfmFileTextCorpus("usfm.sty", "utf-8-sig", USFM_TEST_PROJECT_PATH, include_markers=True)
+    corpus = UsfmFileTextCorpus(USFM_TEST_PROJECT_PATH, include_markers=True)
 
     text = corpus.get_text("MAT")
     assert text is not None
