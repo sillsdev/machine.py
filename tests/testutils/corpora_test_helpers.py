@@ -9,6 +9,7 @@ from . import TEST_DATA_PATH
 USFM_TEST_PROJECT_PATH = TEST_DATA_PATH / "usfm" / "Tes"
 USX_TEST_PROJECT_PATH = TEST_DATA_PATH / "usx" / "Tes"
 TEXT_TEST_PROJECT_PATH = TEST_DATA_PATH / "txt"
+CUSTOM_VERS_PATH = TEST_DATA_PATH / "custom.vrs"
 
 
 def create_test_dbl_bundle(temp_dir: Path) -> Path:

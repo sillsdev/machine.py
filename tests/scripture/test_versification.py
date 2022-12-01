@@ -1,6 +1,7 @@
 from io import StringIO
 
 from pytest import raises
+from testutils.corpora_test_helpers import CUSTOM_VERS_PATH
 
 from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, VerseRef, Versification
 
@@ -60,3 +61,8 @@ def test_custom_versification() -> None:
     reference = VerseRef.from_bbbcccvvv(41005044, versification)
     reference.change_versification(ORIGINAL_VERSIFICATION)
     assert reference.bbbcccvvv == 41006001
+
+
+def test_utf_16_encoding() -> None:
+    versification = Versification.load(CUSTOM_VERS_PATH, ENGLISH_VERSIFICATION, "custom")
+    assert versification.get_last_verse(47, 13) == 13
