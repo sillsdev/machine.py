@@ -127,7 +127,7 @@ class UsfmToken:
                 total_length += 1  # space
 
             if self.data is not None and len(self.data) > 0:
-                if len(self.marker) > 0:
+                if not add_spaces and (len(self.marker) == 0 or self.marker[-1] != "*"):
                     total_length += 1
                 total_length += len(self.data)
                 if add_spaces:
@@ -160,6 +160,8 @@ class UsfmToken:
                 to_return += " "
 
             if self.data is not None and len(self.data) > 0:
+                if not add_spaces and (len(self.marker) == 0 or self.marker[-1] != "*"):
+                    to_return += " "
                 to_return += self.data
                 if add_spaces:
                     to_return += " "
