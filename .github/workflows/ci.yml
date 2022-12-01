@@ -7,10 +7,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python 3.7
         id: setup-python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.7"
       - name: Install Poetry
@@ -21,7 +21,7 @@ jobs:
           installer-parallel: true
       - name: Load cached venv
         id: cached-poetry-dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
@@ -37,7 +37,7 @@ jobs:
       - name: Lint with isort
         run: poetry run isort . --check-only
       - name: Setup Node for pyright
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: "12"
       - name: Lint with pyright
