@@ -1,13 +1,21 @@
-from typing import List, Optional, Sequence, Tuple
+from typing import Iterable, List, Optional, Sequence, Tuple, Union
 
+import regex as re
+
+from ..utils.typeshed import StrPath
 from .usfm_stylesheet import UsfmStylesheet
 from .usfm_tag import UsfmStyleType, UsfmTextProperties
 from .usfm_token import UsfmToken, UsfmTokenType
 
+_RTL_VERSE_REGEX = re.compile(r"[\u200E\u200F]*(\d+\w?)[\u200E\u200F]*([\p{P}\p{S}])[\u200E\u200F]*(?=\d)")
+
 
 class UsfmTokenizer:
-    def __init__(self, stylesheet: UsfmStylesheet) -> None:
-        self._stylesheet = stylesheet
+    def __init__(self, stylesheet: Union[StrPath, UsfmStylesheet] = "usfm.sty") -> None:
+        if isinstance(stylesheet, UsfmStylesheet):
+            self._stylesheet = stylesheet
+        else:
+            self._stylesheet = UsfmStylesheet(stylesheet)
 
     def tokenize(self, usfm: str, preserve_whitespace: bool = False) -> Sequence[UsfmToken]:
         tokens: List[UsfmToken] = []
@@ -188,6 +196,77 @@ class UsfmTokenizer:
                         i += 1
 
         return tokens
+
+    def detokenize(
+        self, tokens: Iterable[UsfmToken], direction_marker: str = "", tokens_have_whitespace: bool = False
+    ) -> str:
+        prev_token: Optional[UsfmToken] = None
+        usfm = ""
+        for token in tokens:
+            token_usfm = ""
+            if token.type in {UsfmTokenType.BOOK, UsfmTokenType.CHAPTER, UsfmTokenType.PARAGRAPH}:
+                # Strip space from end of string before CR/LF
+                if len(usfm) > 0:
+                    if (
+                        usfm[-1] == " "
+                        and (prev_token is not None and prev_token.to_usfm().strip() != "")
+                        or not tokens_have_whitespace
+                    ):
+                        usfm = usfm[:-1]
+                    if not tokens_have_whitespace:
+                        usfm += "\r\n"
+                token_usfm = token.to_usfm()
+            elif token.type is UsfmTokenType.VERSE:
+                # Add newline if after anything other than [ or (
+                if len(usfm) > 0 and usfm[-1] != "[" and usfm[-1] != "(":
+                    if (
+                        usfm[-1] == " "
+                        and (prev_token is not None and prev_token.to_usfm().strip() != "")
+                        or not tokens_have_whitespace
+                    ):
+                        usfm = usfm[:-1]
+                    if not tokens_have_whitespace:
+                        usfm += "\r\n"
+
+                token_usfm = token.to_usfm().strip() if tokens_have_whitespace else token.to_usfm()
+
+                # want RTL mark around all punctuation in verses
+                if direction_marker != "":
+                    token_usfm = _RTL_VERSE_REGEX.sub(token_usfm, f"$1{direction_marker}$2")
+
+            elif token.type is UsfmTokenType.TEXT:
+                # Ensure spaces are preserved
+                token_usfm = token.to_usfm()
+                if tokens_have_whitespace and len(usfm) > 0 and usfm[-1] == " ":
+                    if (
+                        len(token_usfm) > 0
+                        and token_usfm[0] == " "
+                        and prev_token is not None
+                        and prev_token.to_usfm().strip() != ""
+                    ) or token_usfm.startswith("\r\n"):
+                        usfm = usfm[:-1]
+                    else:
+                        token_usfm = token_usfm.lstrip(" ")
+            else:
+                token_usfm = token.to_usfm()
+
+            usfm += token_usfm
+            prev_token = token
+
+        # Make sure begins without space or CR/LF
+        if len(usfm) > 0 and usfm[0] == " ":
+            usfm = usfm[1:]
+        if len(usfm) > 0 and usfm[0] == "\r":
+            usfm = usfm[2:]
+
+        # Make sure ends without space and with a CR/LF
+        if len(usfm) > 0 and usfm[-1] == " ":
+            usfm = usfm[:-1]
+        if len(usfm) > 0 and usfm[-1] != "\n":
+            usfm += "\r\n"
+        if len(usfm) > 3 and usfm[-3] == " " and usfm[-2] == "\r" and usfm[-1] == "\n":
+            usfm = usfm[:-3] + usfm[-2:]
+        return usfm
 
     def _handle_attributes(
         self, usfm: str, preserve_whitespace: bool, tokens: List[UsfmToken], next_marker_index: int, text: str

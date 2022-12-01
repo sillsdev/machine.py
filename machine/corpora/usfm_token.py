@@ -160,8 +160,6 @@ class UsfmToken:
                 to_return += " "
 
             if self.data is not None and len(self.data) > 0:
-                if len(self.marker) > 0:
-                    to_return += " "
                 to_return += self.data
                 if add_spaces:
                     to_return += " "
