@@ -1,3 +1,4 @@
+from enum import Enum, auto
 from typing import Iterable, List, Optional, Sequence, Tuple, Union
 
 import regex as re
@@ -10,12 +11,23 @@ from .usfm_token import UsfmToken, UsfmTokenType
 _RTL_VERSE_REGEX = re.compile(r"[\u200E\u200F]*(\d+\w?)[\u200E\u200F]*([\p{P}\p{S}])[\u200E\u200F]*(?=\d)")
 
 
+class RtlReferenceOrder(Enum):
+    NOT_SET = auto()
+    BOOK_CHAPTER_VERSE = auto()
+    BOOK_VERSE_CHAPTER = auto()
+
+
 class UsfmTokenizer:
-    def __init__(self, stylesheet: Union[StrPath, UsfmStylesheet] = "usfm.sty") -> None:
+    def __init__(
+        self,
+        stylesheet: Union[StrPath, UsfmStylesheet] = "usfm.sty",
+        rtl_reference_order: RtlReferenceOrder = RtlReferenceOrder.NOT_SET,
+    ) -> None:
         if isinstance(stylesheet, UsfmStylesheet):
-            self._stylesheet = stylesheet
+            self.stylesheet = stylesheet
         else:
-            self._stylesheet = UsfmStylesheet(stylesheet)
+            self.stylesheet = UsfmStylesheet(stylesheet)
+        self.rtl_reference_order = rtl_reference_order
 
     def tokenize(self, usfm: str, preserve_whitespace: bool = False) -> Sequence[UsfmToken]:
         tokens: List[UsfmToken] = []
@@ -101,11 +113,11 @@ class UsfmTokenizer:
                     index += 1
 
             # Lookup marker
-            tag = self._stylesheet.get_tag(marker.lstrip("+"))
+            tag = self.stylesheet.get_tag(marker.lstrip("+"))
 
             # If starts with a plus and is not a character style or an end style, it is an unknown tag
             if marker.startswith("+") and tag.style_type not in {UsfmStyleType.CHARACTER, UsfmStyleType.END}:
-                tag = self._stylesheet.get_tag(marker)
+                tag = self.stylesheet.get_tag(marker)
 
             end_marker = marker + "*" if tag.style_type != UsfmStyleType.MILESTONE else tag.end_marker
 
@@ -197,9 +209,7 @@ class UsfmTokenizer:
 
         return tokens
 
-    def detokenize(
-        self, tokens: Iterable[UsfmToken], direction_marker: str = "", tokens_have_whitespace: bool = False
-    ) -> str:
+    def detokenize(self, tokens: Iterable[UsfmToken], tokens_have_whitespace: bool = False) -> str:
         prev_token: Optional[UsfmToken] = None
         usfm = ""
         for token in tokens:
@@ -231,7 +241,10 @@ class UsfmTokenizer:
                 token_usfm = token.to_usfm().strip() if tokens_have_whitespace else token.to_usfm()
 
                 # want RTL mark around all punctuation in verses
-                if direction_marker != "":
+                if self.rtl_reference_order is not RtlReferenceOrder.NOT_SET:
+                    direction_marker = (
+                        "\u200e" if self.rtl_reference_order is RtlReferenceOrder.BOOK_VERSE_CHAPTER else "\u200f"
+                    )
                     token_usfm = _RTL_VERSE_REGEX.sub(token_usfm, f"$1{direction_marker}$2")
 
             elif token.type is UsfmTokenType.TEXT:
@@ -280,7 +293,7 @@ class UsfmTokenizer:
             return None, text
 
         assert matching_token.nestless_marker is not None
-        matching_tag = self._stylesheet.get_tag(matching_token.nestless_marker)
+        matching_tag = self.stylesheet.get_tag(matching_token.nestless_marker)
         if matching_tag.style_type not in {
             UsfmStyleType.CHARACTER,
             UsfmStyleType.MILESTONE,

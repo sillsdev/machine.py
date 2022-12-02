@@ -42,7 +42,7 @@ from .usfm_parser_state import UsfmElementType, UsfmParserElement, UsfmParserSta
 from .usfm_stylesheet import UsfmStylesheet
 from .usfm_tag import UsfmJustification, UsfmStyleAttribute, UsfmStyleType, UsfmTag, UsfmTextProperties, UsfmTextType
 from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
-from .usfm_tokenizer import UsfmTokenizer
+from .usfm_tokenizer import RtlReferenceOrder, UsfmTokenizer
 from .usx_file_alignment_collection import UsxFileAlignmentCollection
 from .usx_file_alignment_corpus import UsxFileAlignmentCorpus
 from .usx_file_text import UsxFileText
@@ -79,6 +79,7 @@ __all__ = [
     "ParatextBackupTextCorpus",
     "ParatextTextCorpus",
     "parse_usfm",
+    "RtlReferenceOrder",
     "ScriptureTextCorpus",
     "StandardParallelTextCorpus",
     "Text",
