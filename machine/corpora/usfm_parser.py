@@ -4,6 +4,7 @@ import regex as re
 
 from ..scripture.canon import book_id_to_number
 from ..scripture.verse_ref import Versification, VersificationType
+from ..utils.typeshed import StrPath
 from .usfm_parser_handler import UsfmParserHandler
 from .usfm_parser_state import UsfmElementType, UsfmParserElement, UsfmParserState
 from .usfm_stylesheet import UsfmStylesheet, is_cell_range
@@ -15,36 +16,39 @@ _OPT_BREAK_SPLITTER = re.compile(r"(//)")
 
 
 def parse_usfm(
-    stylesheet: UsfmStylesheet,
     usfm: str,
     handler: UsfmParserHandler,
+    stylesheet: Union[StrPath, UsfmStylesheet] = "usfm.sty",
     versification: Optional[Versification] = None,
     preserve_whitespace: bool = False,
 ) -> None:
-    parser = UsfmParser(stylesheet, usfm, handler, versification, preserve_whitespace)
+    parser = UsfmParser(usfm, handler, stylesheet, versification, preserve_whitespace)
     parser.process_tokens()
 
 
 class UsfmParser:
     def __init__(
         self,
-        stylesheet: UsfmStylesheet,
         usfm: Union[str, Sequence[UsfmToken]],
         handler: Optional[UsfmParserHandler] = None,
+        stylesheet: Union[StrPath, UsfmStylesheet] = "usfm.sty",
         versification: Optional[Versification] = None,
         tokens_preserve_whitespace: bool = False,
     ) -> None:
-        self._stylesheet = stylesheet
+        if isinstance(stylesheet, UsfmStylesheet):
+            self.stylesheet = stylesheet
+        else:
+            self.stylesheet = UsfmStylesheet(stylesheet)
         if isinstance(usfm, str):
-            tokenizer = UsfmTokenizer(stylesheet)
+            tokenizer = UsfmTokenizer(self.stylesheet)
             tokens = tokenizer.tokenize(usfm, preserve_whitespace=tokens_preserve_whitespace)
         else:
             tokens = usfm
         if versification is None:
             versification = Versification.get_builtin(VersificationType.ENGLISH)
-        self.state = UsfmParserState(stylesheet, versification, tokens)
-        self._handler = handler
-        self._tokens_preserve_whitespace = tokens_preserve_whitespace
+        self.state = UsfmParserState(self.stylesheet, versification, tokens)
+        self.handler = handler
+        self.tokens_preserve_whitespace = tokens_preserve_whitespace
         self._skip = 0
 
     def process_tokens(self) -> None:
@@ -54,19 +58,19 @@ class UsfmParser:
     def process_token(self) -> bool:
         # If past end
         if self.state.index >= len(self.state.tokens) - 1:
-            if self._handler is not None:
-                self._handler.end_usfm(self.state)
+            if self.handler is not None:
+                self.handler.end_usfm(self.state)
             return False
         elif self.state.index < 0:
-            if self._handler is not None:
-                self._handler.start_usfm(self.state)
+            if self.handler is not None:
+                self.handler.start_usfm(self.state)
 
         # Move to next token
         self.state.index += 1
 
         # Update verse offset with previous token (since verse offset is from start of current token)
         if self.state.prev_token is not None:
-            self.state.verse_offset += self.state.prev_token.get_length(add_spaces=not self._tokens_preserve_whitespace)
+            self.state.verse_offset += self.state.prev_token.get_length(add_spaces=not self.tokens_preserve_whitespace)
 
         # Skip over tokens that are to be skipped, ensuring that special_token state is True.
         if self._skip > 0:
@@ -85,8 +89,8 @@ class UsfmParser:
         if token_type == UsfmTokenType.UNKNOWN:
             token_type = self._determine_unknown_token_type()
 
-        if self._handler is not None and token.marker is not None and len(token.marker) > 0:
-            self._handler.got_marker(self.state, token.marker)
+        if self.handler is not None and token.marker is not None and len(token.marker) > 0:
+            self.handler.got_marker(self.state, token.marker)
 
         if token_type in {UsfmTokenType.BOOK, UsfmTokenType.CHAPTER}:
             self._close_all()
@@ -155,9 +159,9 @@ class UsfmParser:
                         self._close_element()
 
                 # Unmatched end marker
-                if unmatched and self._handler is not None:
+                if unmatched and self.handler is not None:
                     assert token.marker is not None
-                    self._handler.unmatched(self.state, token.marker)
+                    self.handler.unmatched(self.state, token.marker)
 
         # Handle tokens
         if token_type == UsfmTokenType.BOOK:
@@ -177,8 +181,8 @@ class UsfmParser:
             self.state.verse_offset = 0
 
             # Book start.
-            if self._handler is not None:
-                self._handler.start_book(self.state, token.marker, code)
+            if self.handler is not None:
+                self.handler.start_book(self.state, token.marker, code)
         elif token_type == UsfmTokenType.CHAPTER:
             assert token.marker is not None
             # Get alternate chapter number
@@ -218,8 +222,8 @@ class UsfmParser:
             if verse_ref.chapter_num != 1:
                 self.state.verse_offset = 0
 
-            if self._handler is not None:
-                self._handler.chapter(self.state, token.data, token.marker, alt_chapter, pub_chapter)
+            if self.handler is not None:
+                self.handler.chapter(self.state, token.data, token.marker, alt_chapter, pub_chapter)
         elif token_type == UsfmTokenType.VERSE:
             assert token.marker is not None
             # Get alternate verse number
@@ -255,8 +259,8 @@ class UsfmParser:
             verse_ref.verse = token.data
             self.state.verse_offset = 0
 
-            if self._handler is not None:
-                self._handler.verse(self.state, token.data, token.marker, alt_verse, pub_verse)
+            if self.handler is not None:
+                self.handler.verse(self.state, token.data, token.marker, alt_verse, pub_verse)
         elif token_type == UsfmTokenType.PARAGRAPH:
             assert token.marker is not None
             if token.marker == "tr":
@@ -264,14 +268,14 @@ class UsfmParser:
                 # Start table if not open
                 if all(e.type != UsfmElementType.TABLE for e in self.state.stack):
                     self.state.push(UsfmParserElement(UsfmElementType.TABLE, None))
-                    if self._handler is not None:
-                        self._handler.start_table(self.state)
+                    if self.handler is not None:
+                        self.handler.start_table(self.state)
 
                 self.state.push(UsfmParserElement(UsfmElementType.ROW, token.marker))
 
                 # Row start
-                if self._handler is not None:
-                    self._handler.start_row(self.state, token.marker)
+                if self.handler is not None:
+                    self.handler.start_row(self.state, token.marker)
             elif token.marker == "esb":
                 # Handle special case of sidebars
                 self.state.push(UsfmParserElement(UsfmElementType.SIDEBAR, token.marker))
@@ -290,21 +294,21 @@ class UsfmParser:
                         category = category_value_token.text.strip()
                         self._skip += 3
 
-                if self._handler is not None:
-                    self._handler.start_sidebar(self.state, token.marker, category)
+                if self.handler is not None:
+                    self.handler.start_sidebar(self.state, token.marker, category)
             elif token.marker == "esbe":
                 # Close sidebar if in sidebar
                 if any(e.type == UsfmElementType.SIDEBAR for e in self.state.stack):
                     while len(self.state.stack) > 0:
                         self._close_element(self.state.peek().type == UsfmElementType.SIDEBAR)
-                elif self._handler is not None:
-                    self._handler.unmatched(self.state, token.marker)
+                elif self.handler is not None:
+                    self.handler.unmatched(self.state, token.marker)
             else:
                 self.state.push(UsfmParserElement(UsfmElementType.PARA, token.marker))
 
                 # Paragraph start
-                if self._handler is not None:
-                    self._handler.start_para(
+                if self.handler is not None:
+                    self.handler.start_para(
                         self.state, token.marker, token.type == UsfmTokenType.UNKNOWN, token.attributes
                     )
         elif token_type == UsfmTokenType.CHARACTER:
@@ -320,8 +324,8 @@ class UsfmParser:
                 _, base_marker, col_span = is_cell_range(token.marker)
                 self.state.push(UsfmParserElement(UsfmElementType.CELL, base_marker))
 
-                if self._handler is not None:
-                    self._handler.start_cell(self.state, base_marker, align, col_span)
+                if self.handler is not None:
+                    self.handler.start_cell(self.state, base_marker, align, col_span)
             elif self._is_ref(token):
                 # xrefs are special tokens (they do not stand alone)
                 self.state.special_token = True
@@ -330,8 +334,8 @@ class UsfmParser:
 
                 self._skip += 2
 
-                if self._handler is not None:
-                    self._handler.ref(self.state, token.marker, display, target)
+                if self.handler is not None:
+                    self.handler.ref(self.state, token.marker, display, target)
             else:
                 invalid_marker = False
                 if token.marker.startswith("+"):
@@ -343,8 +347,8 @@ class UsfmParser:
                     actual_marker = token.marker
 
                 self.state.push(UsfmParserElement(UsfmElementType.CHAR, actual_marker, token.attributes))
-                if self._handler is not None:
-                    self._handler.start_char(
+                if self.handler is not None:
+                    self.handler.start_char(
                         self.state,
                         actual_marker,
                         token.type == UsfmTokenType.UNKNOWN or invalid_marker,
@@ -369,8 +373,8 @@ class UsfmParser:
 
             self.state.push(UsfmParserElement(UsfmElementType.NOTE, token.marker))
 
-            if self._handler is not None:
-                self._handler.start_note(self.state, token.marker, token.data, category)
+            if self.handler is not None:
+                self.handler.start_note(self.state, token.marker, token.data, category)
         elif token_type == UsfmTokenType.TEXT:
             text = token.text
             assert text is not None
@@ -385,21 +389,21 @@ class UsfmParser:
             ):
                 text = text[:-1]
 
-            if self._handler is not None:
+            if self.handler is not None:
                 # Replace ~ with nbsp
                 text = text.replace("~", "\u00A0")
 
                 # Replace // with <optbreak/>
                 for part in _OPT_BREAK_SPLITTER.split(text):
                     if part == "//":
-                        self._handler.opt_break(self.state)
+                        self.handler.opt_break(self.state)
                     else:
-                        self._handler.text(self.state, part)
+                        self.handler.text(self.state, part)
         elif token_type in {UsfmTokenType.MILESTONE, UsfmTokenType.MILESTONE_END}:
             assert token.marker is not None
             # currently, parse state doesn't need to be update, so just inform the handler about the milestone.
-            if self._handler is not None:
-                self._handler.milestone(
+            if self.handler is not None:
+                self.handler.milestone(
                     self.state, token.marker, token.type == UsfmTokenType.MILESTONE, token.attributes
                 )
         return True
@@ -444,30 +448,30 @@ class UsfmParser:
 
     def _close_element(self, closed: bool = False) -> None:
         element = self.state.pop()
-        if self._handler is not None:
+        if self.handler is not None:
             if element.type == UsfmElementType.BOOK:
                 assert element.marker is not None
-                self._handler.end_book(self.state, element.marker)
+                self.handler.end_book(self.state, element.marker)
             elif element.type == UsfmElementType.PARA:
                 assert element.marker is not None
-                self._handler.end_para(self.state, element.marker)
+                self.handler.end_para(self.state, element.marker)
             elif element.type == UsfmElementType.CHAR:
                 assert element.marker is not None
-                self._handler.end_char(self.state, element.marker, element.attributes, closed)
+                self.handler.end_char(self.state, element.marker, element.attributes, closed)
             elif element.type == UsfmElementType.NOTE:
                 assert element.marker is not None
-                self._handler.end_note(self.state, element.marker, closed)
+                self.handler.end_note(self.state, element.marker, closed)
             elif element.type == UsfmElementType.TABLE:
-                self._handler.end_table(self.state)
+                self.handler.end_table(self.state)
             elif element.type == UsfmElementType.ROW:
                 assert element.marker is not None
-                self._handler.end_row(self.state, element.marker)
+                self.handler.end_row(self.state, element.marker)
             elif element.type == UsfmElementType.CELL:
                 assert element.marker is not None
-                self._handler.end_cell(self.state, element.marker)
+                self.handler.end_cell(self.state, element.marker)
             elif element.type == UsfmElementType.SIDEBAR:
                 assert element.marker is not None
-                self._handler.end_sidebar(self.state, element.marker, closed)
+                self.handler.end_sidebar(self.state, element.marker, closed)
 
     def _is_cell(self, token: UsfmToken) -> bool:
         return (

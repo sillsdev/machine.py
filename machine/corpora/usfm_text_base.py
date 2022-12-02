@@ -37,7 +37,7 @@ class UsfmTextBase(ScriptureText):
     def _get_rows(self) -> Generator[TextRow, None, None]:
         usfm = self._read_usfm()
         row_collector = _TextRowCollector(self)
-        parse_usfm(self._stylesheet, usfm, row_collector, self.versification, preserve_whitespace=self._include_markers)
+        parse_usfm(usfm, row_collector, self._stylesheet, self.versification, preserve_whitespace=self._include_markers)
         return gen(row_collector.rows)
 
     def _read_usfm(self) -> str:
