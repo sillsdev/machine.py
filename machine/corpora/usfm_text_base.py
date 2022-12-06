@@ -101,7 +101,7 @@ class _TextRowCollector(UsfmParserHandler):
         if self._text._include_markers:
             self._output_marker(state)
         else:
-            if not self._verse_text[-1].isspace():
+            if len(self._verse_text) > 0 and not self._verse_text[-1].isspace():
                 self._verse_text += " "
 
     def ref(self, state: UsfmParserState, marker: str, display: str, target: str) -> None:
