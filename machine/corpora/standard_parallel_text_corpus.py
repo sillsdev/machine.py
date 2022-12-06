@@ -366,6 +366,9 @@ class _TargetCorpusGenerator(ContextManager["_TargetCorpusGenerator"], Generator
         while self._row is not None:
             row = self._row
             verse_ref: VerseRef = row.ref
+            if not prev_verse_ref.is_default and verse_ref.book_num != prev_verse_ref.book_num:
+                break
+
             verse_ref = verse_ref.copy()
             verse_ref.change_versification(self.source_versification)
             # convert one-to-many mapping to a verse range

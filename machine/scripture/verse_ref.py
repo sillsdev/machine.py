@@ -214,6 +214,15 @@ class VerseRef(Comparable):
         return self.valid_status == ValidStatus.VALID
 
     @property
+    def is_default(self) -> bool:
+        return (
+            self.book_num == 0
+            and self.chapter_num == 0
+            and self.verse_num == 0
+            and self.versification == NULL_VERSIFICATION
+        )
+
+    @property
     def is_excluded(self) -> bool:
         return self.versification.is_excluded(self.bbbcccvvv)
 
