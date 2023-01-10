@@ -34,7 +34,7 @@ class ScriptureText(TextBase):
         return ContextManagedGenerator(gen(seg_list))
 
     def _create_rows(
-        self, verse_ref: VerseRef, text: str, is_sentence_start: bool = True
+        self, verse_ref: VerseRef, text: str = "", is_sentence_start: bool = True
     ) -> Generator[TextRow, None, None]:
         if verse_ref.has_multiple:
             first_verse = True
