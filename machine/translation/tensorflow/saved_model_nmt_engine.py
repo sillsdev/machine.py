@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any, Iterable, Sequence
 
@@ -62,7 +64,7 @@ class SavedModelNmtEngine(TranslationEngine):
             )
             builder.mark_phrase(Range.create(0, len(segment)), wa_matrix)
 
-            yield builder.to_result(segment)
+            yield builder.to_result(len(segment))
             i += 1
 
     def translate_batch(self, segments: Sequence[Sequence[str]]) -> Sequence[TranslationResult]:
@@ -70,3 +72,6 @@ class SavedModelNmtEngine(TranslationEngine):
 
     def translate_n_batch(self, n: int, segments: Sequence[Sequence[str]]) -> Sequence[Sequence[TranslationResult]]:
         raise NotImplementedError
+
+    def __enter__(self) -> SavedModelNmtEngine:
+        return self

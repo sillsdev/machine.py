@@ -7,59 +7,61 @@ from machine.translation.thot import ThotIbm4WordAlignmentModel
 
 
 def test_create_trainer() -> None:
-    model = ThotIbm4WordAlignmentModel()
-    model.parameters.ibm1_iteration_count = 2
-    model.parameters.hmm_iteration_count = 2
-    model.parameters.ibm3_iteration_count = 2
-    model.parameters.ibm4_iteration_count = 2
-    model.parameters.hmm_p0 = 0.1
+    with ThotIbm4WordAlignmentModel() as model:
+        model.parameters.ibm1_iteration_count = 2
+        model.parameters.hmm_iteration_count = 2
+        model.parameters.ibm3_iteration_count = 2
+        model.parameters.ibm4_iteration_count = 2
+        model.parameters.hmm_p0 = 0.1
 
-    # pronouns
-    _add_src_word_class(model, "1", ["isthay", "ouyay", "ityay"])
-    # verbs
-    _add_src_word_class(model, "2", ["isyay", "ouldshay", "orkway-V", "ancay", "ebay", "esttay-V"])
-    # articles
-    _add_src_word_class(model, "3", ["ayay"])
-    # nouns
-    _add_src_word_class(model, "4", ["esttay-N", "orkway-N", "ordway"])
-    # punctuation
-    _add_src_word_class(model, "5", [".", "?", "!"])
-    # adverbs
-    _add_src_word_class(model, "6", ["oftenyay"])
-    # adjectives
-    _add_src_word_class(model, "7", ["ardhay", "orkingway"])
+        # pronouns
+        _add_src_word_class(model, "1", ["isthay", "ouyay", "ityay"])
+        # verbs
+        _add_src_word_class(model, "2", ["isyay", "ouldshay", "orkway-V", "ancay", "ebay", "esttay-V"])
+        # articles
+        _add_src_word_class(model, "3", ["ayay"])
+        # nouns
+        _add_src_word_class(model, "4", ["esttay-N", "orkway-N", "ordway"])
+        # punctuation
+        _add_src_word_class(model, "5", [".", "?", "!"])
+        # adverbs
+        _add_src_word_class(model, "6", ["oftenyay"])
+        # adjectives
+        _add_src_word_class(model, "7", ["ardhay", "orkingway"])
 
-    # pronouns
-    _add_trg_word_class(model, "1", ["this", "you", "it"])
-    # verbs
-    _add_trg_word_class(model, "2", ["is", "should", "can", "be"])
-    # articles
-    _add_trg_word_class(model, "3", ["a"])
-    # nouns
-    _add_trg_word_class(model, "4", ["word"])
-    # punctuation
-    _add_trg_word_class(model, "5", [".", "?", "!"])
-    # adverbs
-    _add_trg_word_class(model, "6", ["often"])
-    # adjectives
-    _add_trg_word_class(model, "7", ["hard", "working"])
-    # nouns/verbs
-    _add_trg_word_class(model, "8", ["test", "work"])
-    # disambiguators
-    _add_trg_word_class(model, "9", ["N", "V"])
+        # pronouns
+        _add_trg_word_class(model, "1", ["this", "you", "it"])
+        # verbs
+        _add_trg_word_class(model, "2", ["is", "should", "can", "be"])
+        # articles
+        _add_trg_word_class(model, "3", ["a"])
+        # nouns
+        _add_trg_word_class(model, "4", ["word"])
+        # punctuation
+        _add_trg_word_class(model, "5", [".", "?", "!"])
+        # adverbs
+        _add_trg_word_class(model, "6", ["often"])
+        # adjectives
+        _add_trg_word_class(model, "7", ["hard", "working"])
+        # nouns/verbs
+        _add_trg_word_class(model, "8", ["test", "work"])
+        # disambiguators
+        _add_trg_word_class(model, "9", ["N", "V"])
 
-    trainer = model.create_trainer(create_test_parallel_corpus())
-    trainer.train()
-    trainer.save()
+        with model.create_trainer(create_test_parallel_corpus()) as trainer:
+            trainer.train()
+            trainer.save()
 
-    matrix = model.align("isthay isyay ayay esttay-N .".split(), "this is a test N .".split())
-    assert matrix == WordAlignmentMatrix.from_word_pairs(5, 6, {(0, 0), (1, 1), (2, 2), (3, 3), (3, 4), (4, 5)})
+        matrix = model.align("isthay isyay ayay esttay-N .".split(), "this is a test N .".split())
+        assert matrix == WordAlignmentMatrix.from_word_pairs(5, 6, {(0, 0), (1, 1), (2, 2), (3, 3), (3, 4), (4, 5)})
 
-    matrix = model.align("isthay isyay otnay ayay esttay-N .".split(), "this is not a test N .".split())
-    assert matrix == WordAlignmentMatrix.from_word_pairs(6, 7, {(0, 0), (1, 1), (3, 3), (4, 4), (4, 5), (5, 6)})
+        matrix = model.align("isthay isyay otnay ayay esttay-N .".split(), "this is not a test N .".split())
+        assert matrix == WordAlignmentMatrix.from_word_pairs(6, 7, {(0, 0), (1, 1), (3, 3), (4, 4), (4, 5), (5, 6)})
 
-    matrix = model.align("isthay isyay ayay esttay-N ardhay .".split(), "this is a hard test N .".split())
-    assert matrix == WordAlignmentMatrix.from_word_pairs(6, 7, {(0, 0), (1, 1), (2, 2), (4, 3), (3, 4), (3, 5), (5, 6)})
+        matrix = model.align("isthay isyay ayay esttay-N ardhay .".split(), "this is a hard test N .".split())
+        assert matrix == WordAlignmentMatrix.from_word_pairs(
+            6, 7, {(0, 0), (1, 1), (2, 2), (4, 3), (3, 4), (3, 5), (5, 6)}
+        )
 
 
 def _add_src_word_class(model: ThotIbm4WordAlignmentModel, word_class: str, words: List[str]) -> None:

@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from types import TracebackType
-from typing import Optional, Sequence, Type
+from typing import ContextManager, Optional, Sequence, Type
 
 from .translation_result import TranslationResult
 
 
-class TranslationEngine:
+class TranslationEngine(ContextManager["TranslationEngine"]):
     @abstractmethod
     def translate(self, segment: Sequence[str]) -> TranslationResult:
         ...
@@ -24,6 +24,9 @@ class TranslationEngine:
     def translate_n_batch(self, n: int, segments: Sequence[Sequence[str]]) -> Sequence[Sequence[TranslationResult]]:
         ...
 
+    def close(self) -> None:
+        ...
+
     def __enter__(self) -> TranslationEngine:
         return self
 
@@ -32,5 +35,5 @@ class TranslationEngine:
         __exc_type: Optional[Type[BaseException]],
         __exc_value: Optional[BaseException],
         __traceback: Optional[TracebackType],
-    ) -> Optional[bool]:
-        return None
+    ) -> None:
+        self.close()

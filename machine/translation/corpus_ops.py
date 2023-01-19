@@ -21,12 +21,10 @@ def word_align_corpus(
         from .thot import create_thot_symmetrized_word_alignment_model
 
         model = create_thot_symmetrized_word_alignment_model(aligner)
-        if model is None:
-            raise ValueError("The word alignment model type is unknown.")
         model.heuristic = symmetrization_heuristic
-        trainer = model.create_trainer(corpus)
-        trainer.train(progress)
-        trainer.save()
+        with model.create_trainer(corpus) as trainer:
+            trainer.train(progress)
+            trainer.save()
         aligner = model
 
     return _WordAlignParallelTextCorpus(corpus, aligner, batch_size)

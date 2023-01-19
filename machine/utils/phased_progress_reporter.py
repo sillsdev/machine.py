@@ -21,7 +21,7 @@ class PhaseProgress(ContextManager[Callable[[ProgressStatus], None]]):
         self._percent_completed = 0.0
         self._step = 0
 
-        self._reporter.report(ProgressStatus(self._step, self._percent_completed))
+        self._reporter._report(ProgressStatus(self._step, self._percent_completed))
 
     @property
     def phase(self) -> Phase:
@@ -31,7 +31,7 @@ class PhaseProgress(ContextManager[Callable[[ProgressStatus], None]]):
         if self._phase.report_steps:
             self._step = value.step
         self._percent_completed = value.percent_completed
-        self._reporter.report(value)
+        self._reporter._report(value)
 
     def __enter__(self) -> Callable[[ProgressStatus], None]:
         return self._report
@@ -43,7 +43,7 @@ class PhaseProgress(ContextManager[Callable[[ProgressStatus], None]]):
         traceback: Optional[TracebackType],
     ) -> Optional[bool]:
         if self._percent_completed is None or self._percent_completed < 1.0:
-            self._reporter.report(ProgressStatus(self._step + 1, 1.0))
+            self._reporter._report(ProgressStatus(self._step + 1, 1.0))
 
 
 class PhasedProgressReporter:
@@ -79,7 +79,7 @@ class PhasedProgressReporter:
 
         return PhaseProgress(self, self._phases[self._current_phase_index])
 
-    def report(self, value: ProgressStatus) -> None:
+    def _report(self, value: ProgressStatus) -> None:
         self._step = max(self._prev_phase_last_step + value.step, self._step)
 
         if self._progress is None:

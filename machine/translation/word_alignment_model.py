@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 from statistics import mean
-from typing import Collection, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from types import TracebackType
+from typing import Collection, ContextManager, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union
 
 from ..corpora.aligned_word_pair import AlignedWordPair
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
@@ -11,7 +14,7 @@ from .word_alignment_matrix import WordAlignmentMatrix
 from .word_vocabulary import WordVocabulary
 
 
-class WordAlignmentModel(WordAligner):
+class WordAlignmentModel(ContextManager["WordAlignmentModel"], WordAligner):
     @property
     @abstractmethod
     def source_words(self) -> WordVocabulary:
@@ -111,3 +114,17 @@ class WordAlignmentModel(WordAligner):
     ) -> str:
         alignment = self.align_parallel_text_row(row)
         return alignment.to_giza_format(row.source_segment, row.target_segment)
+
+    def close(self) -> None:
+        ...
+
+    def __enter__(self) -> WordAlignmentModel:
+        return self
+
+    def __exit__(
+        self,
+        __exc_type: Optional[Type[BaseException]],
+        __exc_value: Optional[BaseException],
+        __traceback: Optional[TracebackType],
+    ) -> None:
+        self.close()

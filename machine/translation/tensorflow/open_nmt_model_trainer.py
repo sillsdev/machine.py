@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 import math
 import os
@@ -169,6 +171,9 @@ class OpenNmtModelTrainer(Trainer):
     @property
     def stats(self) -> TrainStats:
         return self._stats
+
+    def __enter__(self) -> OpenNmtModelTrainer:
+        return self
 
     def _create_corpus_files(self, train_config: dict, data_config: dict, model: Model) -> int:
         train_src_path = Path(data_config["train_features_file"])

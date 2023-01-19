@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Callable, Optional
 
 from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
@@ -33,3 +35,10 @@ class SymmetrizedWordAlignmentModelTrainer(Trainer):
     def save(self) -> None:
         self._direct_trainer.save()
         self._inverse_trainer.save()
+
+    def close(self) -> None:
+        self._direct_trainer.close()
+        self._inverse_trainer.close()
+
+    def __enter__(self) -> SymmetrizedWordAlignmentModelTrainer:
+        return self

@@ -106,8 +106,6 @@ class OpenNmtModel(TranslationModel):
                 index: int = prediction["index"]
 
                 src_length = prediction["src_length"]
-                src_tokens = prediction["src_tokens"][:src_length]
-                src_segment = cast(str, features_inputter.tokenizer.detokenize(src_tokens))
 
                 num_hypotheses = min(n or 1, len(prediction["log_probs"]))
                 hypotheses: List[TranslationResult] = []
@@ -130,7 +128,7 @@ class OpenNmtModel(TranslationModel):
                         builder.append_word(token, TranslationSources.NMT, confidence)
 
                     builder.mark_phrase(Range.create(0, src_length), wa_matrix)
-                    hypotheses.append(builder.to_result(src_segment.split(" ")))
+                    hypotheses.append(builder.to_result(src_length))
 
                 queued_results[index] = hypotheses
                 heapq.heappush(heap, index)
@@ -147,6 +145,9 @@ class OpenNmtModel(TranslationModel):
         self._finalized_config = None
         self._checkpoint_model = None
         self._infer_fn = None
+
+    def __enter__(self) -> OpenNmtModel:
+        return self
 
     def _get_checkpoint(self) -> Tuple[dict, Model]:
         if self._finalized_config is None or self._checkpoint_model is None:
@@ -200,9 +201,6 @@ class OpenNmtModel(TranslationModel):
             )
         )
         return dataset
-
-    def __enter__(self) -> OpenNmtModel:
-        return self
 
 
 class _Trainer(OpenNmtModelTrainer):

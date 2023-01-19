@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 from typing import Optional, Union
 
@@ -10,3 +12,6 @@ class Ibm1WordAlignmentModel(WordAlignmentModel):
         self, source_word: Optional[Union[str, int]], target_word: Optional[Union[str, int]]
     ) -> float:
         ...
+
+    def __enter__(self) -> Ibm1WordAlignmentModel:
+        return self

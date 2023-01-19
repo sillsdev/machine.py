@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import List, Sequence, cast
 
 import thot.alignment as ta
@@ -55,6 +57,9 @@ class ThotSymmetrizedWordAlignmentModel(SymmetrizedWordAlignmentModel):
         inverse_trainer = self._inverse_word_alignment_model.create_trainer(corpus.invert())
 
         return _Trainer(self, direct_trainer, inverse_trainer)
+
+    def __enter__(self) -> ThotSymmetrizedWordAlignmentModel:
+        return self
 
     def _reset_aligner(self) -> None:
         self._aligner = ta.SymmetrizedAligner(

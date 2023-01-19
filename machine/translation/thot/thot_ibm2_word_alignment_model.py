@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from math import exp
 from typing import Collection, Sequence, cast
 
@@ -45,3 +47,6 @@ class ThotIbm2WordAlignmentModel(ThotIbm1WordAlignmentModel, Ibm2WordAlignmentMo
                 word_pair.alignment_score = self.get_alignment_probability(
                     len(source_segment), word_pair.source_index, len(target_segment), word_pair.target_index
                 )
+
+    def __enter__(self) -> ThotIbm2WordAlignmentModel:
+        return self

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Collection, Iterable, Optional, Sequence, Tuple, Union
 
 from ..corpora.aligned_word_pair import AlignedWordPair
@@ -69,3 +71,10 @@ class SymmetrizedWordAlignmentModel(SymmetrizedWordAligner, WordAlignmentModel):
         for word_pair, inverse_word_pair in zip(word_pairs, inverse_word_pairs):
             word_pair.translation_score = max(word_pair.translation_score, inverse_word_pair.translation_score)
             word_pair.alignment_score = max(word_pair.alignment_score, inverse_word_pair.alignment_score)
+
+    def close(self) -> None:
+        self._direct_word_alignment_model.close()
+        self._inverse_word_alignment_model.close()
+
+    def __enter__(self) -> SymmetrizedWordAlignmentModel:
+        return self

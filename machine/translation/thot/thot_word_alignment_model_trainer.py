@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple, Union, overload
@@ -9,6 +11,7 @@ from ...corpora.parallel_text_row import ParallelTextRow
 from ...utils.progress_status import ProgressStatus
 from ...utils.typeshed import StrPath
 from ..trainer import Trainer, TrainStats
+from .thot_utils import escape_token, escape_tokens
 from .thot_word_alignment_model_type import ThotWordAlignmentModelType
 from .thot_word_alignment_parameters import ThotWordAlignmentParameters
 
@@ -101,9 +104,9 @@ class ThotWordAlignmentModelTrainer(Trainer):
                     if parameters.ibm4_distortion_smoothing_factor is not None:
                         ibm4.distortion_smoothing_factor = parameters.ibm4_distortion_smoothing_factor
                     for word, word_class in parameters.source_word_classes.items():
-                        ibm4.map_src_word_to_word_class(word, word_class)
+                        ibm4.map_src_word_to_word_class(escape_token(word), word_class)
                     for word, word_class in parameters.target_word_classes.items():
-                        ibm4.map_trg_word_to_word_class(word, word_class)
+                        ibm4.map_trg_word_to_word_class(escape_token(word), word_class)
                     self._models.append((ibm4, parameters.get_ibm4_iteration_count(model_type)))
 
         self._max_segment_length = self._model.max_sentence_length
@@ -132,7 +135,9 @@ class ThotWordAlignmentModelTrainer(Trainer):
             index = 0
             with self._parallel_corpus.get_rows() as rows:
                 for row in rows:
-                    self._model.add_sentence_pair(row.source_segment, row.target_segment, 1)
+                    self._model.add_sentence_pair(
+                        list(escape_tokens(row.source_segment)), list(escape_tokens(row.target_segment)), 1
+                    )
                     if self._is_segment_valid(row):
                         corpus_count += 1
                     index += 1
@@ -171,6 +176,14 @@ class ThotWordAlignmentModelTrainer(Trainer):
     def save(self) -> None:
         if self._prefix_filename is not None:
             self._model.print(str(self._prefix_filename))
+
+    def close(self) -> None:
+        for model, _ in self._models:
+            model.clear()
+        self._models.clear()
+
+    def __enter__(self) -> ThotWordAlignmentModelTrainer:
+        return self
 
     def _is_segment_valid(self, row: ParallelTextRow) -> bool:
         return (

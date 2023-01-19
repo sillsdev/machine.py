@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from math import exp
 from typing import Collection, Sequence, cast
 
@@ -44,3 +46,6 @@ class ThotIbm3WordAlignmentModel(ThotIbm2WordAlignmentModel):
                 word_pair.alignment_score = self.get_distortion_probability(
                     len(source_segment), word_pair.source_index, len(target_segment), word_pair.target_index
                 )
+
+    def __enter__(self) -> ThotIbm3WordAlignmentModel:
+        return self

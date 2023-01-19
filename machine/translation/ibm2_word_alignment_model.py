@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 
 from .ibm1_word_alignment_model import Ibm1WordAlignmentModel
@@ -9,3 +11,6 @@ class Ibm2WordAlignmentModel(Ibm1WordAlignmentModel):
         self, source_length: int, source_index: int, target_length: int, target_index: int
     ) -> float:
         ...
+
+    def __enter__(self) -> Ibm2WordAlignmentModel:
+        return self

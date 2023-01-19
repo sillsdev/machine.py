@@ -126,9 +126,9 @@ class TranslationResultBuilder:
 
         return len(alignment_cols_to_copy)
 
-    def to_result(self, source_segment: Sequence[str]) -> TranslationResult:
+    def to_result(self, source_segment_length: int) -> TranslationResult:
         sources = [TranslationSources.NONE] * len(self._words)
-        alignment = WordAlignmentMatrix.from_word_pairs(len(source_segment), len(self._words))
+        alignment = WordAlignmentMatrix.from_word_pairs(source_segment_length, len(self._words))
         phrases: List[Phrase] = []
         trg_phrase_start_index = 0
         for phrase_info in self._phrases:
@@ -147,9 +147,7 @@ class TranslationResultBuilder:
             phrases.append(Phrase(phrase_info.source_segment_range, phrase_info.target_cut, confidence))
             trg_phrase_start_index = phrase_info.target_cut
 
-        return TranslationResult(
-            len(source_segment), self._words.copy(), self._confidences.copy(), sources, alignment, phrases
-        )
+        return TranslationResult(source_segment_length, self._words, self._confidences, sources, alignment, phrases)
 
     def _resize_alignment(self, phrase_index: int, cols_to_copy: List[int]) -> None:
         cur_alignment = self._phrases[phrase_index].alignment
