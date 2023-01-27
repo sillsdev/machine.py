@@ -168,7 +168,7 @@ class PairwiseAlignmentAlgorithm(Generic[Seq, Item]):
                 normalized_score = self._calc_normalized_score(
                     start_index1, end_index1, start_index2, end_index2, score
                 )
-                yield Alignment(
+                yield Alignment[Seq, Item](
                     score,
                     normalized_score,
                     [
