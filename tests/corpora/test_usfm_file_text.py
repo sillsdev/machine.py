@@ -11,7 +11,7 @@ def test_get_rows_nonempty_text() -> None:
     assert text is not None
     rows = list(corpus)
 
-    assert len(rows) == 17
+    assert len(rows) == 19
 
     assert verse_ref(rows[0]).exact_equals(VerseRef.from_string("MAT 1:1", corpus.versification))
     assert rows[0].text == "Chapter one, verse one."
@@ -63,7 +63,7 @@ def test_get_rows_sentence_start() -> None:
     assert text is not None
     rows = list(text)
 
-    assert len(rows) == 17
+    assert len(rows) == 19
 
     assert verse_ref(rows[3]).exact_equals(VerseRef.from_string("MAT 1:4", corpus.versification))
     assert rows[3].text == "Chapter one, verse four,"
@@ -91,7 +91,7 @@ def test_get_rows_include_markers() -> None:
     assert text is not None
     rows = list(text)
 
-    assert len(rows) == 17
+    assert len(rows) == 19
 
     assert verse_ref(rows[0]).exact_equals(VerseRef.from_string("MAT 1:1", corpus.versification))
     assert (

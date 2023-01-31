@@ -65,8 +65,8 @@ def extract_scripture_corpus(
                 ref: VerseRef = row.ref
                 if cur_ref is not None and ref.compare_to(cur_ref, compare_segments=False) != 0:
                     yield "<range>" if cur_trg_line_range else cur_trg_line, cur_ref, cur_trg_ref
+                    cur_trg_line_range = cur_trg_line_range or len(cur_trg_line) > 0
                     cur_trg_line = ""
-                    cur_trg_line_range = True
                     cur_trg_ref = None
 
                 cur_ref = ref

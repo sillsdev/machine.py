@@ -41,3 +41,13 @@ def test_extract_scripture_corpus() -> None:
     assert text == "<range>"
     assert orig_vref.exact_equals(VerseRef.from_string("MAT 2:3", ORIGINAL_VERSIFICATION))
     assert corpus_vref is not None and corpus_vref.exact_equals(VerseRef.from_string("MAT 2:3", corpus.versification))
+
+    text, orig_vref, corpus_vref = lines[23248]
+    assert text == ""
+    assert orig_vref.exact_equals(VerseRef.from_string("MAT 2:11", ORIGINAL_VERSIFICATION))
+    assert corpus_vref is not None and corpus_vref.exact_equals(VerseRef.from_string("MAT 2:11", corpus.versification))
+
+    text, orig_vref, corpus_vref = lines[23249]
+    assert text == ""
+    assert orig_vref.exact_equals(VerseRef.from_string("MAT 2:12", ORIGINAL_VERSIFICATION))
+    assert corpus_vref is not None and corpus_vref.exact_equals(VerseRef.from_string("MAT 2:12", corpus.versification))
