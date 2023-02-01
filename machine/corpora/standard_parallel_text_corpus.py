@@ -109,7 +109,12 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
                             range_info.is_source_empty = src_row.is_empty
                             range_info.is_source_sentence_start = src_row.is_sentence_start
                     else:
-                        yield from self._create_source_rows(range_info, src_row, target_same_ref_rows)
+                        yield from self._create_source_rows(
+                            range_info,
+                            src_row,
+                            target_same_ref_rows,
+                            force_target_in_range=not trg_row.is_range_start and trg_row.is_in_range,
+                        )
 
                     source_same_ref_rows.append(src_row)
                     src_row = next(src_iterator, None)
@@ -124,7 +129,12 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
                             range_info.is_target_empty = trg_row.is_empty
                             range_info.is_target_sentence_start = trg_row.is_sentence_start
                     else:
-                        yield from self._create_target_rows(range_info, trg_row, source_same_ref_rows)
+                        yield from self._create_target_rows(
+                            range_info,
+                            trg_row,
+                            source_same_ref_rows,
+                            force_source_in_range=not src_row.is_range_start and src_row.is_in_range,
+                        )
                     target_same_ref_rows.append(trg_row)
                     trg_row = next(trg_iterator, None)
                 else:
@@ -220,6 +230,8 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
         src_row: Optional[TextRow],
         trg_row: Optional[TextRow],
         aligned_word_pairs: Optional[Collection[AlignedWordPair]] = None,
+        force_source_in_range: bool = False,
+        force_target_in_range: bool = False,
     ) -> Iterable[ParallelTextRow]:
         if range_info.is_in_range:
             yield range_info.create_row()
@@ -229,6 +241,17 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
             text_id = trg_row.text_id
         else:
             raise ValueError("Either a source or target must be specified.")
+
+        if src_row is None:
+            source_flags = TextRowFlags.IN_RANGE if force_source_in_range else TextRowFlags.NONE
+        else:
+            source_flags = src_row.flags
+
+        if trg_row is None:
+            target_flags = TextRowFlags.IN_RANGE if force_target_in_range else TextRowFlags.NONE
+        else:
+            target_flags = trg_row.flags
+
         yield ParallelTextRow(
             text_id,
             [] if src_row is None else [src_row.ref],
@@ -236,8 +259,8 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
             [] if src_row is None else src_row.segment,
             [] if trg_row is None else trg_row.segment,
             aligned_word_pairs,
-            TextRowFlags.NONE if src_row is None else src_row.flags,
-            TextRowFlags.NONE if trg_row is None else trg_row.flags,
+            source_flags,
+            target_flags,
         )
 
     def _create_source_rows(
@@ -245,28 +268,26 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
         range_info: _RangeInfo,
         source_row: TextRow,
         target_same_ref_rows: List[TextRow],
+        force_target_in_range: bool = False,
     ) -> Iterable[ParallelTextRow]:
         if _check_same_ref_rows(target_same_ref_rows, source_row):
             for target_same_ref_segment in target_same_ref_rows:
-                for seg in self._create_rows(range_info, source_row, target_same_ref_segment):
-                    yield seg
+                yield from self._create_rows(range_info, source_row, target_same_ref_segment)
         elif self._all_source_rows:
-            for seg in self._create_rows(range_info, source_row, None):
-                yield seg
+            yield from self._create_rows(range_info, source_row, None, force_target_in_range=force_target_in_range)
 
     def _create_target_rows(
         self,
         range_info: _RangeInfo,
         target_row: TextRow,
         source_same_ref_rows: List[TextRow],
+        force_source_in_range: bool = False,
     ) -> Iterable[ParallelTextRow]:
         if _check_same_ref_rows(source_same_ref_rows, target_row):
             for source_same_ref_segment in source_same_ref_rows:
-                for seg in self._create_rows(range_info, source_same_ref_segment, target_row):
-                    yield seg
+                yield from self._create_rows(range_info, source_same_ref_segment, target_row)
         elif self._all_target_rows:
-            for seg in self._create_rows(range_info, None, target_row):
-                yield seg
+            yield from self._create_rows(range_info, None, target_row, force_source_in_range=force_source_in_range)
 
 
 @dataclass

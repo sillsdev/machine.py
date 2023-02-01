@@ -7,7 +7,7 @@ from machine.scripture import ORIGINAL_VERSIFICATION, VerseRef
 def test_texts() -> None:
     corpus = UsfmFileTextCorpus(USFM_TEST_PROJECT_PATH)
 
-    assert [t.id for t in corpus.texts] == ["MAT", "MRK"]
+    assert [t.id for t in corpus.texts] == ["1CH", "MAT", "MRK"]
 
 
 def test_get_text() -> None:
@@ -31,6 +31,26 @@ def test_extract_scripture_corpus() -> None:
     assert text == ""
     assert orig_vref.exact_equals(VerseRef.from_string("GEN 1:1", ORIGINAL_VERSIFICATION))
     assert corpus_vref is None
+
+    text, orig_vref, corpus_vref = lines[10726]
+    assert text == "Chapter twelve, verses three through seven."
+    assert orig_vref.exact_equals(VerseRef.from_string("1CH 12:3", ORIGINAL_VERSIFICATION))
+    assert corpus_vref is not None and corpus_vref.exact_equals(VerseRef.from_string("1CH 12:3", corpus.versification))
+
+    text, orig_vref, corpus_vref = lines[10727]
+    assert text == "<range>"
+    assert orig_vref.exact_equals(VerseRef.from_string("1CH 12:4", ORIGINAL_VERSIFICATION))
+    assert corpus_vref is None
+
+    text, orig_vref, corpus_vref = lines[10731]
+    assert text == "<range>"
+    assert orig_vref.exact_equals(VerseRef.from_string("1CH 12:8", ORIGINAL_VERSIFICATION))
+    assert corpus_vref is not None and corpus_vref.exact_equals(VerseRef.from_string("1CH 12:7", corpus.versification))
+
+    text, orig_vref, corpus_vref = lines[10732]
+    assert text == "Chapter twelve, verse eight."
+    assert orig_vref.exact_equals(VerseRef.from_string("1CH 12:9", ORIGINAL_VERSIFICATION))
+    assert corpus_vref is not None and corpus_vref.exact_equals(VerseRef.from_string("1CH 12:8", corpus.versification))
 
     text, orig_vref, corpus_vref = lines[23213]
     assert text == "Chapter one, verse one."

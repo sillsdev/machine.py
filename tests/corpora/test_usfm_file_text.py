@@ -9,7 +9,7 @@ def test_get_rows_nonempty_text() -> None:
 
     text = corpus.get_text("MAT")
     assert text is not None
-    rows = list(corpus)
+    rows = list(text)
 
     assert len(rows) == 19
 
