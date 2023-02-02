@@ -11,7 +11,7 @@ from machine.corpora import ParatextBackupTextCorpus
 
 def test_texts() -> None:
     with _TestEnvironment() as env:
-        assert [t.id for t in env.corpus.texts] == ["MAT", "MRK"]
+        assert [t.id for t in env.corpus.texts] == ["LEV", "1CH", "MAT", "MRK"]
 
 
 def test_get_text() -> None:

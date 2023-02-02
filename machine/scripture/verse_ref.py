@@ -97,6 +97,8 @@ class VerseRef(Comparable):
     def from_range(cls, start: VerseRef, end: VerseRef) -> VerseRef:
         if start.book_num != end.book_num or start.chapter_num != end.chapter_num:
             raise ValueError("The start and end verses are not in the same chapter.")
+        if start.verse_num == end.verse_num:
+            raise ValueError("The start and end verse numbers are the same.")
         if start.has_multiple:
             raise ValueError("This start verse contains multiple verses.")
         if end.has_multiple:

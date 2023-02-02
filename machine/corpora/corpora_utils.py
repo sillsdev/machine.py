@@ -117,9 +117,12 @@ def merge_verse_ranges(verse1: str, verse2: str) -> str:
     start_verse_str = ""
     prev_verse_num = -1
     prev_verse_str = ""
-    for verse_num, verse_str in sorted(verse1_nums | verse2_nums, key=lambda x: x[0]):
+    for verse_num, verse_str in sorted(verse1_nums | verse2_nums):
         if prev_verse_num == -1:
             start_verse_str = verse_str
+        elif prev_verse_num == verse_num and str(prev_verse_num) == prev_verse_str and str(verse_num) != verse_str:
+            # the verse segment is subsumed by the previous full verse, so skip it
+            continue
         elif prev_verse_num != verse_num - 1:
             if len(text) > 0:
                 text += VERSE_SEQUENCE_INDICATOR

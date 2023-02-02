@@ -113,7 +113,9 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
                             range_info,
                             src_row,
                             target_same_ref_rows,
-                            force_target_in_range=not trg_row.is_range_start and trg_row.is_in_range,
+                            force_target_in_range=src_row.text_id == trg_row.text_id
+                            and not trg_row.is_range_start
+                            and trg_row.is_in_range,
                         )
 
                     source_same_ref_rows.append(src_row)
@@ -133,7 +135,9 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
                             range_info,
                             trg_row,
                             source_same_ref_rows,
-                            force_source_in_range=not src_row.is_range_start and src_row.is_in_range,
+                            force_source_in_range=trg_row.text_id == src_row.text_id
+                            and not src_row.is_range_start
+                            and src_row.is_in_range,
                         )
                     target_same_ref_rows.append(trg_row)
                     trg_row = next(trg_iterator, None)

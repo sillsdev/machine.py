@@ -83,7 +83,8 @@ def extract_scripture_corpus(
                         start_ref = trg_ref
                         end_ref = cur_trg_ref
                     if start_ref.chapter == end_ref.chapter:
-                        cur_trg_ref = VerseRef.from_range(start_ref, end_ref)
+                        if start_ref.verse_num != end_ref.verse_num:
+                            cur_trg_ref = VerseRef.from_range(start_ref, end_ref)
                     else:
                         cur_trg_ref = end_ref
                 if not row.is_target_in_range or row.is_target_range_start or len(row.target_text) > 0:
