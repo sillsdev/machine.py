@@ -337,13 +337,12 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
         alignment_column: Optional[str] = "alignment",
         info: Optional[DatasetInfo] = None,
         split: Optional[NamedSplit] = None,
-        format_type: Optional[str] = None,
     ) -> IterableDataset:
         try:
             from datasets.features.features import Features, FeatureType, Sequence, Value
             from datasets.features.translation import Translation
             from datasets.info import DatasetInfo
-            from datasets.iterable_dataset import iterable_dataset
+            from datasets.iterable_dataset import ExamplesIterable, IterableDataset
         except ImportError:
             raise RuntimeError("datasets is not installed.")
 
@@ -385,7 +384,7 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
                         example[alignment_column] = {source_lang: src_indices, target_lang: trg_indices}
                     yield key, example
 
-        return iterable_dataset(iterable(), info, split, format_type)
+        return IterableDataset(ExamplesIterable(iterable, {}), info, split)
 
 
 def flatten_parallel_text_corpora(corpora: Iterable[ParallelTextCorpus]) -> ParallelTextCorpus:
