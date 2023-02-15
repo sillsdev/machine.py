@@ -170,11 +170,23 @@ def get_books(books: Union[str, List[str]]) -> Set[int]:
         if book_id == "NT":
             book_set.update(range(40, 67))
         elif book_id == "OT":
-            book_set.update(range(40))
+            book_set.update(range(1, 40))
+        elif book_id.startswith("-"):
+            # remove the book from the set
+            book_id = book_id[1:]
+            book_num = book_id_to_number(book_id)
+            if book_num == 0:
+                raise RuntimeError(f"{book_id} is an invalid book ID.")
+            elif book_num not in book_set:
+                raise RuntimeError(
+                    f"{book_id}:{book_num} cannot be removed as it is not in the existing book set of {book_set}"
+                )
+            else:
+                book_set.remove(book_num)
         else:
             book_num = book_id_to_number(book_id)
-            if book_num is None:
-                raise RuntimeError("A specified book Id is invalid.")
+            if book_num == 0:
+                raise RuntimeError(f"{book_id} is an invalid book ID.")
             book_set.add(book_num)
     return book_set
 

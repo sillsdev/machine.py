@@ -30,7 +30,7 @@ typeCheckingMode = "basic"
 
 [tool.poetry]
 name = "sil-machine"
-version = "0.9.1"
+version = "0.9.2"
 description = "A natural language processing library that is focused on providing tools for resource-poor languages."
 license = "MIT"
 authors = ["SIL International"]
@@ -85,6 +85,9 @@ thot = ["sil-thot"]
 tensorflow = ["libclang", "tensorflow", "OpenNMT-tf"]
 webapi = ["clearml", "json-stream", "dynaconf", "typing-extensions", "libclang", "tensorflow", "OpenNMT-tf", "sentencepiece"]
 all = ["sentencepiece", "sil-thot", "libclang", "tensorflow", "OpenNMT-tf", "clearml", "json-stream", "dynaconf", "typing-extensions"]
+
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
