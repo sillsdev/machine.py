@@ -8,7 +8,10 @@ from mockito import ANY, mock, verify, when
 
 from machine.annotations import Range
 from machine.corpora import DictionaryTextCorpus
-from machine.tokenization import LatinWordDetokenizer, WhitespaceTokenizer
+from machine.jobs.clearml_nmt_engine_build_job import ClearMLNmtEngineBuildJob
+from machine.jobs.config import SETTINGS
+from machine.jobs.nmt_model_factory import NmtModelFactory
+from machine.jobs.shared_file_service import PretranslationInfo, PretranslationWriter, SharedFileService
 from machine.translation import (
     Phrase,
     Trainer,
@@ -19,10 +22,6 @@ from machine.translation import (
     WordAlignmentMatrix,
 )
 from machine.utils import CanceledError, ContextManagedGenerator
-from machine.webapi.clearml_nmt_engine_build_job import ClearMLNmtEngineBuildJob
-from machine.webapi.config import SETTINGS
-from machine.webapi.nmt_model_factory import NmtModelFactory
-from machine.webapi.shared_file_service import PretranslationInfo, PretranslationWriter, SharedFileService
 
 
 def test_run() -> None:
@@ -49,11 +48,11 @@ class _TestEnvironment:
         config = {"src_lang": "es", "trg_lang": "en"}
         SETTINGS.update(config)
         self.source_tokenizer_trainer = _mock(Trainer)
-        when(self.source_tokenizer_trainer).train().thenReturn()
+        when(self.source_tokenizer_trainer).train(check_canceled=ANY).thenReturn()
         when(self.source_tokenizer_trainer).save().thenReturn()
 
         self.target_tokenizer_trainer = _mock(Trainer)
-        when(self.target_tokenizer_trainer).train().thenReturn()
+        when(self.target_tokenizer_trainer).train(check_canceled=ANY).thenReturn()
         when(self.target_tokenizer_trainer).save().thenReturn()
 
         self.model_trainer = _mock(Trainer)
@@ -68,7 +67,7 @@ class _TestEnvironment:
         when(self.model).translate_batch(ANY).thenReturn(
             [
                 TranslationResult(
-                    translation="Please , I have booked a room .",
+                    translation="Please, I have booked a room.",
                     source_tokens="Por favor , tengo reservada una habitación .".split(),
                     target_tokens="Please , I have booked a room .".split(),
                     confidences=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
@@ -94,11 +93,8 @@ class _TestEnvironment:
         when(self.nmt_model_factory).init().thenReturn()
         when(self.nmt_model_factory).create_source_tokenizer_trainer(ANY).thenReturn(self.source_tokenizer_trainer)
         when(self.nmt_model_factory).create_target_tokenizer_trainer(ANY).thenReturn(self.target_tokenizer_trainer)
-        when(self.nmt_model_factory).create_model_trainer(ANY, ANY, ANY).thenReturn(self.model_trainer)
-        when(self.nmt_model_factory).create_source_tokenizer().thenReturn(WhitespaceTokenizer())
-        when(self.nmt_model_factory).create_target_detokenizer().thenReturn(LatinWordDetokenizer())
+        when(self.nmt_model_factory).create_model_trainer(ANY).thenReturn(self.model_trainer)
         when(self.nmt_model_factory).create_model().thenReturn(self.model)
-        when(self.nmt_model_factory).save_model().thenReturn()
 
         self.shared_file_service = _mock(SharedFileService)
         when(self.shared_file_service).create_source_corpus().thenReturn(DictionaryTextCorpus())
@@ -112,7 +108,7 @@ class _TestEnvironment:
                             corpusId="corpus1",
                             textId="text1",
                             refs=["ref1"],
-                            translation="Por favor , tengo reservada una habitación .",
+                            segment="Por favor, tengo reservada una habitación.",
                         )
                     ]
                 )

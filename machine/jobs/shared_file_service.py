@@ -1,8 +1,7 @@
 import json
-import sys
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Generator, Iterator, List, Optional, TextIO
+from typing import Any, Generator, Iterator, List, Optional, TextIO, TypedDict
 
 import json_stream
 from clearml import StorageManager
@@ -10,11 +9,6 @@ from clearml import StorageManager
 from ..corpora.text_corpus import TextCorpus
 from ..corpora.text_file_text_corpus import TextFileTextCorpus
 from ..utils.context_managed_generator import ContextManagedGenerator
-
-if sys.version_info >= (3, 8):
-    from typing import TypedDict
-else:
-    from typing_extensions import TypedDict
 
 
 class PretranslationInfo(TypedDict):

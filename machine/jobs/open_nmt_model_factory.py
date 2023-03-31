@@ -2,7 +2,7 @@ import logging
 import os
 import shutil
 from pathlib import Path
-from typing import Any, Set
+from typing import Any, Optional, Set
 
 import tensorflow as tf
 from opennmt import END_OF_SENTENCE_TOKEN, PADDING_TOKEN, START_OF_SENTENCE_TOKEN
@@ -36,21 +36,24 @@ class OpenNmtModelFactory(NmtModelFactory):
         model_config = self._create_model_config()
         model_type: str = self._config.model
         mixed_precision: bool = self._config.mixed_precision
-        return OpenNmtModel(model_type, model_config, mixed_precision=mixed_precision)
+        return OpenNmtModel(
+            model_type,
+            model_config,
+            mixed_precision=mixed_precision,
+            source_tokenizer=self._create_source_tokenizer(),
+            target_tokenizer=self._create_target_tokenizer(),
+            target_detokenizer=self._create_target_detokenizer(),
+        )
 
-    def create_model_trainer(
-        self, source_language_tag: str, target_language_tag: str, corpus: ParallelTextCorpus
-    ) -> Trainer:
+    def create_model_trainer(self, corpus: ParallelTextCorpus) -> Trainer:
         model_dir = self._model_dir
         _convert_vocab(model_dir / "src-sp.vocab", model_dir / "src.vocab")
         _convert_vocab(model_dir / "trg-sp.vocab", model_dir / "trg.vocab")
 
-        corpus = corpus.tokenize(self.create_source_tokenizer(), self._create_target_tokenizer())
-
         model_config = self._create_model_config()
         model_type: str = self._config.model
         mixed_precision: bool = self._config.mixed_precision
-        parent_config = self._get_parent_config(source_language_tag, target_language_tag)
+        parent_config = self._get_parent_config(self._config.src_lang, self._config.trg_lang)
         return OpenNmtModelTrainer(
             model_type,
             model_config,
@@ -59,12 +62,11 @@ class OpenNmtModelFactory(NmtModelFactory):
             mixed_precision,
             resume=True,
             replace_on_save=False,
+            source_tokenizer=self._create_source_tokenizer(),
+            target_tokenizer=self._create_target_tokenizer(),
         )
 
-    def create_source_tokenizer(self) -> Tokenizer[str, int, str]:
-        return SentencePieceTokenizer(self._model_dir / "src-sp.model")
-
-    def create_source_tokenizer_trainer(self, corpus: TextCorpus) -> Trainer:
+    def create_source_tokenizer_trainer(self, corpus: TextCorpus) -> Optional[Trainer]:
         src_sp_model_prefix = self._model_dir / "src-sp"
         return SentencePieceTrainer(
             corpus,
@@ -75,7 +77,7 @@ class OpenNmtModelFactory(NmtModelFactory):
             normalization_rule_name="nmt_nfkc_cf",
         )
 
-    def create_target_tokenizer_trainer(self, corpus: TextCorpus) -> Trainer:
+    def create_target_tokenizer_trainer(self, corpus: TextCorpus) -> Optional[Trainer]:
         trg_sp_model_prefix = self._model_dir / "trg-sp"
         return SentencePieceTrainer(
             corpus,
@@ -86,9 +88,6 @@ class OpenNmtModelFactory(NmtModelFactory):
             normalization_rule_name="nmt_nfkc",
         )
 
-    def create_target_detokenizer(self) -> Detokenizer[str, str]:
-        return SentencePieceDetokenizer()
-
     def save_model(self) -> None:
         shutil.rmtree(self._model_dir / "parent", ignore_errors=True)
         self._shared_file_service.save_model(self._model_dir)
@@ -97,8 +96,14 @@ class OpenNmtModelFactory(NmtModelFactory):
     def _model_dir(self) -> Path:
         return Path(self._config.data_dir, "builds", self._config.build_id, "model")
 
+    def _create_source_tokenizer(self) -> Tokenizer[str, int, str]:
+        return SentencePieceTokenizer(self._model_dir / "src-sp.model")
+
     def _create_target_tokenizer(self) -> Tokenizer[str, int, str]:
         return SentencePieceTokenizer(self._model_dir / "trg-sp.model")
+
+    def _create_target_detokenizer(self) -> Detokenizer[str, str]:
+        return SentencePieceDetokenizer()
 
     def _create_model_config(self) -> dict:
         config = {

@@ -6,13 +6,10 @@ from typing import Any, Callable, Optional, Sequence, cast
 from clearml import Task
 
 from ..corpora.corpora_utils import batch
-from ..tokenization.detokenizer import Detokenizer
-from ..tokenization.tokenizer import Tokenizer
 from ..translation.translation_engine import TranslationEngine
 from ..utils.canceled_error import CanceledError
 from .config import SETTINGS
 from .nmt_model_factory import NmtModelFactory
-from .open_nmt_model_factory import OpenNmtModelFactory
 from .shared_file_service import PretranslationInfo, PretranslationWriter, SharedFileService
 
 _PRETRANSLATE_BATCH_SIZE = 128
@@ -41,26 +38,24 @@ class ClearMLNmtEngineBuildJob:
         if check_canceled is not None:
             check_canceled()
 
-        print("Training source tokenizer")
         source_tokenizer_trainer = self._nmt_model_factory.create_source_tokenizer_trainer(source_corpus)
-        source_tokenizer_trainer.train()
-        source_tokenizer_trainer.save()
+        if source_tokenizer_trainer is not None:
+            print("Training source tokenizer")
+            source_tokenizer_trainer.train(check_canceled=check_canceled)
+            source_tokenizer_trainer.save()
+            if check_canceled is not None:
+                check_canceled()
 
-        if check_canceled is not None:
-            check_canceled()
-
-        print("Training target tokenizer")
         target_tokenizer_trainer = self._nmt_model_factory.create_target_tokenizer_trainer(target_corpus)
-        target_tokenizer_trainer.train()
-        target_tokenizer_trainer.save()
-
-        if check_canceled is not None:
-            check_canceled()
+        if target_tokenizer_trainer is not None:
+            print("Training target tokenizer")
+            target_tokenizer_trainer.train(check_canceled=check_canceled)
+            target_tokenizer_trainer.save()
+            if check_canceled is not None:
+                check_canceled()
 
         print("Training NMT model")
-        model_trainer = self._nmt_model_factory.create_model_trainer(
-            self._config.src_lang, self._config.trg_lang, parallel_corpus
-        )
+        model_trainer = self._nmt_model_factory.create_model_trainer(parallel_corpus)
 
         try:
             model_trainer.train(check_canceled=check_canceled)
@@ -72,8 +67,6 @@ class ClearMLNmtEngineBuildJob:
             check_canceled()
 
         print("Pretranslating segments")
-        source_tokenizer = self._nmt_model_factory.create_source_tokenizer()
-        target_detokenizer = self._nmt_model_factory.create_target_detokenizer()
         with ExitStack() as stack:
             model = stack.enter_context(self._nmt_model_factory.create_model())
             src_pretranslations = stack.enter_context(self._shared_file_service.get_source_pretranslations())
@@ -81,21 +74,18 @@ class ClearMLNmtEngineBuildJob:
             for pi_batch in batch(src_pretranslations, _PRETRANSLATE_BATCH_SIZE):
                 if check_canceled is not None:
                     check_canceled()
-                _translate_batch(model, pi_batch, source_tokenizer, target_detokenizer, writer)
-
+                _translate_batch(model, pi_batch, writer)
         print("Finished")
 
 
 def _translate_batch(
     engine: TranslationEngine,
     batch: Sequence[PretranslationInfo],
-    source_tokenizer: Tokenizer[str, int, str],
-    target_detokenizer: Detokenizer[str, str],
     writer: PretranslationWriter,
 ) -> None:
-    source_segments = [list(source_tokenizer.tokenize(pi["translation"])) for pi in batch]
+    source_segments = [pi["segment"] for pi in batch]
     for i, result in enumerate(engine.translate_batch(source_segments)):
-        batch[i]["translation"] = target_detokenizer.detokenize(result.target_tokens)
+        batch[i]["segment"] = result.translation
         writer.write(batch[i])
 
 
@@ -110,7 +100,18 @@ def run(args: dict) -> None:
     SETTINGS.data_dir = os.path.expanduser(cast(str, SETTINGS.data_dir))
 
     shared_file_service = SharedFileService(SETTINGS)
-    nmt_model_factory = OpenNmtModelFactory(SETTINGS, shared_file_service)
+    model_type = cast(str, SETTINGS.model_type).lower()
+    nmt_model_factory: NmtModelFactory
+    if model_type == "huggingface":
+        from .hugging_face_nmt_model_factory import HuggingFaceNmtModelFactory
+
+        nmt_model_factory = HuggingFaceNmtModelFactory(SETTINGS, shared_file_service)
+    elif model_type == "opennmt":
+        from .open_nmt_model_factory import OpenNmtModelFactory
+
+        nmt_model_factory = OpenNmtModelFactory(SETTINGS, shared_file_service)
+    else:
+        raise RuntimeError("The model type is invalid.")
     job = ClearMLNmtEngineBuildJob(SETTINGS, nmt_model_factory, shared_file_service)
     job.run(check_canceled)
 
