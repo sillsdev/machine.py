@@ -11,14 +11,14 @@ from .flatten import flatten
 from .memory_alignment_collection import MemoryAlignmentCollection
 from .memory_text import MemoryText
 from .multi_key_ref import MultiKeyRef
-from .parallel_text_corpus import ParallelTextCorpus, flatten_parallel_text_corpora
+from .parallel_text_corpus import ParallelTextCorpus
 from .parallel_text_row import ParallelTextRow
 from .paratext_backup_text_corpus import ParatextBackupTextCorpus
 from .paratext_text_corpus import ParatextTextCorpus
 from .scripture_text_corpus import ScriptureTextCorpus, create_versification_ref_corpus, extract_scripture_corpus
 from .standard_parallel_text_corpus import StandardParallelTextCorpus
 from .text import Text
-from .text_corpus import TextCorpus, flatten_text_corpora
+from .text_corpus import TextCorpus
 from .text_file_alignment_collection import TextFileAlignmentCollection
 from .text_file_alignment_corpus import TextFileAlignmentCorpus
 from .text_file_text import TextFileText
@@ -62,8 +62,6 @@ __all__ = [
     "DictionaryTextCorpus",
     "escape_spaces",
     "extract_scripture_corpus",
-    "flatten_parallel_text_corpora",
-    "flatten_text_corpora",
     "flatten",
     "lowercase",
     "MemoryAlignmentCollection",

@@ -427,14 +427,6 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
         return IterableDataset(ExamplesIterable(iterable, {}), info, split)
 
 
-def flatten_parallel_text_corpora(corpora: Iterable[ParallelTextCorpus]) -> ParallelTextCorpus:
-    corpus_list = list(corpora)
-    if len(corpus_list) == 1:
-        return corpus_list[0]
-
-    return _FlattenParallelTextCorpus(corpus_list)
-
-
 class _TransformParallelTextCorpus(ParallelTextCorpus):
     def __init__(
         self,
@@ -502,31 +494,6 @@ class _TakeParallelTextCorpus(ParallelTextCorpus):
     def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
         with self._corpus.get_rows() as rows:
             yield from islice(rows, self._count)
-
-
-class _FlattenParallelTextCorpus(ParallelTextCorpus):
-    def __init__(self, corpora: List[ParallelTextCorpus]) -> None:
-        self._corpora = corpora
-
-    @property
-    def is_source_tokenized(self) -> bool:
-        return all(c.is_source_tokenized for c in self._corpora)
-
-    @property
-    def is_target_tokenized(self) -> bool:
-        return all(c.is_target_tokenized for c in self._corpora)
-
-    @property
-    def missing_rows_allowed(self) -> bool:
-        return any(corpus.missing_rows_allowed for corpus in self._corpora)
-
-    def count(self, include_empty: bool = True) -> int:
-        return sum(corpus.count(include_empty) for corpus in self._corpora)
-
-    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
-        for corpus in self._corpora:
-            with corpus.get_rows() as rows:
-                yield from rows
 
 
 class _PandasParallelTextCorpus(ParallelTextCorpus):

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from itertools import chain, islice
-from typing import Any, Callable, Generator, Iterable, List, Optional, Tuple
+from itertools import islice
+from typing import Any, Callable, Generator, Iterable, Optional, Tuple
 
 from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
@@ -147,14 +147,6 @@ class TextCorpus(Corpus[TextRow]):
         return main_corpus, split_corpus, corpus_size - len(split_indices), len(split_indices)
 
 
-def flatten_text_corpora(corpora: Iterable[TextCorpus]) -> TextCorpus:
-    corpus_list = list(corpora)
-    if len(corpus_list) == 1:
-        return corpus_list[0]
-
-    return _FlattenTextCorpus(corpus_list)
-
-
 class _TransformTextCorpus(TextCorpus):
     def __init__(
         self, corpus: TextCorpus, transform: Callable[[TextRow], TextRow], is_tokenized: Optional[bool]
@@ -235,28 +227,3 @@ class _TakeTextCorpus(TextCorpus):
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
         with self._corpus.get_rows(text_ids) as rows:
             yield from islice(rows, self._count)
-
-
-class _FlattenTextCorpus(TextCorpus):
-    def __init__(self, corpora: List[TextCorpus]) -> None:
-        self._corpora = corpora
-
-    @property
-    def texts(self) -> Iterable[Text]:
-        return chain.from_iterable(c.texts for c in self._corpora)
-
-    @property
-    def is_tokenized(self) -> bool:
-        return all(c.is_tokenized for c in self._corpora)
-
-    @property
-    def missing_rows_allowed(self) -> bool:
-        return any(corpus.missing_rows_allowed for corpus in self._corpora)
-
-    def count(self, include_empty: bool = True) -> int:
-        return sum(corpus.count(include_empty) for corpus in self._corpora)
-
-    def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
-        for corpus in self._corpora:
-            with corpus.get_rows(text_ids) as rows:
-                yield from rows

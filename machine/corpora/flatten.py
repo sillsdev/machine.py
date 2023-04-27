@@ -54,6 +54,10 @@ class _FlattenTextCorpus(TextCorpus):
         return chain.from_iterable(c.texts for c in self._corpora)
 
     @property
+    def is_tokenized(self) -> bool:
+        return all(c.is_tokenized for c in self._corpora)
+
+    @property
     def missing_rows_allowed(self) -> bool:
         return any(c.missing_rows_allowed for c in self._corpora)
 
@@ -90,6 +94,14 @@ class _FlattenAlignmentCorpus(AlignmentCorpus):
 class _FlattenParallelTextCorpus(ParallelTextCorpus):
     def __init__(self, corpora: List[ParallelTextCorpus]) -> None:
         self._corpora = corpora
+
+    @property
+    def is_source_tokenized(self) -> bool:
+        return all(c.is_source_tokenized for c in self._corpora)
+
+    @property
+    def is_target_tokenized(self) -> bool:
+        return all(c.is_target_tokenized for c in self._corpora)
 
     @property
     def missing_rows_allowed(self) -> bool:

@@ -42,6 +42,12 @@ class _WordAlignParallelTextCorpus(ParallelTextCorpus):
         self._aligner = aligner
         self._batch_size = batch_size
 
+    def is_source_tokenized(self) -> bool:
+        return self._corpus.is_source_tokenized
+
+    def is_target_tokenized(self) -> bool:
+        return self._corpus.is_target_tokenized
+
     def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
         with self._corpus.batch(self._batch_size) as batches:
             for batch in batches:
@@ -66,10 +72,18 @@ class _TranslateParallelTextCorpus(ParallelTextCorpus):
         self._translation_engine = translation_engine
         self._batch_size = batch_size
 
+    def is_source_tokenized(self) -> bool:
+        return self._corpus.is_source_tokenized
+
+    def is_target_tokenized(self) -> bool:
+        return self._corpus.is_target_tokenized
+
     def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
         with self._corpus.batch(self._batch_size) as batches:
             for batch in batches:
-                translations = self._translation_engine.translate_batch([r.source_segment for r in batch])
+                translations = self._translation_engine.translate_batch(
+                    [r.source_segment if self.is_source_tokenized else r.source_text for r in batch]
+                )
                 for row, translation in zip(batch, translations):
                     row.target_segment = translation.target_tokens
                     yield row
