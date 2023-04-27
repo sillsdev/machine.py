@@ -3551,14 +3551,18 @@ tensorflow-rocm = ["tensorflow-rocm (>=2.11.0,<2.12.0)"]
 
 [[package]]
 name = "termcolor"
-version = "1.1.0"
-description = "ANSII Color formatting for output in terminal."
+version = "2.3.0"
+description = "ANSI color formatting for output in terminal"
 category = "main"
 optional = false
-python-versions = "*"
+python-versions = ">=3.7"
 files = [
-    {file = "termcolor-1.1.0.tar.gz", hash = "sha256:1d6d69ce66211143803fbc56652b41d73b4a400a2891d7bf7a1cdf4c02de613b"},
+    {file = "termcolor-2.3.0-py3-none-any.whl", hash = "sha256:3afb05607b89aed0ffe25202399ee0867ad4d3cb4180d98aaf8eefa6a5f7d475"},
+    {file = "termcolor-2.3.0.tar.gz", hash = "sha256:b5b08f68937f138fe92f6c089b99f1e2da0ae56c52b78bf7075fd95420fd9a5a"},
 ]
+
+[package.extras]
+tests = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "terminado"
