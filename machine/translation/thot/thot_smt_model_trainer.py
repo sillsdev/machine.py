@@ -18,6 +18,8 @@ import thot.translation as tt
 from ...corpora import ParallelTextCorpus, ParallelTextRow
 from ...optimization.nelder_mead_simplex import NelderMeadSimplex
 from ...statistics.log_space import log_space_add, log_space_divide, to_std_space
+from ...tokenization.tokenizer import Tokenizer
+from ...tokenization.whitespace_tokenizer import WHITESPACE_TOKENIZER
 from ...utils.progress_status import ProgressStatus
 from ...utils.typeshed import StrPath
 from .. import MAX_SEGMENT_LENGTH
@@ -25,7 +27,7 @@ from ..trainer import Trainer, TrainStats
 from .simplex_model_weight_tuner import SimplexModelWeightTuner
 from .thot_smt_parameters import ThotSmtParameters, get_thot_smt_parameter
 from .thot_train_progress_reporter import ThotTrainProgressReporter
-from .thot_utils import escape_token, escape_tokens, load_smt_decoder, load_smt_model
+from .thot_utils import escape_token, escape_tokens, load_smt_decoder, load_smt_model, to_sentence
 from .thot_word_alignment_model_trainer import ThotWordAlignmentModelTrainer
 from .thot_word_alignment_model_type import ThotWordAlignmentModelType
 from .thot_word_alignment_model_utils import create_thot_word_alignment_model
@@ -145,6 +147,10 @@ class ThotSmtModelTrainer(Trainer):
         word_alignment_model_type: ThotWordAlignmentModelType,
         corpus: ParallelTextCorpus,
         config: Optional[Union[ThotSmtParameters, StrPath]] = None,
+        source_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
+        target_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
+        lowercase_source: bool = False,
+        lowercase_target: bool = False,
     ) -> None:
         if config is None:
             config = ThotSmtParameters()
@@ -157,6 +163,10 @@ class ThotSmtModelTrainer(Trainer):
         self._parameters = parameters
         self._word_alignment_model_type = word_alignment_model_type
         self._corpus = corpus
+        self.source_tokenizer = source_tokenizer
+        self.target_tokenizer = target_tokenizer
+        self.lowercase_source = lowercase_source
+        self.lowercase_target = lowercase_target
         self._model_weight_tuner = SimplexModelWeightTuner(word_alignment_model_type)
 
         self._temp_dir = TemporaryDirectory(prefix="thot-smt-train-")
@@ -190,11 +200,18 @@ class ThotSmtModelTrainer(Trainer):
     ) -> None:
         reporter = ThotTrainProgressReporter(progress, check_canceled)
 
-        train_corpus, test_corpus, train_count, test_count = (
+        corpus = (
             self._corpus.filter(_is_segment_valid)
             .take(self.max_corpus_count)
-            .split(percent=0.1, size=1000, seed=self.seed)
+            .tokenize(self.source_tokenizer, self.target_tokenizer)
         )
+        if self.lowercase_source and self.lowercase_target:
+            corpus = corpus.lowercase()
+        elif self.lowercase_source:
+            corpus = corpus.lowercase_source()
+        elif self.lowercase_target:
+            corpus = corpus.lowercase_target()
+        train_corpus, tune_corpus, train_count, tune_count = corpus.split(percent=0.1, size=1000, seed=self.seed)
 
         self._train_lm_dir.mkdir()
         train_lm_prefix = self._train_lm_dir / self._lm_file_prefix
@@ -214,7 +231,7 @@ class ThotSmtModelTrainer(Trainer):
 
         tune_source_corpus: List[Sequence[str]] = []
         tune_target_corpus: List[Sequence[str]] = []
-        with test_corpus.get_rows() as rows:
+        with tune_corpus.get_rows() as rows:
             for row in rows:
                 tune_source_corpus.append(row.source_segment)
                 tune_target_corpus.append(row.target_segment)
@@ -232,7 +249,7 @@ class ThotSmtModelTrainer(Trainer):
                 train_tm_prefix, train_lm_prefix, tune_source_corpus, tune_target_corpus, phase_progress
             )
 
-        self.stats.train_corpus_size = train_count + test_count
+        self.stats.train_corpus_size = train_count + tune_count
 
     def close(self) -> None:
         self._temp_dir.cleanup()
@@ -353,7 +370,9 @@ class ThotSmtModelTrainer(Trainer):
         progress: Callable[[ProgressStatus], None],
         check_canceled: Callable[[], None],
     ) -> None:
-        parameters = ThotWordAlignmentParameters()
+        parameters = ThotWordAlignmentParameters(
+            hmm_p0=0.1, hmm_lexical_smoothing_factor=0.1, hmm_alignment_smoothing_factor=0.3
+        )
         if self._word_alignment_model_type is ThotWordAlignmentModelType.FAST_ALIGN:
             parameters.fast_align_iteration_count = self._parameters.learning_em_iters
         else:
@@ -453,10 +472,10 @@ class ThotSmtModelTrainer(Trainer):
             for i in range(len(tune_source_corpus)):
                 if i > 0:
                     progress(ProgressStatus.from_step(i, len(tune_source_corpus)))
-                decoder.train_sentence_pair(" ".join(tune_source_corpus[i]), " ".join(tune_target_corpus[i]))
-            progress(ProgressStatus.from_step(len(tune_source_corpus), len(tune_source_corpus)))
+                decoder.train_sentence_pair(to_sentence(tune_source_corpus[i]), to_sentence(tune_target_corpus[i]))
             smt_model.print_translation_model(parameters.translation_model_filename_prefix)
             smt_model.print_language_model(parameters.language_model_filename_prefix)
+            progress(ProgressStatus.from_step(len(tune_source_corpus), len(tune_source_corpus)))
         finally:
             if decoder is not None:
                 decoder.clear()

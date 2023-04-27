@@ -19,7 +19,7 @@ class StringDetokenizer(Detokenizer[str, str]):
         ops = [self._get_operation(ctxt, t) for t in token_list]
         result = ""
         for i in range(len(token_list)):
-            result += token_list[i]
+            result += self._transform_token(token_list[i])
 
             append_separator = True
             if i + 1 == len(ops):
@@ -42,3 +42,6 @@ class StringDetokenizer(Detokenizer[str, str]):
 
     def _get_separator(self, tokens: List[str], ops: List[DetokenizeOperation], index: int) -> str:
         return " "
+
+    def _transform_token(self, token: str) -> str:
+        return token

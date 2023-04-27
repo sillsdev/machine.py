@@ -8,8 +8,8 @@ from .range_tokenizer import RangeTokenizer
 from .string_detokenizer import StringDetokenizer
 from .string_tokenizer import StringTokenizer
 from .tokenizer import Tokenizer
-from .whitespace_detokenizer import WhitespaceDetokenizer
-from .whitespace_tokenizer import WhitespaceTokenizer
+from .whitespace_detokenizer import WHITESPACE_DETOKENIZER, WhitespaceDetokenizer
+from .whitespace_tokenizer import WHITESPACE_TOKENIZER, WhitespaceTokenizer
 from .zwsp_word_detokenizer import ZwspWordDetokenizer
 from .zwsp_word_tokenizer import ZwspWordTokenizer
 
@@ -24,6 +24,8 @@ __all__ = [
     "StringDetokenizer",
     "StringTokenizer",
     "Tokenizer",
+    "WHITESPACE_DETOKENIZER",
+    "WHITESPACE_TOKENIZER",
     "WhitespaceDetokenizer",
     "WhitespaceTokenizer",
     "ZwspWordDetokenizer",

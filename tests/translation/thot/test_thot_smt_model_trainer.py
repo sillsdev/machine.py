@@ -96,8 +96,8 @@ def test_train_non_empty_corpus() -> None:
             parameters = trainer.parameters
 
         with ThotSmtModel(ThotWordAlignmentModelType.HMM, parameters) as model:
-            result = model.translate("una habitación individual por semana".split())
-            assert result.target_segment == "a single room cost per week".split()
+            result = model.translate("una habitación individual por semana")
+            assert result.translation == "a single room cost per week"
 
 
 def test_train_empty_corpus() -> None:
@@ -119,12 +119,12 @@ def test_train_empty_corpus() -> None:
             parameters = trainer.parameters
 
         with ThotSmtModel(ThotWordAlignmentModelType.HMM, parameters) as model:
-            result = model.translate("una habitación individual por semana".split())
-            assert result.target_segment == "una habitación individual por semana".split()
+            result = model.translate("una habitación individual por semana")
+            assert result.translation == "una habitación individual por semana"
 
 
 def _row(row_ref: int, text: str) -> TextRow:
-    return TextRow("text1", row_ref, segment=text.split())
+    return TextRow("text1", row_ref, segment=[text])
 
 
 def _alignment(row_ref: int, *pairs: AlignedWordPair) -> AlignmentRow:

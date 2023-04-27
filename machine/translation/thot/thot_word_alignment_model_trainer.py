@@ -8,6 +8,8 @@ import thot.alignment as ta
 
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
 from ...corpora.parallel_text_row import ParallelTextRow
+from ...tokenization.tokenizer import Tokenizer
+from ...tokenization.whitespace_tokenizer import WHITESPACE_TOKENIZER
 from ...utils.progress_status import ProgressStatus
 from ...utils.typeshed import StrPath
 from ..trainer import Trainer, TrainStats
@@ -24,6 +26,8 @@ class ThotWordAlignmentModelTrainer(Trainer):
         corpus: ParallelTextCorpus,
         prefix_filename: Optional[StrPath],
         parameters: ThotWordAlignmentParameters = ThotWordAlignmentParameters(),
+        source_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
+        target_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
         max_corpus_count: int = sys.maxsize,
     ) -> None:
         ...
@@ -35,6 +39,8 @@ class ThotWordAlignmentModelTrainer(Trainer):
         corpus: Tuple[StrPath, StrPath],
         prefix_filename: Optional[StrPath],
         parameters: ThotWordAlignmentParameters = ThotWordAlignmentParameters(),
+        source_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
+        target_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
     ) -> None:
         ...
 
@@ -44,6 +50,8 @@ class ThotWordAlignmentModelTrainer(Trainer):
         corpus: Union[ParallelTextCorpus, Tuple[StrPath, StrPath]],
         prefix_filename: Optional[StrPath],
         parameters: ThotWordAlignmentParameters = ThotWordAlignmentParameters(),
+        source_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
+        target_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
         max_corpus_count: int = sys.maxsize,
     ) -> None:
         if isinstance(corpus, tuple) and max_corpus_count != sys.maxsize:
@@ -52,6 +60,8 @@ class ThotWordAlignmentModelTrainer(Trainer):
         self._prefix_filename = None if prefix_filename is None else Path(prefix_filename)
         self._parallel_corpus = corpus
         self._max_corpus_count = max_corpus_count
+        self.source_tokenizer = source_tokenizer
+        self.target_tokenizer = target_tokenizer
         self._stats = TrainStats()
 
         self._models: List[Tuple[ta.AlignmentModel, int]] = []
@@ -133,7 +143,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
         if isinstance(self._parallel_corpus, ParallelTextCorpus):
             corpus_count = 0
             index = 0
-            with self._parallel_corpus.get_rows() as rows:
+            with self._parallel_corpus.tokenize(self.source_tokenizer, self.target_tokenizer).get_rows() as rows:
                 for row in rows:
                     self._model.add_sentence_pair(
                         list(escape_tokens(row.source_segment)), list(escape_tokens(row.target_segment)), 1

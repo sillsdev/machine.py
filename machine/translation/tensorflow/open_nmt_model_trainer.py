@@ -17,6 +17,8 @@ from opennmt.utils.checkpoint import Checkpoint
 from opennmt.utils.misc import disable_mixed_precision, enable_mixed_precision
 
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
+from ...tokenization.tokenizer import Tokenizer
+from ...tokenization.whitespace_tokenizer import WHITESPACE_TOKENIZER
 from ...utils.progress_status import ProgressStatus
 from ..trainer import Trainer, TrainStats
 from .open_nmt_utils import (
@@ -41,6 +43,8 @@ class OpenNmtModelTrainer(Trainer):
         resume: bool = False,
         val_size: int = 250,
         replace_on_save: bool = True,
+        source_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
+        target_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
     ):
         self._config = config
         self._replace_on_save = replace_on_save
@@ -64,6 +68,8 @@ class OpenNmtModelTrainer(Trainer):
         self.resume = resume
         self._stats = TrainStats()
         self.val_size = val_size
+        self.source_tokenizer = source_tokenizer
+        self.target_tokenizer = target_tokenizer
 
     def train(
         self,
@@ -193,7 +199,9 @@ class OpenNmtModelTrainer(Trainer):
         ):
             max_src_length: int = train_config["maximum_features_length"]
             max_trg_length: int = train_config["maximum_labels_length"]
-            corpus, _, _ = self._corpus.interleaved_split(size=self.val_size, include_empty=False, seed=31415)
+            corpus, _, _ = self._corpus.tokenize(self.source_tokenizer, self.target_tokenizer).interleaved_split(
+                size=self.val_size, include_empty=False, seed=31415
+            )
             train_corpus_size = 0
             with ExitStack() as stack:
                 train_src_path.parent.mkdir(parents=True, exist_ok=True)

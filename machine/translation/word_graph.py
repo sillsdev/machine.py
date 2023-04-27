@@ -14,8 +14,13 @@ class StateInfo:
 
 class WordGraph:
     def __init__(
-        self, arcs: Iterable[WordGraphArc] = [], final_states: Iterable[int] = [], initial_state_score: float = 0
+        self,
+        source_words: Iterable[str],
+        arcs: Iterable[WordGraphArc] = [],
+        final_states: Iterable[int] = [],
+        initial_state_score: float = 0,
     ) -> None:
+        self._source_words = list(source_words)
         self._states: Dict[int, StateInfo] = {}
         arc_list: List[WordGraphArc] = []
         max_state = -1
@@ -33,6 +38,10 @@ class WordGraph:
         self._state_count = max_state + 1
         self._final_states = set(final_states)
         self._initial_state_score = initial_state_score
+
+    @property
+    def source_words(self) -> Sequence[str]:
+        return self._source_words
 
     @property
     def initial_state_score(self) -> float:

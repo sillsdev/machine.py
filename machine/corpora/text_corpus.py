@@ -22,6 +22,11 @@ class TextCorpus(Corpus[TextRow]):
     def texts(self) -> Iterable[Text]:
         ...
 
+    @property
+    @abstractmethod
+    def is_tokenized(self) -> bool:
+        ...
+
     def get_rows(self, text_ids: Optional[Iterable[str]] = None) -> ContextManagedGenerator[TextRow, None, None]:
         return ContextManagedGenerator(self._get_rows(text_ids))
 
@@ -39,21 +44,27 @@ class TextCorpus(Corpus[TextRow]):
     def count(self, include_empty: bool = True) -> int:
         return sum(t.count(include_empty) for t in self.texts)
 
-    def tokenize(self, tokenizer: Tokenizer[str, int, str]) -> TextCorpus:
+    def tokenize(self, tokenizer: Tokenizer[str, int, str], force: bool = False) -> TextCorpus:
+        if not force and self.is_tokenized:
+            return self
+
         def _tokenize(row: TextRow) -> TextRow:
             if len(row.segment) > 0:
                 row.segment = list(tokenizer.tokenize(row.text))
             return row
 
-        return self.transform(_tokenize)
+        return self.transform(_tokenize, is_tokenized=True)
 
-    def detokenize(self, detokenizer: Detokenizer[str, str]) -> TextCorpus:
+    def detokenize(self, detokenizer: Detokenizer[str, str], force: bool = False) -> TextCorpus:
+        if not force and not self.is_tokenized:
+            return self
+
         def _detokenize(row: TextRow) -> TextRow:
             if len(row.segment) > 1:
                 row.segment = [detokenizer.detokenize(row.segment)]
             return row
 
-        return self.transform(_detokenize)
+        return self.transform(_detokenize, is_tokenized=False)
 
     def normalize(self, normalization_form: str) -> TextCorpus:
         def _normalize(row: TextRow) -> TextRow:
@@ -98,8 +109,8 @@ class TextCorpus(Corpus[TextRow]):
     def filter_texts(self, predicate: Callable[[Text], bool]) -> TextCorpus:
         return _TextFilterTextCorpus(self, predicate)
 
-    def transform(self, transform: Callable[[TextRow], TextRow]) -> TextCorpus:
-        return _TransformTextCorpus(self, transform)
+    def transform(self, transform: Callable[[TextRow], TextRow], is_tokenized: Optional[bool] = None) -> TextCorpus:
+        return _TransformTextCorpus(self, transform, is_tokenized)
 
     def align_rows(
         self,
@@ -145,13 +156,20 @@ def flatten_text_corpora(corpora: Iterable[TextCorpus]) -> TextCorpus:
 
 
 class _TransformTextCorpus(TextCorpus):
-    def __init__(self, corpus: TextCorpus, transform: Callable[[TextRow], TextRow]) -> None:
+    def __init__(
+        self, corpus: TextCorpus, transform: Callable[[TextRow], TextRow], is_tokenized: Optional[bool]
+    ) -> None:
         self._corpus = corpus
         self._transform = transform
+        self._is_tokenized = corpus.is_tokenized if is_tokenized is None else is_tokenized
 
     @property
     def texts(self) -> Iterable[Text]:
         return self._corpus.texts
+
+    @property
+    def is_tokenized(self) -> bool:
+        return self._is_tokenized
 
     @property
     def missing_rows_allowed(self) -> bool:
@@ -174,6 +192,10 @@ class _TextFilterTextCorpus(TextCorpus):
     def texts(self) -> Iterable[Text]:
         return (t for t in self._corpus.texts if self._predicate(t))
 
+    @property
+    def is_tokenized(self) -> bool:
+        return self._corpus.is_tokenized
+
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
         with self._corpus.get_rows((t.id for t in self.texts) if text_ids is None else text_ids) as rows:
             yield from rows
@@ -187,6 +209,10 @@ class _FilterTextCorpus(TextCorpus):
     @property
     def texts(self) -> Iterable[Text]:
         return self._corpus.texts
+
+    @property
+    def is_tokenized(self) -> bool:
+        return self._corpus.is_tokenized
 
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
         with self._corpus.get_rows(text_ids) as rows:
@@ -202,6 +228,10 @@ class _TakeTextCorpus(TextCorpus):
     def texts(self) -> Iterable[Text]:
         return self._corpus.texts
 
+    @property
+    def is_tokenized(self) -> bool:
+        return self._corpus.is_tokenized
+
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
         with self._corpus.get_rows(text_ids) as rows:
             yield from islice(rows, self._count)
@@ -214,6 +244,10 @@ class _FlattenTextCorpus(TextCorpus):
     @property
     def texts(self) -> Iterable[Text]:
         return chain.from_iterable(c.texts for c in self._corpora)
+
+    @property
+    def is_tokenized(self) -> bool:
+        return all(c.is_tokenized for c in self._corpora)
 
     @property
     def missing_rows_allowed(self) -> bool:

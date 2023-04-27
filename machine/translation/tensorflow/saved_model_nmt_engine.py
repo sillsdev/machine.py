@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, Sequence, Union
 
 import tensorflow as tf
 
 from ...annotations import Range
+from ...tokenization.detokenizer import Detokenizer
+from ...tokenization.tokenizer import Tokenizer
+from ...tokenization.whitespace_detokenizer import WHITESPACE_DETOKENIZER
+from ...tokenization.whitespace_tokenizer import WHITESPACE_TOKENIZER
 from ...utils.typeshed import StrPath
 from ..translation_engine import TranslationEngine
 from ..translation_result import TranslationResult
@@ -28,19 +32,30 @@ class SavedModelTranslateSignature:
 
 class SavedModelNmtEngine(TranslationEngine):
     def __init__(
-        self, model_filename: StrPath, signature: SavedModelTranslateSignature = SavedModelTranslateSignature()
+        self,
+        model_filename: StrPath,
+        signature: SavedModelTranslateSignature = SavedModelTranslateSignature(),
+        source_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
+        target_detokenizer: Detokenizer[str, str] = WHITESPACE_DETOKENIZER,
     ) -> None:
         self._signature = signature
         self._model: Any = tf.saved_model.load(str(model_filename))
         self._translate_fn = self._model.signatures[signature.signature_key]
+        self.source_tokenizer = source_tokenizer
+        self.target_detokenizer = target_detokenizer
 
-    def translate(self, segment: Sequence[str]) -> TranslationResult:
+    def translate(self, segment: Union[str, Sequence[str]]) -> TranslationResult:
         return next(iter(self.translate_n(1, segment)))
 
-    def translate_n(self, n: int, segment: Sequence[str]) -> Iterable[TranslationResult]:
+    def translate_n(self, n: int, segment: Union[str, Sequence[str]]) -> Iterable[TranslationResult]:
+        if isinstance(segment, str):
+            source_tokens = list(self.source_tokenizer.tokenize(segment))
+        else:
+            source_tokens = segment
+
         inputs = {
-            self._signature.input_tokens_key: tf.constant([segment], dtype=tf.string),
-            self._signature.input_length_key: tf.constant([len(segment)], dtype=tf.int32),
+            self._signature.input_tokens_key: tf.constant([source_tokens], dtype=tf.string),
+            self._signature.input_length_key: tf.constant([len(source_tokens)], dtype=tf.int32),
             self._signature.input_ref_key: tf.constant([[""]], dtype=tf.string),
             self._signature.input_ref_length_key: tf.constant([1], dtype=tf.int32),
         }
@@ -55,22 +70,24 @@ class SavedModelNmtEngine(TranslationEngine):
             output_tokens_i = output_tokens[0][i][:output_length_i]
             builder = TranslationResultBuilder()
             for word in output_tokens_i.numpy():
-                builder.append_word(word.decode("utf-8"), TranslationSources.NMT)
+                builder.append_token(word.decode("utf-8"), TranslationSources.NMT)
 
             alignment = output_alignments[0][i]
             src_indices = tf.argmax(alignment[:output_length_i], axis=-1).numpy()
             wa_matrix = WordAlignmentMatrix.from_word_pairs(
-                len(segment), output_length_i, set(zip(src_indices, range(output_length_i)))
+                len(source_tokens), output_length_i, set(zip(src_indices, range(output_length_i)))
             )
             builder.mark_phrase(Range.create(0, len(segment)), wa_matrix)
 
-            yield builder.to_result(len(segment))
+            yield builder.to_result(self.target_detokenizer.detokenize(builder.target_tokens), source_tokens)
             i += 1
 
-    def translate_batch(self, segments: Sequence[Sequence[str]]) -> Sequence[TranslationResult]:
+    def translate_batch(self, segments: Sequence[Union[str, Sequence[str]]]) -> Sequence[TranslationResult]:
         return [results[0] for results in self.translate_n_batch(1, segments)]
 
-    def translate_n_batch(self, n: int, segments: Sequence[Sequence[str]]) -> Sequence[Sequence[TranslationResult]]:
+    def translate_n_batch(
+        self, n: int, segments: Sequence[Union[str, Sequence[str]]]
+    ) -> Sequence[Sequence[TranslationResult]]:
         raise NotImplementedError
 
     def __enter__(self) -> SavedModelNmtEngine:

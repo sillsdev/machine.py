@@ -7,7 +7,7 @@ from .word_graph import WordGraph
 
 class WordConfidenceEstimator(ABC):
     @abstractmethod
-    def estimate_word_graph(self, source_segment: Sequence[str], word_graph: WordGraph) -> None:
+    def estimate_word_graph(self, word_graph: WordGraph) -> None:
         ...
 
     @abstractmethod

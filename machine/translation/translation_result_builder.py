@@ -19,14 +19,14 @@ class PhraseInfo:
 
 class TranslationResultBuilder:
     def __init__(self) -> None:
-        self._words: List[str] = []
+        self._target_tokens: List[str] = []
         self._confidences: List[float] = []
         self._sources: List[TranslationSources] = []
         self._phrases: List[PhraseInfo] = []
 
     @property
-    def words(self) -> Sequence[str]:
-        return self._words
+    def target_tokens(self) -> Sequence[str]:
+        return self._target_tokens
 
     @property
     def confidences(self) -> Sequence[float]:
@@ -40,13 +40,13 @@ class TranslationResultBuilder:
     def phrases(self) -> Sequence[PhraseInfo]:
         return self._phrases
 
-    def append_word(self, word: str, source: TranslationSources, confidence: float = -1) -> None:
-        self._words.append(word)
+    def append_token(self, token: str, source: TranslationSources, confidence: float = -1) -> None:
+        self._target_tokens.append(token)
         self._sources.append(source)
         self._confidences.append(confidence)
 
     def mark_phrase(self, source_segment_range: Range[int], alignment: WordAlignmentMatrix) -> None:
-        self._phrases.append(PhraseInfo(source_segment_range, len(self._words), alignment))
+        self._phrases.append(PhraseInfo(source_segment_range, len(self._target_tokens), alignment))
 
     def set_confidence(self, index: int, confidence: float) -> None:
         self._confidences[index] = confidence
@@ -65,7 +65,7 @@ class TranslationResultBuilder:
         k = 0
         for word_op in word_ops:
             if word_op == EditOperation.INSERT:
-                self._words.insert(j, prefix[i])
+                self._target_tokens.insert(j, prefix[i])
                 self._sources.insert(j, TranslationSources.PREFIX)
                 self._confidences.insert(j, -1)
                 alignment_cols_to_copy.append(-1)
@@ -73,7 +73,7 @@ class TranslationResultBuilder:
                     self._phrases[pi].target_cut += 1
                 j += 1
             elif word_op == EditOperation.DELETE:
-                self._words.pop(j)
+                self._target_tokens.pop(j)
                 self._sources.pop(j)
                 self._confidences.pop(j)
                 i += 1
@@ -94,9 +94,9 @@ class TranslationResultBuilder:
                         k += 1
             elif word_op in {EditOperation.HIT, EditOperation.SUBSTITUTE}:
                 if word_op == EditOperation.SUBSTITUTE or j < len(prefix) - 1 or is_last_word_complete:
-                    self._words[j] = prefix[i]
+                    self._target_tokens[j] = prefix[i]
                 else:
-                    self._words[j] = self._correct_word(char_ops, self._words[j], prefix[i])
+                    self._target_tokens[j] = self._correct_word(char_ops, self._target_tokens[j], prefix[i])
 
                 if word_op == EditOperation.SUBSTITUTE:
                     self._confidences[j] = -1
@@ -114,7 +114,7 @@ class TranslationResultBuilder:
                     i = 0
                     k += 1
 
-        while j < len(self._words):
+        while j < len(self._target_tokens):
             alignment_cols_to_copy.append(i)
 
             i += 1
@@ -126,9 +126,9 @@ class TranslationResultBuilder:
 
         return len(alignment_cols_to_copy)
 
-    def to_result(self, source_segment_length: int) -> TranslationResult:
-        sources = [TranslationSources.NONE] * len(self._words)
-        alignment = WordAlignmentMatrix.from_word_pairs(source_segment_length, len(self._words))
+    def to_result(self, translation: str, source_tokens: Sequence[str]) -> TranslationResult:
+        sources = [TranslationSources.NONE] * len(self._target_tokens)
+        alignment = WordAlignmentMatrix.from_word_pairs(len(source_tokens), len(self._target_tokens))
         phrases: List[Phrase] = []
         trg_phrase_start_index = 0
         for phrase_info in self._phrases:
@@ -147,7 +147,9 @@ class TranslationResultBuilder:
             phrases.append(Phrase(phrase_info.source_segment_range, phrase_info.target_cut, confidence))
             trg_phrase_start_index = phrase_info.target_cut
 
-        return TranslationResult(source_segment_length, self._words, self._confidences, sources, alignment, phrases)
+        return TranslationResult(
+            translation, source_tokens, self._target_tokens, self._confidences, sources, alignment, phrases
+        )
 
     def _resize_alignment(self, phrase_index: int, cols_to_copy: List[int]) -> None:
         cur_alignment = self._phrases[phrase_index].alignment

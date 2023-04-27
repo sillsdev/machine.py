@@ -9,7 +9,7 @@ from ..evaluation import compute_bleu
 from ..trainer import TrainStats
 from .parameter_tuner import ParameterTuner
 from .thot_smt_parameters import ThotSmtParameters
-from .thot_utils import escape_tokens, load_smt_decoder, load_smt_model
+from .thot_utils import load_smt_decoder, load_smt_model, to_sentence, to_target_tokens
 from .thot_word_alignment_model_type import ThotWordAlignmentModelType
 
 
@@ -83,8 +83,8 @@ class SimplexModelWeightTuner(ParameterTuner):
         try:
             model = load_smt_model(self._word_alignment_model_type, parameters)
             decoder = load_smt_decoder(model, parameters)
-            translations = decoder.translate_batch([" ".join(escape_tokens(s)) for s in source_corpus])
-            return [t.target for t in translations]
+            translations = decoder.translate_batch([to_sentence(s) for s in source_corpus])
+            return [to_target_tokens(t.target) for t in translations]
         finally:
             if decoder is not None:
                 decoder.clear()

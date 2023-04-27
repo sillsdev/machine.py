@@ -97,7 +97,7 @@ def _translate_batch(
 ) -> None:
     source_segments = [list(source_tokenizer.tokenize(pi["segment"])) for pi in batch]
     for i, result in enumerate(engine.translate_batch(source_segments)):
-        batch[i]["segment"] = target_detokenizer.detokenize(result.target_segment)
+        batch[i]["segment"] = target_detokenizer.detokenize(result.target_tokens)
         writer.write(batch[i])
 
 

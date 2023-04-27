@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import abstractmethod
 from itertools import islice
 from typing import (
     TYPE_CHECKING,
@@ -84,6 +85,16 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
             ref_factory,
         )
 
+    @property
+    @abstractmethod
+    def is_source_tokenized(self) -> bool:
+        ...
+
+    @property
+    @abstractmethod
+    def is_target_tokenized(self) -> bool:
+        ...
+
     def invert(self) -> ParallelTextCorpus:
         def _invert(row: ParallelTextRow) -> ParallelTextRow:
             return row.invert()
@@ -91,66 +102,90 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
         return self.transform(_invert)
 
     def tokenize(
-        self, source_tokenizer: Tokenizer[str, int, str], target_tokenizer: Optional[Tokenizer[str, int, str]] = None
+        self,
+        source_tokenizer: Tokenizer[str, int, str],
+        target_tokenizer: Optional[Tokenizer[str, int, str]] = None,
+        force: bool = False,
     ) -> ParallelTextCorpus:
+        if not force and self.is_source_tokenized and self.is_target_tokenized:
+            return self
+
         if target_tokenizer is None:
             target_tokenizer = source_tokenizer
 
         def _tokenize(row: ParallelTextRow) -> ParallelTextRow:
-            if len(row.source_segment) > 0:
+            if (force or not self.is_source_tokenized) and len(row.source_segment) > 0:
                 row.source_segment = list(source_tokenizer.tokenize(row.source_text))
-            if len(row.target_segment) > 0:
+            if (force or not self.is_target_tokenized) and len(row.target_segment) > 0:
                 row.target_segment = list(target_tokenizer.tokenize(row.target_text))
             return row
 
-        return self.transform(_tokenize)
+        return self.transform(_tokenize, is_source_tokenized=True, is_target_tokenized=True)
 
-    def tokenize_source(self, tokenizer: Tokenizer[str, int, str]) -> ParallelTextCorpus:
+    def tokenize_source(self, tokenizer: Tokenizer[str, int, str], force: bool = False) -> ParallelTextCorpus:
+        if not force and self.is_source_tokenized:
+            return self
+
         def _tokenize(row: ParallelTextRow) -> ParallelTextRow:
             if len(row.source_segment) > 0:
                 row.source_segment = list(tokenizer.tokenize(row.source_text))
             return row
 
-        return self.transform(_tokenize)
+        return self.transform(_tokenize, is_source_tokenized=True)
 
-    def tokenize_target(self, tokenizer: Tokenizer[str, int, str]) -> ParallelTextCorpus:
+    def tokenize_target(self, tokenizer: Tokenizer[str, int, str], force: bool = False) -> ParallelTextCorpus:
+        if not force and self.is_target_tokenized:
+            return self
+
         def _tokenize(row: ParallelTextRow) -> ParallelTextRow:
             if len(row.target_segment) > 0:
                 row.target_segment = list(tokenizer.tokenize(row.target_text))
             return row
 
-        return self.transform(_tokenize)
+        return self.transform(_tokenize, is_target_tokenized=True)
 
     def detokenize(
-        self, source_detokenizer: Detokenizer[str, str], target_detokenizer: Optional[Detokenizer[str, str]] = None
+        self,
+        source_detokenizer: Detokenizer[str, str],
+        target_detokenizer: Optional[Detokenizer[str, str]] = None,
+        force: bool = False,
     ) -> ParallelTextCorpus:
+        if not force and not self.is_source_tokenized and not self.is_target_tokenized:
+            return self
+
         if target_detokenizer is None:
             target_detokenizer = source_detokenizer
 
         def _detokenize(row: ParallelTextRow) -> ParallelTextRow:
-            if len(row.source_segment) > 1:
+            if (force or self.is_source_tokenized) and len(row.source_segment) > 1:
                 row.source_segment = [source_detokenizer.detokenize(row.source_segment)]
-            if len(row.target_segment) > 1:
+            if (force or self.is_target_tokenized) and len(row.target_segment) > 1:
                 row.target_segment = [target_detokenizer.detokenize(row.target_segment)]
             return row
 
-        return self.transform(_detokenize)
+        return self.transform(_detokenize, is_source_tokenized=False, is_target_tokenized=False)
 
-    def detokenize_source(self, detokenizer: Detokenizer[str, str]) -> ParallelTextCorpus:
+    def detokenize_source(self, detokenizer: Detokenizer[str, str], force: bool = False) -> ParallelTextCorpus:
+        if not force and not self.is_source_tokenized:
+            return self
+
         def _detokenize(row: ParallelTextRow) -> ParallelTextRow:
             if len(row.source_segment) > 1:
                 row.source_segment = [detokenizer.detokenize(row.source_segment)]
             return row
 
-        return self.transform(_detokenize)
+        return self.transform(_detokenize, is_source_tokenized=False)
 
-    def detokenize_target(self, detokenizer: Detokenizer[str, str]) -> ParallelTextCorpus:
+    def detokenize_target(self, detokenizer: Detokenizer[str, str], force: bool = False) -> ParallelTextCorpus:
+        if not force and not self.is_target_tokenized:
+            return self
+
         def _detokenize(row: ParallelTextRow) -> ParallelTextRow:
             if len(row.target_segment) > 1:
                 row.target_segment = [detokenizer.detokenize(row.target_segment)]
             return row
 
-        return self.transform(_detokenize)
+        return self.transform(_detokenize, is_target_tokenized=False)
 
     def normalize(self, normalization_form: str) -> ParallelTextCorpus:
         def _normalize(row: ParallelTextRow) -> ParallelTextRow:
@@ -248,8 +283,13 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
         return self.transform(_unescape_spaces)
 
-    def transform(self, transform: Callable[[ParallelTextRow], ParallelTextRow]) -> ParallelTextCorpus:
-        return _TransformParallelTextCorpus(self, transform)
+    def transform(
+        self,
+        transform: Callable[[ParallelTextRow], ParallelTextRow],
+        is_source_tokenized: Optional[bool] = None,
+        is_target_tokenized: Optional[bool] = None,
+    ) -> ParallelTextCorpus:
+        return _TransformParallelTextCorpus(self, transform, is_source_tokenized, is_target_tokenized)
 
     def filter_nonempty(self) -> ParallelTextCorpus:
         return self.filter(lambda r: not r.is_empty)
@@ -396,9 +436,25 @@ def flatten_parallel_text_corpora(corpora: Iterable[ParallelTextCorpus]) -> Para
 
 
 class _TransformParallelTextCorpus(ParallelTextCorpus):
-    def __init__(self, corpus: ParallelTextCorpus, transform: Callable[[ParallelTextRow], ParallelTextRow]):
+    def __init__(
+        self,
+        corpus: ParallelTextCorpus,
+        transform: Callable[[ParallelTextRow], ParallelTextRow],
+        is_source_tokenized: Optional[bool],
+        is_target_tokenized: Optional[bool],
+    ):
         self._corpus = corpus
         self._transform = transform
+        self._is_source_tokenized = corpus.is_source_tokenized if is_source_tokenized is None else is_source_tokenized
+        self._is_target_tokenized = corpus.is_target_tokenized if is_target_tokenized is None else is_target_tokenized
+
+    @property
+    def is_source_tokenized(self) -> bool:
+        return self._is_source_tokenized
+
+    @property
+    def is_target_tokenized(self) -> bool:
+        return self._is_target_tokenized
 
     @property
     def missing_rows_allowed(self) -> bool:
@@ -417,6 +473,14 @@ class _FilterParallelTextCorpus(ParallelTextCorpus):
         self._corpus = corpus
         self._predicate = predicate
 
+    @property
+    def is_source_tokenized(self) -> bool:
+        return self._corpus.is_source_tokenized
+
+    @property
+    def is_target_tokenized(self) -> bool:
+        return self._corpus.is_target_tokenized
+
     def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
         with self._corpus.get_rows() as rows:
             yield from (row for i, row in enumerate(rows) if self._predicate(row, i))
@@ -427,6 +491,14 @@ class _TakeParallelTextCorpus(ParallelTextCorpus):
         self._corpus = corpus
         self._count = count
 
+    @property
+    def is_source_tokenized(self) -> bool:
+        return self._corpus.is_source_tokenized
+
+    @property
+    def is_target_tokenized(self) -> bool:
+        return self._corpus.is_target_tokenized
+
     def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
         with self._corpus.get_rows() as rows:
             yield from islice(rows, self._count)
@@ -435,6 +507,14 @@ class _TakeParallelTextCorpus(ParallelTextCorpus):
 class _FlattenParallelTextCorpus(ParallelTextCorpus):
     def __init__(self, corpora: List[ParallelTextCorpus]) -> None:
         self._corpora = corpora
+
+    @property
+    def is_source_tokenized(self) -> bool:
+        return all(c.is_source_tokenized for c in self._corpora)
+
+    @property
+    def is_target_tokenized(self) -> bool:
+        return all(c.is_target_tokenized for c in self._corpora)
 
     @property
     def missing_rows_allowed(self) -> bool:
@@ -469,6 +549,14 @@ class _PandasParallelTextCorpus(ParallelTextCorpus):
         self._alignment_column = alignment_column
         self._default_text_id = default_text_id
         self._ref_factory = ref_factory
+
+    @property
+    def is_source_tokenized(self) -> bool:
+        return False
+
+    @property
+    def is_target_tokenized(self) -> bool:
+        return False
 
     @property
     def missing_rows_allowed(self) -> bool:
@@ -526,6 +614,14 @@ class _DatasetParallelTextCorpus(ParallelTextCorpus):
         self._alignment_column = alignment_column
         self._default_text_id = default_text_id
         self._ref_factory = ref_factory
+
+    @property
+    def is_source_tokenized(self) -> bool:
+        return False
+
+    @property
+    def is_target_tokenized(self) -> bool:
+        return False
 
     @property
     def missing_rows_allowed(self) -> bool:

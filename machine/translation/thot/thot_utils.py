@@ -83,3 +83,11 @@ def unescape_token(token: str) -> str:
 
 def unescape_tokens(segment: Iterable[str]) -> Iterable[str]:
     return (unescape_token(t) for t in segment)
+
+
+def to_sentence(tokens: Iterable[str]) -> str:
+    return " ".join(escape_tokens(tokens))
+
+
+def to_target_tokens(target: Iterable[str]) -> Sequence[str]:
+    return list(unescape_tokens(target))

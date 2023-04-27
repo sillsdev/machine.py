@@ -34,6 +34,14 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
         self._all_target_rows = all_target_rows
 
     @property
+    def is_source_tokenized(self) -> bool:
+        return self.source_corpus.is_tokenized
+
+    @property
+    def is_target_tokenized(self) -> bool:
+        return self.target_corpus.is_tokenized
+
+    @property
     def source_corpus(self) -> TextCorpus:
         return self._source_corpus
 

@@ -1,5 +1,5 @@
 from itertools import repeat
-from typing import Iterable, List, Optional, Sequence
+from typing import Iterable, Optional, Sequence
 
 from ..annotations import Range
 from .translation_sources import TranslationSources
@@ -15,8 +15,8 @@ class WordGraphArc:
         words: Iterable[str],
         alignment: WordAlignmentMatrix,
         source_segment_range: Range[int],
-        word_sources: Iterable[TranslationSources],
-        word_confidences: Optional[Iterable[float]] = None,
+        sources: Iterable[TranslationSources],
+        confidences: Optional[Iterable[float]] = None,
     ) -> None:
         self._prev_state = prev_state
         self._next_state = next_state
@@ -24,10 +24,10 @@ class WordGraphArc:
         self._words = list(words)
         self._alignment = alignment
         self._source_segment_range = source_segment_range
-        self._word_sources = list(word_sources)
-        if word_confidences is None:
-            word_confidences = repeat(-1, len(self._words))
-        self._word_confidences = list(word_confidences)
+        self._sources = list(sources)
+        if confidences is None:
+            confidences = repeat(-1, len(self._words))
+        self._confidences = list(confidences)
 
     @property
     def prev_state(self) -> int:
@@ -54,13 +54,13 @@ class WordGraphArc:
         return self._source_segment_range
 
     @property
-    def word_sources(self) -> Sequence[TranslationSources]:
-        return self._word_sources
+    def sources(self) -> Sequence[TranslationSources]:
+        return self._sources
 
     @property
-    def word_confidences(self) -> List[float]:
-        return self._word_confidences
+    def confidences(self) -> Sequence[float]:
+        return self._confidences
 
     @property
     def is_unknown(self) -> bool:
-        return all(s == TranslationSources.NONE for s in self._word_sources)
+        return all(s == TranslationSources.NONE for s in self._sources)

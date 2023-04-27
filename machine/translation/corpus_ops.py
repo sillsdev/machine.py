@@ -71,5 +71,5 @@ class _TranslateParallelTextCorpus(ParallelTextCorpus):
             for batch in batches:
                 translations = self._translation_engine.translate_batch([r.source_segment for r in batch])
                 for row, translation in zip(batch, translations):
-                    row.target_segment = translation.target_segment
+                    row.target_segment = translation.target_tokens
                     yield row

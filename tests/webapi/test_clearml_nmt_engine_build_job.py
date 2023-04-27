@@ -68,10 +68,11 @@ class _TestEnvironment:
         when(self.model).translate_batch(ANY).thenReturn(
             [
                 TranslationResult(
-                    source_segment_length=8,
-                    target_segment="Please , I have booked a room .".split(),
-                    word_confidences=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
-                    word_sources=[
+                    translation="Please , I have booked a room .",
+                    source_tokens="Por favor , tengo reservada una habitación .".split(),
+                    target_tokens="Please , I have booked a room .".split(),
+                    confidences=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+                    sources=[
                         TranslationSources.NMT,
                         TranslationSources.NMT,
                         TranslationSources.NMT,

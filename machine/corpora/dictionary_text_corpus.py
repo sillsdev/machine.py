@@ -22,10 +22,19 @@ class DictionaryTextCorpus(TextCorpus):
         else:
             texts = args[0]
         self._texts = {t.id: t for t in texts}
+        self._is_tokenized = False
 
     @property
     def texts(self) -> Iterable[Text]:
         return sorted(self._texts.values(), key=lambda t: t.sort_key)
+
+    @property
+    def is_tokenized(self) -> bool:
+        return self._is_tokenized
+
+    @is_tokenized.setter
+    def is_tokenized(self, value: bool) -> None:
+        self._is_tokenized = value
 
     def __getitem__(self, id: str) -> Optional[Text]:
         return self._texts.get(id)

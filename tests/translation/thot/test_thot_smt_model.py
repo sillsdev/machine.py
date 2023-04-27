@@ -5,32 +5,32 @@ from machine.translation.thot import ThotSmtModel, ThotWordAlignmentModelType
 
 def test_translate_target_segment_hmm() -> None:
     with _create_hmm_model() as smt_model:
-        result = smt_model.translate("voy a marcharme hoy por la tarde .".split())
-        assert result.target_segment == "i am leaving today in the afternoon .".split()
+        result = smt_model.translate("voy a marcharme hoy por la tarde .")
+        assert result.translation == "i am leaving today in the afternoon ."
 
 
 def test_translate_n_less_than_n_hmm() -> None:
     with _create_hmm_model() as smt_model:
-        results = smt_model.translate_n(3, "voy a marcharme hoy por la tarde .".split())
-        assert [r.target_segment for r in results] == ["i am leaving today in the afternoon .".split()]
+        results = smt_model.translate_n(3, "voy a marcharme hoy por la tarde .")
+        assert [r.translation for r in results] == ["i am leaving today in the afternoon ."]
 
 
 def test_translate_n_hmm() -> None:
     with _create_hmm_model() as smt_model:
-        results = smt_model.translate_n(2, "hablé hasta cinco en punto .".split())
-        assert [r.target_segment for r in results] == [
-            "hablé until five o ' clock .".split(),
-            "hablé until five o ' clock for".split(),
+        results = smt_model.translate_n(2, "hablé hasta cinco en punto .")
+        assert [r.translation for r in results] == [
+            "hablé until five o ' clock .",
+            "hablé until five o ' clock for",
         ]
 
 
 def test_train_segment_hmm() -> None:
     with _create_hmm_model() as smt_model:
-        result = smt_model.translate("esto es una prueba .".split())
-        assert result.target_segment == "esto is a prueba .".split()
-        smt_model.train_segment("esto es una prueba .".split(), "this is a test .".split())
-        result = smt_model.translate("esto es una prueba .".split())
-        assert result.target_segment == "this is a test .".split()
+        result = smt_model.translate("esto es una prueba .")
+        assert result.translation == "esto is a prueba ."
+        smt_model.train_segment("esto es una prueba .", "this is a test .")
+        result = smt_model.translate("esto es una prueba .")
+        assert result.translation == "this is a test ."
 
 
 def test_get_word_graph_empty_segment_hmm() -> None:
@@ -49,8 +49,8 @@ def test_translate_batch_hmm() -> None:
     ]
 
     with _create_hmm_model() as smt_model:
-        results = smt_model.translate_batch([s.split() for s in batch])
-        assert [" ".join(r.target_segment) for r in results] == [
+        results = smt_model.translate_batch(batch)
+        assert [r.translation for r in results] == [
             "please i would like to book a room until tomorrow .",
             "please wake us up tomorrow at a quarter past seven .",
             "i am leaving today in the afternoon .",
@@ -61,32 +61,32 @@ def test_translate_batch_hmm() -> None:
 
 def test_translate_fast_align() -> None:
     with _create_fast_align_model() as smt_model:
-        result = smt_model.translate("voy a marcharme hoy por la tarde .".split())
-        assert result.target_segment == "i am leaving today in the afternoon .".split()
+        result = smt_model.translate("voy a marcharme hoy por la tarde .")
+        assert result.translation == "i am leaving today in the afternoon ."
 
 
 def test_translate_n_less_than_n_fast_align() -> None:
     with _create_fast_align_model() as smt_model:
-        results = smt_model.translate_n(3, "voy a marcharme hoy por la tarde .".split())
-        assert [r.target_segment for r in results] == ["i am leaving today in the afternoon .".split()]
+        results = smt_model.translate_n(3, "voy a marcharme hoy por la tarde .")
+        assert [r.translation for r in results] == ["i am leaving today in the afternoon ."]
 
 
 def test_translate_n_fast_align() -> None:
     with _create_fast_align_model() as smt_model:
-        results = smt_model.translate_n(2, "hablé hasta cinco en punto .".split())
-        assert [r.target_segment for r in results] == [
-            "hablé until five o ' clock .".split(),
-            "hablé until five o ' clock , please .".split(),
+        results = smt_model.translate_n(2, "hablé hasta cinco en punto .")
+        assert [r.translation for r in results] == [
+            "hablé until five o ' clock .",
+            "hablé until five o ' clock , please .",
         ]
 
 
 def test_train_segment_fast_align() -> None:
     with _create_fast_align_model() as smt_model:
-        result = smt_model.translate("esto es una prueba .".split())
-        assert result.target_segment == "esto is a prueba .".split()
-        smt_model.train_segment("esto es una prueba .".split(), "this is a test .".split())
-        result = smt_model.translate("esto es una prueba .".split())
-        assert result.target_segment == "this is a test .".split()
+        result = smt_model.translate("esto es una prueba .")
+        assert result.translation == "esto is a prueba ."
+        smt_model.train_segment("esto es una prueba .", "this is a test .")
+        result = smt_model.translate("esto es una prueba .")
+        assert result.translation == "this is a test ."
 
 
 def test_get_word_graph_empty_segment_fast_align() -> None:

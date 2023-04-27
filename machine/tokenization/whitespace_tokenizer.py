@@ -22,3 +22,6 @@ class WhitespaceTokenizer(StringTokenizer):
 
     def _is_whitespace(self, c: str) -> bool:
         return c.isspace() or c == "\u200b" or c == "\ufeff"
+
+
+WHITESPACE_TOKENIZER = WhitespaceTokenizer()

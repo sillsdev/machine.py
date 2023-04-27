@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import heapq
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, cast
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 import numpy as np
 import tensorflow as tf
@@ -13,6 +13,10 @@ from opennmt.utils.misc import extract_batches, item_or_tuple
 
 from ...annotations.range import Range
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
+from ...tokenization.detokenizer import Detokenizer
+from ...tokenization.tokenizer import Tokenizer
+from ...tokenization.whitespace_detokenizer import WHITESPACE_DETOKENIZER
+from ...tokenization.whitespace_tokenizer import WHITESPACE_TOKENIZER
 from ..translation_model import TranslationModel
 from ..translation_result import TranslationResult
 from ..translation_result_builder import TranslationResultBuilder
@@ -29,9 +33,15 @@ class OpenNmtModel(TranslationModel):
         config: dict,
         parent_config: Optional[dict] = None,
         mixed_precision: bool = False,
+        source_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
+        target_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
+        target_detokenizer: Detokenizer[str, str] = WHITESPACE_DETOKENIZER,
     ):
         self._config = config
         self._parent_config = parent_config
+        self.source_tokenizer = source_tokenizer
+        self.target_tokenizer = target_tokenizer
+        self.target_detokenizer = target_detokenizer
         self._runner = OpenNmtRunner(model_type, config, mixed_precision, prefix_corpus_paths=True)
         self._finalized_config: Optional[dict] = None
         self._checkpoint_model: Optional[Model] = None
@@ -61,16 +71,18 @@ class OpenNmtModel(TranslationModel):
     def runner(self) -> OpenNmtRunner:
         return self._runner
 
-    def translate(self, segment: Sequence[str]) -> TranslationResult:
+    def translate(self, segment: Union[str, Sequence[str]]) -> TranslationResult:
         return self.translate_batch([segment])[0]
 
-    def translate_n(self, n: int, segment: Sequence[str]) -> Sequence[TranslationResult]:
+    def translate_n(self, n: int, segment: Union[str, Sequence[str]]) -> Sequence[TranslationResult]:
         return self.translate_n_batch(n, [segment])[0]
 
-    def translate_batch(self, segments: Sequence[Sequence[str]]) -> Sequence[TranslationResult]:
+    def translate_batch(self, segments: Sequence[Union[str, Sequence[str]]]) -> Sequence[TranslationResult]:
         return [results[0] for results in self.translate_n_batch(1, segments)]
 
-    def translate_n_batch(self, n: int, segments: Sequence[Sequence[str]]) -> Sequence[Sequence[TranslationResult]]:
+    def translate_n_batch(
+        self, n: int, segments: Sequence[Union[str, Sequence[str]]]
+    ) -> Sequence[Sequence[TranslationResult]]:
         finalized_config, checkpoint_model = self._get_checkpoint()
         features_inputter = cast(TextInputter, checkpoint_model.features_inputter)
         assert features_inputter.tokenizer is not None
@@ -78,7 +90,10 @@ class OpenNmtModel(TranslationModel):
         assert labels_inputter.tokenizer is not None
 
         infer_config = finalized_config["infer"]
-        features = (" ".join(segment) for segment in segments)
+        features = (
+            " ".join(self.source_tokenizer.tokenize(segment) if isinstance(segment, str) else segment)
+            for segment in segments
+        )
         dataset = self._make_inference_dataset(
             features_inputter,
             [features],
@@ -101,12 +116,10 @@ class OpenNmtModel(TranslationModel):
             predictions = self._infer_fn(source)
             predictions["src_tokens"] = source["tokens"]
             predictions["src_length"] = source["length"]
+            source_tokens = cast(str, features_inputter.tokenizer.detokenize(source["tokens"])).split()
             predictions = tf.nest.map_structure(lambda t: t.numpy(), predictions)
             for prediction in extract_batches(predictions):
                 index: int = prediction["index"]
-
-                src_length = prediction["src_length"]
-
                 num_hypotheses = min(n or 1, len(prediction["log_probs"]))
                 hypotheses: List[TranslationResult] = []
                 for i in range(num_hypotheses):
@@ -121,14 +134,16 @@ class OpenNmtModel(TranslationModel):
                     confidences = np.max(alignment, axis=-1)
                     trg_indices = range(trg_length)
                     wa_matrix = WordAlignmentMatrix.from_word_pairs(
-                        src_length, trg_length, set(zip(src_indices, trg_indices))
+                        len(source_tokens), trg_length, set(zip(src_indices, trg_indices))
                     )
 
-                    for token, confidence in zip(trg_segment.split(" "), confidences):
-                        builder.append_word(token, TranslationSources.NMT, confidence)
+                    for token, confidence in zip(trg_segment.split(), confidences):
+                        builder.append_token(token, TranslationSources.NMT, confidence)
 
-                    builder.mark_phrase(Range.create(0, src_length), wa_matrix)
-                    hypotheses.append(builder.to_result(src_length))
+                    builder.mark_phrase(Range.create(0, len(source_tokens)), wa_matrix)
+                    hypotheses.append(
+                        builder.to_result(self.target_detokenizer.detokenize(builder.target_tokens), source_tokens)
+                    )
 
                 queued_results[index] = hypotheses
                 heapq.heappush(heap, index)
@@ -139,7 +154,10 @@ class OpenNmtModel(TranslationModel):
         return results
 
     def create_trainer(self, corpus: Optional[ParallelTextCorpus] = None) -> OpenNmtModelTrainer:
-        return _Trainer(self, corpus)
+        trainer = _Trainer(self, corpus)
+        trainer.source_tokenizer = self.source_tokenizer
+        trainer.target_tokenizer = self.target_tokenizer
+        return trainer
 
     def reset_checkpoint(self) -> None:
         self._finalized_config = None
