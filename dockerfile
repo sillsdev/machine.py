@@ -1,7 +1,7 @@
 #compatability with Tensorflow 2.6.0 as per https://www.tensorflow.org/install/source#gpu
 ARG PYTHON_VERSION=3.8
 ARG UBUNTU_VERSION=focal
-ARG POETRY_VERSION=1.2.0
+ARG POETRY_VERSION=1.4.2
 ARG CUDA_VERSION=11.2.2-cudnn8-runtime-ubuntu20.04
 
 FROM python:$PYTHON_VERSION-slim as builder
