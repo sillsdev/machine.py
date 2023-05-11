@@ -32,7 +32,7 @@ def test_run() -> None:
     verify(env.model, times=1).translate_batch(...)
     pretranslations = json.loads(env.target_pretranslations)
     assert len(pretranslations) == 1
-    assert pretranslations[0]["segment"] == "Please, I have booked a room."
+    assert pretranslations[0]["translation"] == "Please, I have booked a room."
 
 
 def test_cancel() -> None:
@@ -112,7 +112,7 @@ class _TestEnvironment:
                             corpusId="corpus1",
                             textId="text1",
                             refs=["ref1"],
-                            segment="Por favor , tengo reservada una habitación .",
+                            translation="Por favor , tengo reservada una habitación .",
                         )
                     ]
                 )

@@ -2,5 +2,6 @@ default:
   model: TransformerBase
   mixed_precision: true
   data_dir: ~/machine
+  save_model: true
 development:
   shared_file_uri: s3://aqua-ml-data/
