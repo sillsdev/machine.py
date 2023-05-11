@@ -21,7 +21,7 @@ class PretranslationInfo(TypedDict):
     corpusId: str
     textId: str
     refs: List[str]
-    segment: str
+    translation: str
 
 
 class PretranslationWriter:
@@ -53,7 +53,7 @@ class SharedFileService:
             with src_pretranslate_path.open("r", encoding="utf-8-sig") as file:
                 for pi in json_stream.load(file):
                     yield PretranslationInfo(
-                        corpusId=pi["corpusId"], textId=pi["textId"], refs=list(pi["refs"]), segment=pi["segment"]
+                        corpusId=pi["corpusId"], textId=pi["textId"], refs=list(pi["refs"]), translation=pi["translation"]
                     )
 
         return ContextManagedGenerator(generator())

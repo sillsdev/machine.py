@@ -83,8 +83,11 @@ class ClearMLNmtEngineBuildJob:
                     check_canceled()
                 _translate_batch(model, pi_batch, source_tokenizer, target_detokenizer, writer)
 
-        print("Saving NMT model")
-        self._nmt_model_factory.save_model()
+        if(self._config.save_model):
+            print("Saving NMT model")
+            self._nmt_model_factory.save_model()
+        else:
+            print("Model saving skipped")
         print("Finished")
 
 
@@ -95,9 +98,9 @@ def _translate_batch(
     target_detokenizer: Detokenizer[str, str],
     writer: PretranslationWriter,
 ) -> None:
-    source_segments = [list(source_tokenizer.tokenize(pi["segment"])) for pi in batch]
+    source_segments = [list(source_tokenizer.tokenize(pi["translation"])) for pi in batch]
     for i, result in enumerate(engine.translate_batch(source_segments)):
-        batch[i]["segment"] = target_detokenizer.detokenize(result.target_tokens)
+        batch[i]["translation"] = target_detokenizer.detokenize(result.target_tokens)
         writer.write(batch[i])
 
 
