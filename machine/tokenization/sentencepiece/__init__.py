@@ -1,10 +1,7 @@
-try:
-    import sentencepiece  # noqa: F401
-except ImportError:
-    raise RuntimeError(
-        'sil-machine must be installed with the "sentencepiece" extra in order to use the '
-        + "machine.tokenization.sentencepiece package."
-    )
+from ...utils.packages import is_sentencepiece_available
+
+if not is_sentencepiece_available():
+    raise RuntimeError('sentencepiece is not installed. Install sil-machine with the "sentencepiece" extra.')
 
 from .sentence_piece_detokenizer import SentencePieceDetokenizer
 from .sentence_piece_tokenizer import SentencePieceTokenizer

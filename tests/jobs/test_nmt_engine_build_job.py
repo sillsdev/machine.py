@@ -8,10 +8,7 @@ from mockito import ANY, mock, verify, when
 
 from machine.annotations import Range
 from machine.corpora import DictionaryTextCorpus
-from machine.jobs.clearml_nmt_engine_build_job import ClearMLNmtEngineBuildJob
-from machine.jobs.config import SETTINGS
-from machine.jobs.nmt_model_factory import NmtModelFactory
-from machine.jobs.shared_file_service import PretranslationInfo, PretranslationWriter, SharedFileService
+from machine.jobs import NmtEngineBuildJob, NmtModelFactory, PretranslationInfo, PretranslationWriter, SharedFileService
 from machine.translation import (
     Phrase,
     Trainer,
@@ -46,7 +43,6 @@ def test_cancel() -> None:
 class _TestEnvironment:
     def __init__(self) -> None:
         config = {"src_lang": "es", "trg_lang": "en"}
-        SETTINGS.update(config)
         self.source_tokenizer_trainer = _mock(Trainer)
         when(self.source_tokenizer_trainer).train(check_canceled=ANY).thenReturn()
         when(self.source_tokenizer_trainer).save().thenReturn()
@@ -84,7 +80,7 @@ class _TestEnvironment:
                     alignment=WordAlignmentMatrix.from_word_pairs(
                         8, 8, {(0, 0), (1, 0), (2, 1), (3, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7)}
                     ),
-                    phrases=[Phrase(Range.create(0, 8), 8, 0.5)],
+                    phrases=[Phrase(Range.create(0, 8), 8)],
                 )
             ]
         )
@@ -108,7 +104,7 @@ class _TestEnvironment:
                             corpusId="corpus1",
                             textId="text1",
                             refs=["ref1"],
-                            segment="Por favor, tengo reservada una habitación.",
+                            translation="Por favor, tengo reservada una habitación.",
                         )
                     ]
                 )
@@ -129,7 +125,7 @@ class _TestEnvironment:
             open_target_pretranslation_writer(self)
         )
 
-        self.job = ClearMLNmtEngineBuildJob(SETTINGS, self.nmt_model_factory, self.shared_file_service)
+        self.job = NmtEngineBuildJob(config, self.nmt_model_factory, self.shared_file_service)
 
 
 T = TypeVar("T")

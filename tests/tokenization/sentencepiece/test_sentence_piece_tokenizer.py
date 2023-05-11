@@ -21,7 +21,7 @@ def model_filename() -> Iterable[Path]:
 def test_tokenize(model_filename: Path) -> None:
     tokenizer = SentencePieceTokenizer(model_filename)
     tokens = list(tokenizer.tokenize("Other travelling salesmen live a life of luxury."))
-    assert len(tokens) == 30
+    assert len(tokens) == 29
 
 
 def test_tokenize_empty(model_filename: Path) -> None:

@@ -1,16 +1,43 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Python: Current File",
-            "type": "python",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "justMyCode": true
-        }
-    ]
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "build_nmt_engine",
+      "type": "python",
+      "request": "launch",
+      "module": "machine.jobs.build_nmt_engine",
+      "justMyCode": false,
+      "args": [
+        "--model-type",
+        "huggingface",
+        "--build-id",
+        "build1",
+        "--engine-id",
+        "engine1",
+        "--src-lang",
+        "spa_Latn",
+        "--trg-lang",
+        "eng_Latn",
+        "--max-steps",
+        "1000"
+      ]
+    },
+    {
+      "name": "Debug Unit Test",
+      "type": "python",
+      "request": "test",
+      "justMyCode": false
+    }
+  ]
 }

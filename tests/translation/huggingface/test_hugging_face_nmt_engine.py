@@ -1,40 +1,38 @@
+import sys
+
+if sys.platform == "darwin":
+    from pytest import skip
+
+    skip("skipping Hugging Face tests on MacOS", allow_module_level=True)
+
+from pytest import approx
+
 from machine.translation.huggingface import HuggingFaceNmtEngine
 
 
-def test_strings() -> None:
-    engine = HuggingFaceNmtEngine("franjamonga/translate", batch_size=8, device=0)
+def test_translate_n_batch_beam() -> None:
+    engine = HuggingFaceNmtEngine("stas/tiny-m2m_100", src_lang="en", tgt_lang="es", num_beams=2, max_length=10)
     results = engine.translate_n_batch(
         n=2,
-        segments=[
-            "Me llamo Wolfgang y vivo en Berlin",
-            "Los ingredientes de una tortilla de patatas son: huevos, patatas y cebolla",
-        ],
+        segments=["This is a test string", "Hello, world!"],
     )
-    assert results[0][0].translation == "My name is Wolfgang and I live in Berlin"
+    assert results[0][0].translation == "skaberskaber Dollar Dollar ፤ ፤ gerekir gerekir"
+    assert results[0][0].confidences[0] == approx(1.08e-05, 0.01)
+    assert str(results[0][0].alignment) == "2-0 2-1 2-2 2-3 4-4 4-5 4-6 4-7"
+    assert results[0][1].translation == "skaberskaber Dollar Dollar ፤ ፤ ፤ gerekir"
+    assert results[0][1].confidences[0] == approx(1.08e-05, 0.01)
+    assert str(results[0][1].alignment) == "2-0 2-1 2-2 2-3 4-4 4-5 4-6 4-7"
+    assert results[1][0].translation == "skaberskaber Dollar Dollar ፤ ፤ gerekir gerekir"
+    assert results[1][0].confidences[0] == approx(1.08e-05, 0.01)
+    assert str(results[1][0].alignment) == "0-1 0-2 0-7 1-0 3-3 3-4 3-5 3-6"
+    assert results[1][1].translation == "skaberskaber Dollar Dollar ፤ ፤ ፤ gerekir"
+    assert results[1][1].confidences[0] == approx(1.08e-05, 0.01)
+    assert str(results[1][1].alignment) == "0-1 0-2 0-7 1-0 3-3 3-4 3-5 3-6"
 
 
-def test_tokens() -> None:
-    engine = HuggingFaceNmtEngine("franjamonga/translate", batch_size=8, device=0)
-    results = engine.translate_n_batch(
-        n=2,
-        segments=[
-            ["▁Me", "▁llamo", "▁Wolf", "gan", "g", "▁y", "▁vivo", "▁en", "▁Berlin"],
-            [
-                "▁Los",
-                "▁ingredientes",
-                "▁de",
-                "▁una",
-                "▁tortilla",
-                "▁de",
-                "▁patatas",
-                "▁son",
-                ":",
-                "▁huevos",
-                ",",
-                "▁patatas",
-                "▁y",
-                "▁cebolla",
-            ],
-        ],
-    )
-    assert results[0][0].translation == "My name is Wolfgang and I live in Berlin"
+def test_translate_greedy() -> None:
+    engine = HuggingFaceNmtEngine("stas/tiny-m2m_100", src_lang="en", tgt_lang="es", max_length=10)
+    result = engine.translate("This is a test string")
+    assert result.translation == "skaberskaber Dollar Dollar Dollar ፤ gerekir gerekir"
+    assert result.confidences[0] == approx(1.08e-05, 0.01)
+    assert str(result.alignment) == "2-0 2-1 2-2 2-3 4-4 4-5 4-6 4-7"

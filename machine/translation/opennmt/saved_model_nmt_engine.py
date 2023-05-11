@@ -68,9 +68,9 @@ class SavedModelNmtEngine(TranslationEngine):
         while i < n or i < output_count:
             output_length_i = int(output_lengths[0][i].numpy())
             output_tokens_i = output_tokens[0][i][:output_length_i]
-            builder = TranslationResultBuilder()
+            builder = TranslationResultBuilder(source_tokens, self.target_detokenizer)
             for word in output_tokens_i.numpy():
-                builder.append_token(word.decode("utf-8"), TranslationSources.NMT)
+                builder.append_token(word.decode("utf-8"), TranslationSources.NMT, -1)
 
             alignment = output_alignments[0][i]
             src_indices = tf.argmax(alignment[:output_length_i], axis=-1).numpy()
@@ -79,7 +79,7 @@ class SavedModelNmtEngine(TranslationEngine):
             )
             builder.mark_phrase(Range.create(0, len(segment)), wa_matrix)
 
-            yield builder.to_result(self.target_detokenizer.detokenize(builder.target_tokens), source_tokens)
+            yield builder.to_result()
             i += 1
 
     def translate_batch(self, segments: Sequence[Union[str, Sequence[str]]]) -> Sequence[TranslationResult]:

@@ -1,6 +1,20 @@
 default:
-  model_type: HuggingFace
   data_dir: ~/machine
-  parent_model_name: facebook/nllb-200-1.3B
+  huggingface:
+    parent_model_name: facebook/nllb-200-1.3B
+    device: 0
+    train_params:
+      do_train: true
+      optim: adamw_torch
+      warmup_steps: 4000
+      per_device_train_batch_size: 16
+      gradient_accumulation_steps: 4
+      label_smoothing_factor: 0.2
+      group_by_length: true
+      gradient_checkpointing: true
+      fp16: true
+      max_steps: 20000
 development:
   shared_file_uri: s3://aqua-ml-data/
+  huggingface:
+    parent_model_name: facebook/nllb-200-distilled-600M

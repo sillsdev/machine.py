@@ -7,7 +7,13 @@ from dynaconf.base import Settings
 CONFIG_DIR = Path(__file__).parent
 
 SETTINGS = cast(
-    Settings, Dynaconf(envvar_prefix="MACHINE", settings_files=[str(CONFIG_DIR / "settings.yaml")], environments=True)
+    Settings,
+    Dynaconf(
+        envvar_prefix="MACHINE",
+        settings_files=[str(CONFIG_DIR / "settings.yaml")],
+        environments=True,
+        merge_enabled=True,
+    ),
 )
 
 # `envvar_prefix` = export envvars with `export DYNACONF_FOO=bar`.

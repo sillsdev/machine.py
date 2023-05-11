@@ -1,8 +1,9 @@
-import sys
 from dataclasses import dataclass
-from typing import Iterable, List, Sequence
+from typing import Iterable, List, Optional, Sequence
 
 from ..annotations.range import Range
+from ..tokenization.detokenizer import Detokenizer
+from ..tokenization.whitespace_detokenizer import WHITESPACE_DETOKENIZER
 from .edit_operation import EditOperation
 from .phrase import Phrase
 from .translation_result import TranslationResult
@@ -18,11 +19,19 @@ class PhraseInfo:
 
 
 class TranslationResultBuilder:
-    def __init__(self) -> None:
+    def __init__(
+        self, source_tokens: Sequence[str], target_detokenizer: Detokenizer[str, str] = WHITESPACE_DETOKENIZER
+    ) -> None:
+        self._source_tokens = source_tokens
+        self.target_detokenizer = target_detokenizer
         self._target_tokens: List[str] = []
         self._confidences: List[float] = []
         self._sources: List[TranslationSources] = []
         self._phrases: List[PhraseInfo] = []
+
+    @property
+    def source_tokens(self) -> Sequence[str]:
+        return self._source_tokens
 
     @property
     def target_tokens(self) -> Sequence[str]:
@@ -40,7 +49,7 @@ class TranslationResultBuilder:
     def phrases(self) -> Sequence[PhraseInfo]:
         return self._phrases
 
-    def append_token(self, token: str, source: TranslationSources, confidence: float = -1) -> None:
+    def append_token(self, token: str, source: TranslationSources, confidence: float) -> None:
         self._target_tokens.append(token)
         self._sources.append(source)
         self._confidences.append(confidence)
@@ -126,13 +135,18 @@ class TranslationResultBuilder:
 
         return len(alignment_cols_to_copy)
 
-    def to_result(self, translation: str, source_tokens: Sequence[str]) -> TranslationResult:
+    def reset(self) -> None:
+        self._target_tokens.clear()
+        self._confidences.clear()
+        self._sources.clear()
+        self._phrases.clear()
+
+    def to_result(self, translation: Optional[str] = None) -> TranslationResult:
         sources = [TranslationSources.NONE] * len(self._target_tokens)
-        alignment = WordAlignmentMatrix.from_word_pairs(len(source_tokens), len(self._target_tokens))
+        alignment = WordAlignmentMatrix.from_word_pairs(len(self._source_tokens), len(self._target_tokens))
         phrases: List[Phrase] = []
         trg_phrase_start_index = 0
         for phrase_info in self._phrases:
-            confidence = sys.float_info.max
             for j in range(trg_phrase_start_index, phrase_info.target_cut):
                 for i in range(phrase_info.source_segment_range.start, phrase_info.source_segment_range.end):
                     aligned = phrase_info.alignment[
@@ -142,13 +156,18 @@ class TranslationResultBuilder:
                         alignment[i, j] = True
 
                 sources[j] = self._sources[j]
-                confidence = min(confidence, self._confidences[j])
 
-            phrases.append(Phrase(phrase_info.source_segment_range, phrase_info.target_cut, confidence))
+            phrases.append(Phrase(phrase_info.source_segment_range, phrase_info.target_cut))
             trg_phrase_start_index = phrase_info.target_cut
 
         return TranslationResult(
-            translation, source_tokens, self._target_tokens, self._confidences, sources, alignment, phrases
+            self.target_detokenizer.detokenize(self._target_tokens) if translation is None else translation,
+            self._source_tokens,
+            self._target_tokens,
+            self._confidences,
+            sources,
+            alignment,
+            phrases,
         )
 
     def _resize_alignment(self, phrase_index: int, cols_to_copy: List[int]) -> None:

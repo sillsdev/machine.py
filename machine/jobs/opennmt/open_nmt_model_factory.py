@@ -8,19 +8,19 @@ import tensorflow as tf
 from opennmt import END_OF_SENTENCE_TOKEN, PADDING_TOKEN, START_OF_SENTENCE_TOKEN
 from opennmt.data import Vocab
 
-from ..corpora.parallel_text_corpus import ParallelTextCorpus
-from ..corpora.text_corpus import TextCorpus
-from ..tokenization.detokenizer import Detokenizer
-from ..tokenization.sentencepiece.sentence_piece_detokenizer import SentencePieceDetokenizer
-from ..tokenization.sentencepiece.sentence_piece_tokenizer import SentencePieceTokenizer
-from ..tokenization.sentencepiece.sentence_piece_trainer import SentencePieceTrainer
-from ..tokenization.tokenizer import Tokenizer
-from ..translation.tensorflow.open_nmt_model import OpenNmtModel
-from ..translation.tensorflow.open_nmt_model_trainer import OpenNmtModelTrainer
-from ..translation.trainer import Trainer
-from ..translation.translation_model import TranslationModel
-from .nmt_model_factory import NmtModelFactory
-from .shared_file_service import SharedFileService
+from ...corpora.parallel_text_corpus import ParallelTextCorpus
+from ...corpora.text_corpus import TextCorpus
+from ...tokenization.detokenizer import Detokenizer
+from ...tokenization.sentencepiece.sentence_piece_detokenizer import SentencePieceDetokenizer
+from ...tokenization.sentencepiece.sentence_piece_tokenizer import SentencePieceTokenizer
+from ...tokenization.sentencepiece.sentence_piece_trainer import SentencePieceTrainer
+from ...tokenization.tokenizer import Tokenizer
+from ...translation.opennmt.open_nmt_model import OpenNmtModel
+from ...translation.opennmt.open_nmt_model_trainer import OpenNmtModelTrainer
+from ...translation.trainer import Trainer
+from ...translation.translation_model import TranslationModel
+from ..nmt_model_factory import NmtModelFactory
+from ..shared_file_service import SharedFileService
 
 
 class OpenNmtModelFactory(NmtModelFactory):
@@ -131,8 +131,8 @@ class OpenNmtModelFactory(NmtModelFactory):
                 "length_penalty": 0.2,
             },
         }
-        if "max_step" in self._config:
-            config["train"]["max_step"] = self._config.max_step
+        if "max_steps" in self._config:
+            config["train"]["max_step"] = self._config.max_steps
 
         return config
 

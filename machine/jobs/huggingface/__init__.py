@@ -6,8 +6,6 @@ if not is_transformers_available():
 if not is_torch_available():
     raise RuntimeError("torch is not installed.")
 
-from .hugging_face_nmt_engine import HuggingFaceNmtEngine
-from .hugging_face_nmt_model import HuggingFaceNmtModel
-from .hugging_face_nmt_model_trainer import HuggingFaceNmtModelTrainer
+from .hugging_face_nmt_model_factory import HuggingFaceNmtModelFactory
 
-__all__ = ["HuggingFaceNmtEngine", "HuggingFaceNmtModel", "HuggingFaceNmtModelTrainer"]
+__all__ = ["HuggingFaceNmtModelFactory"]

@@ -1,15 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Sequence
 
-from .translation_result_builder import TranslationResultBuilder
-from .word_graph import WordGraph
+from ..annotations.range import Range
 
 
 class WordConfidenceEstimator(ABC):
     @abstractmethod
-    def estimate_word_graph(self, word_graph: WordGraph) -> None:
-        ...
-
-    @abstractmethod
-    def estimate_translation_result(self, source_segment: Sequence[str], builder: TranslationResultBuilder) -> None:
+    def estimate(self, source_segment_range: Range[int], target_word: str) -> float:
         ...

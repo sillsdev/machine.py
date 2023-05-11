@@ -1,5 +1,4 @@
-from itertools import repeat
-from typing import Iterable, Optional, Sequence
+from typing import Iterable, Sequence
 
 from ..annotations import Range
 from .translation_sources import TranslationSources
@@ -16,7 +15,7 @@ class WordGraphArc:
         alignment: WordAlignmentMatrix,
         source_segment_range: Range[int],
         sources: Iterable[TranslationSources],
-        confidences: Optional[Iterable[float]] = None,
+        confidences: Iterable[float],
     ) -> None:
         self._prev_state = prev_state
         self._next_state = next_state
@@ -25,8 +24,6 @@ class WordGraphArc:
         self._alignment = alignment
         self._source_segment_range = source_segment_range
         self._sources = list(sources)
-        if confidences is None:
-            confidences = repeat(-1, len(self._words))
         self._confidences = list(confidences)
 
     @property

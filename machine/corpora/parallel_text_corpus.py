@@ -375,6 +375,52 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
         ref_column: Optional[str] = "ref",
         translation_column: str = "translation",
         alignment_column: Optional[str] = "alignment",
+    ) -> Dataset:
+        try:
+            from datasets.arrow_dataset import Dataset
+            from datasets.features.features import Features, FeatureType, Sequence, Value
+            from datasets.features.translation import Translation
+        except ImportError:
+            raise RuntimeError("datasets is not installed.")
+
+        features_dict: Dict[str, FeatureType] = {translation_column: Translation(languages=[source_lang, target_lang])}
+        if text_id_column is not None:
+            features_dict[text_id_column] = Value("string")
+        if ref_column is not None:
+            features_dict[ref_column] = Sequence(Value("string"))
+        if alignment_column is not None:
+            features_dict[alignment_column] = Sequence({source_lang: Value("int32"), target_lang: Value("int32")})
+        features = Features(features_dict)
+
+        def iterable() -> Iterable[dict]:
+            with self.get_rows() as rows:
+                for row in rows:
+                    example = {}
+                    if text_id_column is not None:
+                        example[text_id_column] = row.text_id
+                    if ref_column is not None:
+                        example[ref_column] = row.refs
+                    example[translation_column] = {source_lang: row.source_text, target_lang: row.target_text}
+                    if alignment_column is not None:
+                        src_indices: List[int] = []
+                        trg_indices: List[int] = []
+                        if row.aligned_word_pairs is not None:
+                            for wp in row.aligned_word_pairs:
+                                src_indices.append(wp.source_index)
+                                trg_indices.append(wp.target_index)
+                        example[alignment_column] = {source_lang: src_indices, target_lang: trg_indices}
+                    yield example
+
+        return cast(Dataset, Dataset.from_generator(iterable, features=features))
+
+    def to_hf_iterable_dataset(
+        self,
+        source_lang: str,
+        target_lang: str,
+        text_id_column: Optional[str] = "text",
+        ref_column: Optional[str] = "ref",
+        translation_column: str = "translation",
+        alignment_column: Optional[str] = "alignment",
         info: Optional[DatasetInfo] = None,
         split: Optional[NamedSplit] = None,
     ) -> IterableDataset:
@@ -415,12 +461,13 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
                     if ref_column is not None:
                         example[ref_column] = row.refs
                     example[translation_column] = {source_lang: row.source_text, target_lang: row.target_text}
-                    if alignment_column is not None and row.aligned_word_pairs is not None:
+                    if alignment_column is not None:
                         src_indices: List[int] = []
                         trg_indices: List[int] = []
-                        for wp in row.aligned_word_pairs:
-                            src_indices.append(wp.source_index)
-                            trg_indices.append(wp.target_index)
+                        if row.aligned_word_pairs is not None:
+                            for wp in row.aligned_word_pairs:
+                                src_indices.append(wp.source_index)
+                                trg_indices.append(wp.target_index)
                         example[alignment_column] = {source_lang: src_indices, target_lang: trg_indices}
                     yield key, example
 

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union, cast
+import shutil
+from pathlib import Path
+from typing import Optional, Sequence, Union
 
 from datasets.arrow_dataset import Dataset
-from transformers import HfArgumentParser, Seq2SeqTrainingArguments
+from transformers import Seq2SeqTrainingArguments
 
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
 from ...utils.typeshed import StrPath
@@ -18,35 +20,20 @@ class HuggingFaceNmtModel(TranslationModel):
         self,
         model_path: StrPath,
         parent_model_name: str,
-        source_lang: Optional[str] = None,
-        target_lang: Optional[str] = None,
         training_args: Optional[Seq2SeqTrainingArguments] = None,
-        batch_size: Optional[int] = None,
-        device: Optional[Union[int, str]] = None,
+        **pipeline_kwargs,
     ) -> None:
-        self._model_path = model_path
+        self._model_path = Path(model_path)
         self._parent_model_name = parent_model_name
         if training_args is None:
-            parser = HfArgumentParser(Seq2SeqTrainingArguments)
-            training_args = cast(Seq2SeqTrainingArguments, parser.parse_dict({"output_dir": str(self._model_path)})[0])
+            training_args = Seq2SeqTrainingArguments(output_dir=str(self._model_path))
         self._training_args = training_args
-        self._source_lang = source_lang
-        self._target_lang = target_lang
-        self._batch_size = batch_size
-        self._device = device
+        self._pipeline_kwargs = pipeline_kwargs
         self._engine: Optional[HuggingFaceNmtEngine] = None
 
     @property
     def parent_model_name(self) -> str:
         return self._parent_model_name
-
-    @property
-    def source_lang(self) -> Optional[str]:
-        return self._source_lang
-
-    @property
-    def target_lang(self) -> Optional[str]:
-        return self._target_lang
 
     @property
     def training_args(self) -> Seq2SeqTrainingArguments:
@@ -77,17 +64,23 @@ class HuggingFaceNmtModel(TranslationModel):
 
     def _get_engine(self) -> HuggingFaceNmtEngine:
         if self._engine is None:
-            self._engine = HuggingFaceNmtEngine(
-                self._model_path, self._source_lang, self._target_lang, self._batch_size, self._device
-            )
+            self._engine = HuggingFaceNmtEngine(self._model_path, **self._pipeline_kwargs)
         return self._engine
 
 
 class _Trainer(HuggingFaceNmtModelTrainer):
     def __init__(self, model: HuggingFaceNmtModel, corpus: Union[ParallelTextCorpus, Dataset]) -> None:
         self._model = model
-        super().__init__(model.parent_model_name, model.training_args, corpus, model._source_lang, model._target_lang)
+        src_lang = model._pipeline_kwargs.get("src_lang")
+        tgt_lang = model._pipeline_kwargs.get("tgt_lang")
+        max_length = model._pipeline_kwargs.get("max_length")
+        super().__init__(
+            model.parent_model_name, model.training_args, corpus, src_lang, tgt_lang, max_length, max_length
+        )
 
     def save(self) -> None:
         super().save()
+        output_dir = Path(self._model.training_args.output_dir)
+        if output_dir != self._model._model_path:
+            shutil.copytree(output_dir, self._model._model_path)
         self._model.reset_engine()

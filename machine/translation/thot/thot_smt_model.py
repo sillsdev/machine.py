@@ -28,7 +28,7 @@ from ..word_graph_arc import WordGraphArc
 from .thot_smt_model_trainer import ThotSmtModelTrainer
 from .thot_smt_parameters import ThotSmtParameters
 from .thot_symmetrized_word_alignment_model import ThotSymmetrizedWordAlignmentModel
-from .thot_utils import load_smt_decoder, load_smt_model, to_sentence, to_target_tokens
+from .thot_utils import load_smt_decoder, load_smt_model, to_sentence, to_target_tokens, unescape_token
 from .thot_word_alignment_model import ThotWordAlignmentModel
 from .thot_word_alignment_model_type import ThotWordAlignmentModelType
 from .thot_word_alignment_model_utils import create_thot_word_alignment_model
@@ -84,9 +84,6 @@ class ThotSmtModel(InteractiveTranslationModel):
         self._inverse_word_alignment_model = create_thot_word_alignment_model(self._word_alignment_model_type)
         self._symmetrized_word_alignment_model = ThotSymmetrizedWordAlignmentModel(
             self._direct_word_alignment_model, self._inverse_word_alignment_model
-        )
-        self._confidence_estimator = Ibm1WordConfidenceEstimator(
-            self._symmetrized_word_alignment_model.get_translation_score
         )
 
         self._load()
@@ -234,18 +231,28 @@ class ThotSmtModel(InteractiveTranslationModel):
         )
 
     def _create_word_graph(
-        self, source_words: Sequence[str], normalized_source_words: Sequence[str], thot_word_graph: tt.WordGraph
+        self, source_tokens: Sequence[str], normalized_source_tokens: Sequence[str], thot_word_graph: tt.WordGraph
     ) -> WordGraph:
+        confidence_estimator = Ibm1WordConfidenceEstimator(
+            self._symmetrized_word_alignment_model.get_translation_score, normalized_source_tokens
+        )
+
         arcs: List[WordGraphArc] = []
         for thot_arc_id in range(thot_word_graph.num_arcs):
             thot_arc = thot_word_graph.get_arc(thot_arc_id)
             src_phrase_len = thot_arc.source_end_index - thot_arc.source_start_index
-            words = to_target_tokens(thot_arc.words)
-            if src_phrase_len == 1 and len(words) == 1:
+            source_segment_range = Range[int].create(thot_arc.source_start_index, thot_arc.source_end_index + 1)
+            normalized_tokens: List[str] = []
+            confidences: List[float] = []
+            for word in thot_arc.words:
+                normalized_token = unescape_token(word)
+                normalized_tokens.append(normalized_token)
+                confidences.append(confidence_estimator.estimate(source_segment_range, normalized_token))
+            if src_phrase_len == 1 and len(normalized_tokens) == 1:
                 wa_matrix = WordAlignmentMatrix.from_word_pairs(1, 1, {(0, 0)})
             else:
                 wa_matrix = self._word_aligner.align(
-                    normalized_source_words[thot_arc.source_start_index : thot_arc.source_end_index], words
+                    normalized_source_tokens[thot_arc.source_start_index : thot_arc.source_end_index], normalized_tokens
                 )
 
             arcs.append(
@@ -253,14 +260,15 @@ class ThotSmtModel(InteractiveTranslationModel):
                     thot_arc.in_state,
                     thot_arc.out_state,
                     thot_arc.score,
-                    words,
+                    self._denormalize_target(normalized_tokens),
                     wa_matrix,
                     Range[int].create(thot_arc.source_start_index, thot_arc.source_end_index + 1),
-                    [TranslationSources.NONE if thot_arc.is_unknown else TranslationSources.SMT] * len(words),
+                    [TranslationSources.NONE if thot_arc.is_unknown else TranslationSources.SMT]
+                    * len(normalized_tokens),
+                    confidences,
                 )
             )
-        word_graph = WordGraph(source_words, arcs, thot_word_graph.final_states, thot_word_graph.initial_state_score)
-        self._confidence_estimator.estimate_word_graph(word_graph)
+        word_graph = WordGraph(source_tokens, arcs, thot_word_graph.final_states, thot_word_graph.initial_state_score)
         return word_graph
 
     def _create_result(
@@ -269,17 +277,22 @@ class ThotSmtModel(InteractiveTranslationModel):
         normalized_target_tokens = to_target_tokens(data.target)
         target_tokens = self._denormalize_target(normalized_target_tokens)
 
-        builder = TranslationResultBuilder()
+        builder = TranslationResultBuilder(source_tokens, self.target_detokenizer)
+        confidence_estimator = Ibm1WordConfidenceEstimator(
+            self._symmetrized_word_alignment_model.get_translation_score, normalized_source_tokens
+        )
         trg_phrase_start_index = 0
         for k in range(len(data.source_segmentation)):
             source_start_index, source_end_index = data.source_segmentation[k]
             source_start_index -= 1
             target_cut = data.target_segment_cuts[k]
 
+            source_segment_range = Range[int].create(source_start_index, source_end_index)
             for j in range(trg_phrase_start_index, target_cut):
                 builder.append_token(
                     target_tokens[j],
                     TranslationSources.NONE if j in data.target_unknown_words else TranslationSources.SMT,
+                    confidence_estimator.estimate(source_segment_range, normalized_target_tokens[j]),
                 )
 
             src_phrase_len = source_end_index - source_start_index
@@ -294,11 +307,10 @@ class ThotSmtModel(InteractiveTranslationModel):
                 for j in range(trg_phrase_len):
                     trg_phrase[j] = normalized_target_tokens[trg_phrase_start_index + j]
                 wa_matrix = self._word_aligner.align(src_phrase, trg_phrase)
-            builder.mark_phrase(Range[int].create(source_start_index, source_end_index), wa_matrix)
+            builder.mark_phrase(source_segment_range, wa_matrix)
             trg_phrase_start_index += trg_phrase_len
 
-        result = builder.to_result(self.target_detokenizer.detokenize(target_tokens), source_tokens)
-        self._confidence_estimator.estimate_translation_result(source_tokens, result)
+        result = builder.to_result()
         return result
 
     def _load(self) -> None:

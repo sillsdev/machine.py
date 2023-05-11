@@ -6,11 +6,14 @@ from typing import Any, Callable, Optional, Union, cast
 import datasets.utils.logging as datasets_logging
 import transformers.utils.logging as transformers_logging
 from datasets.arrow_dataset import Dataset
+from torch import Tensor  # pyright: ignore[reportMissingImports]
+from torch.utils.checkpoint import checkpoint  # pyright: ignore[reportMissingImports] # noqa: F401
 from transformers import (
     AutoConfig,
     AutoModelForSeq2SeqLM,
     AutoTokenizer,
     DataCollatorForSeq2Seq,
+    M2M100ForConditionalGeneration,
     M2M100Tokenizer,
     MBart50TokenizerFast,
     MBartTokenizer,
@@ -20,10 +23,13 @@ from transformers import (
     PreTrainedModel,
     Seq2SeqTrainer,
     Seq2SeqTrainingArguments,
+    TrainerCallback,
     set_seed,
 )
 from transformers.models.mbart50 import MBart50Tokenizer
+from transformers.trainer_callback import TrainerControl, TrainerState
 from transformers.trainer_utils import get_last_checkpoint
+from transformers.training_args import TrainingArguments
 
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
 from ...utils.progress_status import ProgressStatus
@@ -37,6 +43,24 @@ logging.basicConfig(
     datefmt="%m/%d/%Y %H:%M:%S",
     handlers=[logging.StreamHandler(sys.stdout)],
 )
+
+
+def prepare_decoder_input_ids_from_labels(self: M2M100ForConditionalGeneration, labels: Tensor) -> Tensor:
+    # shift ids to the right
+    shifted_input_ids = labels.new_zeros(labels.shape)
+    shifted_input_ids[:, 1:] = labels[:, :-1].clone()
+    assert self.config.decoder_start_token_id is not None
+    shifted_input_ids[:, 0] = self.config.decoder_start_token_id
+
+    if self.config.pad_token_id is None:
+        raise ValueError("self.model.config.pad_token_id has to be defined.")
+    # replace possible -100 values in labels by `pad_token_id`
+    shifted_input_ids.masked_fill_(shifted_input_ids == -100, self.config.pad_token_id)
+
+    return shifted_input_ids
+
+
+setattr(M2M100ForConditionalGeneration, "prepare_decoder_input_ids_from_labels", prepare_decoder_input_ids_from_labels)
 
 MULTILINGUAL_TOKENIZERS = (
     MBartTokenizer,
@@ -55,18 +79,20 @@ class HuggingFaceNmtModelTrainer(Trainer):
         parent_model_name: str,
         training_args: Seq2SeqTrainingArguments,
         corpus: Union[ParallelTextCorpus, Dataset],
-        source_lang: Optional[str] = None,
-        target_lang: Optional[str] = None,
+        src_lang: Optional[str] = None,
+        tgt_lang: Optional[str] = None,
+        max_source_length: Optional[int] = None,
+        max_target_length: Optional[int] = None,
     ) -> None:
         self._parent_model_name = parent_model_name
         self._training_args = training_args
         self._corpus = corpus
-        self._source_lang = source_lang
-        self._target_lang = target_lang
+        self._src_lang = src_lang
+        self._tgt_lang = tgt_lang
         self._trainer: Optional[Seq2SeqTrainer] = None
         self._metrics = {}
-        self.max_source_length = 200
-        self.max_target_length = 200
+        self.max_source_length = max_source_length
+        self.max_target_length = max_target_length
 
     @property
     def stats(self) -> TrainStats:
@@ -108,7 +134,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
         config = AutoConfig.from_pretrained(
             self._parent_model_name, use_cache=not self._training_args.gradient_checkpointing
         )
-        model: PreTrainedModel = AutoModelForSeq2SeqLM.from_pretrained(self._parent_model_name, config=config)
+        model = cast(PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(self._parent_model_name, config=config))
         tokenizer: Any = AutoTokenizer.from_pretrained(self._parent_model_name, use_fast=True)
 
         def add_lang_code_to_tokenizer(tokenizer: Any, lang_code: str):
@@ -128,26 +154,26 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 tokenizer.id_to_lang_token[lang_id] = lang_code
 
         if isinstance(tokenizer, MULTILINGUAL_TOKENIZERS):
-            if self._source_lang is not None:
-                add_lang_code_to_tokenizer(tokenizer, self._source_lang)
-            if self._target_lang is not None:
-                add_lang_code_to_tokenizer(tokenizer, self._target_lang)
+            if self._src_lang is not None:
+                add_lang_code_to_tokenizer(tokenizer, self._src_lang)
+            if self._tgt_lang is not None:
+                add_lang_code_to_tokenizer(tokenizer, self._tgt_lang)
 
         # We resize the embeddings only when necessary to avoid index errors.
-        embedding_size = model.get_input_embeddings().weight.shape[0]
+        embedding_size = cast(Any, model.get_input_embeddings()).weight.shape[0]
         if len(tokenizer) > embedding_size:
             model.resize_token_embeddings(len(tokenizer))
 
         # Set decoder_start_token_id
         if (
-            self._target_lang is not None
+            self._tgt_lang is not None
             and model.config.decoder_start_token_id is None
             and isinstance(tokenizer, (MBartTokenizer, MBartTokenizerFast))
         ):
             if isinstance(tokenizer, MBartTokenizer):
-                model.config.decoder_start_token_id = tokenizer.lang_code_to_id[self._target_lang]
+                model.config.decoder_start_token_id = tokenizer.lang_code_to_id[self._tgt_lang]
             else:
-                model.config.decoder_start_token_id = tokenizer.convert_tokens_to_ids(self._target_lang)
+                model.config.decoder_start_token_id = tokenizer.convert_tokens_to_ids(self._tgt_lang)
 
         if model.config.decoder_start_token_id is None:
             raise ValueError("Make sure that `config.decoder_start_token_id` is correctly defined")
@@ -155,60 +181,71 @@ class HuggingFaceNmtModelTrainer(Trainer):
         # For translation we set the codes of our source and target languages (only useful for mBART, the others will
         # ignore those attributes).
         if isinstance(tokenizer, MULTILINGUAL_TOKENIZERS):
-            if self._source_lang is None or self._target_lang is None:
+            if self._src_lang is None or self._tgt_lang is None:
                 raise ValueError(
                     f"{tokenizer.__class__.__name__} is a multilingual tokenizer which requires source_lang and "
                     "target_lang to be set."
                 )
 
-            tokenizer.src_lang = self._source_lang
-            tokenizer.tgt_lang = self._target_lang
+            tokenizer.src_lang = self._src_lang
+            tokenizer.tgt_lang = self._tgt_lang
 
             # For multilingual translation models like mBART-50 and M2M100 we need to force the target language token
             # as the first generated token. We ask the user to explicitly provide this as --forced_bos_token argument.
-            forced_bos_token_id = tokenizer.lang_code_to_id[self._target_lang]
+            forced_bos_token_id = tokenizer.lang_code_to_id[self._tgt_lang]
             model.config.forced_bos_token_id = forced_bos_token_id
 
         prefix = ""
         if self._parent_model_name.startswith("t5-") or self._parent_model_name.startswith("mt5-"):
-            prefix = f"translate {self._source_lang} to {self._target_lang}: "
+            prefix = f"translate {self._src_lang} to {self._tgt_lang}: "
 
-        source_lang = self._source_lang
-        if source_lang is None:
-            source_lang = "src"
-        target_lang = self._target_lang
-        if target_lang is None:
-            target_lang = "trg"
+        src_lang = self._src_lang
+        if src_lang is None:
+            src_lang = "src"
+        tgt_lang = self._tgt_lang
+        if tgt_lang is None:
+            tgt_lang = "tgt"
+
+        max_source_length = self.max_source_length
+        if max_source_length is None:
+            max_source_length = model.config.max_length
+        max_target_length = self.max_target_length
+        if max_target_length is None:
+            max_target_length = model.config.max_length
+
+        if self._training_args.label_smoothing_factor > 0 and not hasattr(
+            model, "prepare_decoder_input_ids_from_labels"
+        ):
+            logger.warning(
+                "label_smoothing is enabled but the `prepare_decoder_input_ids_from_labels` method is not defined for"
+                f"`{model.__class__.__name__}`. This will lead to loss being calculated twice and will take up more "
+                "memory"
+            )
 
         def preprocess_function(examples):
-            inputs = [ex[source_lang] for ex in examples["translation"]]
-            targets = [ex[target_lang] for ex in examples["translation"]]
+            inputs = [ex[src_lang] for ex in examples["translation"]]
+            targets = [ex[tgt_lang] for ex in examples["translation"]]
             inputs = [prefix + inp for inp in inputs]
-            model_inputs = tokenizer(inputs, max_length=self.max_source_length, truncation=True)
+            model_inputs = tokenizer(inputs, max_length=max_source_length, truncation=True)
 
             # Tokenize targets with the `text_target` keyword argument
-            labels = tokenizer(text_target=targets, max_length=self.max_target_length, truncation=True)
+            labels = tokenizer(text_target=targets, max_length=max_target_length, truncation=True)
 
             model_inputs["labels"] = labels["input_ids"]
             return model_inputs
 
         if isinstance(self._corpus, Dataset):
-            train_count = len(self._corpus)
             train_dataset = self._corpus
-            train_dataset = train_dataset.map(
-                preprocess_function,
-                batched=True,
-                remove_columns=train_dataset.column_names,
-                load_from_cache_file=True,
-                desc="Running tokenizer on train dataset",
-            )
         else:
-            train_count = self._corpus.count(include_empty=False)
+            train_dataset = self._corpus.filter_nonempty().to_hf_dataset(src_lang, tgt_lang)
 
-            train_dataset = self._corpus.filter_nonempty().to_hf_dataset(source_lang, target_lang)
-            train_dataset = train_dataset.map(
-                preprocess_function, batched=True, remove_columns=["text", "ref", "translation", "alignment"]
-            )
+        train_dataset = train_dataset.map(
+            preprocess_function,
+            batched=True,
+            remove_columns=train_dataset.column_names,
+            load_from_cache_file=True,
+            desc="Running tokenizer on train dataset",
+        )
 
         data_collator = DataCollatorForSeq2Seq(
             tokenizer,
@@ -223,17 +260,18 @@ class HuggingFaceNmtModelTrainer(Trainer):
             train_dataset=cast(Any, train_dataset),
             tokenizer=tokenizer,
             data_collator=data_collator,
+            callbacks=[_ProgressCallback(progress, check_canceled)],
         )
 
-        checkpoint = None
+        ckpt = None
         if self._training_args.resume_from_checkpoint is not None:
-            checkpoint = self._training_args.resume_from_checkpoint
+            ckpt = self._training_args.resume_from_checkpoint
         elif last_checkpoint is not None:
-            checkpoint = last_checkpoint
-        train_result = self._trainer.train(resume_from_checkpoint=checkpoint)
+            ckpt = last_checkpoint
+        train_result = self._trainer.train(resume_from_checkpoint=ckpt)
 
         self._metrics = train_result.metrics
-        self._metrics["train_samples"] = train_count
+        self._metrics["train_samples"] = len(train_dataset)
 
         self._trainer.log_metrics("train", self._metrics)
 
@@ -243,3 +281,25 @@ class HuggingFaceNmtModelTrainer(Trainer):
         self._trainer.save_model()
         self._trainer.save_metrics("train", self._metrics)
         self._trainer.save_state()
+
+
+class _ProgressCallback(TrainerCallback):
+    def __init__(
+        self, progress: Optional[Callable[[ProgressStatus], None]], check_canceled: Optional[Callable[[], None]]
+    ) -> None:
+        self._progress = progress
+        self._check_canceled = check_canceled
+
+    def on_train_begin(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs) -> None:
+        if self._progress is not None and state.is_local_process_zero:
+            self._progress(ProgressStatus(0))
+
+        if self._check_canceled is not None:
+            self._check_canceled()
+
+    def on_step_end(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs) -> None:
+        if self._progress is not None and state.is_local_process_zero:
+            self._progress(ProgressStatus(state.global_step))
+
+        if self._check_canceled is not None:
+            self._check_canceled()

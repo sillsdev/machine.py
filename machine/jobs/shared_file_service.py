@@ -1,10 +1,10 @@
 import json
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Generator, Iterator, List, Optional, TextIO, TypedDict
+from typing import Any, Generator, Iterator, List, TextIO, TypedDict
 
 import json_stream
-from clearml import StorageManager
 
 from ..corpora.text_corpus import TextCorpus
 from ..corpora.text_file_text_corpus import TextFileTextCorpus
@@ -30,7 +30,7 @@ class PretranslationWriter:
         self._first = False
 
 
-class SharedFileService:
+class SharedFileService(ABC):
     def __init__(self, config: Any) -> None:
         self._config = config
 
@@ -90,28 +90,18 @@ class SharedFileService:
         shared_file_uri: str = self._config.shared_file_uri
         return shared_file_uri.rstrip("/")
 
+    @abstractmethod
     def _download_file(self, path: str, cache: bool = False) -> Path:
-        uri = f"{self._shared_file_uri}/{path}"
-        local_folder: Optional[str] = None
-        if not cache:
-            local_folder = str(self._data_dir)
-        file_path = StorageManager.download_file(uri, local_folder)
-        if file_path is None:
-            raise RuntimeError(f"Failed to download file: {uri}")
-        return Path(file_path)
+        ...
 
+    @abstractmethod
     def _download_folder(self, path: str, cache: bool = False) -> Path:
-        uri = f"{self._shared_file_uri}/{path}"
-        local_folder: Optional[str] = None
-        if not cache:
-            local_folder = str(self._data_dir)
-        folder_path = StorageManager.download_folder(uri, local_folder)
-        if folder_path is None:
-            raise RuntimeError(f"Failed to download folder: {uri}")
-        return Path(folder_path) / path
+        ...
 
+    @abstractmethod
     def _upload_file(self, path: str, local_file_path: Path) -> None:
-        StorageManager.upload_file(str(local_file_path), f"{self._shared_file_uri}/{path}")
+        ...
 
+    @abstractmethod
     def _upload_folder(self, path: str, local_folder_path: Path) -> None:
-        StorageManager.upload_folder(str(local_folder_path), f"{self._shared_file_uri}/{path}")
+        ...

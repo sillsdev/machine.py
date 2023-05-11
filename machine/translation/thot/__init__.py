@@ -1,9 +1,7 @@
-try:
-    import thot  # noqa: F401
-except ImportError:
-    raise RuntimeError(
-        'sil-machine must be installed with the "thot" extra in order to use the machine.translation.thot package.'
-    )
+from ...utils.packages import is_thot_available
+
+if not is_thot_available():
+    raise RuntimeError('sil-thot is not installed. Install sil-machine with the "thot" extra.')
 
 from .thot_fast_align_word_alignment_model import ThotFastAlignWordAlignmentModel
 from .thot_hmm_word_alignment_model import ThotHmmWordAlignmentModel

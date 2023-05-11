@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from math import exp, prod
-from typing import Iterable, List, Optional, Sequence, Tuple, Union, cast
+from typing import Iterable, List, Sequence, Tuple, Union, cast
 
-import torch
+import torch  # pyright: ignore[reportMissingImports]
 from transformers import AutoConfig, AutoModelForSeq2SeqLM, AutoTokenizer, TranslationPipeline
-from transformers.generation import BeamSearchEncoderDecoderOutput
+from transformers.generation import BeamSearchEncoderDecoderOutput, GreedySearchEncoderDecoderOutput
 from transformers.tokenization_utils import BatchEncoding, TruncationStrategy
 
 from ...annotations.range import Range
@@ -21,21 +21,25 @@ class HuggingFaceNmtEngine(TranslationEngine):
     def __init__(
         self,
         model_name_or_path: StrPath,
-        source_lang: Optional[str] = None,
-        target_lang: Optional[str] = None,
-        batch_size: Optional[int] = None,
-        device: Optional[Union[int, str]] = None,
+        **pipeline_kwargs,
     ) -> None:
-        model_config = AutoConfig.from_pretrained(model_name_or_path)
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_name_or_path, config=model_config)
-        self._tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, use_fast=True)
+        model_name = str(model_name_or_path)
+        model_config = AutoConfig.from_pretrained(model_name)
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_name, config=model_config)
+        self._tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
+        if "prefix" not in pipeline_kwargs:
+            if (
+                "src_lang" in pipeline_kwargs
+                and "tgt_lang" in pipeline_kwargs
+                and (model_name.startswith("t5-") or model_name.startswith("mt5-"))
+            ):
+                src_lang = pipeline_kwargs["src_lang"]
+                tgt_lang = pipeline_kwargs["tgt_lang"]
+                pipeline_kwargs["prefix"] = f"translate {src_lang} to {tgt_lang}: "
         self._pipeline = _TranslationPipeline(
             model=model,
             tokenizer=self._tokenizer,
-            src_lang=source_lang,
-            tgt_lang=target_lang,
-            device=device,
-            batch_size=batch_size,
+            **pipeline_kwargs,
         )
 
     def translate(self, segment: Union[str, Sequence[str]]) -> TranslationResult:
@@ -53,14 +57,16 @@ class HuggingFaceNmtEngine(TranslationEngine):
         all_results: List[List[TranslationResult]] = []
         i = 0
         for outputs in cast(
-            Iterable[List[dict]],
+            Iterable[Union[List[dict], dict]],
             self._pipeline(segments, num_return_sequences=n),
         ):
+            if isinstance(outputs, dict):
+                outputs = [outputs]
             segment_results: List[TranslationResult] = []
             for output in outputs:
                 input_tokens: Sequence[str] = output["input_tokens"]
                 output_length = len(output["translation_tokens"])
-                builder = TranslationResultBuilder()
+                builder = TranslationResultBuilder(input_tokens)
                 for token, score in zip(output["translation_tokens"], output["token_scores"]):
                     builder.append_token(token, TranslationSources.NMT, exp(score))
                 src_indices = torch.argmax(output["token_attentions"], dim=1).tolist()
@@ -68,7 +74,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
                     len(input_tokens), output_length, set(zip(src_indices, range(output_length)))
                 )
                 builder.mark_phrase(Range.create(0, len(input_tokens)), wa_matrix)
-                segment_results.append(builder.to_result(output["translation_text"], input_tokens))
+                segment_results.append(builder.to_result(output["translation_text"]))
             all_results.append(segment_results)
             i += 1
         return all_results
@@ -87,7 +93,9 @@ class _TranslationPipeline(TranslationPipeline):
             else self.tokenizer.decode(self.tokenizer.convert_tokens_to_ids(s), use_source_tokenizer=True)
             for s in args
         ]
-        inputs = cast(BatchEncoding, super().preprocess(*sentences, truncation, src_lang, tgt_lang))
+        inputs = cast(
+            BatchEncoding, super().preprocess(*sentences, truncation=truncation, src_lang=src_lang, tgt_lang=tgt_lang)
+        )
         if inputs.is_fast:
             inputs["input_tokens"] = [
                 inputs.tokens(i) if isinstance(args[i], str) else args[i] for i in range(len(args))
@@ -104,50 +112,77 @@ class _TranslationPipeline(TranslationPipeline):
         generate_kwargs["min_length"] = generate_kwargs.get("min_length", self.model.config.min_length)
         generate_kwargs["max_length"] = generate_kwargs.get("max_length", self.model.config.max_length)
         self.check_inputs(input_length, generate_kwargs["min_length"], generate_kwargs["max_length"])
-        output = cast(
-            BeamSearchEncoderDecoderOutput,
-            self.model.generate(
-                **model_inputs,
-                **generate_kwargs,
-                output_scores=True,
-                output_attentions=True,
-                return_dict_in_generate=True,
-            ),
+        output = self.model.generate(
+            **model_inputs,
+            **generate_kwargs,
+            output_scores=True,
+            output_attentions=True,
+            return_dict_in_generate=True,
         )
-        output_ids = output.sequences
 
-        assert output.sequences is not None and output.beam_indices is not None and output.scores is not None
+        if isinstance(output, BeamSearchEncoderDecoderOutput):
+            output_ids = output.sequences
+            beam_indices = output.beam_indices
+            scores = output.scores
+            attentions = output.cross_attentions
+        elif isinstance(output, GreedySearchEncoderDecoderOutput):
+            output_ids = output.sequences
+            beam_indices = torch.zeros_like(output_ids)
+            assert output.scores is not None
+            scores = tuple(torch.nn.functional.log_softmax(logits, dim=-1) for logits in output.scores)
+            attentions = output.cross_attentions
+        else:
+            raise RuntimeError("Cannot postprocess the output of the model.")
+
+        assert beam_indices is not None and scores is not None
         out_b = output_ids.shape[0]
-        num_beams = output.scores[0].shape[0] // in_b
+        num_beams = scores[0].shape[0] // in_b
         n_sequences = out_b // in_b
+        start_index = 0
+        if self.model.config.decoder_start_token_id is not None:
+            start_index = 1
         indices = torch.stack(
             (
-                torch.arange(output.sequences.shape[1] - 1, device=output_ids.device).expand(in_b, n_sequences, -1),
-                torch.reshape(output.beam_indices[:, :-1] % num_beams, (in_b, n_sequences, -1)),
-                torch.reshape(output.sequences[:, 1:], (in_b, n_sequences, -1)),
+                torch.arange(output_ids.shape[1] - start_index, device=output_ids.device).expand(in_b, n_sequences, -1),
+                torch.reshape(beam_indices[:, start_index:] % num_beams, (in_b, n_sequences, -1)),
+                torch.reshape(output_ids[:, start_index:], (in_b, n_sequences, -1)),
             ),
             dim=3,
         )
-        scores = torch.stack(output.scores, dim=0).reshape(len(output.scores), in_b, num_beams, -1).transpose(0, 1)
+        scores = torch.stack(scores, dim=0).reshape(len(scores), in_b, num_beams, -1).transpose(0, 1)
         scores = torch_gather_nd(scores, indices, 1)
+        if self.model.config.decoder_start_token_id is not None:
+            scores = torch.cat((torch.zeros(scores.shape[0], scores.shape[1], 1, device=scores.device), scores), dim=2)
 
-        assert output.cross_attentions is not None
-        num_heads = output.cross_attentions[0][0].shape[1]
+        assert attentions is not None
+        num_heads = attentions[0][0].shape[1]
         indices = torch.stack(
             (
-                torch.arange(1, output.sequences.shape[1], device=output_ids.device).expand(in_b, n_sequences, -1),
-                torch.reshape(output.beam_indices[:, :-1] % num_beams, (in_b, n_sequences, -1)),
+                torch.arange(output_ids.shape[1] - start_index, device=output_ids.device).expand(in_b, n_sequences, -1),
+                torch.reshape(beam_indices[:, start_index:] % num_beams, (in_b, n_sequences, -1)),
             ),
             dim=3,
         )
+        num_layers = len(attentions[0])
+        layer = (2 * num_layers) // 3
         attentions = (
-            torch.stack([cast(Tuple[torch.FloatTensor, ...], a)[4] for a in output.cross_attentions], dim=0)
+            torch.stack([cast(Tuple[torch.FloatTensor, ...], a)[layer][:, :, -1, :] for a in attentions], dim=0)
             .squeeze()
-            .reshape(len(output.cross_attentions), in_b, num_beams, num_heads, -1)
+            .reshape(len(attentions), in_b, num_beams, num_heads, -1)
             .transpose(0, 1)
         )
         attentions = torch.mean(attentions, dim=3)
         attentions = torch_gather_nd(attentions, indices, 1)
+        if self.model.config.decoder_start_token_id is not None:
+            attentions = torch.cat(
+                (
+                    torch.zeros(
+                        (attentions.shape[0], attentions.shape[1], 1, attentions.shape[3]), device=attentions.device
+                    ),
+                    attentions,
+                ),
+                dim=2,
+            )
 
         output_ids = output_ids.reshape(in_b, n_sequences, *output_ids.shape[1:])
         return {
@@ -161,21 +196,41 @@ class _TranslationPipeline(TranslationPipeline):
     def postprocess(self, model_outputs, clean_up_tokenization_spaces=False):
         if self.tokenizer is None:
             raise RuntimeError("No tokenizer is specified.")
+        all_special_ids = set(self.tokenizer.all_special_ids)
 
+        input_ids = model_outputs["input_ids"][0]
+        input_indices: List[int] = []
+        for i, input_id in enumerate(input_ids):
+            id = cast(int, input_id.item())
+            if id not in all_special_ids:
+                input_indices.append(i)
         input_tokens = model_outputs["input_tokens"][0]
+
         records = []
+        output_ids: torch.Tensor
+        scores: torch.Tensor
+        attentions: torch.Tensor
         for output_ids, scores, attentions in zip(
             model_outputs["output_ids"][0],
             model_outputs["scores"][0],
             model_outputs["attentions"][0],
         ):
-            tokens = self.tokenizer.convert_ids_to_tokens(output_ids, skip_special_tokens=True)
+            output_tokens: List[str] = []
+            output_indices: List[int] = []
+            for i, output_id in enumerate(output_ids):
+                id = cast(int, output_id.item())
+                if id not in all_special_ids:
+                    output_tokens.append(self.tokenizer.convert_ids_to_tokens(id))
+                    output_indices.append(i)
+            scores = scores[output_indices]
+            attentions = attentions[output_indices]
+            attentions = attentions[:, input_indices]
             records.append(
                 {
                     "input_tokens": input_tokens,
-                    "translation_tokens": tokens,
-                    "token_scores": scores[: len(tokens)],
-                    "token_attentions": attentions[: len(tokens), 1 : len(input_tokens) + 1],
+                    "translation_tokens": output_tokens,
+                    "token_scores": scores,
+                    "token_attentions": attentions,
                     "translation_text": self.tokenizer.decode(
                         output_ids,
                         skip_special_tokens=True,

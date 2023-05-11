@@ -127,7 +127,7 @@ class OpenNmtModel(TranslationModel):
                     trg_tokens = prediction["tokens"][i][:trg_length]
                     trg_segment = cast(str, labels_inputter.tokenizer.detokenize(trg_tokens))
 
-                    builder = TranslationResultBuilder()
+                    builder = TranslationResultBuilder(source_tokens, self.target_detokenizer)
 
                     alignment = prediction["alignment"][i][:trg_length]
                     src_indices = np.argmax(alignment, axis=-1)
@@ -141,9 +141,7 @@ class OpenNmtModel(TranslationModel):
                         builder.append_token(token, TranslationSources.NMT, confidence)
 
                     builder.mark_phrase(Range.create(0, len(source_tokens)), wa_matrix)
-                    hypotheses.append(
-                        builder.to_result(self.target_detokenizer.detokenize(builder.target_tokens), source_tokens)
-                    )
+                    hypotheses.append(builder.to_result())
 
                 queued_results[index] = hypotheses
                 heapq.heappush(heap, index)

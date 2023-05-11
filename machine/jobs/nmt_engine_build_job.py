@@ -1,21 +1,15 @@
-import argparse
-import os
 from contextlib import ExitStack
-from typing import Any, Callable, Optional, Sequence, cast
-
-from clearml import Task
+from typing import Any, Callable, Optional, Sequence
 
 from ..corpora.corpora_utils import batch
 from ..translation.translation_engine import TranslationEngine
-from ..utils.canceled_error import CanceledError
-from .config import SETTINGS
 from .nmt_model_factory import NmtModelFactory
 from .shared_file_service import PretranslationInfo, PretranslationWriter, SharedFileService
 
 _PRETRANSLATE_BATCH_SIZE = 128
 
 
-class ClearMLNmtEngineBuildJob:
+class NmtEngineBuildJob:
     def __init__(self, config: Any, nmt_model_factory: NmtModelFactory, shared_file_service: SharedFileService) -> None:
         self._config = config
         self._nmt_model_factory = nmt_model_factory
@@ -24,9 +18,6 @@ class ClearMLNmtEngineBuildJob:
     def run(self, check_canceled: Optional[Callable[[], None]] = None) -> None:
         if check_canceled is not None:
             check_canceled()
-
-        print("NMT Engine Build Job started")
-        print("Config:", self._config)
 
         self._nmt_model_factory.init()
 
@@ -57,11 +48,8 @@ class ClearMLNmtEngineBuildJob:
         print("Training NMT model")
         model_trainer = self._nmt_model_factory.create_model_trainer(parallel_corpus)
 
-        try:
-            model_trainer.train(check_canceled=check_canceled)
-            model_trainer.save()
-        except RuntimeError:
-            print("Training already completed")
+        model_trainer.train(check_canceled=check_canceled)
+        model_trainer.save()
 
         if check_canceled is not None:
             check_canceled()
@@ -75,7 +63,6 @@ class ClearMLNmtEngineBuildJob:
                 if check_canceled is not None:
                     check_canceled()
                 _translate_batch(model, pi_batch, writer)
-        print("Finished")
 
 
 def _translate_batch(
@@ -83,50 +70,7 @@ def _translate_batch(
     batch: Sequence[PretranslationInfo],
     writer: PretranslationWriter,
 ) -> None:
-    source_segments = [pi["segment"] for pi in batch]
+    source_segments = [pi["translation"] for pi in batch]
     for i, result in enumerate(engine.translate_batch(source_segments)):
-        batch[i]["segment"] = result.translation
+        batch[i]["translation"] = result.translation
         writer.write(batch[i])
-
-
-def run(args: dict) -> None:
-    task = Task.init()
-
-    def check_canceled() -> None:
-        if task.get_status() in {"stopped", "stopping"}:
-            raise CanceledError
-
-    SETTINGS.update(args)
-    SETTINGS.data_dir = os.path.expanduser(cast(str, SETTINGS.data_dir))
-
-    shared_file_service = SharedFileService(SETTINGS)
-    model_type = cast(str, SETTINGS.model_type).lower()
-    nmt_model_factory: NmtModelFactory
-    if model_type == "huggingface":
-        from .hugging_face_nmt_model_factory import HuggingFaceNmtModelFactory
-
-        nmt_model_factory = HuggingFaceNmtModelFactory(SETTINGS, shared_file_service)
-    elif model_type == "opennmt":
-        from .open_nmt_model_factory import OpenNmtModelFactory
-
-        nmt_model_factory = OpenNmtModelFactory(SETTINGS, shared_file_service)
-    else:
-        raise RuntimeError("The model type is invalid.")
-    job = ClearMLNmtEngineBuildJob(SETTINGS, nmt_model_factory, shared_file_service)
-    job.run(check_canceled)
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Trains an NMT model.")
-    parser.add_argument("--engine-id", required=True, type=str, help="Engine id")
-    parser.add_argument("--build-id", required=True, type=str, help="Build id")
-    parser.add_argument("--src-lang", required=True, type=str, help="Source language tag")
-    parser.add_argument("--trg-lang", required=True, type=str, help="Target language tag")
-    parser.add_argument("--max-step", type=int, help="Maximum number of steps")
-    args = parser.parse_args()
-
-    run(vars(args))
-
-
-if __name__ == "__main__":
-    main()

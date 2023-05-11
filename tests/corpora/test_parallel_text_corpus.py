@@ -1061,7 +1061,7 @@ def test_from_pandas() -> None:
     assert set_equals(rows[2].aligned_word_pairs, [AlignedWordPair(2, 2)])
 
 
-def test_to_hf_dataset() -> None:
+def test_to_hf_iterable_dataset() -> None:
     source_corpus = DictionaryTextCorpus(
         MemoryText(
             "text1",
@@ -1094,7 +1094,7 @@ def test_to_hf_dataset() -> None:
     )
 
     parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus, alignment_corpus)
-    ds = parallel_corpus.to_hf_dataset("src", "trg")
+    ds = parallel_corpus.to_hf_iterable_dataset("src", "trg")
     examples = list(ds)
 
     assert len(examples) == 3

@@ -7,4 +7,3 @@ from ..annotations.range import Range
 class Phrase:
     source_segment_range: Range[int]
     target_segment_cut: int
-    confidence: float
