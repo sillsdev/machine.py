@@ -90,7 +90,7 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
         results: List[WordAlignmentMatrix] = []
         for source_segments, target_segments in batch(segments, _MAX_BATCH_SIZE):
             alignments = self._model.get_best_alignments(source_segments, target_segments)
-            for (_, matrix) in alignments:
+            for _, matrix in alignments:
                 results.append(WordAlignmentMatrix(matrix.to_numpy()))
         return results
 

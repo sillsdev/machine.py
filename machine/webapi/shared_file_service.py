@@ -53,7 +53,10 @@ class SharedFileService:
             with src_pretranslate_path.open("r", encoding="utf-8-sig") as file:
                 for pi in json_stream.load(file):
                     yield PretranslationInfo(
-                        corpusId=pi["corpusId"], textId=pi["textId"], refs=list(pi["refs"]), translation=pi["translation"]
+                        corpusId=pi["corpusId"],
+                        textId=pi["textId"],
+                        refs=list(pi["refs"]),
+                        translation=pi["translation"],
                     )
 
         return ContextManagedGenerator(generator())
