@@ -71,7 +71,7 @@ sil-thot = "^3.4.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
-black = "^21.7b0"
+black = "^23.3.0" #match the extension
 flake8 = "^3.9.2"
 isort = "^5.9.3"
 pytest-mockito = "^0.0.4"

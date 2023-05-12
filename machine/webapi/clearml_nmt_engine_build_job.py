@@ -83,7 +83,7 @@ class ClearMLNmtEngineBuildJob:
                     check_canceled()
                 _translate_batch(model, pi_batch, source_tokenizer, target_detokenizer, writer)
 
-        if(self._config.save_model):
+        if self._config.save_model:
             print("Saving NMT model")
             self._nmt_model_factory.save_model()
         else:
