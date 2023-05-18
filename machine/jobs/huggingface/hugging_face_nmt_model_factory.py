@@ -22,8 +22,14 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
         args["overwrite_output_dir"] = True
         if "max_steps" in self._config:
             args["max_steps"] = self._config.max_steps
-        parser = HfArgumentParser(Seq2SeqTrainingArguments)
+        parser = HfArgumentParser(cast(Any, Seq2SeqTrainingArguments))
         self._training_args = cast(Seq2SeqTrainingArguments, parser.parse_dict(args)[0])
+        if (
+            not config.clearml
+            and self._training_args.report_to is not None
+            and "clearml" in self._training_args.report_to
+        ):
+            self._training_args.report_to.remove("clearml")
 
     def init(self) -> None:
         self._model_dir.mkdir(parents=True, exist_ok=True)

@@ -1,6 +1,5 @@
 import logging
 import os
-import sys
 from typing import Any, Callable, Optional, Union, cast
 
 import datasets.utils.logging as datasets_logging
@@ -36,13 +35,6 @@ from ...utils.progress_status import ProgressStatus
 from ..trainer import Trainer, TrainStats
 
 logger = logging.getLogger(__name__)
-
-# Setup logging
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-    datefmt="%m/%d/%Y %H:%M:%S",
-    handlers=[logging.StreamHandler(sys.stdout)],
-)
 
 
 def prepare_decoder_input_ids_from_labels(self: M2M100ForConditionalGeneration, labels: Tensor) -> Tensor:

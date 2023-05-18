@@ -1,3 +1,4 @@
+import logging
 from contextlib import ExitStack
 from typing import Any, Callable, Optional, Sequence
 
@@ -5,6 +6,8 @@ from ..corpora.corpora_utils import batch
 from ..translation.translation_engine import TranslationEngine
 from .nmt_model_factory import NmtModelFactory
 from .shared_file_service import PretranslationInfo, PretranslationWriter, SharedFileService
+
+logger = logging.getLogger(__name__)
 
 _PRETRANSLATE_BATCH_SIZE = 128
 
@@ -21,7 +24,7 @@ class NmtEngineBuildJob:
 
         self._nmt_model_factory.init()
 
-        print("Downloading data files")
+        logger.info("Downloading data files")
         source_corpus = self._shared_file_service.create_source_corpus()
         target_corpus = self._shared_file_service.create_target_corpus()
         parallel_corpus = source_corpus.align_rows(target_corpus)
@@ -31,7 +34,7 @@ class NmtEngineBuildJob:
 
         source_tokenizer_trainer = self._nmt_model_factory.create_source_tokenizer_trainer(source_corpus)
         if source_tokenizer_trainer is not None:
-            print("Training source tokenizer")
+            logger.info("Training source tokenizer")
             source_tokenizer_trainer.train(check_canceled=check_canceled)
             source_tokenizer_trainer.save()
             if check_canceled is not None:
@@ -39,13 +42,13 @@ class NmtEngineBuildJob:
 
         target_tokenizer_trainer = self._nmt_model_factory.create_target_tokenizer_trainer(target_corpus)
         if target_tokenizer_trainer is not None:
-            print("Training target tokenizer")
+            logger.info("Training target tokenizer")
             target_tokenizer_trainer.train(check_canceled=check_canceled)
             target_tokenizer_trainer.save()
             if check_canceled is not None:
                 check_canceled()
 
-        print("Training NMT model")
+        logger.info("Training NMT model")
         model_trainer = self._nmt_model_factory.create_model_trainer(parallel_corpus)
 
         model_trainer.train(check_canceled=check_canceled)
@@ -54,7 +57,7 @@ class NmtEngineBuildJob:
         if check_canceled is not None:
             check_canceled()
 
-        print("Pretranslating segments")
+        logger.info("Pretranslating segments")
         with ExitStack() as stack:
             model = stack.enter_context(self._nmt_model_factory.create_model())
             src_pretranslations = stack.enter_context(self._shared_file_service.get_source_pretranslations())
