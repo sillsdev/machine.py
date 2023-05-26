@@ -24,7 +24,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
         **pipeline_kwargs,
     ) -> None:
         model_name = str(model_name_or_path)
-        model_config = AutoConfig.from_pretrained(model_name)
+        model_config = AutoConfig.from_pretrained(model_name, label2id={}, id2label={}, num_labels=0)
         model = AutoModelForSeq2SeqLM.from_pretrained(model_name, config=model_config)
         self._tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
         if "prefix" not in pipeline_kwargs:

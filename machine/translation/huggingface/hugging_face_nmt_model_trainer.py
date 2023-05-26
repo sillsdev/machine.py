@@ -124,7 +124,11 @@ class HuggingFaceNmtModelTrainer(Trainer):
         set_seed(self._training_args.seed)
 
         config = AutoConfig.from_pretrained(
-            self._parent_model_name, use_cache=not self._training_args.gradient_checkpointing
+            self._parent_model_name,
+            use_cache=not self._training_args.gradient_checkpointing,
+            label2id={},
+            id2label={},
+            num_labels=0,
         )
         model = cast(PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(self._parent_model_name, config=config))
         tokenizer: Any = AutoTokenizer.from_pretrained(self._parent_model_name, use_fast=True)
