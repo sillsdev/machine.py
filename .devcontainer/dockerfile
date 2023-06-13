@@ -27,7 +27,8 @@ RUN ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python3  & \
 
 # Install python packages
 RUN pip install -U pip setuptools \
-    && pip install poetry==${POETRY_VERSION} black pipenv virtualenv clearml
+    && pip install poetry==${POETRY_VERSION} black pipenv virtualenv clearml \
+    && poetry config virtualenvs.in-project true
 
 COPY ./.devcontainer/clearml.conf /root/clearml.conf
 
