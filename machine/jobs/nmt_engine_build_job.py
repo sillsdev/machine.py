@@ -9,8 +9,6 @@ from .shared_file_service import PretranslationInfo, PretranslationWriter, Share
 
 logger = logging.getLogger(__name__)
 
-_PRETRANSLATE_BATCH_SIZE = 128
-
 
 class NmtEngineBuildJob:
     def __init__(self, config: Any, nmt_model_factory: NmtModelFactory, shared_file_service: SharedFileService) -> None:
@@ -32,37 +30,37 @@ class NmtEngineBuildJob:
         if check_canceled is not None:
             check_canceled()
 
-        source_tokenizer_trainer = self._nmt_model_factory.create_source_tokenizer_trainer(source_corpus)
-        if source_tokenizer_trainer is not None:
+        if self._nmt_model_factory.train_tokenizer:
             logger.info("Training source tokenizer")
-            source_tokenizer_trainer.train(check_canceled=check_canceled)
-            source_tokenizer_trainer.save()
+            with self._nmt_model_factory.create_source_tokenizer_trainer(source_corpus) as source_tokenizer_trainer:
+                source_tokenizer_trainer.train(check_canceled=check_canceled)
+                source_tokenizer_trainer.save()
+
             if check_canceled is not None:
                 check_canceled()
 
-        target_tokenizer_trainer = self._nmt_model_factory.create_target_tokenizer_trainer(target_corpus)
-        if target_tokenizer_trainer is not None:
             logger.info("Training target tokenizer")
-            target_tokenizer_trainer.train(check_canceled=check_canceled)
-            target_tokenizer_trainer.save()
+            with self._nmt_model_factory.create_target_tokenizer_trainer(target_corpus) as target_tokenizer_trainer:
+                target_tokenizer_trainer.train(check_canceled=check_canceled)
+                target_tokenizer_trainer.save()
+
             if check_canceled is not None:
                 check_canceled()
 
         logger.info("Training NMT model")
-        model_trainer = self._nmt_model_factory.create_model_trainer(parallel_corpus)
-
-        model_trainer.train(check_canceled=check_canceled)
-        model_trainer.save()
+        with self._nmt_model_factory.create_model_trainer(parallel_corpus) as model_trainer:
+            model_trainer.train(check_canceled=check_canceled)
+            model_trainer.save()
 
         if check_canceled is not None:
             check_canceled()
 
         logger.info("Pretranslating segments")
         with ExitStack() as stack:
-            model = stack.enter_context(self._nmt_model_factory.create_model())
+            model = stack.enter_context(self._nmt_model_factory.create_engine())
             src_pretranslations = stack.enter_context(self._shared_file_service.get_source_pretranslations())
             writer = stack.enter_context(self._shared_file_service.open_target_pretranslation_writer())
-            for pi_batch in batch(src_pretranslations, _PRETRANSLATE_BATCH_SIZE):
+            for pi_batch in batch(src_pretranslations, self._config["batch_size"]):
                 if check_canceled is not None:
                     check_canceled()
                 _translate_batch(model, pi_batch, writer)

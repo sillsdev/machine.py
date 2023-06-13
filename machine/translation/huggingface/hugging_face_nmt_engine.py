@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import gc
 from math import exp, prod
 from typing import Iterable, List, Sequence, Tuple, Union, cast
 
 import torch  # pyright: ignore[reportMissingImports]
-from transformers import AutoConfig, AutoModelForSeq2SeqLM, AutoTokenizer, TranslationPipeline
+from transformers import AutoConfig, AutoModelForSeq2SeqLM, AutoTokenizer, PreTrainedModel, TranslationPipeline
 from transformers.generation import BeamSearchEncoderDecoderOutput, GreedySearchEncoderDecoderOutput
 from transformers.tokenization_utils import BatchEncoding, TruncationStrategy
 
@@ -20,18 +21,20 @@ from ..word_alignment_matrix import WordAlignmentMatrix
 class HuggingFaceNmtEngine(TranslationEngine):
     def __init__(
         self,
-        model_name_or_path: StrPath,
+        model: Union[PreTrainedModel, StrPath, str],
         **pipeline_kwargs,
     ) -> None:
-        model_name = str(model_name_or_path)
-        model_config = AutoConfig.from_pretrained(model_name)
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_name, config=model_config)
-        self._tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
+        if isinstance(model, PreTrainedModel):
+            model.eval()
+        else:
+            model_config = AutoConfig.from_pretrained(str(model))
+            model = cast(PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(str(model), config=model_config))
+        self._tokenizer = AutoTokenizer.from_pretrained(model.name_or_path, use_fast=True)
         if "prefix" not in pipeline_kwargs:
             if (
                 "src_lang" in pipeline_kwargs
                 and "tgt_lang" in pipeline_kwargs
-                and (model_name.startswith("t5-") or model_name.startswith("mt5-"))
+                and (model.name_or_path.startswith("t5-") or model.name_or_path.startswith("google/mt5-"))
             ):
                 src_lang = pipeline_kwargs["src_lang"]
                 tgt_lang = pipeline_kwargs["tgt_lang"]
@@ -81,6 +84,12 @@ class HuggingFaceNmtEngine(TranslationEngine):
 
     def __enter__(self) -> HuggingFaceNmtEngine:
         return self
+
+    def close(self) -> None:
+        del self._pipeline
+        gc.collect()
+        with torch.no_grad():
+            torch.cuda.empty_cache()
 
 
 class _TranslationPipeline(TranslationPipeline):
