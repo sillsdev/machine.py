@@ -1,9 +1,9 @@
 default:
   max_steps: 20000
   data_dir: ~/machine
+  batch_size: 1024
   huggingface:
     parent_model_name: facebook/nllb-200-1.3B
-    device: 0
     train_params:
       do_train: true
       optim: adamw_torch
@@ -15,7 +15,13 @@ default:
       gradient_checkpointing: true
       fp16: true
       save_strategy: no
+    generate_params:
+      device: 0
+      num_beams: 2
+      batch_size: 16
 development:
   shared_file_uri: s3://aqua-ml-data/
   huggingface:
     parent_model_name: facebook/nllb-200-distilled-600M
+    generate_params:
+      num_beams: 1

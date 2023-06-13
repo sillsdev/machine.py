@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
-from typing import Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
 from datasets.arrow_dataset import Dataset
-from transformers import Seq2SeqTrainingArguments
+from transformers import PreTrainedModel, Seq2SeqTrainingArguments
 
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
 from ...utils.typeshed import StrPath
@@ -18,12 +18,16 @@ from .hugging_face_nmt_model_trainer import HuggingFaceNmtModelTrainer
 class HuggingFaceNmtModel(TranslationModel):
     def __init__(
         self,
-        model_path: StrPath,
+        model: Union[PreTrainedModel, StrPath],
         parent_model_name: str,
         training_args: Optional[Seq2SeqTrainingArguments] = None,
         **pipeline_kwargs,
     ) -> None:
-        self._model_path = Path(model_path)
+        self._model = model
+        if isinstance(model, PreTrainedModel):
+            self._model_path = Path(model.name_or_path)
+        else:
+            self._model_path = Path(model)
         self._parent_model_name = parent_model_name
         if training_args is None:
             training_args = Seq2SeqTrainingArguments(output_dir=str(self._model_path))
@@ -59,12 +63,17 @@ class HuggingFaceNmtModel(TranslationModel):
     def __enter__(self) -> HuggingFaceNmtModel:
         return self
 
+    def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
+        self.reset_engine()
+
     def reset_engine(self) -> None:
-        self._engine = None
+        if self._engine is not None:
+            self._engine.close()
+            self._engine = None
 
     def _get_engine(self) -> HuggingFaceNmtEngine:
         if self._engine is None:
-            self._engine = HuggingFaceNmtEngine(self._model_path, **self._pipeline_kwargs)
+            self._engine = HuggingFaceNmtEngine(self._model, **self._pipeline_kwargs)
         return self._engine
 
 

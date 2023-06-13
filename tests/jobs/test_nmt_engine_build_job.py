@@ -9,15 +9,8 @@ from mockito import ANY, mock, verify, when
 from machine.annotations import Range
 from machine.corpora import DictionaryTextCorpus
 from machine.jobs import NmtEngineBuildJob, NmtModelFactory, PretranslationInfo, PretranslationWriter, SharedFileService
-from machine.translation import (
-    Phrase,
-    Trainer,
-    TrainStats,
-    TranslationModel,
-    TranslationResult,
-    TranslationSources,
-    WordAlignmentMatrix,
-)
+from machine.translation import Phrase, Trainer, TrainStats, TranslationResult, TranslationSources, WordAlignmentMatrix
+from machine.translation.translation_engine import TranslationEngine
 from machine.utils import CanceledError, ContextManagedGenerator
 
 
@@ -25,7 +18,7 @@ def test_run() -> None:
     env = _TestEnvironment()
     env.job.run()
 
-    verify(env.model, times=1).translate_batch(...)
+    verify(env.engine, times=1).translate_batch(...)
     pretranslations = json.loads(env.target_pretranslations)
     assert len(pretranslations) == 1
     assert pretranslations[0]["translation"] == "Please, I have booked a room."
@@ -42,7 +35,7 @@ def test_cancel() -> None:
 
 class _TestEnvironment:
     def __init__(self) -> None:
-        config = {"src_lang": "es", "trg_lang": "en"}
+        config = {"src_lang": "es", "trg_lang": "en", "batch_size": 100}
         self.source_tokenizer_trainer = _mock(Trainer)
         when(self.source_tokenizer_trainer).train(check_canceled=ANY).thenReturn()
         when(self.source_tokenizer_trainer).save().thenReturn()
@@ -59,8 +52,8 @@ class _TestEnvironment:
         stats.metrics["bleu"] = 30.0
         setattr(self.model_trainer, "stats", stats)
 
-        self.model = _mock(TranslationModel)
-        when(self.model).translate_batch(ANY).thenReturn(
+        self.engine = _mock(TranslationEngine)
+        when(self.engine).translate_batch(ANY).thenReturn(
             [
                 TranslationResult(
                     translation="Please, I have booked a room.",
@@ -86,11 +79,12 @@ class _TestEnvironment:
         )
 
         self.nmt_model_factory = _mock(NmtModelFactory)
+        setattr(self.nmt_model_factory, "train_tokenizer", True)
         when(self.nmt_model_factory).init().thenReturn()
         when(self.nmt_model_factory).create_source_tokenizer_trainer(ANY).thenReturn(self.source_tokenizer_trainer)
         when(self.nmt_model_factory).create_target_tokenizer_trainer(ANY).thenReturn(self.target_tokenizer_trainer)
         when(self.nmt_model_factory).create_model_trainer(ANY).thenReturn(self.model_trainer)
-        when(self.nmt_model_factory).create_model().thenReturn(self.model)
+        when(self.nmt_model_factory).create_engine().thenReturn(self.engine)
 
         self.shared_file_service = _mock(SharedFileService)
         when(self.shared_file_service).create_source_corpus().thenReturn(DictionaryTextCorpus())
