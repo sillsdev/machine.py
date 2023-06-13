@@ -2,7 +2,7 @@ import logging
 import os
 import shutil
 from pathlib import Path
-from typing import Any, Optional, Set
+from typing import Any, Set
 
 import tensorflow as tf
 from opennmt import END_OF_SENTENCE_TOKEN, PADDING_TOKEN, START_OF_SENTENCE_TOKEN
@@ -18,7 +18,7 @@ from ...tokenization.tokenizer import Tokenizer
 from ...translation.opennmt.open_nmt_model import OpenNmtModel
 from ...translation.opennmt.open_nmt_model_trainer import OpenNmtModelTrainer
 from ...translation.trainer import Trainer
-from ...translation.translation_model import TranslationModel
+from ...translation.translation_engine import TranslationEngine
 from ..nmt_model_factory import NmtModelFactory
 from ..shared_file_service import SharedFileService
 
@@ -28,21 +28,34 @@ class OpenNmtModelFactory(NmtModelFactory):
         self._config = config
         self._shared_file_service = shared_file_service
 
+    @property
+    def train_tokenizer(self) -> bool:
+        return True
+
     def init(self) -> None:
         _set_tf_log_level()
         self._model_dir.mkdir(parents=True, exist_ok=True)
 
-    def create_model(self) -> TranslationModel:
-        model_config = self._create_model_config()
-        model_type: str = self._config.model
-        mixed_precision: bool = self._config.mixed_precision
-        return OpenNmtModel(
-            model_type,
-            model_config,
-            mixed_precision=mixed_precision,
-            source_tokenizer=self._create_source_tokenizer(),
-            target_tokenizer=self._create_target_tokenizer(),
-            target_detokenizer=self._create_target_detokenizer(),
+    def create_source_tokenizer_trainer(self, corpus: TextCorpus) -> Trainer:
+        src_sp_model_prefix = self._model_dir / "src-sp"
+        return SentencePieceTrainer(
+            corpus,
+            vocab_size=8000,
+            hard_vocab_limit=False,
+            character_coverage=1.0,
+            model_prefix=str(src_sp_model_prefix),
+            normalization_rule_name="nmt_nfkc_cf",
+        )
+
+    def create_target_tokenizer_trainer(self, corpus: TextCorpus) -> Trainer:
+        trg_sp_model_prefix = self._model_dir / "trg-sp"
+        return SentencePieceTrainer(
+            corpus,
+            vocab_size=8000,
+            hard_vocab_limit=False,
+            character_coverage=1.0,
+            model_prefix=str(trg_sp_model_prefix),
+            normalization_rule_name="nmt_nfkc",
         )
 
     def create_model_trainer(self, corpus: ParallelTextCorpus) -> Trainer:
@@ -66,26 +79,17 @@ class OpenNmtModelFactory(NmtModelFactory):
             target_tokenizer=self._create_target_tokenizer(),
         )
 
-    def create_source_tokenizer_trainer(self, corpus: TextCorpus) -> Optional[Trainer]:
-        src_sp_model_prefix = self._model_dir / "src-sp"
-        return SentencePieceTrainer(
-            corpus,
-            vocab_size=8000,
-            hard_vocab_limit=False,
-            character_coverage=1.0,
-            model_prefix=str(src_sp_model_prefix),
-            normalization_rule_name="nmt_nfkc_cf",
-        )
-
-    def create_target_tokenizer_trainer(self, corpus: TextCorpus) -> Optional[Trainer]:
-        trg_sp_model_prefix = self._model_dir / "trg-sp"
-        return SentencePieceTrainer(
-            corpus,
-            vocab_size=8000,
-            hard_vocab_limit=False,
-            character_coverage=1.0,
-            model_prefix=str(trg_sp_model_prefix),
-            normalization_rule_name="nmt_nfkc",
+    def create_engine(self) -> TranslationEngine:
+        model_config = self._create_model_config()
+        model_type: str = self._config.model
+        mixed_precision: bool = self._config.mixed_precision
+        return OpenNmtModel(
+            model_type,
+            model_config,
+            mixed_precision=mixed_precision,
+            source_tokenizer=self._create_source_tokenizer(),
+            target_tokenizer=self._create_target_tokenizer(),
+            target_detokenizer=self._create_target_detokenizer(),
         )
 
     def save_model(self) -> None:

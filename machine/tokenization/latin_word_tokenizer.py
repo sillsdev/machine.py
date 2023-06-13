@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Optional, Tuple
+from typing import Iterable, Optional, Tuple, cast
 
 import regex as re
 
@@ -51,7 +51,7 @@ class LatinWordTokenizer(WhitespaceTokenizer):
                     ) or (inner_punct_str == "'" and not self.treat_apostrophe_as_single_quote):
                         yield Range.create(ctxt.word_start, char_range.end)
                     else:
-                        yield Range.create(ctxt.word_start, ctxt.inner_word_punct)
+                        yield Range.create(cast(int, ctxt.word_start), ctxt.inner_word_punct)
                         yield Range.create(ctxt.inner_word_punct, char_range.end)
                 else:
                     yield Range.create(ctxt.word_start, char_range.end)

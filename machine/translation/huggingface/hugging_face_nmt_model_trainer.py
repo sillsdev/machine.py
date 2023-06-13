@@ -1,8 +1,10 @@
+import gc
 import logging
 import os
 from typing import Any, Callable, Optional, Union, cast
 
 import datasets.utils.logging as datasets_logging
+import torch  # pyright: ignore[reportMissingImports]
 import transformers.utils.logging as transformers_logging
 from datasets.arrow_dataset import Dataset
 from torch import Tensor  # pyright: ignore[reportMissingImports]
@@ -68,7 +70,7 @@ MULTILINGUAL_TOKENIZERS = (
 class HuggingFaceNmtModelTrainer(Trainer):
     def __init__(
         self,
-        parent_model_name: str,
+        model: Union[PreTrainedModel, str],
         training_args: Seq2SeqTrainingArguments,
         corpus: Union[ParallelTextCorpus, Dataset],
         src_lang: Optional[str] = None,
@@ -76,7 +78,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
         max_source_length: Optional[int] = None,
         max_target_length: Optional[int] = None,
     ) -> None:
-        self._parent_model_name = parent_model_name
+        self._model = model
         self._training_args = training_args
         self._corpus = corpus
         self._src_lang = src_lang
@@ -123,15 +125,20 @@ class HuggingFaceNmtModelTrainer(Trainer):
         # Set seed before initializing model.
         set_seed(self._training_args.seed)
 
-        config = AutoConfig.from_pretrained(
-            self._parent_model_name,
-            use_cache=not self._training_args.gradient_checkpointing,
-            label2id={},
-            id2label={},
-            num_labels=0,
-        )
-        model = cast(PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(self._parent_model_name, config=config))
-        tokenizer: Any = AutoTokenizer.from_pretrained(self._parent_model_name, use_fast=True)
+        if isinstance(self._model, PreTrainedModel):
+            model = self._model
+            self._original_use_cache = model.config.use_cache
+            model.config.use_cache = not self._training_args.gradient_checkpointing
+        else:
+            config = AutoConfig.from_pretrained(
+                self._model,
+                use_cache=not self._training_args.gradient_checkpointing,
+                label2id={},
+                id2label={},
+                num_labels=0,
+            )
+            model = cast(PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(self._model, config=config))
+        tokenizer: Any = AutoTokenizer.from_pretrained(model.name_or_path, use_fast=True)
 
         def add_lang_code_to_tokenizer(tokenizer: Any, lang_code: str):
             if lang_code in tokenizer.lang_code_to_id:
@@ -190,9 +197,11 @@ class HuggingFaceNmtModelTrainer(Trainer):
             # as the first generated token. We ask the user to explicitly provide this as --forced_bos_token argument.
             forced_bos_token_id = tokenizer.lang_code_to_id[self._tgt_lang]
             model.config.forced_bos_token_id = forced_bos_token_id
+            if model.generation_config is not None:
+                model.generation_config.forced_bos_token_id = forced_bos_token_id
 
         prefix = ""
-        if self._parent_model_name.startswith("t5-") or self._parent_model_name.startswith("mt5-"):
+        if model.name_or_path.startswith("t5-") or model.name_or_path.startswith("google/mt5-"):
             prefix = f"translate {self._src_lang} to {self._tgt_lang}: "
 
         src_lang = self._src_lang
@@ -277,6 +286,17 @@ class HuggingFaceNmtModelTrainer(Trainer):
         self._trainer.save_model()
         self._trainer.save_metrics("train", self._metrics)
         self._trainer.save_state()
+        if isinstance(self._model, PreTrainedModel):
+            self._model.name_or_path = self._training_args.output_dir
+            self._model.config.name_or_path = self._training_args.output_dir
+            self._model.config.use_cache = self._original_use_cache
+
+    def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
+        if self._trainer is not None:
+            self._trainer = None
+            gc.collect()
+            with torch.no_grad():
+                torch.cuda.empty_cache()
 
 
 class _ProgressCallback(TrainerCallback):

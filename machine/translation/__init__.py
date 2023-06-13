@@ -8,6 +8,7 @@ from .ibm1_word_confidence_estimator import Ibm1WordConfidenceEstimator
 from .ibm2_word_alignment_model import Ibm2WordAlignmentModel
 from .interactive_translation_engine import InterativeTranslationEngine
 from .interactive_translation_model import InteractiveTranslationModel
+from .null_trainer import NullTrainer
 from .phrase import Phrase
 from .segment_scorer import SegmentScorer
 from .symmetrization_heuristic import SymmetrizationHeuristic
@@ -41,6 +42,7 @@ __all__ = [
     "InteractiveTranslationModel",
     "InterativeTranslationEngine",
     "MAX_SEGMENT_LENGTH",
+    "NullTrainer",
     "Phrase",
     "SegmentScorer",
     "SymmetrizationHeuristic",
