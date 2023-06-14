@@ -22,7 +22,7 @@ ENV PATH="${PATH}:${POETRY_VENV}/bin"
 WORKDIR /src
 COPY . /src
 RUN poetry build
-RUN poetry export --extras=all --without-hashes -f requirements.txt > requirements.txt
+RUN poetry export --extras="sentencepiece thot opennmt huggingface jobs" --without-hashes -f requirements.txt > requirements.txt
 
 
 FROM nvidia/cuda:$CUDA_VERSION

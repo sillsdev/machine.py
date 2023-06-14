@@ -4,7 +4,7 @@
 name = "absl-py"
 version = "1.0.0"
 description = "Abseil Python Common Libraries, see https://github.com/abseil/abseil-py."
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "absl-py-1.0.0.tar.gz", hash = "sha256:ac511215c01ee9ae47b19716599e8ccfa746f2e18de72bdf641b79b22afa27ea"},
@@ -18,7 +18,7 @@ six = "*"
 name = "accelerate"
 version = "0.19.0"
 description = "Accelerate"
-optional = false
+optional = true
 python-versions = ">=3.7.0"
 files = [
     {file = "accelerate-0.19.0-py3-none-any.whl", hash = "sha256:2866b0bf9fff08f51e6384c95fa96725838b70f1988d1cce42e56b820d8a91dd"},
@@ -46,7 +46,7 @@ testing = ["datasets", "deepspeed", "evaluate", "parameterized", "pytest", "pyte
 name = "aiohttp"
 version = "3.8.1"
 description = "Async http client/server framework (asyncio)"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "aiohttp-3.8.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:1ed0b6477896559f17b9eaeb6d38e07f7f9ffe40b9f0f9627ae8b9926ae260a8"},
@@ -139,7 +139,7 @@ speedups = ["Brotli", "aiodns", "cchardet"]
 name = "aiosignal"
 version = "1.2.0"
 description = "aiosignal: a list of registered asynchronous callbacks"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "aiosignal-1.2.0-py3-none-any.whl", hash = "sha256:26e62109036cd181df6e6ad646f91f0dcfd05fe16d0cb924138ff2ab75d64e3a"},
@@ -240,7 +240,7 @@ tests = ["pytest"]
 name = "astunparse"
 version = "1.6.3"
 description = "An AST unparser for Python"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "astunparse-1.6.3-py2.py3-none-any.whl", hash = "sha256:c2652417f2c8b5bb325c885ae329bdf3f86424075c4fd1a128674bc6fba4b8e8"},
@@ -255,7 +255,7 @@ wheel = ">=0.23.0,<1.0"
 name = "async-timeout"
 version = "4.0.2"
 description = "Timeout context manager for asyncio programs"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "async-timeout-4.0.2.tar.gz", hash = "sha256:2163e1640ddb52b7a8c80d0a67a08587e5d245cc9c553a74a847056bc2976b15"},
@@ -390,7 +390,7 @@ css = ["tinycss2 (>=1.1.0,<1.2)"]
 name = "boto3"
 version = "1.24.68"
 description = "The AWS SDK for Python"
-optional = false
+optional = true
 python-versions = ">= 3.7"
 files = [
     {file = "boto3-1.24.68-py3-none-any.whl", hash = "sha256:428d94d7c79b6ea65ade428afbd89fb1b869da631bb5acf22230b5b0b7486290"},
@@ -409,7 +409,7 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 name = "botocore"
 version = "1.27.68"
 description = "Low-level, data-driven core of boto 3."
-optional = false
+optional = true
 python-versions = ">= 3.7"
 files = [
     {file = "botocore-1.27.68-py3-none-any.whl", hash = "sha256:d7decff8d5d94c265ad533c11ba0d653acf0819fcdf1049452076cf8fc0f8946"},
@@ -428,7 +428,7 @@ crt = ["awscrt (==0.14.0)"]
 name = "cachetools"
 version = "4.2.4"
 description = "Extensible memoizing collections and decorators"
-optional = false
+optional = true
 python-versions = "~=3.5"
 files = [
     {file = "cachetools-4.2.4-py3-none-any.whl", hash = "sha256:92971d3cb7d2a97efff7c7bb1657f21a8f5fb309a37530537c71b1774189f2d1"},
@@ -439,7 +439,7 @@ files = [
 name = "certifi"
 version = "2023.5.7"
 description = "Python package for providing Mozilla's CA Bundle."
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "certifi-2023.5.7-py3-none-any.whl", hash = "sha256:c6c2e98f5c7869efca1f8916fed228dd91539f9f1b444c314c06eef02980c716"},
@@ -526,7 +526,7 @@ unicode-backport = ["unicodedata2"]
 name = "clearml"
 version = "1.6.4"
 description = "ClearML - Auto-Magical Experiment Manager, Version Control, and MLOps for AI"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "clearml-1.6.4-py2.py3-none-any.whl", hash = "sha256:653594742869604d6f15341863c9fee2b8d38621479c019c434e67bba3100841"},
@@ -573,7 +573,7 @@ colorama = {version = "*", markers = "platform_system == \"Windows\""}
 name = "cmake"
 version = "3.26.3"
 description = "CMake is an open-source, cross-platform family of tools designed to build, test and package software"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "cmake-3.26.3-py2.py3-none-macosx_10_10_universal2.macosx_10_10_x86_64.macosx_11_0_arm64.macosx_11_0_universal2.whl", hash = "sha256:9d38ea5b4999f8f042a071bea3e213f085bac26d7ab54cb5a4c6a193c4baf132"},
@@ -613,7 +613,7 @@ files = [
 name = "ctranslate2"
 version = "2.24.0"
 description = "Fast inference engine for Transformer models"
-optional = false
+optional = true
 python-versions = ">=3.6,<3.12"
 files = [
     {file = "ctranslate2-2.24.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:4918282e4809d0128b13b0459f6eee3aa918e37db2a8b6dd8b4293445b505060"},
@@ -654,7 +654,7 @@ pyyaml = ">=5.3,<7"
 name = "datasets"
 version = "2.9.0"
 description = "HuggingFace community-driven open-source library of datasets"
-optional = false
+optional = true
 python-versions = ">=3.7.0"
 files = [
     {file = "datasets-2.9.0-py3-none-any.whl", hash = "sha256:f1aa5b98959cddb30f5077448204c8ce4235a4f1c8ec2473920660ebd6fc304f"},
@@ -748,7 +748,7 @@ files = [
 name = "dill"
 version = "0.3.5.1"
 description = "serialize all of python"
-optional = false
+optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*"
 files = [
     {file = "dill-0.3.5.1-py2.py3-none-any.whl", hash = "sha256:33501d03270bbe410c72639b350e941882a8b0fd55357580fbc873fba0c59302"},
@@ -762,7 +762,7 @@ graph = ["objgraph (>=1.7.2)"]
 name = "dynaconf"
 version = "3.1.9"
 description = "The dynamic configurator for your Python Project"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "dynaconf-3.1.9-py2.py3-none-any.whl", hash = "sha256:9eaaa6e64a4a64225f80cdad14379a37656b8f2dc607ab0fd949b75d479674cc"},
@@ -808,7 +808,7 @@ devel = ["colorama", "json-spec", "jsonschema", "pylint", "pytest", "pytest-benc
 name = "filelock"
 version = "3.8.0"
 description = "A platform independent file lock."
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "filelock-3.8.0-py3-none-any.whl", hash = "sha256:617eb4e5eedc82fc5f47b6d61e4d11cb837c56cb4544e39081099fa17ad109d4"},
@@ -839,7 +839,7 @@ pyflakes = ">=2.3.0,<2.4.0"
 name = "flatbuffers"
 version = "2.0"
 description = "The FlatBuffers serialization format for Python"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "flatbuffers-2.0-py2.py3-none-any.whl", hash = "sha256:3751954f0604580d3219ae49a85fafec9d85eec599c0b96226e1bc0b48e57474"},
@@ -850,7 +850,7 @@ files = [
 name = "frozenlist"
 version = "1.3.1"
 description = "A list-like structure which implements collections.abc.MutableSequence"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "frozenlist-1.3.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:5f271c93f001748fc26ddea409241312a75e13466b06c94798d1a341cf0e6989"},
@@ -918,7 +918,7 @@ files = [
 name = "fsspec"
 version = "2022.8.2"
 description = "File-system specification"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "fsspec-2022.8.2-py3-none-any.whl", hash = "sha256:6374804a2c0d24f225a67d009ee1eabb4046ad00c793c3f6df97e426c890a1d9"},
@@ -956,7 +956,7 @@ tqdm = ["tqdm"]
 name = "furl"
 version = "2.1.3"
 description = "URL manipulation made simple."
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "furl-2.1.3-py2.py3-none-any.whl", hash = "sha256:9ab425062c4217f9802508e45feb4a83e54324273ac4b202f1850363309666c0"},
@@ -971,7 +971,7 @@ six = ">=1.8.0"
 name = "future"
 version = "0.18.3"
 description = "Clean single-source support for Python 3 and 2"
-optional = false
+optional = true
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 files = [
     {file = "future-0.18.3.tar.gz", hash = "sha256:34a17436ed1e96697a86f9de3d15a3b0be01d8bc8de9c1dffd59fb8234ed5307"},
@@ -981,7 +981,7 @@ files = [
 name = "gast"
 version = "0.4.0"
 description = "Python AST that abstracts the underlying Python version"
-optional = false
+optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 files = [
     {file = "gast-0.4.0-py3-none-any.whl", hash = "sha256:b7adcdd5adbebf1adf17378da5ba3f543684dbec47b1cda1f3997e573cd542c4"},
@@ -992,7 +992,7 @@ files = [
 name = "google-auth"
 version = "2.3.3"
 description = "Google Authentication Library"
-optional = false
+optional = true
 python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*"
 files = [
     {file = "google-auth-2.3.3.tar.gz", hash = "sha256:d83570a664c10b97a1dc6f8df87e5fdfff012f48f62be131e449c20dfc32630e"},
@@ -1015,7 +1015,7 @@ reauth = ["pyu2f (>=0.1.5)"]
 name = "google-auth-oauthlib"
 version = "0.4.6"
 description = "Google Authentication Library"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "google-auth-oauthlib-0.4.6.tar.gz", hash = "sha256:a90a072f6993f2c327067bf65270046384cda5a8ecb20b94ea9a687f1f233a7a"},
@@ -1033,7 +1033,7 @@ tool = ["click (>=6.0.0)"]
 name = "google-pasta"
 version = "0.2.0"
 description = "pasta is an AST-based Python refactoring library"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "google-pasta-0.2.0.tar.gz", hash = "sha256:c9f2c8dfc8f96d0d5808299920721be30c9eec37f2389f28904f454565c8a16e"},
@@ -1048,7 +1048,7 @@ six = "*"
 name = "grpcio"
 version = "1.43.0"
 description = "HTTP/2-based RPC framework"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "grpcio-1.43.0-cp310-cp310-linux_armv7l.whl", hash = "sha256:a4e786a8ee8b30b25d70ee52cda6d1dbba2a8ca2f1208d8e20ed8280774f15c8"},
@@ -1107,7 +1107,7 @@ protobuf = ["grpcio-tools (>=1.43.0)"]
 name = "h5py"
 version = "3.6.0"
 description = "Read and write HDF5 files from Python"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "h5py-3.6.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:a5320837c60870911645e9a935099bdb2be6a786fcf0dac5c860f3b679e2de55"},
@@ -1135,7 +1135,7 @@ numpy = ">=1.14.5"
 name = "huggingface-hub"
 version = "0.14.1"
 description = "Client library to download and publish models, datasets and other repos on the huggingface.co hub"
-optional = false
+optional = true
 python-versions = ">=3.7.0"
 files = [
     {file = "huggingface_hub-0.14.1-py3-none-any.whl", hash = "sha256:9fc619170d800ff3793ad37c9757c255c8783051e1b5b00501205eb43ccc4f27"},
@@ -1369,7 +1369,7 @@ i18n = ["Babel (>=2.7)"]
 name = "jmespath"
 version = "1.0.1"
 description = "JSON Matching Expressions"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "jmespath-1.0.1-py3-none-any.whl", hash = "sha256:02e2e4cc71b5bcab88332eebf907519190dd9e6e82107fa7f83b1003a6252980"},
@@ -1380,7 +1380,7 @@ files = [
 name = "joblib"
 version = "1.2.0"
 description = "Lightweight pipelining with Python functions"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "joblib-1.2.0-py3-none-any.whl", hash = "sha256:091138ed78f800342968c523bdde947e7a305b8594b910a0fea2ab83c3c6d385"},
@@ -1391,7 +1391,7 @@ files = [
 name = "json-stream"
 version = "1.3.0"
 description = "Streaming JSON decoder"
-optional = false
+optional = true
 python-versions = "<4,>=3.5"
 files = [
     {file = "json-stream-1.3.0.tar.gz", hash = "sha256:2790c16bccde6a77640c85e911a44de9c9de648206d9a4474b9ce398cfc7d14c"},
@@ -1559,7 +1559,7 @@ files = [
 name = "keras"
 version = "2.8.0"
 description = "Deep learning for humans."
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "keras-2.8.0-py2.py3-none-any.whl", hash = "sha256:744d39dc6577dcd80ff4a4d41549e92b77d6a17e0edd58a431d30656e29bc94e"},
@@ -1569,7 +1569,7 @@ files = [
 name = "keras-preprocessing"
 version = "1.1.2"
 description = "Easy data preprocessing and data augmentation for deep learning models"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "Keras_Preprocessing-1.1.2-py2.py3-none-any.whl", hash = "sha256:7b82029b130ff61cc99b55f3bd27427df4838576838c5b2f65940e4fcec99a7b"},
@@ -1589,7 +1589,7 @@ tests = ["Pillow", "keras", "pandas", "pytest", "pytest-cov", "pytest-xdist", "t
 name = "libclang"
 version = "11.1.0"
 description = "Clang Python Bindings, mirrored from the official LLVM repo: https://github.com/llvm/llvm-project/tree/master/clang/bindings/python, to make the installation process easier."
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "libclang-11.1.0-py2.py3-none-macosx_10_9_x86_64.whl", hash = "sha256:c9680adc86aaa15f3bd8271218415cae9356b7c4341313dba812991a56e1b7cb"},
@@ -1602,7 +1602,7 @@ files = [
 name = "lit"
 version = "16.0.5"
 description = "A Software Testing Tool"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "lit-16.0.5.tar.gz", hash = "sha256:40b0224271f7832991874a6285e13da343963110f0d7c9c6e1e53f3ace901dc0"},
@@ -1612,7 +1612,7 @@ files = [
 name = "markdown"
 version = "3.3.6"
 description = "Python implementation of Markdown."
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "Markdown-3.3.6-py3-none-any.whl", hash = "sha256:9923332318f843411e9932237530df53162e29dc7a4e2b91e35764583c46c9a3"},
@@ -1735,7 +1735,7 @@ files = [
 name = "mpmath"
 version = "1.3.0"
 description = "Python library for arbitrary-precision floating-point arithmetic"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "mpmath-1.3.0-py3-none-any.whl", hash = "sha256:a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c"},
@@ -1752,7 +1752,7 @@ tests = ["pytest (>=4.6)"]
 name = "multidict"
 version = "6.0.2"
 description = "multidict implementation"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "multidict-6.0.2-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:0b9e95a740109c6047602f4db4da9949e6c5945cefbad34a1299775ddc9a62e2"},
@@ -1820,7 +1820,7 @@ files = [
 name = "multiprocess"
 version = "0.70.13"
 description = "better multiprocessing and multithreading in python"
-optional = false
+optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*"
 files = [
     {file = "multiprocess-0.70.13-cp27-cp27m-macosx_10_14_x86_64.whl", hash = "sha256:b9a3be43ecee6776a9e7223af96914a0164f306affcf4624b213885172236b77"},
@@ -2096,7 +2096,7 @@ files = [
 name = "nvidia-cublas-cu11"
 version = "11.10.3.66"
 description = "CUBLAS native runtime libraries"
-optional = false
+optional = true
 python-versions = ">=3"
 files = [
     {file = "nvidia_cublas_cu11-11.10.3.66-py3-none-manylinux1_x86_64.whl", hash = "sha256:d32e4d75f94ddfb93ea0a5dda08389bcc65d8916a25cb9f37ac89edaeed3bded"},
@@ -2111,7 +2111,7 @@ wheel = "*"
 name = "nvidia-cuda-cupti-cu11"
 version = "11.7.101"
 description = "CUDA profiling tools runtime libs."
-optional = false
+optional = true
 python-versions = ">=3"
 files = [
     {file = "nvidia_cuda_cupti_cu11-11.7.101-py3-none-manylinux1_x86_64.whl", hash = "sha256:e0cfd9854e1f2edaa36ca20d21cd0bdd5dcfca4e3b9e130a082e05b33b6c5895"},
@@ -2126,7 +2126,7 @@ wheel = "*"
 name = "nvidia-cuda-nvrtc-cu11"
 version = "11.7.99"
 description = "NVRTC native runtime libraries"
-optional = false
+optional = true
 python-versions = ">=3"
 files = [
     {file = "nvidia_cuda_nvrtc_cu11-11.7.99-2-py3-none-manylinux1_x86_64.whl", hash = "sha256:9f1562822ea264b7e34ed5930567e89242d266448e936b85bc97a3370feabb03"},
@@ -2142,7 +2142,7 @@ wheel = "*"
 name = "nvidia-cuda-runtime-cu11"
 version = "11.7.99"
 description = "CUDA Runtime native Libraries"
-optional = false
+optional = true
 python-versions = ">=3"
 files = [
     {file = "nvidia_cuda_runtime_cu11-11.7.99-py3-none-manylinux1_x86_64.whl", hash = "sha256:cc768314ae58d2641f07eac350f40f99dcb35719c4faff4bc458a7cd2b119e31"},
@@ -2157,7 +2157,7 @@ wheel = "*"
 name = "nvidia-cudnn-cu11"
 version = "8.5.0.96"
 description = "cuDNN runtime libraries"
-optional = false
+optional = true
 python-versions = ">=3"
 files = [
     {file = "nvidia_cudnn_cu11-8.5.0.96-2-py3-none-manylinux1_x86_64.whl", hash = "sha256:402f40adfc6f418f9dae9ab402e773cfed9beae52333f6d86ae3107a1b9527e7"},
@@ -2172,7 +2172,7 @@ wheel = "*"
 name = "nvidia-cufft-cu11"
 version = "10.9.0.58"
 description = "CUFFT native runtime libraries"
-optional = false
+optional = true
 python-versions = ">=3"
 files = [
     {file = "nvidia_cufft_cu11-10.9.0.58-py3-none-manylinux1_x86_64.whl", hash = "sha256:222f9da70c80384632fd6035e4c3f16762d64ea7a843829cb278f98b3cb7dd81"},
@@ -2183,7 +2183,7 @@ files = [
 name = "nvidia-curand-cu11"
 version = "10.2.10.91"
 description = "CURAND native runtime libraries"
-optional = false
+optional = true
 python-versions = ">=3"
 files = [
     {file = "nvidia_curand_cu11-10.2.10.91-py3-none-manylinux1_x86_64.whl", hash = "sha256:eecb269c970fa599a2660c9232fa46aaccbf90d9170b96c462e13bcb4d129e2c"},
@@ -2198,7 +2198,7 @@ wheel = "*"
 name = "nvidia-cusolver-cu11"
 version = "11.4.0.1"
 description = "CUDA solver native runtime libraries"
-optional = false
+optional = true
 python-versions = ">=3"
 files = [
     {file = "nvidia_cusolver_cu11-11.4.0.1-2-py3-none-manylinux1_x86_64.whl", hash = "sha256:72fa7261d755ed55c0074960df5904b65e2326f7adce364cbe4945063c1be412"},
@@ -2214,7 +2214,7 @@ wheel = "*"
 name = "nvidia-cusparse-cu11"
 version = "11.7.4.91"
 description = "CUSPARSE native runtime libraries"
-optional = false
+optional = true
 python-versions = ">=3"
 files = [
     {file = "nvidia_cusparse_cu11-11.7.4.91-py3-none-manylinux1_x86_64.whl", hash = "sha256:a3389de714db63321aa11fbec3919271f415ef19fda58aed7f2ede488c32733d"},
@@ -2229,7 +2229,7 @@ wheel = "*"
 name = "nvidia-nccl-cu11"
 version = "2.14.3"
 description = "NVIDIA Collective Communication Library (NCCL) Runtime"
-optional = false
+optional = true
 python-versions = ">=3"
 files = [
     {file = "nvidia_nccl_cu11-2.14.3-py3-none-manylinux1_x86_64.whl", hash = "sha256:5e5534257d1284b8e825bc3a182c6f06acd6eb405e9f89d49340e98cd8f136eb"},
@@ -2239,7 +2239,7 @@ files = [
 name = "nvidia-nvtx-cu11"
 version = "11.7.91"
 description = "NVIDIA Tools Extension"
-optional = false
+optional = true
 python-versions = ">=3"
 files = [
     {file = "nvidia_nvtx_cu11-11.7.91-py3-none-manylinux1_x86_64.whl", hash = "sha256:b22c64eee426a62fc00952b507d6d29cf62b4c9df7a480fcc417e540e05fd5ac"},
@@ -2254,7 +2254,7 @@ wheel = "*"
 name = "oauthlib"
 version = "3.1.1"
 description = "A generic, spec-compliant, thorough implementation of the OAuth request-signing logic"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "oauthlib-3.1.1-py2.py3-none-any.whl", hash = "sha256:42bf6354c2ed8c6acb54d971fce6f88193d97297e18602a3a886603f9d7730cc"},
@@ -2270,7 +2270,7 @@ signedtoken = ["cryptography (>=3.0.0,<4)", "pyjwt (>=2.0.0,<3)"]
 name = "opennmt-tf"
 version = "2.25.0"
 description = "Neural machine translation and sequence learning using TensorFlow"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "OpenNMT-tf-2.25.0.tar.gz", hash = "sha256:4650943c06d35c309dd5a0a551c83001c882455b20834ff72577a27d31b54a98"},
@@ -2293,7 +2293,7 @@ tests = ["black (==22.*)", "flake8 (==3.9.*)", "isort (>=5.9,<6)", "parameterize
 name = "opt-einsum"
 version = "3.3.0"
 description = "Optimizing numpys einsum function"
-optional = false
+optional = true
 python-versions = ">=3.5"
 files = [
     {file = "opt_einsum-3.3.0-py3-none-any.whl", hash = "sha256:2455e59e3947d3c275477df7f5205b30635e266fe6dc300e3d9f9646bfcea147"},
@@ -2311,7 +2311,7 @@ tests = ["pytest", "pytest-cov", "pytest-pep8"]
 name = "orderedmultidict"
 version = "1.0.1"
 description = "Ordered Multivalue Dictionary"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "orderedmultidict-1.0.1-py2.py3-none-any.whl", hash = "sha256:43c839a17ee3cdd62234c47deca1a8508a3f2ca1d0678a3bf791c87cf84adbf3"},
@@ -2409,7 +2409,7 @@ testing = ["docopt", "pytest (<6.0.0)"]
 name = "pathlib2"
 version = "2.3.7.post1"
 description = "Object-oriented filesystem paths"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "pathlib2-2.3.7.post1-py2.py3-none-any.whl", hash = "sha256:5266a0fd000452f1b3467d782f079a4343c63aaa119221fbdc4e39577489ca5b"},
@@ -2459,7 +2459,7 @@ files = [
 name = "pillow"
 version = "9.1.1"
 description = "Python Imaging Library (Fork)"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "Pillow-9.1.1-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:42dfefbef90eb67c10c45a73a9bc1599d4dac920f7dfcbf4ec6b80cb620757fe"},
@@ -2539,7 +2539,7 @@ dev = ["pre-commit", "tox"]
 name = "portalocker"
 version = "2.4.0"
 description = "Wraps the portalocker recipe for easy usage"
-optional = false
+optional = true
 python-versions = ">=3.5"
 files = [
     {file = "portalocker-2.4.0-py2.py3-none-any.whl", hash = "sha256:b092f48e1e30a234ab3dd1cfd44f2f235e8a41f4e310e463fc8d6798d1c3c235"},
@@ -2586,7 +2586,7 @@ wcwidth = "*"
 name = "protobuf"
 version = "3.19.3"
 description = "Protocol Buffers"
-optional = false
+optional = true
 python-versions = ">=3.5"
 files = [
     {file = "protobuf-3.19.3-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:1cb2ed66aac593adbf6dca4f07cd7ee7e2958b17bbc85b2cc8bc564ebeb258ec"},
@@ -2621,7 +2621,7 @@ files = [
 name = "psutil"
 version = "5.9.1"
 description = "Cross-platform lib for process and system monitoring in Python."
-optional = false
+optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 files = [
     {file = "psutil-5.9.1-cp27-cp27m-manylinux2010_i686.whl", hash = "sha256:799759d809c31aab5fe4579e50addf84565e71c1dc9f1c31258f159ff70d3f87"},
@@ -2687,7 +2687,7 @@ files = [
 name = "pyarrow"
 version = "9.0.0"
 description = "Python library for Apache Arrow"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "pyarrow-9.0.0-cp310-cp310-macosx_10_13_universal2.whl", hash = "sha256:767cafb14278165ad539a2918c14c1b73cf20689747c21375c38e3fe62884902"},
@@ -2725,7 +2725,7 @@ numpy = ">=1.16.6"
 name = "pyasn1"
 version = "0.4.8"
 description = "ASN.1 types and codecs"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "pyasn1-0.4.8-py2.py3-none-any.whl", hash = "sha256:39c7e2ec30515947ff4e87fb6f456dfc6e84857d34be479c9d4a4ba4bf46aa5d"},
@@ -2736,7 +2736,7 @@ files = [
 name = "pyasn1-modules"
 version = "0.2.8"
 description = "A collection of ASN.1-based protocols modules."
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "pyasn1-modules-0.2.8.tar.gz", hash = "sha256:905f84c712230b2c592c19470d3ca8d552de726050d1d1716282a1f6146be65e"},
@@ -2794,7 +2794,7 @@ files = [
 name = "pyjwt"
 version = "2.4.0"
 description = "JSON Web Token implementation in Python"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "PyJWT-2.4.0-py3-none-any.whl", hash = "sha256:72d1d253f32dbd4f5c88eaf1fdc62f3a19f676ccbadb9dbc5d07e951b2b26daf"},
@@ -2811,7 +2811,7 @@ tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
 name = "pyonmttok"
 version = "1.36.0"
 description = "Fast and customizable text tokenization library with BPE and SentencePiece support"
-optional = false
+optional = true
 python-versions = ">=3.6,<3.12"
 files = [
     {file = "pyonmttok-1.36.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:dd6ee135d8f9ce8e7d1b4debccf2c0304216fedd7541fd662ea279944ce48174"},
@@ -2848,7 +2848,7 @@ files = [
 name = "pyparsing"
 version = "2.4.7"
 description = "Python parsing module"
-optional = false
+optional = true
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 files = [
     {file = "pyparsing-2.4.7-py2.py3-none-any.whl", hash = "sha256:ef9d7589ef3c200abe66653d3f1ab1033c3c419ae9b9bdb1240a85b024efc88b"},
@@ -2988,7 +2988,7 @@ files = [
 name = "pyyaml"
 version = "6.0"
 description = "YAML parser and emitter for Python"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "PyYAML-6.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:d4db7c7aef085872ef65a8fd7d6d09a14ae91f691dec3e87ee5ee0539d516f53"},
@@ -3189,7 +3189,7 @@ files = [
 name = "requests"
 version = "2.28.1"
 description = "Python HTTP for Humans."
-optional = false
+optional = true
 python-versions = ">=3.7, <4"
 files = [
     {file = "requests-2.28.1-py3-none-any.whl", hash = "sha256:8fefa2a1a1365bf5520aac41836fbee479da67864514bdb821f31ce07ce65349"},
@@ -3210,7 +3210,7 @@ use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 name = "requests-oauthlib"
 version = "1.3.0"
 description = "OAuthlib authentication support for Requests."
-optional = false
+optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 files = [
     {file = "requests-oauthlib-1.3.0.tar.gz", hash = "sha256:b4261601a71fd721a8bd6d7aa1cc1d6a8a93b4a9f5e96626f8e4d91e8beeaa6a"},
@@ -3228,7 +3228,7 @@ rsa = ["oauthlib[signedtoken] (>=3.0.0)"]
 name = "responses"
 version = "0.18.0"
 description = "A utility library for mocking out the `requests` Python library."
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "responses-0.18.0-py3-none-any.whl", hash = "sha256:15c63ad16de13ee8e7182d99c9334f64fd81f1ee79f90748d527c28f7ca9dd51"},
@@ -3246,7 +3246,7 @@ tests = ["coverage (>=6.0.0)", "flake8", "mypy", "pytest (>=4.6)", "pytest-cov",
 name = "rouge"
 version = "1.0.1"
 description = "Full Python ROUGE Score Implementation (not a wrapper)"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "rouge-1.0.1-py3-none-any.whl", hash = "sha256:28d118536e8c774dc47d1d15ec266479b4dd0914c4672ce117d4002789bdc644"},
@@ -3260,7 +3260,7 @@ six = "*"
 name = "rsa"
 version = "4.8"
 description = "Pure-Python RSA implementation"
-optional = false
+optional = true
 python-versions = ">=3.6,<4"
 files = [
     {file = "rsa-4.8-py3-none-any.whl", hash = "sha256:95c5d300c4e879ee69708c428ba566c59478fd653cc3a22243eeb8ed846950bb"},
@@ -3274,7 +3274,7 @@ pyasn1 = ">=0.1.3"
 name = "s3transfer"
 version = "0.6.0"
 description = "An Amazon S3 Transfer Manager"
-optional = false
+optional = true
 python-versions = ">= 3.7"
 files = [
     {file = "s3transfer-0.6.0-py3-none-any.whl", hash = "sha256:06176b74f3a15f61f1b4f25a1fc29a4429040b7647133a463da8fa5bd28d5ecd"},
@@ -3291,7 +3291,7 @@ crt = ["botocore[crt] (>=1.20.29,<2.0a.0)"]
 name = "sacrebleu"
 version = "2.0.0"
 description = "Hassle-free computation of shareable, comparable, and reproducible BLEU, chrF, and TER scores"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "sacrebleu-2.0.0-py3-none-any.whl", hash = "sha256:1acae0221e27c23c4987834fd17b284b4addc6556941c2097c4d618baa2d67af"},
@@ -3312,7 +3312,7 @@ ja = ["ipadic (>=1.0,<2.0)", "mecab-python3 (==1.0.3)"]
 name = "sacremoses"
 version = "0.0.53"
 description = "SacreMoses"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "sacremoses-0.0.53.tar.gz", hash = "sha256:43715868766c643b35de4b8046cce236bfe59a7fa88b25eaf6ddf02bacf53a7a"},
@@ -3345,7 +3345,7 @@ win32 = ["pywin32"]
 name = "sentencepiece"
 version = "0.1.99"
 description = "SentencePiece python wrapper"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "sentencepiece-0.1.99-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:0eb528e70571b7c02723e5804322469b82fe7ea418c96051d0286c0fa028db73"},
@@ -3415,7 +3415,7 @@ testing-integration = ["build[virtualenv]", "filelock (>=3.4.0)", "jaraco.envs (
 name = "sil-thot"
 version = "3.4.1"
 description = "A toolkit for statistical word alignment and machine translation"
-optional = false
+optional = true
 python-versions = ">=3.7, <4.0"
 files = [
     {file = "sil-thot-3.4.1.tar.gz", hash = "sha256:419f4ebd93a87531e365c94f377792ad81529148521016d63ef2effd80336676"},
@@ -3492,7 +3492,7 @@ files = [
 name = "sympy"
 version = "1.12"
 description = "Computer algebra system (CAS) in Python"
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "sympy-1.12-py3-none-any.whl", hash = "sha256:c3588cd4295d0c0f603d0f2ae780587e64e2efeedb3521e46b9bb1d08d184fa5"},
@@ -3506,7 +3506,7 @@ mpmath = ">=0.19"
 name = "tabulate"
 version = "0.8.9"
 description = "Pretty-print tabular data"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "tabulate-0.8.9-py3-none-any.whl", hash = "sha256:d7c013fe7abbc5e491394e10fa845f8f32fe54f8dc60c6622c6cf482d25d47e4"},
@@ -3520,7 +3520,7 @@ widechars = ["wcwidth"]
 name = "tensorboard"
 version = "2.8.0"
 description = "TensorBoard lets you watch Tensors Flow"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "tensorboard-2.8.0-py3-none-any.whl", hash = "sha256:65a338e4424e9079f2604923bdbe301792adce2ace1be68da6b3ddf005170def"},
@@ -3545,7 +3545,7 @@ wheel = ">=0.26"
 name = "tensorboard-data-server"
 version = "0.6.1"
 description = "Fast data loading for TensorBoard"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "tensorboard_data_server-0.6.1-py3-none-any.whl", hash = "sha256:809fe9887682d35c1f7d1f54f0f40f98bb1f771b14265b453ca051e2ce58fca7"},
@@ -3557,7 +3557,7 @@ files = [
 name = "tensorboard-plugin-wit"
 version = "1.8.1"
 description = "What-If Tool TensorBoard plugin."
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "tensorboard_plugin_wit-1.8.1-py3-none-any.whl", hash = "sha256:ff26bdd583d155aa951ee3b152b3d0cffae8005dc697f72b44a8e8c2a77a8cbe"},
@@ -3567,7 +3567,7 @@ files = [
 name = "tensorflow"
 version = "2.8.4"
 description = "TensorFlow is an open source machine learning framework for everyone."
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "tensorflow-2.8.4-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:8c59216566545a5bea98760572d73ec9949a36210b7f64faafa4f485e7b75833"},
@@ -3611,7 +3611,7 @@ wrapt = ">=1.11.0"
 name = "tensorflow-addons"
 version = "0.16.1"
 description = "TensorFlow Addons."
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "tensorflow_addons-0.16.1-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:05efb227446f39eebc1ab721d429091cf1762b46f74b78bd937e84d5205977b7"},
@@ -3642,7 +3642,7 @@ tensorflow-gpu = ["tensorflow-gpu (>=2.6.0,<2.9.0)"]
 name = "tensorflow-estimator"
 version = "2.8.0"
 description = "TensorFlow Estimator."
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "tensorflow_estimator-2.8.0-py2.py3-none-any.whl", hash = "sha256:bee8e0520c60ae7eaf6ca8cb46c5a9f4b45725531380db8fbe38fcb48478b6bb"},
@@ -3652,7 +3652,7 @@ files = [
 name = "tensorflow-io-gcs-filesystem"
 version = "0.30.0"
 description = "TensorFlow IO"
-optional = false
+optional = true
 python-versions = ">=3.7, <3.12"
 files = [
     {file = "tensorflow_io_gcs_filesystem-0.30.0-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:f5aa1aa0ec88b7d309ebf520c950ed12894ec1908c3d7335f080de9e16e88360"},
@@ -3687,7 +3687,7 @@ tensorflow-rocm = ["tensorflow-rocm (>=2.11.0,<2.12.0)"]
 name = "termcolor"
 version = "2.3.0"
 description = "ANSI color formatting for output in terminal"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "termcolor-2.3.0-py3-none-any.whl", hash = "sha256:3afb05607b89aed0ffe25202399ee0867ad4d3cb4180d98aaf8eefa6a5f7d475"},
@@ -3739,7 +3739,7 @@ test = ["flake8", "isort", "pytest"]
 name = "tokenizers"
 version = "0.13.2"
 description = "Fast and Customizable Tokenizers"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "tokenizers-0.13.2-cp310-cp310-macosx_10_11_x86_64.whl", hash = "sha256:a6f36b1b499233bb4443b5e57e20630c5e02fba61109632f5e00dab970440157"},
@@ -3815,7 +3815,7 @@ files = [
 name = "torch"
 version = "2.0.0"
 description = "Tensors and Dynamic neural networks in Python with strong GPU acceleration"
-optional = false
+optional = true
 python-versions = ">=3.8.0"
 files = [
     {file = "torch-2.0.0-1-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:c9090bda7d2eeeecd74f51b721420dbeb44f838d4536cc1b284e879417e3064a"},
@@ -3920,7 +3920,7 @@ files = [
 name = "tqdm"
 version = "4.64.0"
 description = "Fast, Extensible Progress Meter"
-optional = false
+optional = true
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,>=2.7"
 files = [
     {file = "tqdm-4.64.0-py2.py3-none-any.whl", hash = "sha256:74a2cdefe14d11442cedf3ba4e21a3b84ff9a2dbdc6cfae2c34addb2a14a5ea6"},
@@ -3954,7 +3954,7 @@ test = ["pytest"]
 name = "transformers"
 version = "4.29.1"
 description = "State-of-the-art Machine Learning for JAX, PyTorch and TensorFlow"
-optional = false
+optional = true
 python-versions = ">=3.7.0"
 files = [
     {file = "transformers-4.29.1-py3-none-any.whl", hash = "sha256:75f851f2420c26410edbdf4a2a1a5b434ab2b96aea36eb5931d06cc3b2e7b509"},
@@ -4022,7 +4022,7 @@ vision = ["Pillow"]
 name = "triton"
 version = "2.0.0"
 description = "A language and compiler for custom Deep Learning operations"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "triton-2.0.0-1-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:38806ee9663f4b0f7cd64790e96c579374089e58f49aac4a6608121aa55e2505"},
@@ -4059,7 +4059,7 @@ tutorials = ["matplotlib", "pandas", "tabulate"]
 name = "typeguard"
 version = "2.13.3"
 description = "Run-time type checker for Python"
-optional = false
+optional = true
 python-versions = ">=3.5.3"
 files = [
     {file = "typeguard-2.13.3-py3-none-any.whl", hash = "sha256:5e3e3be01e887e7eafae5af63d1f36c849aaa94e3a0112097312aabfa16284f1"},
@@ -4085,7 +4085,7 @@ files = [
 name = "urllib3"
 version = "1.26.8"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
-optional = false
+optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4"
 files = [
     {file = "urllib3-1.26.8-py2.py3-none-any.whl", hash = "sha256:000ca7f471a233c2251c6c7023ee85305721bfdf18621ebff4fd17a8653427ed"},
@@ -4139,7 +4139,7 @@ test = ["websockets"]
 name = "werkzeug"
 version = "2.0.2"
 description = "The comprehensive WSGI web application library."
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "Werkzeug-2.0.2-py3-none-any.whl", hash = "sha256:63d3dc1cf60e7b7e35e97fa9861f7397283b75d765afcaefd993d6046899de8f"},
@@ -4153,7 +4153,7 @@ watchdog = ["watchdog"]
 name = "wheel"
 version = "0.37.1"
 description = "A built-package format for Python"
-optional = false
+optional = true
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 files = [
     {file = "wheel-0.37.1-py2.py3-none-any.whl", hash = "sha256:4bdcd7d840138086126cd09254dc6195fb4fc6f01c050a1d7236f2630db1d22a"},
@@ -4178,7 +4178,7 @@ files = [
 name = "wrapt"
 version = "1.13.3"
 description = "Module for decorators, wrappers and monkey patching."
-optional = false
+optional = true
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 files = [
     {file = "wrapt-1.13.3-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:e05e60ff3b2b0342153be4d1b597bbcfd8330890056b9619f4ad6b8d5c96a81a"},
@@ -4238,7 +4238,7 @@ files = [
 name = "xxhash"
 version = "3.0.0"
 description = "Python binding for xxHash"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "xxhash-3.0.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:219cba13991fd73cf21a5efdafa5056f0ae0b8f79e5e0112967e3058daf73eea"},
@@ -4301,7 +4301,7 @@ files = [
 name = "yarl"
 version = "1.8.1"
 description = "Yet another URL library"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "yarl-1.8.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:abc06b97407868ef38f3d172762f4069323de52f2b70d133d096a48d72215d28"},
@@ -4385,15 +4385,13 @@ docs = ["jaraco.packaging (>=8.2)", "rst.linker (>=1.9)", "sphinx"]
 testing = ["func-timeout", "jaraco.itertools", "pytest (>=4.6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.0.1)", "pytest-flake8", "pytest-mypy"]
 
 [extras]
-all = []
-all-but-nmt = ["sentencepiece", "sil-thot"]
-all-huggingface = ["accelerate", "datasets", "sacremoses", "torch", "transformers"]
-all-opennmt = ["OpenNMT-tf", "libclang", "tensorflow"]
+huggingface = ["accelerate", "datasets", "pandas", "sacremoses", "torch", "transformers"]
 jobs = ["clearml", "dynaconf", "json-stream"]
+opennmt = ["OpenNMT-tf", "libclang", "pandas", "tensorflow"]
 sentencepiece = ["sentencepiece"]
 thot = ["sil-thot"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.11"
-content-hash = "ee9ac39cc130221592c6f8d235a4a19b8e9a8d735ac9d81e4d68ad6139a88b19"
+content-hash = "3c50b2c96ac540c709a470caab3c22649cf7a1971f901a6bb95b70b2d5a28787"

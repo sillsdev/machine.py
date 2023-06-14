@@ -52,7 +52,8 @@
 				"ms-python.pylint",
 				"ms-python.black-formatter",
 				"eamodio.gitlens",
-				"donjayamanne.githistory"
+				"donjayamanne.githistory",
+				"tamasfe.even-better-toml"
 			]
 		}
 	}
