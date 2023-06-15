@@ -130,7 +130,13 @@ class HuggingFaceNmtModelTrainer(Trainer):
             self._original_use_cache = model.config.use_cache
             model.config.use_cache = not self._training_args.gradient_checkpointing
         else:
-            config = AutoConfig.from_pretrained(self._model, use_cache=not self._training_args.gradient_checkpointing)
+            config = AutoConfig.from_pretrained(
+                self._model,
+                use_cache=not self._training_args.gradient_checkpointing,
+                label2id={},
+                id2label={},
+                num_labels=0,
+            )
             model = cast(PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(self._model, config=config))
         tokenizer: Any = AutoTokenizer.from_pretrained(model.name_or_path, use_fast=True)
 

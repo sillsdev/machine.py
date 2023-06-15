@@ -38,7 +38,9 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
 
     def init(self) -> None:
         self._model_dir.mkdir(parents=True, exist_ok=True)
-        config = AutoConfig.from_pretrained(self._config.huggingface.parent_model_name)
+        config = AutoConfig.from_pretrained(
+            self._config.huggingface.parent_model_name, label2id={}, id2label={}, num_labels=0
+        )
         self._model = cast(
             PreTrainedModel,
             AutoModelForSeq2SeqLM.from_pretrained(self._config.huggingface.parent_model_name, config=config),

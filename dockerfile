@@ -1,7 +1,7 @@
 #compatability with Tensorflow 2.6.0 as per https://www.tensorflow.org/install/source#gpu
 ARG PYTHON_VERSION=3.8
 ARG UBUNTU_VERSION=focal
-ARG POETRY_VERSION=1.4.2
+ARG POETRY_VERSION=1.5
 ARG CUDA_VERSION=11.2.2-cudnn8-runtime-ubuntu20.04
 
 FROM python:$PYTHON_VERSION-slim as builder
@@ -22,7 +22,7 @@ ENV PATH="${PATH}:${POETRY_VENV}/bin"
 WORKDIR /src
 COPY . /src
 RUN poetry build
-RUN poetry export --without-hashes -f requirements.txt > requirements.txt
+RUN poetry export --with=gpu --without-hashes -f requirements.txt > requirements.txt
 
 
 FROM nvidia/cuda:$CUDA_VERSION
@@ -31,6 +31,8 @@ ARG PYTHON_VERSION
 ENV PIP_DISABLE_PIP_VERSION_CHECK=on
 ENV TZ=America/New_York
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+WORKDIR /root
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
