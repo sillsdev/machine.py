@@ -38,16 +38,17 @@ RUN apt-get update && \
     apt-get install --no-install-recommends -y \
     python$PYTHON_VERSION \
     python3-pip && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get clean
 
 # make some useful symlinks that are expected to exist
 RUN ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python3  & \
     ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python
 
 COPY --from=builder /src/requirements.txt .
-RUN --mount=type=cache,target=/root/.cache pip install -r requirements.txt && rm requirements.txt
-
 COPY --from=builder /src/dist/*.whl .
+
+RUN pip install --no-cache-dir -r requirements.txt && rm requirements.txt
 RUN pip install --no-deps *.whl && rm *.whl
 
 CMD ["bash"]
