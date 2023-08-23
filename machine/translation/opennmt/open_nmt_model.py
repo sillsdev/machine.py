@@ -45,7 +45,7 @@ class OpenNmtModel(TranslationModel):
         self._runner = OpenNmtRunner(model_type, config, mixed_precision, prefix_corpus_paths=True)
         self._finalized_config: Optional[dict] = None
         self._checkpoint_model: Optional[Model] = None
-        self._infer_fn: Any = None
+        self._infer_fn: Optional[tf.types.experimental.GenericFunction] = None
 
     @property
     def model_dir(self) -> str:
@@ -113,11 +113,11 @@ class OpenNmtModel(TranslationModel):
         heap: List[int] = []
         results: List[Sequence[TranslationResult]] = []
         for source in cast(Iterable[dict], dataset):
-            predictions = self._infer_fn(source)
+            predictions: Dict[str, int] = self._infer_fn(source)  # type: ignore
             predictions["src_tokens"] = source["tokens"]
             predictions["src_length"] = source["length"]
             source_tokens = cast(str, features_inputter.tokenizer.detokenize(source["tokens"])).split()
-            predictions = tf.nest.map_structure(lambda t: t.numpy(), predictions)
+            predictions = tf.nest.map_structure(lambda t: t.numpy(), predictions)  # type: ignore
             for prediction in extract_batches(predictions):
                 index: int = prediction["index"]
                 num_hypotheses = min(n or 1, len(prediction["log_probs"]))
