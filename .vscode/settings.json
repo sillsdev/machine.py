@@ -5,10 +5,10 @@
     "source.organizeImports": true
   },
   "python.testing.unittestEnabled": false,
-  "python.linting.flake8Enabled": true,
   "python.testing.pytestEnabled": true,
   "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter"
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true
   },
   "formatFiles.excludedFolders": [
     "node_modules",
