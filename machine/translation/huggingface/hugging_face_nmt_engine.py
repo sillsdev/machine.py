@@ -93,7 +93,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
 
 
 class _TranslationPipeline(TranslationPipeline):
-    def preprocess(self, *args, truncation=TruncationStrategy.DO_NOT_TRUNCATE, src_lang=None, tgt_lang=None):
+    def preprocess(self, *args, truncation=TruncationStrategy.LONGEST_FIRST, src_lang=None, tgt_lang=None):
         if self.tokenizer is None:
             raise RuntimeError("No tokenizer is specified.")
         sentences = [
