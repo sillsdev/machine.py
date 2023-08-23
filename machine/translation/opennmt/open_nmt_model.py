@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import heapq
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 import numpy as np
 import tensorflow as tf
