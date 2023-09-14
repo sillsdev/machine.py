@@ -58,9 +58,9 @@ def run(args: dict) -> None:
         job.run(check_canceled)
         logger.info("Finished")
     except Exception as e:
-        logger.exception(str(e))
+        logger.exception(e, stack_info=True)
         if task:
-            task.mark_failed(status_reason=str(e))
+            task.mark_failed(status_reason=type(e).__name__, status_message=str(e))
 
 
 def main() -> None:
