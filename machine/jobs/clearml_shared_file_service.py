@@ -1,7 +1,7 @@
-import time
 import logging
+import time
 from pathlib import Path
-from typing import Optional, Callable
+from typing import Callable, Optional
 
 from clearml import StorageManager
 
