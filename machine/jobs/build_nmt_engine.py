@@ -22,6 +22,7 @@ logger = logging.getLogger(__package__ + ".build_nmt_engine")
 
 def run(args: dict) -> None:
     check_canceled: Optional[Callable[[], None]] = None
+    task = None
     if args["clearml"]:
         task = Task.init()
 
@@ -31,30 +32,35 @@ def run(args: dict) -> None:
 
         check_canceled = clearml_check_canceled
 
-    logger.info("NMT Engine Build Job started")
+    try:
+        logger.info("NMT Engine Build Job started")
 
-    SETTINGS.update(args)
-    SETTINGS.data_dir = os.path.expanduser(cast(str, SETTINGS.data_dir))
+        SETTINGS.update(args)
+        SETTINGS.data_dir = os.path.expanduser(cast(str, SETTINGS.data_dir))
 
-    logger.info(f"Config: {SETTINGS.as_dict()}")
+        logger.info(f"Config: {SETTINGS.as_dict()}")
 
-    shared_file_service = ClearMLSharedFileService(SETTINGS)
-    model_type = cast(str, SETTINGS.model_type).lower()
-    nmt_model_factory: NmtModelFactory
-    if model_type == "huggingface":
-        from .huggingface.hugging_face_nmt_model_factory import HuggingFaceNmtModelFactory
+        shared_file_service = ClearMLSharedFileService(SETTINGS)
+        model_type = cast(str, SETTINGS.model_type).lower()
+        nmt_model_factory: NmtModelFactory
+        if model_type == "huggingface":
+            from .huggingface.hugging_face_nmt_model_factory import HuggingFaceNmtModelFactory
 
-        nmt_model_factory = HuggingFaceNmtModelFactory(SETTINGS, shared_file_service)
-    elif model_type == "opennmt":
-        from .opennmt.open_nmt_model_factory import OpenNmtModelFactory
+            nmt_model_factory = HuggingFaceNmtModelFactory(SETTINGS, shared_file_service)
+        elif model_type == "opennmt":
+            from .opennmt.open_nmt_model_factory import OpenNmtModelFactory
 
-        nmt_model_factory = OpenNmtModelFactory(SETTINGS, shared_file_service)
-    else:
-        raise RuntimeError("The model type is invalid.")
+            nmt_model_factory = OpenNmtModelFactory(SETTINGS, shared_file_service)
+        else:
+            raise RuntimeError("The model type is invalid.")
 
-    job = NmtEngineBuildJob(SETTINGS, nmt_model_factory, shared_file_service)
-    job.run(check_canceled)
-    logger.info("Finished")
+        job = NmtEngineBuildJob(SETTINGS, nmt_model_factory, shared_file_service)
+        job.run(check_canceled)
+        logger.info("Finished")
+    except Exception as e:
+        logger.exception(e, stack_info=True)
+        if task:
+            task.mark_failed(status_reason=type(e).__name__, status_message=str(e))
 
 
 def main() -> None:
