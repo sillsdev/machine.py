@@ -21,7 +21,6 @@ ENV PATH="${PATH}:${POETRY_VENV}/bin"
 
 WORKDIR /src
 COPY . /src
-RUN poetry self add setuptools
 RUN poetry build
 RUN poetry export --with=gpu --without-hashes -f requirements.txt > requirements.txt
 
@@ -49,6 +48,7 @@ RUN ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python3  & \
 COPY --from=builder /src/requirements.txt .
 COPY --from=builder /src/dist/*.whl .
 
+RUN pip install --no-cache-dir -r requirements.txt && rm requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt && rm requirements.txt
 RUN pip install --no-deps *.whl && rm *.whl
 
