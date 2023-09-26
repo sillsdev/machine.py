@@ -27,7 +27,7 @@
         "spa_Latn",
         "--trg-lang",
         "eng_Latn",
-        //"--clearml",
+        "--clearml",
         "--build-options",
         "{\"model_type\": \"huggingface\",\"max_steps\": 10}"
       ]
