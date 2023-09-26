@@ -49,7 +49,6 @@ COPY --from=builder /src/requirements.txt .
 COPY --from=builder /src/dist/*.whl .
 
 RUN pip install --no-cache-dir -r requirements.txt && rm requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt && rm requirements.txt
 RUN pip install --no-deps *.whl && rm *.whl
 
 CMD ["bash"]

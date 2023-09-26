@@ -57,6 +57,7 @@ numpy = "^1.19.0"
 sortedcontainers = "^2.4.0"
 networkx = "^2.6.3"
 charset-normalizer = "^2.1.1"
+setuptools = "^68.2.2"
 
 ### extras
 sentencepiece = "^0.1.95"
