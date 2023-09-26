@@ -31,7 +31,16 @@
 		"vscode": {
 			// Set *default* container specific settings.json values on container create.
 			"settings": {
-				"python.defaultInterpreterPath": "/usr/bin/python"
+				"python.defaultInterpreterPath": "/usr/bin/python",
+				"[python]": {
+					"editor.defaultFormatter": "ms-python.black-formatter",
+					"editor.codeActionsOnSave": {
+						"source.organizeImports": true
+					}
+				},
+				"editor.formatOnSave": true,
+				"editor.formatOnType": true,
+				"isort.args":["--profile", "black"]
 			},
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
@@ -40,6 +49,7 @@
 				"ms-python.flake8",
 				"ms-python.pylint",
 				"ms-python.black-formatter",
+				"ms-python.isort",
 				"eamodio.gitlens",
 				"donjayamanne.githistory",
 				"tamasfe.even-better-toml"

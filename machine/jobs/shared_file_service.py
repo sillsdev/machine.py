@@ -40,6 +40,12 @@ class SharedFileService(ABC):
     def create_target_corpus(self) -> TextCorpus:
         return TextFileTextCorpus(self._download_file(f"builds/{self._build_id}/train.trg.txt"))
 
+    def exists_source_corpus(self) -> bool:
+        return self._exists_file(f"builds/{self._build_id}/train.src.txt")
+
+    def exists_target_corpus(self) -> bool:
+        return self._exists_file(f"builds/{self._build_id}/train.trg.txt")
+
     def get_source_pretranslations(self) -> ContextManagedGenerator[PretranslationInfo, None, None]:
         src_pretranslate_path = self._download_file(f"builds/{self._build_id}/pretranslate.src.json")
 
@@ -96,6 +102,10 @@ class SharedFileService(ABC):
 
     @abstractmethod
     def _download_folder(self, path: str, cache: bool = False) -> Path:
+        ...
+
+    @abstractmethod
+    def _exists_file(self, path: str) -> bool:
         ...
 
     @abstractmethod

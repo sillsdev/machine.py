@@ -31,6 +31,10 @@ class ClearMLSharedFileService(SharedFileService):
             raise RuntimeError(f"Failed to download folder: {uri}")
         return Path(folder_path) / path
 
+    def _exists_file(self, path: str) -> bool:
+        uri = f"{self._shared_file_uri}/{path}"
+        return try_n_times(lambda: StorageManager.exists_file(uri))  # type: ignore
+
     def _upload_file(self, path: str, local_file_path: Path) -> None:
         final_destination = try_n_times(
             lambda: StorageManager.upload_file(str(local_file_path), f"{self._shared_file_uri}/{path}")

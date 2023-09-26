@@ -22,35 +22,36 @@ class NmtEngineBuildJob:
 
         self._nmt_model_factory.init()
 
-        logger.info("Downloading data files")
-        source_corpus = self._shared_file_service.create_source_corpus()
-        target_corpus = self._shared_file_service.create_target_corpus()
-        parallel_corpus = source_corpus.align_rows(target_corpus)
-
-        if check_canceled is not None:
-            check_canceled()
-
-        if self._nmt_model_factory.train_tokenizer:
-            logger.info("Training source tokenizer")
-            with self._nmt_model_factory.create_source_tokenizer_trainer(source_corpus) as source_tokenizer_trainer:
-                source_tokenizer_trainer.train(check_canceled=check_canceled)
-                source_tokenizer_trainer.save()
+        if self._shared_file_service.exists_source_corpus() and self._shared_file_service.exists_target_corpus():
+            logger.info("Downloading data files")
+            source_corpus = self._shared_file_service.create_source_corpus()
+            target_corpus = self._shared_file_service.create_target_corpus()
+            parallel_corpus = source_corpus.align_rows(target_corpus)
 
             if check_canceled is not None:
                 check_canceled()
 
-            logger.info("Training target tokenizer")
-            with self._nmt_model_factory.create_target_tokenizer_trainer(target_corpus) as target_tokenizer_trainer:
-                target_tokenizer_trainer.train(check_canceled=check_canceled)
-                target_tokenizer_trainer.save()
+            if self._nmt_model_factory.train_tokenizer:
+                logger.info("Training source tokenizer")
+                with self._nmt_model_factory.create_source_tokenizer_trainer(source_corpus) as source_tokenizer_trainer:
+                    source_tokenizer_trainer.train(check_canceled=check_canceled)
+                    source_tokenizer_trainer.save()
 
-            if check_canceled is not None:
-                check_canceled()
+                if check_canceled is not None:
+                    check_canceled()
 
-        logger.info("Training NMT model")
-        with self._nmt_model_factory.create_model_trainer(parallel_corpus) as model_trainer:
-            model_trainer.train(check_canceled=check_canceled)
-            model_trainer.save()
+                logger.info("Training target tokenizer")
+                with self._nmt_model_factory.create_target_tokenizer_trainer(target_corpus) as target_tokenizer_trainer:
+                    target_tokenizer_trainer.train(check_canceled=check_canceled)
+                    target_tokenizer_trainer.save()
+
+                if check_canceled is not None:
+                    check_canceled()
+
+            logger.info("Training NMT model")
+            with self._nmt_model_factory.create_model_trainer(parallel_corpus) as model_trainer:
+                model_trainer.train(check_canceled=check_canceled)
+                model_trainer.save()
 
         if check_canceled is not None:
             check_canceled()
