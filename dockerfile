@@ -21,6 +21,7 @@ ENV PATH="${PATH}:${POETRY_VENV}/bin"
 
 WORKDIR /src
 COPY . /src
+RUN poetry self add setuptools
 RUN poetry build
 RUN poetry export --with=gpu --without-hashes -f requirements.txt > requirements.txt
 
