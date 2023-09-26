@@ -51,10 +51,6 @@ def run(args: dict) -> None:
             from .huggingface.hugging_face_nmt_model_factory import HuggingFaceNmtModelFactory
 
             nmt_model_factory = HuggingFaceNmtModelFactory(SETTINGS, shared_file_service)
-        elif model_type == "opennmt":
-            from .opennmt.open_nmt_model_factory import OpenNmtModelFactory
-
-            nmt_model_factory = OpenNmtModelFactory(SETTINGS, shared_file_service)
         else:
             raise RuntimeError("The model type is invalid.")
 

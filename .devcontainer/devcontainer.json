@@ -52,7 +52,9 @@
 				"ms-python.isort",
 				"eamodio.gitlens",
 				"donjayamanne.githistory",
-				"tamasfe.even-better-toml"
+				"tamasfe.even-better-toml",
+				"github.vscode-github-actions",
+				"mhutchie.git-graph"
 			]
 		}
 	}

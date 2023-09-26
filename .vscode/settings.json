@@ -1,5 +1,4 @@
 {
-  "python.formatting.provider": "none",
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.organizeImports": true
@@ -10,14 +9,5 @@
     "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.formatOnSave": true
   },
-  "formatFiles.excludedFolders": [
-    "node_modules",
-    ".vscode",
-    ".git",
-    "dist",
-    ".chrome",
-    ".venv",
-    ".pytest_cache"
-  ],
-  "formatFiles.extensionsToInclude": "py"
+  "python.formatting.provider": "none"
 }
