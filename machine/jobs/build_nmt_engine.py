@@ -65,6 +65,7 @@ def run(args: dict) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Trains an NMT model.")
+    parser.add_argument("--model-type", required=True, type=str, help="Model type")
     parser.add_argument("--engine-id", required=True, type=str, help="Engine id")
     parser.add_argument("--build-id", required=True, type=str, help="Build id")
     parser.add_argument("--src-lang", required=True, type=str, help="Source language tag")

@@ -19,6 +19,8 @@
       "module": "machine.jobs.build_nmt_engine",
       "justMyCode": false,
       "args": [
+        "--model-type",
+        "huggingface",
         "--build-id",
         "build1",
         "--engine-id",
@@ -29,7 +31,7 @@
         "eng_Latn",
         "--clearml",
         "--build-options",
-        "{\"model_type\": \"huggingface\",\"max_steps\": 10}"
+        "{\"max_steps\": 10}"
       ]
     },
     {
