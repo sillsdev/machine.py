@@ -3668,4 +3668,4 @@ thot = ["sil-thot"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.12"
-content-hash = "e1a04bfb89c14cb077261cbc8d2d147d5c63f7bede7dde1749502277b131c4b7"
+content-hash = "2ca3667758f4fdd2206558a473dec6a73d2bb50a7e3a72fd8a3c3a4af9ae813f"
