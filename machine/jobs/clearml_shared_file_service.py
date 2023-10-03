@@ -16,7 +16,7 @@ class ClearMLSharedFileService(SharedFileService):
         local_folder: Optional[str] = None
         if not cache:
             local_folder = str(self._data_dir)
-        file_path = try_n_times(lambda: StorageManager.download_file(uri, local_folder))
+        file_path = try_n_times(lambda: StorageManager.download_file(uri, local_folder, skip_zero_size_check=True))
         if file_path is None:
             raise RuntimeError(f"Failed to download file: {uri}")
         return Path(file_path)

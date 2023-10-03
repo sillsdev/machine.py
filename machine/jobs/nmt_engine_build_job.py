@@ -22,12 +22,12 @@ class NmtEngineBuildJob:
 
         self._nmt_model_factory.init()
 
-        if self._shared_file_service.exists_source_corpus() and self._shared_file_service.exists_target_corpus():
-            logger.info("Downloading data files")
-            source_corpus = self._shared_file_service.create_source_corpus()
-            target_corpus = self._shared_file_service.create_target_corpus()
-            parallel_corpus = source_corpus.align_rows(target_corpus)
+        logger.info("Downloading data files")
+        source_corpus = self._shared_file_service.create_source_corpus()
+        target_corpus = self._shared_file_service.create_target_corpus()
+        parallel_corpus = source_corpus.align_rows(target_corpus)
 
+        if parallel_corpus.count(include_empty=False):
             if check_canceled is not None:
                 check_canceled()
 
