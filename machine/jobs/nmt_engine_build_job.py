@@ -52,6 +52,8 @@ class NmtEngineBuildJob:
             with self._nmt_model_factory.create_model_trainer(parallel_corpus) as model_trainer:
                 model_trainer.train(check_canceled=check_canceled)
                 model_trainer.save()
+        else:
+            logger.info("No matching entries in the source and target corpus - skipping training")
 
         if check_canceled is not None:
             check_canceled()
