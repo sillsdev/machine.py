@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging
 import os
 from typing import Callable, Optional, cast
@@ -36,6 +37,12 @@ def run(args: dict) -> None:
         logger.info("NMT Engine Build Job started")
 
         SETTINGS.update(args)
+        try:
+            SETTINGS.build_options = json.loads(args["build_options"])
+        except ValueError as e:
+            raise ValueError("Build options could not be parsed: Invalid JSON") from e
+        if SETTINGS.build_options:
+            SETTINGS.update(SETTINGS.build_options)
         SETTINGS.data_dir = os.path.expanduser(cast(str, SETTINGS.data_dir))
 
         logger.info(f"Config: {SETTINGS.as_dict()}")
@@ -66,8 +73,8 @@ def main() -> None:
     parser.add_argument("--build-id", required=True, type=str, help="Build id")
     parser.add_argument("--src-lang", required=True, type=str, help="Source language tag")
     parser.add_argument("--trg-lang", required=True, type=str, help="Target language tag")
-    parser.add_argument("--max-steps", type=int, help="Maximum number of steps")
     parser.add_argument("--clearml", default=False, action="store_true", help="Initializes a ClearML task")
+    parser.add_argument("--build-options", default="{}", help="Build configurations")
     args = parser.parse_args()
 
     run({k: v for k, v in vars(args).items() if v is not None})

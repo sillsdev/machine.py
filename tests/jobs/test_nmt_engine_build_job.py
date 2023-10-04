@@ -89,6 +89,8 @@ class _TestEnvironment:
         self.shared_file_service = _mock(SharedFileService)
         when(self.shared_file_service).create_source_corpus().thenReturn(DictionaryTextCorpus())
         when(self.shared_file_service).create_target_corpus().thenReturn(DictionaryTextCorpus())
+        when(self.shared_file_service).exists_source_corpus().thenReturn(True)
+        when(self.shared_file_service).exists_target_corpus().thenReturn(True)
         when(self.shared_file_service).get_source_pretranslations().thenReturn(
             ContextManagedGenerator(
                 (

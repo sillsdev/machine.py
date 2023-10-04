@@ -29,8 +29,9 @@
         "spa_Latn",
         "--trg-lang",
         "eng_Latn",
-        "--max-steps",
-        "1000"
+        "--clearml",
+        "--build-options",
+        "{\"max_steps\": 10}"
       ]
     },
     {
