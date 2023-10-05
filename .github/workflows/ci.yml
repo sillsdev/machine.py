@@ -58,7 +58,7 @@ jobs:
           npm install -g pyright@1.1.313
           poetry run pyright
       - name: Test with pytest
-        run: poetry run pytest --cov
+        run: poetry run pytest --cov --cov-report=xml
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         env:
