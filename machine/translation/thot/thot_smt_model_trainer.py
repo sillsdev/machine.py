@@ -60,7 +60,7 @@ def _prune_lex_table(filename: Path, threshold: float) -> None:
         chunk = file.read(struct.size)
         while chunk != b"":
             entry = struct.unpack(chunk)
-            entries.append(entry[:-1])
+            entries.append(entry[:-1])  # type: ignore
             chunk = file.read(struct.size)
 
     if len(entries) == 0:

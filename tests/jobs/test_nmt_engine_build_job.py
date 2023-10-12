@@ -27,8 +27,9 @@ def test_run() -> None:
 def test_cancel() -> None:
     env = _TestEnvironment()
     checker = _CancellationChecker(3)
+    setattr(env.job, "_check_canceled", checker.check_canceled)
     with pytest.raises(CanceledError):
-        env.job.run(checker.check_canceled)
+        env.job.run()
 
     assert env.target_pretranslations == ""
 

@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from transformers import AutoConfig, AutoModelForSeq2SeqLM, HfArgumentParser, PreTrainedModel, Seq2SeqTrainingArguments
+from transformers.integrations import ClearMLCallback
 
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
 from ...corpora.text_corpus import TextCorpus
@@ -77,3 +78,14 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
     @property
     def _model_dir(self) -> Path:
         return Path(self._config.data_dir, "builds", self._config.build_id, "model")
+
+
+# FIXME - remove this code when the fix is applied to Huggingface
+# https://github.com/huggingface/transformers/pull/26763
+def on_train_end(
+    self: ClearMLCallback, args, state, control, model=None, tokenizer=None, metrics=None, logs=None, **kwargs
+):
+    pass
+
+
+setattr(ClearMLCallback, "on_train_end", on_train_end)
