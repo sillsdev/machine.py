@@ -20,9 +20,10 @@ class NmtEngineBuildJob:
         self._shared_file_service = shared_file_service
         self.clearml_task: Optional[Task] = None
 
-    def run(self, task: Optional[Task]) -> None:
+    def run(self, task: Optional[Task] = None) -> None:
         self.clearml_task = task
         self._send_clearml_config()
+        self._check_canceled()
 
         self._nmt_model_factory.init()
 
