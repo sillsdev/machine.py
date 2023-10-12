@@ -88,5 +88,75 @@ def test_train_non_empty_corpus() -> None:
         assert finetuned_result.translation != pretrained_result.translation
 
 
+def test_train_non_empty_corpus_missing_char() -> None:
+    with TemporaryDirectory() as temp_dir:
+        source_corpus = DictionaryTextCorpus(
+            [
+                MemoryText(
+                    "text1",
+                    [
+                        _row(1, "Ḻ ḻ Ṉ"),
+                    ],
+                )
+            ]
+        )
+
+        target_corpus = DictionaryTextCorpus(
+            [
+                MemoryText(
+                    "text1",
+                    [
+                        _row(1, "ॽ " + "‌ " + "‍"),
+                    ],
+                )
+            ]
+        )
+        corpus = source_corpus.align_rows(target_corpus)
+
+        training_args = Seq2SeqTrainingArguments(
+            output_dir=temp_dir, num_train_epochs=1, report_to=["none"], learning_rate=0.01
+        )
+
+        trainer_nochar = HuggingFaceNmtModelTrainer(
+            "facebook/nllb-200-distilled-600M",
+            training_args,
+            corpus,
+            src_lang="src_Lang",
+            tgt_lang="tgt_Lang",
+            max_source_length=20,
+            max_target_length=20,
+        )
+        trainer_nochar.train()
+        trainer_nochar.save()
+
+        finetuned_engine_nochar = HuggingFaceNmtEngine(
+            temp_dir, src_lang="src_Lang", tgt_lang="tgt_Lang", max_length=20
+        )
+        finetuned_result_nochar = finetuned_engine_nochar.translate(
+            "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
+        )
+
+        config = {"tokenizer": {"update_src": True, "update_trg": True}}
+        trainer_char = HuggingFaceNmtModelTrainer(
+            "facebook/nllb-200-distilled-600M",
+            training_args,
+            corpus,
+            src_lang="src_Lang",
+            tgt_lang="tgt_Lang",
+            max_source_length=20,
+            max_target_length=20,
+            config=config,
+        )
+        trainer_char.train()
+        trainer_char.save()
+
+        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="src_Lang", tgt_lang="tgt_Lang", max_length=20)
+        finetuned_result_char = finetuned_engine_char.translate(
+            "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
+        )
+
+        assert finetuned_result_nochar.translation != finetuned_result_char.translation
+
+
 def _row(row_ref: int, text: str) -> TextRow:
     return TextRow("text1", row_ref, segment=[text])
