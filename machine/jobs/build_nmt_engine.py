@@ -22,16 +22,9 @@ logger = logging.getLogger(__package__ + ".build_nmt_engine")
 
 
 def run(args: dict) -> None:
-    check_canceled: Optional[Callable[[], None]] = None
     task = None
     if args["clearml"]:
         task = Task.init()
-
-        def clearml_check_canceled() -> None:
-            if task.get_status() in {"stopped", "stopping"}:
-                raise CanceledError
-
-        check_canceled = clearml_check_canceled
 
     try:
         logger.info("NMT Engine Build Job started")
@@ -60,7 +53,7 @@ def run(args: dict) -> None:
             raise RuntimeError("The model type is invalid.")
 
         job = NmtEngineBuildJob(SETTINGS, nmt_model_factory, shared_file_service)
-        job.run(check_canceled)
+        job.run(task)
         logger.info("Finished")
     except Exception as e:
         logger.exception(e, stack_info=True)
