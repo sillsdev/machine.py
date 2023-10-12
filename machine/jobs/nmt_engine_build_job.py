@@ -2,8 +2,7 @@ import logging
 from contextlib import ExitStack
 from typing import Any, Optional, Sequence
 
-import pandas as pd
-from clearml import Model, Task
+from clearml import Task
 
 from ..corpora.corpora_utils import batch
 from ..translation.translation_engine import TranslationEngine

@@ -2,11 +2,10 @@ import argparse
 import json
 import logging
 import os
-from typing import Callable, Optional, cast
+from typing import cast
 
 from clearml import Task
 
-from ..utils.canceled_error import CanceledError
 from .clearml_shared_file_service import ClearMLSharedFileService
 from .config import SETTINGS
 from .nmt_engine_build_job import NmtEngineBuildJob
