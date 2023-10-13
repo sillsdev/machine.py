@@ -179,6 +179,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
         if self._config.get("tokenizer") and (  # type: ignore
             self._config["tokenizer"].get("update_src") or self._config["tokenizer"].get("update_trg")
         ):
+            original_tokenizer = tokenizer
             if not isinstance(tokenizer, NllbTokenizerFast):
                 tokenizer = NllbTokenizerFast.from_pretrained("facebook/nllb-200-distilled-600M", use_fast=True)
             norm_tok = PreTrainedTokenizerFast.from_pretrained(
@@ -195,7 +196,10 @@ class HuggingFaceNmtModelTrainer(Trainer):
             else:
                 texts = trg_texts
             missing_tokens = find_missing_characters(tokenizer, texts)
-            tokenizer = add_tokens(tokenizer, missing_tokens)
+            if missing_tokens:
+                tokenizer = add_tokens(tokenizer, missing_tokens)
+            else:
+                tokenizer = original_tokenizer
 
         def add_lang_code_to_tokenizer(tokenizer: Any, lang_code: str):
             if lang_code in tokenizer.lang_code_to_id:
