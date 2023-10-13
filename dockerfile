@@ -22,8 +22,6 @@ ENV PATH="${PATH}:${POETRY_VENV}/bin"
 WORKDIR /src
 COPY poetry.lock pyproject.toml /src
 RUN poetry export --with=gpu --without-hashes -f requirements.txt > requirements.txt
-COPY . /src
-RUN poetry build
 
 
 FROM nvidia/cuda:$CUDA_VERSION
@@ -49,7 +47,7 @@ RUN ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python3  & \
 COPY --from=builder /src/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && rm requirements.txt
 
-COPY --from=builder /src/dist/*.whl .
-RUN pip install --no-deps *.whl && rm *.whl
+COPY . .
+RUN pip install --no-deps . && rm -r *
 
 CMD ["bash"]
