@@ -9,7 +9,7 @@ from pathlib import Path
 from random import Random
 from struct import Struct
 from tempfile import TemporaryDirectory
-from typing import Callable, Dict, Iterable, List, Optional, Sequence, Set, TextIO, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Optional, Sequence, Set, TextIO, Tuple, Union, cast
 
 import numpy as np
 import thot.common as tc
@@ -60,7 +60,7 @@ def _prune_lex_table(filename: Path, threshold: float) -> None:
         chunk = file.read(struct.size)
         while chunk != b"":
             entry = struct.unpack(chunk)
-            entries.append(entry[:-1])
+            entries.append(cast(Tuple[int, int, float], entry[:-1]))
             chunk = file.read(struct.size)
 
     if len(entries) == 0:

@@ -4,6 +4,8 @@ from typing import Any, Callable, Optional, Sequence
 
 from ..corpora.corpora_utils import batch
 from ..translation.translation_engine import TranslationEngine
+from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
+from ..utils.progress_status import ProgressStatus
 from .nmt_model_factory import NmtModelFactory
 from .shared_file_service import PretranslationInfo, PretranslationWriter, SharedFileService
 
@@ -16,7 +18,11 @@ class NmtEngineBuildJob:
         self._nmt_model_factory = nmt_model_factory
         self._shared_file_service = shared_file_service
 
-    def run(self, check_canceled: Optional[Callable[[], None]] = None) -> None:
+    def run(
+        self,
+        progress: Optional[Callable[[ProgressStatus], None]] = None,
+        check_canceled: Optional[Callable[[], None]] = None,
+    ) -> None:
         if check_canceled is not None:
             check_canceled()
 
@@ -26,8 +32,18 @@ class NmtEngineBuildJob:
         source_corpus = self._shared_file_service.create_source_corpus()
         target_corpus = self._shared_file_service.create_target_corpus()
         parallel_corpus = source_corpus.align_rows(target_corpus)
+        parallel_corpus_size = parallel_corpus.count(include_empty=False)
 
-        if parallel_corpus.count(include_empty=False):
+        if parallel_corpus_size > 0:
+            phases = [
+                Phase(message="Training NMT model", percentage=0.9),
+                Phase(message="Pretranslating segments", percentage=0.1),
+            ]
+        else:
+            phases = [Phase(message="Pretranslating segments", percentage=1.0)]
+        progress_reporter = PhasedProgressReporter(progress, phases)
+
+        if parallel_corpus_size > 0:
             if check_canceled is not None:
                 check_canceled()
 
@@ -49,8 +65,10 @@ class NmtEngineBuildJob:
                     check_canceled()
 
             logger.info("Training NMT model")
-            with self._nmt_model_factory.create_model_trainer(parallel_corpus) as model_trainer:
-                model_trainer.train(check_canceled=check_canceled)
+            with progress_reporter.start_next_phase() as phase_progress, self._nmt_model_factory.create_model_trainer(
+                parallel_corpus
+            ) as model_trainer:
+                model_trainer.train(progress=phase_progress, check_canceled=check_canceled)
                 model_trainer.save()
         else:
             logger.info("No matching entries in the source and target corpus - skipping training")
@@ -59,14 +77,22 @@ class NmtEngineBuildJob:
             check_canceled()
 
         logger.info("Pretranslating segments")
+        with self._shared_file_service.get_source_pretranslations() as src_pretranslations:
+            inference_step_count = sum(1 for _ in src_pretranslations)
         with ExitStack() as stack:
+            phase_progress = stack.enter_context(progress_reporter.start_next_phase())
             model = stack.enter_context(self._nmt_model_factory.create_engine())
             src_pretranslations = stack.enter_context(self._shared_file_service.get_source_pretranslations())
             writer = stack.enter_context(self._shared_file_service.open_target_pretranslation_writer())
-            for pi_batch in batch(src_pretranslations, self._config["batch_size"]):
+            current_inference_step = 0
+            phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
+            batch_size = self._config["batch_size"]
+            for pi_batch in batch(src_pretranslations, batch_size):
                 if check_canceled is not None:
                     check_canceled()
                 _translate_batch(model, pi_batch, writer)
+                current_inference_step += len(pi_batch)
+                phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
 
 
 def _translate_batch(

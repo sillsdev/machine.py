@@ -28,7 +28,7 @@ def test_cancel() -> None:
     env = _TestEnvironment()
     checker = _CancellationChecker(3)
     with pytest.raises(CanceledError):
-        env.job.run(checker.check_canceled)
+        env.job.run(check_canceled=checker.check_canceled)
 
     assert env.target_pretranslations == ""
 
@@ -45,7 +45,7 @@ class _TestEnvironment:
         when(self.target_tokenizer_trainer).save().thenReturn()
 
         self.model_trainer = _mock(Trainer)
-        when(self.model_trainer).train(check_canceled=ANY).thenReturn()
+        when(self.model_trainer).train(progress=ANY, check_canceled=ANY).thenReturn()
         when(self.model_trainer).save().thenReturn()
         stats = TrainStats()
         stats.train_corpus_size = 3
@@ -91,8 +91,8 @@ class _TestEnvironment:
         when(self.shared_file_service).create_target_corpus().thenReturn(DictionaryTextCorpus())
         when(self.shared_file_service).exists_source_corpus().thenReturn(True)
         when(self.shared_file_service).exists_target_corpus().thenReturn(True)
-        when(self.shared_file_service).get_source_pretranslations().thenReturn(
-            ContextManagedGenerator(
+        when(self.shared_file_service).get_source_pretranslations().thenAnswer(
+            lambda: ContextManagedGenerator(
                 (
                     pi
                     for pi in [
@@ -117,8 +117,8 @@ class _TestEnvironment:
             file.write("\n]\n")
             env.target_pretranslations = file.getvalue()
 
-        when(self.shared_file_service).open_target_pretranslation_writer().thenReturn(
-            open_target_pretranslation_writer(self)
+        when(self.shared_file_service).open_target_pretranslation_writer().thenAnswer(
+            lambda: open_target_pretranslation_writer(self)
         )
 
         self.job = NmtEngineBuildJob(config, self.nmt_model_factory, self.shared_file_service)
