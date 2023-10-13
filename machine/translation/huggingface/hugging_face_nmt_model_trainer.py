@@ -185,8 +185,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
             norm_tok = PreTrainedTokenizerFast.from_pretrained(
                 "./machine/tokenization/custom_normalizer", use_fast=True
             )
-            if isinstance(tokenizer, PreTrainedTokenizerFast):
-                tokenizer.backend_tokenizer.normalizer = norm_tok.backend_tokenizer.normalizer  # type: ignore
+            tokenizer.backend_tokenizer.normalizer = norm_tok.backend_tokenizer.normalizer  # type: ignore
             src_texts = [text for text in self._corpus.source_corpus.texts]  # type: ignore
             trg_texts = [text for text in self._corpus.target_corpus.texts]  # type: ignore
             if self._config["tokenizer"]["update_src"] and self._config["tokenizer"]["update_trg"]:
