@@ -148,8 +148,6 @@ class HuggingFaceNmtModelTrainer(Trainer):
             )
             model = cast(PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(self._model, config=config))
         tokenizer = AutoTokenizer.from_pretrained(model.name_or_path, use_fast=True)
-        if isinstance(tokenizer, PreTrainedTokenizerFast):
-            tokenizer.can_save_slow_tokenizer = False
 
         def find_missing_characters(tokenizer: Any, texts: List[Text]) -> List[str]:
             vocab = tokenizer.get_vocab().keys()
@@ -181,6 +179,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
         if self._config.get("tokenizer") and (  # type: ignore
             self._config["tokenizer"].get("update_src") or self._config["tokenizer"].get("update_trg")
         ):
+            if not isinstance(tokenizer, NllbTokenizerFast):
+                tokenizer = NllbTokenizerFast.from_pretrained("facebook/nllb-200-distilled-600M", use_fast=True)
             norm_tok = PreTrainedTokenizerFast.from_pretrained(
                 "./machine/tokenization/custom_normalizer", use_fast=True
             )

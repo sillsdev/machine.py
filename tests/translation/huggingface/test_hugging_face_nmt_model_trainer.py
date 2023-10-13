@@ -118,11 +118,11 @@ def test_train_non_empty_corpus_missing_char() -> None:
         )
 
         trainer_nochar = HuggingFaceNmtModelTrainer(
-            "facebook/nllb-200-distilled-600M",
+            "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
-            src_lang="src_Lang",
-            tgt_lang="tgt_Lang",
+            src_lang="eng_Latn",
+            tgt_lang="spa_Latn",
             max_source_length=20,
             max_target_length=20,
         )
@@ -130,7 +130,7 @@ def test_train_non_empty_corpus_missing_char() -> None:
         trainer_nochar.save()
 
         finetuned_engine_nochar = HuggingFaceNmtEngine(
-            temp_dir, src_lang="src_Lang", tgt_lang="tgt_Lang", max_length=20
+            temp_dir, src_lang="eng_Latn", tgt_lang="spa_Latn", max_length=20
         )
         finetuned_result_nochar = finetuned_engine_nochar.translate(
             "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
@@ -138,11 +138,11 @@ def test_train_non_empty_corpus_missing_char() -> None:
 
         config = {"tokenizer": {"update_src": True, "update_trg": True}}
         trainer_char = HuggingFaceNmtModelTrainer(
-            "facebook/nllb-200-distilled-600M",
+            "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
-            src_lang="src_Lang",
-            tgt_lang="tgt_Lang",
+            src_lang="eng_Latn",
+            tgt_lang="spa_Latn",
             max_source_length=20,
             max_target_length=20,
             config=config,
@@ -150,7 +150,7 @@ def test_train_non_empty_corpus_missing_char() -> None:
         trainer_char.train()
         trainer_char.save()
 
-        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="src_Lang", tgt_lang="tgt_Lang", max_length=20)
+        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="eng_Latn", tgt_lang="spa_Latn", max_length=20)
         finetuned_result_char = finetuned_engine_char.translate(
             "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
         )
