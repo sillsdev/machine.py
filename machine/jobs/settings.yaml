@@ -26,7 +26,7 @@ development:
     parent_model_name: facebook/nllb-200-distilled-600M
     generate_params:
       num_beams: 1
-dummy_build:
+staging:
   max_steps: 10
   huggingface:
     parent_model_name: facebook/nllb-200-distilled-600M
