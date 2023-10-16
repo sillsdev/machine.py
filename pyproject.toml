@@ -76,11 +76,11 @@ black = "^23.3.0"         # match the vscode extension
 flake8 = "^3.9.2"
 isort = "^5.9.3"
 pytest-cov = "^4.1.0"
-pytest-mockito = "^0.0.4"
 ipykernel = "^6.7.0"
 jupyter = "^1.0.0"
 pandas = "^1.3.0"
 pyright = "^1.1.331"
+decoy = "^2.1.0"
 
 [tool.poetry.group.gpu.dependencies]
 # Torch is not included in the normal install to allow the user to choose the versions of these dependencies when

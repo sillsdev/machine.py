@@ -1,10 +1,10 @@
 import json
 from contextlib import contextmanager
 from io import StringIO
-from typing import Iterator, Type, TypeVar, cast
+from typing import Iterator
 
 import pytest
-from mockito import ANY, mock, verify, when
+from decoy import Decoy, matchers
 
 from machine.annotations import Range
 from machine.corpora import DictionaryTextCorpus
@@ -14,18 +14,18 @@ from machine.translation.translation_engine import TranslationEngine
 from machine.utils import CanceledError, ContextManagedGenerator
 
 
-def test_run() -> None:
-    env = _TestEnvironment()
+def test_run(decoy: Decoy) -> None:
+    env = _TestEnvironment(decoy)
     env.job.run()
 
-    verify(env.engine, times=1).translate_batch(...)
+    decoy.verify(env.engine.translate_batch(matchers.Anything()), times=1)
     pretranslations = json.loads(env.target_pretranslations)
     assert len(pretranslations) == 1
     assert pretranslations[0]["translation"] == "Please, I have booked a room."
 
 
-def test_cancel() -> None:
-    env = _TestEnvironment()
+def test_cancel(decoy: Decoy) -> None:
+    env = _TestEnvironment(decoy)
     checker = _CancellationChecker(3)
     with pytest.raises(CanceledError):
         env.job.run(check_canceled=checker.check_canceled)
@@ -34,26 +34,20 @@ def test_cancel() -> None:
 
 
 class _TestEnvironment:
-    def __init__(self) -> None:
+    def __init__(self, decoy: Decoy) -> None:
         config = {"src_lang": "es", "trg_lang": "en", "batch_size": 100}
-        self.source_tokenizer_trainer = _mock(Trainer)
-        when(self.source_tokenizer_trainer).train(check_canceled=ANY).thenReturn()
-        when(self.source_tokenizer_trainer).save().thenReturn()
+        self.source_tokenizer_trainer = decoy.mock(cls=Trainer)
+        self.target_tokenizer_trainer = decoy.mock(cls=Trainer)
 
-        self.target_tokenizer_trainer = _mock(Trainer)
-        when(self.target_tokenizer_trainer).train(check_canceled=ANY).thenReturn()
-        when(self.target_tokenizer_trainer).save().thenReturn()
-
-        self.model_trainer = _mock(Trainer)
-        when(self.model_trainer).train(progress=ANY, check_canceled=ANY).thenReturn()
-        when(self.model_trainer).save().thenReturn()
+        self.model_trainer = decoy.mock(cls=Trainer)
         stats = TrainStats()
         stats.train_corpus_size = 3
         stats.metrics["bleu"] = 30.0
-        setattr(self.model_trainer, "stats", stats)
+        decoy.when(self.model_trainer.stats).then_return(stats)
 
-        self.engine = _mock(TranslationEngine)
-        when(self.engine).translate_batch(ANY).thenReturn(
+        self.engine = decoy.mock(cls=TranslationEngine)
+        decoy.when(self.engine.__enter__()).then_return(self.engine)
+        decoy.when(self.engine.translate_batch(matchers.Anything())).then_return(
             [
                 TranslationResult(
                     translation="Please, I have booked a room.",
@@ -78,20 +72,23 @@ class _TestEnvironment:
             ]
         )
 
-        self.nmt_model_factory = _mock(NmtModelFactory)
-        setattr(self.nmt_model_factory, "train_tokenizer", True)
-        when(self.nmt_model_factory).init().thenReturn()
-        when(self.nmt_model_factory).create_source_tokenizer_trainer(ANY).thenReturn(self.source_tokenizer_trainer)
-        when(self.nmt_model_factory).create_target_tokenizer_trainer(ANY).thenReturn(self.target_tokenizer_trainer)
-        when(self.nmt_model_factory).create_model_trainer(ANY).thenReturn(self.model_trainer)
-        when(self.nmt_model_factory).create_engine().thenReturn(self.engine)
+        self.nmt_model_factory = decoy.mock(cls=NmtModelFactory)
+        decoy.when(self.nmt_model_factory.train_tokenizer).then_return(True)
+        decoy.when(self.nmt_model_factory.create_source_tokenizer_trainer(matchers.Anything())).then_return(
+            self.source_tokenizer_trainer
+        )
+        decoy.when(self.nmt_model_factory.create_target_tokenizer_trainer(matchers.Anything())).then_return(
+            self.target_tokenizer_trainer
+        )
+        decoy.when(self.nmt_model_factory.create_model_trainer(matchers.Anything())).then_return(self.model_trainer)
+        decoy.when(self.nmt_model_factory.create_engine()).then_return(self.engine)
 
-        self.shared_file_service = _mock(SharedFileService)
-        when(self.shared_file_service).create_source_corpus().thenReturn(DictionaryTextCorpus())
-        when(self.shared_file_service).create_target_corpus().thenReturn(DictionaryTextCorpus())
-        when(self.shared_file_service).exists_source_corpus().thenReturn(True)
-        when(self.shared_file_service).exists_target_corpus().thenReturn(True)
-        when(self.shared_file_service).get_source_pretranslations().thenAnswer(
+        self.shared_file_service = decoy.mock(cls=SharedFileService)
+        decoy.when(self.shared_file_service.create_source_corpus()).then_return(DictionaryTextCorpus())
+        decoy.when(self.shared_file_service.create_target_corpus()).then_return(DictionaryTextCorpus())
+        decoy.when(self.shared_file_service.exists_source_corpus()).then_return(True)
+        decoy.when(self.shared_file_service.exists_target_corpus()).then_return(True)
+        decoy.when(self.shared_file_service.get_source_pretranslations()).then_do(
             lambda: ContextManagedGenerator(
                 (
                     pi
@@ -117,22 +114,11 @@ class _TestEnvironment:
             file.write("\n]\n")
             env.target_pretranslations = file.getvalue()
 
-        when(self.shared_file_service).open_target_pretranslation_writer().thenAnswer(
+        decoy.when(self.shared_file_service.open_target_pretranslation_writer()).then_do(
             lambda: open_target_pretranslation_writer(self)
         )
 
         self.job = NmtEngineBuildJob(config, self.nmt_model_factory, self.shared_file_service)
-
-
-T = TypeVar("T")
-
-
-def _mock(class_to_mock: Type[T]) -> T:
-    o = cast(T, mock(class_to_mock))
-    if hasattr(class_to_mock, "__enter__"):
-        when(o).__enter__().thenReturn(o)
-        when(o).__exit__(ANY, ANY, ANY).thenReturn()
-    return o
 
 
 class _CancellationChecker:

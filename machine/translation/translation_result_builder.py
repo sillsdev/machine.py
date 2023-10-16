@@ -64,7 +64,7 @@ class TranslationResultBuilder:
         self,
         word_ops: Iterable[EditOperation],
         char_ops: Iterable[EditOperation],
-        prefix: List[str],
+        prefix: Sequence[str],
         is_last_word_complete: bool,
     ) -> int:
         alignment_cols_to_copy: List[int] = []
@@ -74,7 +74,7 @@ class TranslationResultBuilder:
         k = 0
         for word_op in word_ops:
             if word_op == EditOperation.INSERT:
-                self._target_tokens.insert(j, prefix[i])
+                self._target_tokens.insert(j, prefix[j])
                 self._sources.insert(j, TranslationSources.PREFIX)
                 self._confidences.insert(j, -1)
                 alignment_cols_to_copy.append(-1)
@@ -103,9 +103,9 @@ class TranslationResultBuilder:
                         k += 1
             elif word_op in {EditOperation.HIT, EditOperation.SUBSTITUTE}:
                 if word_op == EditOperation.SUBSTITUTE or j < len(prefix) - 1 or is_last_word_complete:
-                    self._target_tokens[j] = prefix[i]
+                    self._target_tokens[j] = prefix[j]
                 else:
-                    self._target_tokens[j] = self._correct_word(char_ops, self._target_tokens[j], prefix[i])
+                    self._target_tokens[j] = self._correct_word(char_ops, self._target_tokens[j], prefix[j])
 
                 if word_op == EditOperation.SUBSTITUTE:
                     self._confidences[j] = -1

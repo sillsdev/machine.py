@@ -1,5 +1,4 @@
-from mockito import ANY, when
-from testutils import make_concrete
+from typing import Sequence
 
 from machine.corpora.parallel_text_row import ParallelTextRow
 from machine.translation import WordAligner, WordAlignmentMatrix
@@ -18,10 +17,19 @@ def test_align_parallel_text_row() -> None:
     estimated_alignment = WordAlignmentMatrix.from_word_pairs(
         10, 7, {(1, 1), (2, 1), (4, 2), (5, 1), (6, 3), (7, 4), (8, 5), (9, 6)}
     )
-    TestWordAligner = make_concrete(WordAligner)
-    when(TestWordAligner).align(ANY, ANY).thenReturn(estimated_alignment)
-    aligner = TestWordAligner()  # type: ignore
+    aligner = _MockWordAligner(estimated_alignment)
     alignment = aligner.align_parallel_text_row(row)
     assert alignment == WordAlignmentMatrix.from_word_pairs(
         10, 7, {(0, 0), (1, 1), (2, 1), (4, 2), (6, 3), (8, 4), (7, 5), (9, 6)}
     )
+
+
+class _MockWordAligner(WordAligner):
+    def __init__(self, alignment: WordAlignmentMatrix) -> None:
+        self._alignment = alignment
+
+    def align(self, source_segment: Sequence[str], target_segment: Sequence[str]) -> WordAlignmentMatrix:
+        return self._alignment
+
+    def align_batch(self, segments: Sequence[Sequence[Sequence[str]]]) -> Sequence[WordAlignmentMatrix]:
+        return [self._alignment for _ in segments]
