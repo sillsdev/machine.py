@@ -11,7 +11,7 @@ class WordGraphArc:
         prev_state: int,
         next_state: int,
         score: float,
-        words: Iterable[str],
+        target_tokens: Iterable[str],
         alignment: WordAlignmentMatrix,
         source_segment_range: Range[int],
         sources: Iterable[TranslationSources],
@@ -20,7 +20,7 @@ class WordGraphArc:
         self._prev_state = prev_state
         self._next_state = next_state
         self._score = score
-        self._words = list(words)
+        self._target_tokens = list(target_tokens)
         self._alignment = alignment
         self._source_segment_range = source_segment_range
         self._sources = list(sources)
@@ -39,8 +39,8 @@ class WordGraphArc:
         return self._score
 
     @property
-    def words(self) -> Sequence[str]:
-        return self._words
+    def target_tokens(self) -> Sequence[str]:
+        return self._target_tokens
 
     @property
     def alignment(self) -> WordAlignmentMatrix:

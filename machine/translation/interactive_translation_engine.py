@@ -7,7 +7,7 @@ from .translation_engine import TranslationEngine
 from .word_graph import WordGraph
 
 
-class InterativeTranslationEngine(TranslationEngine):
+class InteractiveTranslationEngine(TranslationEngine):
     @abstractmethod
     def get_word_graph(self, segment: Union[str, Sequence[str]]) -> WordGraph:
         ...
@@ -20,5 +20,5 @@ class InterativeTranslationEngine(TranslationEngine):
     ) -> None:
         ...
 
-    def __enter__(self) -> InterativeTranslationEngine:
+    def __enter__(self) -> InteractiveTranslationEngine:
         return self

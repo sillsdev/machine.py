@@ -723,6 +723,17 @@ files = [
 ]
 
 [[package]]
+name = "decoy"
+version = "2.1.0"
+description = "Opinionated mocking library for Python"
+optional = false
+python-versions = ">=3.7,<4.0"
+files = [
+    {file = "decoy-2.1.0-py3-none-any.whl", hash = "sha256:f1823fbb85e2cd602bc3eb386fd1b6be1a293ea7dc3324f6ccf7af56b3b127d6"},
+    {file = "decoy-2.1.0.tar.gz", hash = "sha256:c6a6c09d158bc77de693332f40c4992b61f0a9dcd72631033f161ee570ee2d88"},
+]
+
+[[package]]
 name = "defusedxml"
 version = "0.7.1"
 description = "XML bomb protection for Python stdlib modules"
@@ -1488,17 +1499,6 @@ python-versions = "*"
 files = [
     {file = "mistune-2.0.5-py2.py3-none-any.whl", hash = "sha256:bad7f5d431886fcbaf5f758118ecff70d31f75231b34024a1341120340a65ce8"},
     {file = "mistune-2.0.5.tar.gz", hash = "sha256:0246113cb2492db875c6be56974a7c893333bf26cd92891c85f63151cee09d34"},
-]
-
-[[package]]
-name = "mockito"
-version = "1.4.0"
-description = "Spying framework"
-optional = false
-python-versions = ">=2.7"
-files = [
-    {file = "mockito-1.4.0-py3-none-any.whl", hash = "sha256:1719c6bec3523f9b465c86d247bb76027f53ab10f76b2a126dde409d0492fe3e"},
-    {file = "mockito-1.4.0.tar.gz", hash = "sha256:409ab604c9ebe1bb7dc18ec6b0ed98a8ad5127b08273f5804b22f4d1b51e5222"},
 ]
 
 [[package]]
@@ -2562,20 +2562,6 @@ pytest = ">=4.6"
 
 [package.extras]
 testing = ["fields", "hunter", "process-tests", "pytest-xdist", "six", "virtualenv"]
-
-[[package]]
-name = "pytest-mockito"
-version = "0.0.4"
-description = "Base fixtures for mockito"
-optional = false
-python-versions = "*"
-files = [
-    {file = "pytest-mockito-0.0.4.tar.gz", hash = "sha256:40d40cdf118127dcb1e3c9e838b0d1c11d5197a23beaf10b6e3f42f9b6cb68a9"},
-]
-
-[package.dependencies]
-mockito = ">=1.0.6"
-pytest = ">=3"
 
 [[package]]
 name = "python-dateutil"
@@ -3968,4 +3954,4 @@ thot = ["sil-thot"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.12"
-content-hash = "5737e433ca2a038cc44c20a878e94dba57baf5dd1431985c0229da1b9f875fd1"
+content-hash = "7d53fccb68beb7d88f67c7e02522bd23ac4210c877db3e55912b95c9a129ecce"

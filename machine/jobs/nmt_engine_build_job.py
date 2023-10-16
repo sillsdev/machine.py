@@ -81,7 +81,7 @@ class NmtEngineBuildJob:
             inference_step_count = sum(1 for _ in src_pretranslations)
         with ExitStack() as stack:
             phase_progress = stack.enter_context(progress_reporter.start_next_phase())
-            model = stack.enter_context(self._nmt_model_factory.create_engine())
+            engine = stack.enter_context(self._nmt_model_factory.create_engine())
             src_pretranslations = stack.enter_context(self._shared_file_service.get_source_pretranslations())
             writer = stack.enter_context(self._shared_file_service.open_target_pretranslation_writer())
             current_inference_step = 0
@@ -90,7 +90,7 @@ class NmtEngineBuildJob:
             for pi_batch in batch(src_pretranslations, batch_size):
                 if check_canceled is not None:
                     check_canceled()
-                _translate_batch(model, pi_batch, writer)
+                _translate_batch(engine, pi_batch, writer)
                 current_inference_step += len(pi_batch)
                 phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
 
