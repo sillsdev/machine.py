@@ -332,7 +332,13 @@ class HuggingFaceNmtModelTrainer(Trainer):
             train_dataset=cast(Any, train_dataset),
             tokenizer=tokenizer,
             data_collator=data_collator,
-            callbacks=[_ProgressCallback(progress, check_canceled)],
+            callbacks=[
+                _ProgressCallback(
+                    self._training_args.max_steps if self._training_args.max_steps > 0 else None,
+                    progress,
+                    check_canceled,
+                )
+            ],
         )
 
         ckpt = None
@@ -368,21 +374,31 @@ class HuggingFaceNmtModelTrainer(Trainer):
 
 class _ProgressCallback(TrainerCallback):
     def __init__(
-        self, progress: Optional[Callable[[ProgressStatus], None]], check_canceled: Optional[Callable[[], None]]
+        self,
+        max_steps: Optional[int],
+        progress: Optional[Callable[[ProgressStatus], None]],
+        check_canceled: Optional[Callable[[], None]],
     ) -> None:
+        self._max_steps = max_steps
         self._progress = progress
         self._check_canceled = check_canceled
 
     def on_train_begin(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs) -> None:
         if self._progress is not None and state.is_local_process_zero:
-            self._progress(ProgressStatus(0))
+            self._progress(
+                ProgressStatus(0) if self._max_steps is None else ProgressStatus.from_step(0, self._max_steps)
+            )
 
         if self._check_canceled is not None:
             self._check_canceled()
 
     def on_step_end(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs) -> None:
         if self._progress is not None and state.is_local_process_zero:
-            self._progress(ProgressStatus(state.global_step))
+            self._progress(
+                ProgressStatus(state.global_step)
+                if self._max_steps is None
+                else ProgressStatus.from_step(state.global_step, self._max_steps)
+            )
 
         if self._check_canceled is not None:
             self._check_canceled()

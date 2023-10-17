@@ -40,7 +40,10 @@
 				},
 				"editor.formatOnSave": true,
 				"editor.formatOnType": true,
-				"isort.args":["--profile", "black"]
+				"isort.args": [
+					"--profile",
+					"black"
+				]
 			},
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
@@ -54,7 +57,8 @@
 				"donjayamanne.githistory",
 				"tamasfe.even-better-toml",
 				"github.vscode-github-actions",
-				"mhutchie.git-graph"
+				"mhutchie.git-graph",
+				"GitHub.copilot"
 			]
 		}
 	}

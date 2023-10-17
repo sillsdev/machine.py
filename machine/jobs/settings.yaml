@@ -7,7 +7,7 @@ default:
     update_src: true
     update_trg: true
   huggingface:
-    parent_model_name: facebook/nllb-200-1.3B
+    parent_model_name: facebook/nllb-200-distilled-1.3B
     train_params:
       do_train: true
       optim: adamw_torch
@@ -24,7 +24,13 @@ default:
       num_beams: 2
       batch_size: 16
 development:
-  shared_file_uri: s3://aqua-ml-data/
+  shared_file_uri: s3://aqua-ml-data/dev/
+  huggingface:
+    parent_model_name: facebook/nllb-200-distilled-600M
+    generate_params:
+      num_beams: 1
+staging:
+  max_steps: 10
   huggingface:
     parent_model_name: facebook/nllb-200-distilled-600M
     generate_params:
