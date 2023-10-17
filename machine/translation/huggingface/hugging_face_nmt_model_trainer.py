@@ -169,36 +169,42 @@ class HuggingFaceNmtModelTrainer(Trainer):
             with open(tokenizer_dir / "tokenizer.json", "r+", encoding="utf-8") as file:
                 data = json.load(file)
                 vocab_len = len(tokenizer)
-                for i, token in enumerate(missing_tokens):
-                    data["model"]["vocab"][token] = vocab_len + i
+                if isinstance(data["model"]["vocab"], dict):
+                    for i, token in enumerate(missing_tokens):
+                        data["model"]["vocab"][token] = vocab_len + i
+                elif isinstance(data["model"]["vocab"], list):
+                    for i, token in enumerate(missing_tokens):
+                        data["model"]["vocab"].append([token, vocab_len + i])
                 file.seek(0)
                 json.dump(data, file, ensure_ascii=False, indent=4)
                 file.truncate()
+            logger.info(f"Added {len(missing_tokens)} tokens to the tokenizer: {missing_tokens}")
             return AutoTokenizer.from_pretrained(str(tokenizer_dir), use_fast=True)
 
         if self._config.get("tokenizer") and (  # type: ignore
             self._config["tokenizer"].get("update_src") or self._config["tokenizer"].get("update_trg")
         ):
-            original_tokenizer = tokenizer
-            if not isinstance(tokenizer, NllbTokenizerFast):
-                tokenizer = NllbTokenizerFast.from_pretrained("facebook/nllb-200-distilled-600M", use_fast=True)
-            norm_tok = PreTrainedTokenizerFast.from_pretrained(
-                "./machine/tokenization/custom_normalizer", use_fast=True
-            )
-            tokenizer.backend_tokenizer.normalizer = norm_tok.backend_tokenizer.normalizer  # type: ignore
-            src_texts = [text for text in self._corpus.source_corpus.texts]  # type: ignore
-            trg_texts = [text for text in self._corpus.target_corpus.texts]  # type: ignore
-            if self._config["tokenizer"]["update_src"] and self._config["tokenizer"]["update_trg"]:
-                texts = src_texts + trg_texts
-            elif self._config["tokenizer"]["update_src"]:
-                texts = src_texts
+            if not isinstance(tokenizer, PreTrainedTokenizerFast):
+                logger.warning(
+                    f"Tokenizer can not be updated from default configuration: \
+                        tokenizer type {type(tokenizer)} is not an instance of PreTrainedTokenizerFast."
+                )
             else:
-                texts = trg_texts
-            missing_tokens = find_missing_characters(tokenizer, texts)
-            if missing_tokens:
-                tokenizer = add_tokens(tokenizer, missing_tokens)
-            else:
-                tokenizer = original_tokenizer
+                norm_tok = PreTrainedTokenizerFast.from_pretrained(
+                    "./machine/tokenization/custom_normalizer", use_fast=True
+                )
+                tokenizer.backend_tokenizer.normalizer = norm_tok.backend_tokenizer.normalizer  # type: ignore
+                src_texts = [text for text in self._corpus.source_corpus.texts]  # type: ignore
+                trg_texts = [text for text in self._corpus.target_corpus.texts]  # type: ignore
+                if self._config["tokenizer"]["update_src"] and self._config["tokenizer"]["update_trg"]:
+                    texts = src_texts + trg_texts
+                elif self._config["tokenizer"]["update_src"]:
+                    texts = src_texts
+                else:
+                    texts = trg_texts
+                missing_tokens = find_missing_characters(tokenizer, texts)
+                if missing_tokens:
+                    tokenizer = add_tokens(tokenizer, missing_tokens)
 
         def add_lang_code_to_tokenizer(tokenizer: Any, lang_code: str):
             if lang_code in tokenizer.lang_code_to_id:
@@ -213,6 +219,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 tokenizer.fairseq_tokens_to_ids[lang_code] = lang_id
                 tokenizer.fairseq_ids_to_tokens[lang_id] = lang_code
             elif isinstance(tokenizer, M2M100Tokenizer):
+                tokenizer.lang_code_to_token[lang_code] = lang_code
                 tokenizer.lang_token_to_id[lang_code] = lang_id
                 tokenizer.id_to_lang_token[lang_id] = lang_code
 
