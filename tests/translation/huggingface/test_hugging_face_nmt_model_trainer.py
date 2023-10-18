@@ -127,6 +127,8 @@ def test_update_tokenizer_missing_char() -> None:
             tgt_lang="es",
             max_source_length=20,
             max_target_length=20,
+            update_src=False,
+            update_trg=False,
         )
         trainer_nochar.train()
         trainer_nochar.save()
@@ -136,7 +138,6 @@ def test_update_tokenizer_missing_char() -> None:
             "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
         )
 
-        config = {"tokenizer": {"update_src": True, "update_trg": True}}
         trainer_char = HuggingFaceNmtModelTrainer(
             "hf-internal-testing/tiny-random-nllb",
             training_args,
@@ -145,7 +146,8 @@ def test_update_tokenizer_missing_char() -> None:
             tgt_lang="es",
             max_source_length=20,
             max_target_length=20,
-            config=config,
+            update_src=True,
+            update_trg=True,
         )
         trainer_char.train()
         trainer_char.save()
@@ -178,7 +180,7 @@ def test_update_tokenizer_missing_char_skip() -> None:
                     "text1",
                     [
                         _row(1, "a b c"),
-                        _row(1, "ॽ " + "‌ " + "‍"),
+                        _row(2, "ॽ " + "‌ " + "‍"),
                     ],
                 )
             ]
@@ -197,6 +199,8 @@ def test_update_tokenizer_missing_char_skip() -> None:
             tgt_lang="es",
             max_source_length=20,
             max_target_length=20,
+            update_src=False,
+            update_trg=False,
         )
         trainer_nochar.train()
         trainer_nochar.save()
@@ -206,7 +210,6 @@ def test_update_tokenizer_missing_char_skip() -> None:
             "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
         )
 
-        config = {"tokenizer": {"update_src": True, "update_trg": True}}
         trainer_char = HuggingFaceNmtModelTrainer(
             "stas/tiny-m2m_100",
             training_args,
@@ -215,7 +218,8 @@ def test_update_tokenizer_missing_char_skip() -> None:
             tgt_lang="es",
             max_source_length=20,
             max_target_length=20,
-            config=config,
+            update_src=False,
+            update_trg=False,
         )
         trainer_char.train()
         trainer_char.save()
@@ -267,6 +271,8 @@ def test_update_tokenizer_missing_char_src() -> None:
             tgt_lang="spa_Latn",
             max_source_length=20,
             max_target_length=20,
+            update_src=False,
+            update_trg=False,
         )
         trainer_nochar.train()
         trainer_nochar.save()
@@ -278,7 +284,6 @@ def test_update_tokenizer_missing_char_src() -> None:
             "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
         )
 
-        config = {"tokenizer": {"update_src": True, "update_trg": False}}
         trainer_char = HuggingFaceNmtModelTrainer(
             "hf-internal-testing/tiny-random-nllb",
             training_args,
@@ -287,7 +292,8 @@ def test_update_tokenizer_missing_char_src() -> None:
             tgt_lang="spa_Latn",
             max_source_length=20,
             max_target_length=20,
-            config=config,
+            update_src=True,
+            update_trg=False,
         )
         trainer_char.train()
         trainer_char.save()
@@ -339,6 +345,8 @@ def test_update_tokenizer_missing_char_trg() -> None:
             tgt_lang="spa_Latn",
             max_source_length=20,
             max_target_length=20,
+            update_src=False,
+            update_trg=False,
         )
         trainer_nochar.train()
         trainer_nochar.save()
@@ -350,7 +358,6 @@ def test_update_tokenizer_missing_char_trg() -> None:
             "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
         )
 
-        config = {"tokenizer": {"update_src": False, "update_trg": True}}
         trainer_char = HuggingFaceNmtModelTrainer(
             "hf-internal-testing/tiny-random-nllb",
             training_args,
@@ -359,7 +366,8 @@ def test_update_tokenizer_missing_char_trg() -> None:
             tgt_lang="spa_Latn",
             max_source_length=20,
             max_target_length=20,
-            config=config,
+            update_src=False,
+            update_trg=True,
         )
         trainer_char.train()
         trainer_char.save()
@@ -411,6 +419,8 @@ def test_update_tokenizer_no_missing_char() -> None:
             tgt_lang="spa_Latn",
             max_source_length=20,
             max_target_length=20,
+            update_src=False,
+            update_trg=False,
         )
         trainer_nochar.train()
         trainer_nochar.save()
@@ -420,7 +430,6 @@ def test_update_tokenizer_no_missing_char() -> None:
         )
         finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode("una habitación individual por semana")
 
-        config = {"tokenizer": {"update_src": True, "update_trg": True}}
         trainer_char = HuggingFaceNmtModelTrainer(
             "hf-internal-testing/tiny-random-nllb",
             training_args,
@@ -429,7 +438,8 @@ def test_update_tokenizer_no_missing_char() -> None:
             tgt_lang="spa_Latn",
             max_source_length=20,
             max_target_length=20,
-            config=config,
+            update_src=True,
+            update_trg=True,
         )
         trainer_char.train()
         trainer_char.save()

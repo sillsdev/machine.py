@@ -10,7 +10,6 @@ import datasets.utils.logging as datasets_logging
 import torch  # pyright: ignore[reportMissingImports]
 import transformers.utils.logging as transformers_logging
 from datasets.arrow_dataset import Dataset
-from dynaconf import LazySettings
 from sacremoses import MosesPunctNormalizer
 from torch import Tensor  # pyright: ignore[reportMissingImports]
 from torch.utils.checkpoint import checkpoint  # pyright: ignore[reportMissingImports] # noqa: F401
@@ -84,7 +83,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
         tgt_lang: Optional[str] = None,
         max_source_length: Optional[int] = None,
         max_target_length: Optional[int] = None,
-        config: Union[LazySettings, dict] = {},
+        update_src: bool = False,
+        update_trg: bool = True,
     ) -> None:
         self._model = model
         self._training_args = training_args
@@ -95,7 +95,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
         self._metrics = {}
         self.max_source_length = max_source_length
         self.max_target_length = max_target_length
-        self._config = config
+        self._update_src = update_src
+        self._update_trg = update_trg
 
     @property
     def stats(self) -> TrainStats:
@@ -158,7 +159,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
             mpn = MosesPunctNormalizer()
             mpn.substitutions = [(re.compile(r), sub) for r, sub in mpn.substitutions]
             charset = {mpn.normalize(char) for char in charset}
-            charset = {tokenizer.backend_tokenizer.normalizer.normalize_str(char) for char in charset}  # type: ignore
+            charset = {tokenizer.backend_tokenizer.normalizer.normalize_str(char) for char in charset}
             charset = set(filter(None, {char.strip() for char in charset}))
             missing_characters = sorted(list(charset - vocab))
             return missing_characters
@@ -181,24 +182,20 @@ class HuggingFaceNmtModelTrainer(Trainer):
             logger.info(f"Added {len(missing_tokens)} tokens to the tokenizer: {missing_tokens}")
             return AutoTokenizer.from_pretrained(str(tokenizer_dir), use_fast=True)
 
-        if self._config.get("tokenizer") and (  # type: ignore
-            self._config["tokenizer"].get("update_src") or self._config["tokenizer"].get("update_trg")
-        ):
+        if self._update_src or self._update_trg:
             if not isinstance(tokenizer, PreTrainedTokenizerFast):
                 logger.warning(
                     f"Tokenizer can not be updated from default configuration: \
                         tokenizer type {type(tokenizer)} is not an instance of PreTrainedTokenizerFast."
                 )
             else:
-                norm_tok = PreTrainedTokenizerFast.from_pretrained(
-                    "./machine/tokenization/custom_normalizer", use_fast=True
-                )
+                norm_tok = PreTrainedTokenizerFast.from_pretrained("./machine/translation/huggingface", use_fast=True)
                 tokenizer.backend_tokenizer.normalizer = norm_tok.backend_tokenizer.normalizer  # type: ignore
                 src_texts = [text for text in self._corpus.source_corpus.texts]  # type: ignore
                 trg_texts = [text for text in self._corpus.target_corpus.texts]  # type: ignore
-                if self._config["tokenizer"]["update_src"] and self._config["tokenizer"]["update_trg"]:
+                if self._update_src and self._update_trg:
                     texts = src_texts + trg_texts
-                elif self._config["tokenizer"]["update_src"]:
+                elif self._update_src:
                     texts = src_texts
                 else:
                     texts = trg_texts

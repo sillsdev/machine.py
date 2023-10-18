@@ -4,7 +4,7 @@ default:
   data_dir: ~/machine
   batch_size: 1024
   tokenizer:
-    update_src: true
+    update_src: false
     update_trg: true
   huggingface:
     parent_model_name: facebook/nllb-200-distilled-1.3B

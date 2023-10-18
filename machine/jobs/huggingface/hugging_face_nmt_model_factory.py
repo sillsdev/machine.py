@@ -60,7 +60,8 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
             corpus,
             src_lang=self._config.src_lang,
             tgt_lang=self._config.trg_lang,
-            config=self._config,
+            update_src=self._config.tokenizer.update_src,
+            update_trg=self._config.tokenizer.update_trg,
         )
 
     def create_engine(self) -> TranslationEngine:
