@@ -3,9 +3,6 @@ default:
   max_steps: 20000
   data_dir: ~/machine
   batch_size: 1024
-  tokenizer:
-    update_src: false
-    update_trg: true
   huggingface:
     parent_model_name: facebook/nllb-200-distilled-1.3B
     train_params:
@@ -23,6 +20,9 @@ default:
       device: 0
       num_beams: 2
       batch_size: 16
+    tokenizer:
+      add_unk_src_tokens: false
+      add_unk_trg_tokens: true
 development:
   shared_file_uri: s3://aqua-ml-data/dev/
   huggingface:

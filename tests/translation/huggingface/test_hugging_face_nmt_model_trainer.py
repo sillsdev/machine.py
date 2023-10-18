@@ -127,8 +127,8 @@ def test_update_tokenizer_missing_char() -> None:
             tgt_lang="es",
             max_source_length=20,
             max_target_length=20,
-            update_src=False,
-            update_trg=False,
+            add_unk_src_tokens=False,
+            add_unk_trg_tokens=False,
         )
         trainer_nochar.train()
         trainer_nochar.save()
@@ -146,8 +146,8 @@ def test_update_tokenizer_missing_char() -> None:
             tgt_lang="es",
             max_source_length=20,
             max_target_length=20,
-            update_src=True,
-            update_trg=True,
+            add_unk_src_tokens=True,
+            add_unk_trg_tokens=True,
         )
         trainer_char.train()
         trainer_char.save()
@@ -199,8 +199,8 @@ def test_update_tokenizer_missing_char_skip() -> None:
             tgt_lang="es",
             max_source_length=20,
             max_target_length=20,
-            update_src=False,
-            update_trg=False,
+            add_unk_src_tokens=False,
+            add_unk_trg_tokens=False,
         )
         trainer_nochar.train()
         trainer_nochar.save()
@@ -218,8 +218,8 @@ def test_update_tokenizer_missing_char_skip() -> None:
             tgt_lang="es",
             max_source_length=20,
             max_target_length=20,
-            update_src=False,
-            update_trg=False,
+            add_unk_src_tokens=False,
+            add_unk_trg_tokens=False,
         )
         trainer_char.train()
         trainer_char.save()
@@ -271,8 +271,8 @@ def test_update_tokenizer_missing_char_src() -> None:
             tgt_lang="spa_Latn",
             max_source_length=20,
             max_target_length=20,
-            update_src=False,
-            update_trg=False,
+            add_unk_src_tokens=False,
+            add_unk_trg_tokens=False,
         )
         trainer_nochar.train()
         trainer_nochar.save()
@@ -292,8 +292,8 @@ def test_update_tokenizer_missing_char_src() -> None:
             tgt_lang="spa_Latn",
             max_source_length=20,
             max_target_length=20,
-            update_src=True,
-            update_trg=False,
+            add_unk_src_tokens=True,
+            add_unk_trg_tokens=False,
         )
         trainer_char.train()
         trainer_char.save()
@@ -345,8 +345,8 @@ def test_update_tokenizer_missing_char_trg() -> None:
             tgt_lang="spa_Latn",
             max_source_length=20,
             max_target_length=20,
-            update_src=False,
-            update_trg=False,
+            add_unk_src_tokens=False,
+            add_unk_trg_tokens=False,
         )
         trainer_nochar.train()
         trainer_nochar.save()
@@ -366,8 +366,8 @@ def test_update_tokenizer_missing_char_trg() -> None:
             tgt_lang="spa_Latn",
             max_source_length=20,
             max_target_length=20,
-            update_src=False,
-            update_trg=True,
+            add_unk_src_tokens=False,
+            add_unk_trg_tokens=True,
         )
         trainer_char.train()
         trainer_char.save()
@@ -419,8 +419,8 @@ def test_update_tokenizer_no_missing_char() -> None:
             tgt_lang="spa_Latn",
             max_source_length=20,
             max_target_length=20,
-            update_src=False,
-            update_trg=False,
+            add_unk_src_tokens=False,
+            add_unk_trg_tokens=False,
         )
         trainer_nochar.train()
         trainer_nochar.save()
@@ -438,8 +438,8 @@ def test_update_tokenizer_no_missing_char() -> None:
             tgt_lang="spa_Latn",
             max_source_length=20,
             max_target_length=20,
-            update_src=True,
-            update_trg=True,
+            add_unk_src_tokens=True,
+            add_unk_trg_tokens=True,
         )
         trainer_char.train()
         trainer_char.save()

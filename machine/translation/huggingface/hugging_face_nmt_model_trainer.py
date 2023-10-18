@@ -83,8 +83,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
         tgt_lang: Optional[str] = None,
         max_source_length: Optional[int] = None,
         max_target_length: Optional[int] = None,
-        update_src: bool = False,
-        update_trg: bool = True,
+        add_unk_src_tokens: bool = False,
+        add_unk_trg_tokens: bool = True,
     ) -> None:
         self._model = model
         self._training_args = training_args
@@ -95,8 +95,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
         self._metrics = {}
         self.max_source_length = max_source_length
         self.max_target_length = max_target_length
-        self._update_src = update_src
-        self._update_trg = update_trg
+        self._add_unk_src_tokens = add_unk_src_tokens
+        self._add_unk_trg_tokens = add_unk_trg_tokens
 
     @property
     def stats(self) -> TrainStats:
@@ -182,20 +182,22 @@ class HuggingFaceNmtModelTrainer(Trainer):
             logger.info(f"Added {len(missing_tokens)} tokens to the tokenizer: {missing_tokens}")
             return AutoTokenizer.from_pretrained(str(tokenizer_dir), use_fast=True)
 
-        if self._update_src or self._update_trg:
+        if self._add_unk_src_tokens or self._add_unk_trg_tokens:
             if not isinstance(tokenizer, PreTrainedTokenizerFast):
                 logger.warning(
                     f"Tokenizer can not be updated from default configuration: \
                         tokenizer type {type(tokenizer)} is not an instance of PreTrainedTokenizerFast."
                 )
             else:
-                norm_tok = PreTrainedTokenizerFast.from_pretrained("./machine/translation/huggingface", use_fast=True)
-                tokenizer.backend_tokenizer.normalizer = norm_tok.backend_tokenizer.normalizer  # type: ignore
-                src_texts = [text for text in self._corpus.source_corpus.texts]  # type: ignore
-                trg_texts = [text for text in self._corpus.target_corpus.texts]  # type: ignore
-                if self._update_src and self._update_trg:
+                norm_tok = PreTrainedTokenizerFast.from_pretrained(
+                    "./machine/translation/huggingface/custom_normalizer", use_fast=True
+                )
+                tokenizer.backend_tokenizer.normalizer = norm_tok.backend_tokenizer.normalizer
+                src_texts = [text for text in self._corpus.source_corpus.texts]
+                trg_texts = [text for text in self._corpus.target_corpus.texts]
+                if self._add_unk_src_tokens and self._add_unk_trg_tokens:
                     texts = src_texts + trg_texts
-                elif self._update_src:
+                elif self._add_unk_src_tokens:
                     texts = src_texts
                 else:
                     texts = trg_texts
