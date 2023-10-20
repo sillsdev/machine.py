@@ -7,7 +7,7 @@ if sys.platform == "darwin":
 
 from tempfile import TemporaryDirectory
 
-from transformers import Seq2SeqTrainingArguments
+from transformers import PreTrainedTokenizerFast, Seq2SeqTrainingArguments
 
 from machine.corpora import DictionaryTextCorpus, MemoryText, TextRow
 from machine.translation.huggingface import HuggingFaceNmtEngine, HuggingFaceNmtModelTrainer
@@ -86,6 +86,381 @@ def test_train_non_empty_corpus() -> None:
         finetuned_engine = HuggingFaceNmtEngine(temp_dir, src_lang="es", tgt_lang="en", max_length=20)
         finetuned_result = finetuned_engine.translate("una habitación individual por semana")
         assert finetuned_result.translation != pretrained_result.translation
+
+
+def test_update_tokenizer_missing_char() -> None:
+    with TemporaryDirectory() as temp_dir:
+        source_corpus = DictionaryTextCorpus(
+            [
+                MemoryText(
+                    "text1",
+                    [
+                        _row(1, "Ḻ ḻ Ṉ"),
+                        _row(2, "d e f"),
+                    ],
+                )
+            ]
+        )
+
+        target_corpus = DictionaryTextCorpus(
+            [
+                MemoryText(
+                    "text1",
+                    [
+                        _row(1, "a b c"),
+                        _row(1, "ॽ " + "‌ " + "‍"),
+                    ],
+                )
+            ]
+        )
+        corpus = source_corpus.align_rows(target_corpus)
+
+        training_args = Seq2SeqTrainingArguments(
+            output_dir=temp_dir, num_train_epochs=1, report_to=["none"], learning_rate=0.01
+        )
+
+        trainer_nochar = HuggingFaceNmtModelTrainer(
+            "hf-internal-testing/tiny-random-nllb",
+            training_args,
+            corpus,
+            src_lang="en",
+            tgt_lang="es",
+            max_source_length=20,
+            max_target_length=20,
+            add_unk_src_tokens=False,
+            add_unk_trg_tokens=False,
+        )
+        trainer_nochar.train()
+        trainer_nochar.save()
+
+        finetuned_engine_nochar = HuggingFaceNmtEngine(temp_dir, src_lang="en", tgt_lang="es", max_length=20)
+        finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode(
+            "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
+        )
+
+        trainer_char = HuggingFaceNmtModelTrainer(
+            "hf-internal-testing/tiny-random-nllb",
+            training_args,
+            corpus,
+            src_lang="en",
+            tgt_lang="es",
+            max_source_length=20,
+            max_target_length=20,
+            add_unk_src_tokens=True,
+            add_unk_trg_tokens=True,
+        )
+        trainer_char.train()
+        trainer_char.save()
+
+        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="en", tgt_lang="es", max_length=20)
+        finetuned_result_char = finetuned_engine_char._tokenizer.encode(
+            "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
+        )
+
+        assert isinstance(finetuned_engine_nochar._tokenizer, PreTrainedTokenizerFast) and isinstance(
+            finetuned_engine_char._tokenizer, PreTrainedTokenizerFast
+        )
+
+        normalized_result_nochar1 = finetuned_engine_nochar._tokenizer.backend_tokenizer.normalizer.normalize_str("‌ ")
+        normalized_result_char1 = finetuned_engine_char._tokenizer.backend_tokenizer.normalizer.normalize_str("‌ ")
+
+        normalized_result_nochar2 = finetuned_engine_nochar._tokenizer.backend_tokenizer.normalizer.normalize_str("‍")
+        normalized_result_char2 = finetuned_engine_char._tokenizer.backend_tokenizer.normalizer.normalize_str("‍")
+
+        assert normalized_result_nochar1 != normalized_result_char1
+        assert normalized_result_nochar2 != normalized_result_char2
+
+        assert finetuned_result_nochar != finetuned_result_char
+
+
+def test_update_tokenizer_missing_char_skip() -> None:
+    with TemporaryDirectory() as temp_dir:
+        source_corpus = DictionaryTextCorpus(
+            [
+                MemoryText(
+                    "text1",
+                    [
+                        _row(1, "Ḻ ḻ Ṉ"),
+                        _row(2, "d e f"),
+                    ],
+                )
+            ]
+        )
+
+        target_corpus = DictionaryTextCorpus(
+            [
+                MemoryText(
+                    "text1",
+                    [
+                        _row(1, "a b c"),
+                        _row(2, "ॽ " + "‌ " + "‍"),
+                    ],
+                )
+            ]
+        )
+        corpus = source_corpus.align_rows(target_corpus)
+
+        training_args = Seq2SeqTrainingArguments(
+            output_dir=temp_dir, num_train_epochs=1, report_to=["none"], learning_rate=0.01
+        )
+
+        trainer_nochar = HuggingFaceNmtModelTrainer(
+            "stas/tiny-m2m_100",
+            training_args,
+            corpus,
+            src_lang="en",
+            tgt_lang="es",
+            max_source_length=20,
+            max_target_length=20,
+            add_unk_src_tokens=False,
+            add_unk_trg_tokens=False,
+        )
+        trainer_nochar.train()
+        trainer_nochar.save()
+
+        finetuned_engine_nochar = HuggingFaceNmtEngine(temp_dir, src_lang="en", tgt_lang="es", max_length=20)
+        finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode(
+            "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
+        )
+
+        trainer_char = HuggingFaceNmtModelTrainer(
+            "stas/tiny-m2m_100",
+            training_args,
+            corpus,
+            src_lang="en",
+            tgt_lang="es",
+            max_source_length=20,
+            max_target_length=20,
+            add_unk_src_tokens=False,
+            add_unk_trg_tokens=False,
+        )
+        trainer_char.train()
+        trainer_char.save()
+
+        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="en", tgt_lang="es", max_length=20)
+        finetuned_result_char = finetuned_engine_char._tokenizer.encode(
+            "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
+        )
+
+        assert finetuned_result_nochar == finetuned_result_char
+
+
+def test_update_tokenizer_missing_char_src() -> None:
+    with TemporaryDirectory() as temp_dir:
+        source_corpus = DictionaryTextCorpus(
+            [
+                MemoryText(
+                    "text1",
+                    [
+                        _row(1, "Ḻ ḻ Ṉ"),
+                        _row(2, "ॽ " + "‌ " + "‍"),
+                    ],
+                )
+            ]
+        )
+
+        target_corpus = DictionaryTextCorpus(
+            [
+                MemoryText(
+                    "text1",
+                    [
+                        _row(1, "random data"),
+                        _row(2, "other info"),
+                    ],
+                )
+            ]
+        )
+        corpus = source_corpus.align_rows(target_corpus)
+
+        training_args = Seq2SeqTrainingArguments(
+            output_dir=temp_dir, num_train_epochs=1, report_to=["none"], learning_rate=0.01
+        )
+
+        trainer_nochar = HuggingFaceNmtModelTrainer(
+            "hf-internal-testing/tiny-random-nllb",
+            training_args,
+            corpus,
+            src_lang="eng_Latn",
+            tgt_lang="spa_Latn",
+            max_source_length=20,
+            max_target_length=20,
+            add_unk_src_tokens=False,
+            add_unk_trg_tokens=False,
+        )
+        trainer_nochar.train()
+        trainer_nochar.save()
+
+        finetuned_engine_nochar = HuggingFaceNmtEngine(
+            temp_dir, src_lang="eng_Latn", tgt_lang="spa_Latn", max_length=20
+        )
+        finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode(
+            "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
+        )
+
+        trainer_char = HuggingFaceNmtModelTrainer(
+            "hf-internal-testing/tiny-random-nllb",
+            training_args,
+            corpus,
+            src_lang="eng_Latn",
+            tgt_lang="spa_Latn",
+            max_source_length=20,
+            max_target_length=20,
+            add_unk_src_tokens=True,
+            add_unk_trg_tokens=False,
+        )
+        trainer_char.train()
+        trainer_char.save()
+
+        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="eng_Latn", tgt_lang="spa_Latn", max_length=20)
+        finetuned_result_char = finetuned_engine_char._tokenizer.encode(
+            "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
+        )
+
+        assert finetuned_result_nochar != finetuned_result_char
+
+
+def test_update_tokenizer_missing_char_trg() -> None:
+    with TemporaryDirectory() as temp_dir:
+        source_corpus = DictionaryTextCorpus(
+            [
+                MemoryText(
+                    "text1",
+                    [
+                        _row(1, "random data"),
+                        _row(2, "other info"),
+                    ],
+                )
+            ]
+        )
+
+        target_corpus = DictionaryTextCorpus(
+            [
+                MemoryText(
+                    "text1",
+                    [
+                        _row(1, "Ḻ ḻ Ṉ"),
+                        _row(2, "ॽ " + "‌ " + "‍"),
+                    ],
+                )
+            ]
+        )
+        corpus = source_corpus.align_rows(target_corpus)
+
+        training_args = Seq2SeqTrainingArguments(
+            output_dir=temp_dir, num_train_epochs=1, report_to=["none"], learning_rate=0.01
+        )
+
+        trainer_nochar = HuggingFaceNmtModelTrainer(
+            "hf-internal-testing/tiny-random-nllb",
+            training_args,
+            corpus,
+            src_lang="eng_Latn",
+            tgt_lang="spa_Latn",
+            max_source_length=20,
+            max_target_length=20,
+            add_unk_src_tokens=False,
+            add_unk_trg_tokens=False,
+        )
+        trainer_nochar.train()
+        trainer_nochar.save()
+
+        finetuned_engine_nochar = HuggingFaceNmtEngine(
+            temp_dir, src_lang="eng_Latn", tgt_lang="spa_Latn", max_length=20
+        )
+        finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode(
+            "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
+        )
+
+        trainer_char = HuggingFaceNmtModelTrainer(
+            "hf-internal-testing/tiny-random-nllb",
+            training_args,
+            corpus,
+            src_lang="eng_Latn",
+            tgt_lang="spa_Latn",
+            max_source_length=20,
+            max_target_length=20,
+            add_unk_src_tokens=False,
+            add_unk_trg_tokens=True,
+        )
+        trainer_char.train()
+        trainer_char.save()
+
+        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="eng_Latn", tgt_lang="spa_Latn", max_length=20)
+        finetuned_result_char = finetuned_engine_char._tokenizer.encode(
+            "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
+        )
+
+        assert finetuned_result_nochar != finetuned_result_char
+
+
+def test_update_tokenizer_no_missing_char() -> None:
+    with TemporaryDirectory() as temp_dir:
+        source_corpus = DictionaryTextCorpus(
+            [
+                MemoryText(
+                    "text1",
+                    [
+                        _row(1, "Me parece que existe un problema."),
+                        _row(2, "Yo voy a marcharme el dos a las ocho de la noche."),
+                    ],
+                )
+            ]
+        )
+
+        target_corpus = DictionaryTextCorpus(
+            [
+                MemoryText(
+                    "text1",
+                    [
+                        _row(1, "I think that there is a problem."),
+                        _row(2, "I am leaving on the second at eight in the evening."),
+                    ],
+                )
+            ]
+        )
+        corpus = source_corpus.align_rows(target_corpus)
+
+        training_args = Seq2SeqTrainingArguments(
+            output_dir=temp_dir, num_train_epochs=1, report_to=["none"], learning_rate=0.01
+        )
+
+        trainer_nochar = HuggingFaceNmtModelTrainer(
+            "hf-internal-testing/tiny-random-nllb",
+            training_args,
+            corpus,
+            src_lang="eng_Latn",
+            tgt_lang="spa_Latn",
+            max_source_length=20,
+            max_target_length=20,
+            add_unk_src_tokens=False,
+            add_unk_trg_tokens=False,
+        )
+        trainer_nochar.train()
+        trainer_nochar.save()
+
+        finetuned_engine_nochar = HuggingFaceNmtEngine(
+            temp_dir, src_lang="eng_Latn", tgt_lang="spa_Latn", max_length=20
+        )
+        finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode("una habitación individual por semana")
+
+        trainer_char = HuggingFaceNmtModelTrainer(
+            "hf-internal-testing/tiny-random-nllb",
+            training_args,
+            corpus,
+            src_lang="eng_Latn",
+            tgt_lang="spa_Latn",
+            max_source_length=20,
+            max_target_length=20,
+            add_unk_src_tokens=True,
+            add_unk_trg_tokens=True,
+        )
+        trainer_char.train()
+        trainer_char.save()
+
+        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="eng_Latn", tgt_lang="spa_Latn", max_length=20)
+        finetuned_result_char = finetuned_engine_char._tokenizer.encode("una habitación individual por semana")
+
+        assert finetuned_result_nochar == finetuned_result_char
 
 
 def _row(row_ref: int, text: str) -> TextRow:

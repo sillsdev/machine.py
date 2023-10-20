@@ -1,12 +1,16 @@
 import gc
+import json
 import logging
 import os
-from typing import Any, Callable, Optional, Union, cast
+import re
+from pathlib import Path
+from typing import Any, Callable, List, Optional, Union, cast
 
 import datasets.utils.logging as datasets_logging
 import torch  # pyright: ignore[reportMissingImports]
 import transformers.utils.logging as transformers_logging
 from datasets.arrow_dataset import Dataset
+from sacremoses import MosesPunctNormalizer
 from torch import Tensor  # pyright: ignore[reportMissingImports]
 from torch.utils.checkpoint import checkpoint  # pyright: ignore[reportMissingImports] # noqa: F401
 from transformers import (
@@ -22,6 +26,7 @@ from transformers import (
     NllbTokenizer,
     NllbTokenizerFast,
     PreTrainedModel,
+    PreTrainedTokenizerFast,
     Seq2SeqTrainer,
     Seq2SeqTrainingArguments,
     TrainerCallback,
@@ -77,6 +82,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
         tgt_lang: Optional[str] = None,
         max_source_length: Optional[int] = None,
         max_target_length: Optional[int] = None,
+        add_unk_src_tokens: bool = False,
+        add_unk_trg_tokens: bool = True,
     ) -> None:
         self._model = model
         self._training_args = training_args
@@ -87,6 +94,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
         self._metrics = {}
         self.max_source_length = max_source_length
         self.max_target_length = max_target_length
+        self._add_unk_src_tokens = add_unk_src_tokens
+        self._add_unk_trg_tokens = add_unk_trg_tokens
 
     @property
     def stats(self) -> TrainStats:
@@ -138,7 +147,73 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 num_labels=0,
             )
             model = cast(PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(self._model, config=config))
-        tokenizer: Any = AutoTokenizer.from_pretrained(model.name_or_path, use_fast=True)
+        tokenizer = AutoTokenizer.from_pretrained(model.name_or_path, use_fast=True)
+
+        src_lang = self._src_lang
+        if src_lang is None:
+            src_lang = "src"
+        tgt_lang = self._tgt_lang
+        if tgt_lang is None:
+            tgt_lang = "tgt"
+
+        if isinstance(self._corpus, Dataset):
+            train_dataset = self._corpus
+        else:
+            train_dataset = self._corpus.filter_nonempty().to_hf_dataset(src_lang, tgt_lang)
+
+        def find_missing_characters(tokenizer: Any, train_dataset: Dataset, lang_codes: List[str]) -> List[str]:
+            vocab = tokenizer.get_vocab().keys()
+            charset = set()
+            for lang_code in lang_codes:
+                for ex in train_dataset["translation"]:
+                    charset = charset | set(ex[lang_code])
+            mpn = MosesPunctNormalizer()
+            mpn.substitutions = [(re.compile(r), sub) for r, sub in mpn.substitutions]
+            charset = {mpn.normalize(char) for char in charset}
+            charset = {tokenizer.backend_tokenizer.normalizer.normalize_str(char) for char in charset}
+            charset = set(filter(None, {char.strip() for char in charset}))
+            missing_characters = sorted(list(charset - vocab))
+            return missing_characters
+
+        def add_tokens(tokenizer: Any, missing_tokens: List[str]) -> Any:
+            tokenizer_dir = Path(self._training_args.output_dir)
+            tokenizer.save_pretrained(str(tokenizer_dir))
+            with open(tokenizer_dir / "tokenizer.json", "r+", encoding="utf-8") as file:
+                data = json.load(file)
+                vocab_len = len(tokenizer)
+                if isinstance(data["model"]["vocab"], dict):
+                    for i, token in enumerate(missing_tokens):
+                        data["model"]["vocab"][token] = vocab_len + i
+                elif isinstance(data["model"]["vocab"], list):
+                    for i, token in enumerate(missing_tokens):
+                        data["model"]["vocab"].append([token, vocab_len + i])
+                file.seek(0)
+                json.dump(data, file, ensure_ascii=False, indent=4)
+                file.truncate()
+            logger.info(f"Added {len(missing_tokens)} tokens to the tokenizer: {missing_tokens}")
+            return AutoTokenizer.from_pretrained(str(tokenizer_dir), use_fast=True)
+
+        if self._add_unk_src_tokens or self._add_unk_trg_tokens:
+            if not isinstance(tokenizer, PreTrainedTokenizerFast):
+                logger.warning(
+                    f"Tokenizer can not be updated from default configuration: \
+                        tokenizer type {type(tokenizer)} is not an instance of PreTrainedTokenizerFast."
+                )
+            else:
+                norm_tok = PreTrainedTokenizerFast.from_pretrained(
+                    "./machine/translation/huggingface/custom_normalizer", use_fast=True
+                )
+                # using unofficially supported behavior to set the normalizer
+                tokenizer.backend_tokenizer.normalizer = norm_tok.backend_tokenizer.normalizer  # type: ignore
+                if self._add_unk_src_tokens and self._add_unk_trg_tokens:
+                    lang_codes = [src_lang, tgt_lang]
+                elif self._add_unk_src_tokens:
+                    lang_codes = [src_lang]
+                else:
+                    lang_codes = [tgt_lang]
+                missing_tokens = find_missing_characters(tokenizer, train_dataset, lang_codes)
+                if missing_tokens:
+                    tokenizer = add_tokens(tokenizer, missing_tokens)
 
         def add_lang_code_to_tokenizer(tokenizer: Any, lang_code: str):
             if lang_code in tokenizer.lang_code_to_id:
@@ -153,6 +228,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 tokenizer.fairseq_tokens_to_ids[lang_code] = lang_id
                 tokenizer.fairseq_ids_to_tokens[lang_id] = lang_code
             elif isinstance(tokenizer, M2M100Tokenizer):
+                tokenizer.lang_code_to_token[lang_code] = lang_code
                 tokenizer.lang_token_to_id[lang_code] = lang_id
                 tokenizer.id_to_lang_token[lang_id] = lang_code
 
@@ -204,13 +280,6 @@ class HuggingFaceNmtModelTrainer(Trainer):
         if model.name_or_path.startswith("t5-") or model.name_or_path.startswith("google/mt5-"):
             prefix = f"translate {self._src_lang} to {self._tgt_lang}: "
 
-        src_lang = self._src_lang
-        if src_lang is None:
-            src_lang = "src"
-        tgt_lang = self._tgt_lang
-        if tgt_lang is None:
-            tgt_lang = "tgt"
-
         max_source_length = self.max_source_length
         if max_source_length is None:
             max_source_length = model.config.max_length
@@ -238,11 +307,6 @@ class HuggingFaceNmtModelTrainer(Trainer):
 
             model_inputs["labels"] = labels["input_ids"]
             return model_inputs
-
-        if isinstance(self._corpus, Dataset):
-            train_dataset = self._corpus
-        else:
-            train_dataset = self._corpus.filter_nonempty().to_hf_dataset(src_lang, tgt_lang)
 
         train_dataset = train_dataset.map(
             preprocess_function,
