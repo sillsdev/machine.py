@@ -38,7 +38,6 @@ from transformers.trainer_utils import get_last_checkpoint
 from transformers.training_args import TrainingArguments
 
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
-from ...corpora.text import Text
 from ...utils.progress_status import ProgressStatus
 from ..trainer import Trainer, TrainStats
 
@@ -150,12 +149,24 @@ class HuggingFaceNmtModelTrainer(Trainer):
             model = cast(PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(self._model, config=config))
         tokenizer = AutoTokenizer.from_pretrained(model.name_or_path, use_fast=True)
 
-        def find_missing_characters(tokenizer: Any, texts: List[Text]) -> List[str]:
+        src_lang = self._src_lang
+        if src_lang is None:
+            src_lang = "src"
+        tgt_lang = self._tgt_lang
+        if tgt_lang is None:
+            tgt_lang = "tgt"
+
+        if isinstance(self._corpus, Dataset):
+            train_dataset = self._corpus
+        else:
+            train_dataset = self._corpus.filter_nonempty().to_hf_dataset(src_lang, tgt_lang)
+
+        def find_missing_characters(tokenizer: Any, train_dataset: Dataset, lang_codes: List[str]) -> List[str]:
             vocab = tokenizer.get_vocab().keys()
             charset = set()
-            for text in texts:
-                for row in text._get_rows():
-                    charset = charset | set(row.text)
+            for lang_code in lang_codes:
+                for ex in train_dataset["translation"]:
+                    charset = charset | set(ex[lang_code])
             mpn = MosesPunctNormalizer()
             mpn.substitutions = [(re.compile(r), sub) for r, sub in mpn.substitutions]
             charset = {mpn.normalize(char) for char in charset}
@@ -192,16 +203,15 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 norm_tok = PreTrainedTokenizerFast.from_pretrained(
                     "./machine/translation/huggingface/custom_normalizer", use_fast=True
                 )
-                tokenizer.backend_tokenizer.normalizer = norm_tok.backend_tokenizer.normalizer
-                src_texts = [text for text in self._corpus.source_corpus.texts]
-                trg_texts = [text for text in self._corpus.target_corpus.texts]
+                # using unofficially supported behavior to set the normalizer
+                tokenizer.backend_tokenizer.normalizer = norm_tok.backend_tokenizer.normalizer  # type: ignore
                 if self._add_unk_src_tokens and self._add_unk_trg_tokens:
-                    texts = src_texts + trg_texts
+                    lang_codes = [src_lang, tgt_lang]
                 elif self._add_unk_src_tokens:
-                    texts = src_texts
+                    lang_codes = [src_lang]
                 else:
-                    texts = trg_texts
-                missing_tokens = find_missing_characters(tokenizer, texts)
+                    lang_codes = [tgt_lang]
+                missing_tokens = find_missing_characters(tokenizer, train_dataset, lang_codes)
                 if missing_tokens:
                     tokenizer = add_tokens(tokenizer, missing_tokens)
 
@@ -270,13 +280,6 @@ class HuggingFaceNmtModelTrainer(Trainer):
         if model.name_or_path.startswith("t5-") or model.name_or_path.startswith("google/mt5-"):
             prefix = f"translate {self._src_lang} to {self._tgt_lang}: "
 
-        src_lang = self._src_lang
-        if src_lang is None:
-            src_lang = "src"
-        tgt_lang = self._tgt_lang
-        if tgt_lang is None:
-            tgt_lang = "tgt"
-
         max_source_length = self.max_source_length
         if max_source_length is None:
             max_source_length = model.config.max_length
@@ -304,11 +307,6 @@ class HuggingFaceNmtModelTrainer(Trainer):
 
             model_inputs["labels"] = labels["input_ids"]
             return model_inputs
-
-        if isinstance(self._corpus, Dataset):
-            train_dataset = self._corpus
-        else:
-            train_dataset = self._corpus.filter_nonempty().to_hf_dataset(src_lang, tgt_lang)
 
         train_dataset = train_dataset.map(
             preprocess_function,

@@ -7,7 +7,7 @@ if sys.platform == "darwin":
 
 from tempfile import TemporaryDirectory
 
-from transformers import Seq2SeqTrainingArguments
+from transformers import PreTrainedTokenizerFast, Seq2SeqTrainingArguments
 
 from machine.corpora import DictionaryTextCorpus, MemoryText, TextRow
 from machine.translation.huggingface import HuggingFaceNmtEngine, HuggingFaceNmtModelTrainer
@@ -156,6 +156,19 @@ def test_update_tokenizer_missing_char() -> None:
         finetuned_result_char = finetuned_engine_char._tokenizer.encode(
             "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
         )
+
+        assert isinstance(finetuned_engine_nochar._tokenizer, PreTrainedTokenizerFast) and isinstance(
+            finetuned_engine_char._tokenizer, PreTrainedTokenizerFast
+        )
+
+        normalized_result_nochar1 = finetuned_engine_nochar._tokenizer.backend_tokenizer.normalizer.normalize_str("‌ ")
+        normalized_result_char1 = finetuned_engine_char._tokenizer.backend_tokenizer.normalizer.normalize_str("‌ ")
+
+        normalized_result_nochar2 = finetuned_engine_nochar._tokenizer.backend_tokenizer.normalizer.normalize_str("‍")
+        normalized_result_char2 = finetuned_engine_char._tokenizer.backend_tokenizer.normalizer.normalize_str("‍")
+
+        assert normalized_result_nochar1 != normalized_result_char1
+        assert normalized_result_nochar2 != normalized_result_char2
 
         assert finetuned_result_nochar != finetuned_result_char
 

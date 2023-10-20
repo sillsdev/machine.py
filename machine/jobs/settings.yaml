@@ -21,7 +21,7 @@ default:
       num_beams: 2
       batch_size: 16
     tokenizer:
-      add_unk_src_tokens: false
+      add_unk_src_tokens: true
       add_unk_trg_tokens: true
 development:
   shared_file_uri: s3://aqua-ml-data/dev/
