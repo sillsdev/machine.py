@@ -3,6 +3,7 @@ from typing import Any, cast
 
 from transformers import AutoConfig, AutoModelForSeq2SeqLM, HfArgumentParser, PreTrainedModel, Seq2SeqTrainingArguments
 from transformers.integrations import ClearMLCallback
+from transformers.tokenization_utils import TruncationStrategy
 
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
 from ...corpora.text_corpus import TextCorpus
@@ -70,6 +71,7 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
             device=self._config.huggingface.generate_params.device,
             num_beams=self._config.huggingface.generate_params.num_beams,
             batch_size=self._config.huggingface.generate_params.batch_size,
+            truncation=TruncationStrategy.LONGEST_FIRST,
         )
 
     def save_model(self) -> None:
