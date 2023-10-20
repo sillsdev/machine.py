@@ -495,10 +495,6 @@ class _TransformParallelTextCorpus(ParallelTextCorpus):
     def is_target_tokenized(self) -> bool:
         return self._is_target_tokenized
 
-    @property
-    def missing_rows_allowed(self) -> bool:
-        return self._corpus.missing_rows_allowed
-
     def count(self, include_empty: bool = True) -> int:
         return self._corpus.count(include_empty)
 
@@ -572,10 +568,6 @@ class _PandasParallelTextCorpus(ParallelTextCorpus):
     def is_target_tokenized(self) -> bool:
         return False
 
-    @property
-    def missing_rows_allowed(self) -> bool:
-        return False
-
     def count(self, include_empty: bool = True) -> int:
         if include_empty:
             return len(self._df)
@@ -635,10 +627,6 @@ class _DatasetParallelTextCorpus(ParallelTextCorpus):
 
     @property
     def is_target_tokenized(self) -> bool:
-        return False
-
-    @property
-    def missing_rows_allowed(self) -> bool:
         return False
 
     def count(self, include_empty: bool = True) -> int:

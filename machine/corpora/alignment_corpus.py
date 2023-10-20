@@ -26,10 +26,6 @@ class AlignmentCorpus(Corpus[AlignmentRow]):
                 with tac.get_rows() as rows:
                     yield from rows
 
-    @property
-    def missing_rows_allowed(self) -> bool:
-        return any(ac.missing_rows_allowed for ac in self.alignment_collections)
-
     def count(self, include_empty: bool = True) -> int:
         return sum(ac.count(include_empty) for ac in self.alignment_collections)
 
@@ -63,10 +59,6 @@ class _TransformAlignmentCorpus(AlignmentCorpus):
     @property
     def alignment_collections(self) -> Iterable[AlignmentCollection]:
         return self._corpus.alignment_collections
-
-    @property
-    def missing_rows_allowed(self) -> bool:
-        return self._corpus.missing_rows_allowed
 
     def count(self, include_empty: bool = True) -> int:
         return self._corpus.count(include_empty)

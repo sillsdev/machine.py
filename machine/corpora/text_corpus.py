@@ -37,10 +37,6 @@ class TextCorpus(Corpus[TextRow]):
                 with text.get_rows() as rows:
                     yield from rows
 
-    @property
-    def missing_rows_allowed(self) -> bool:
-        return any(t.missing_rows_allowed for t in self.texts)
-
     def count(self, include_empty: bool = True) -> int:
         return sum(t.count(include_empty) for t in self.texts)
 
@@ -162,10 +158,6 @@ class _TransformTextCorpus(TextCorpus):
     @property
     def is_tokenized(self) -> bool:
         return self._is_tokenized
-
-    @property
-    def missing_rows_allowed(self) -> bool:
-        return self._corpus.missing_rows_allowed
 
     def count(self, include_empty: bool = True) -> int:
         return self._corpus.count(include_empty)

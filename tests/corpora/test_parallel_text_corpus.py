@@ -19,7 +19,7 @@ from machine.corpora import (
 from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, VerseRef, Versification
 
 
-def test_get_rows_no_segments() -> None:
+def test_get_rows_no_rows() -> None:
     source_corpus = DictionaryTextCorpus()
     target_corpus = DictionaryTextCorpus()
     parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus)
@@ -1160,6 +1160,75 @@ def test_from_hf_dataset() -> None:
     assert rows[2].is_source_sentence_start
     assert rows[2].is_target_sentence_start
     assert set_equals(rows[2].aligned_word_pairs, [AlignedWordPair(2, 2)])
+
+
+def test_count_no_rows() -> None:
+    source_corpus = DictionaryTextCorpus()
+    target_corpus = DictionaryTextCorpus()
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus)
+
+    assert parallel_corpus.count(include_empty=True) == 0
+    assert parallel_corpus.count(include_empty=False) == 0
+
+
+def test_count_missing_row() -> None:
+    source_corpus = DictionaryTextCorpus(
+        MemoryText(
+            "text1",
+            [
+                text_row("text1", 1, "source segment 1 ."),
+                text_row("text1", 3, "source segment 3 ."),
+            ],
+        )
+    )
+    target_corpus = DictionaryTextCorpus(
+        MemoryText(
+            "text1",
+            [
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 2, "target segment 2 ."),
+                text_row("text1", 3, "target segment 3 ."),
+            ],
+        )
+    )
+
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus)
+
+    assert parallel_corpus.count(include_empty=True) == 2
+    assert parallel_corpus.count(include_empty=False) == 2
+
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus, all_target_rows=True)
+
+    assert parallel_corpus.count(include_empty=True) == 3
+    assert parallel_corpus.count(include_empty=False) == 2
+
+
+def test_count_empty_row() -> None:
+    source_corpus = DictionaryTextCorpus(
+        MemoryText(
+            "text1",
+            [
+                text_row("text1", 1, "source segment 1 ."),
+                text_row("text1", 2, "source segment 2 ."),
+                text_row("text1", 3, "source segment 3 ."),
+            ],
+        )
+    )
+    target_corpus = DictionaryTextCorpus(
+        MemoryText(
+            "text1",
+            [
+                text_row("text1", 1, "target segment 1 ."),
+                text_row("text1", 2),
+                text_row("text1", 3, "target segment 3 ."),
+            ],
+        )
+    )
+
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus)
+
+    assert parallel_corpus.count(include_empty=True) == 3
+    assert parallel_corpus.count(include_empty=False) == 2
 
 
 def text_row(text_id: str, ref: Any, text: str = "", flags: TextRowFlags = TextRowFlags.SENTENCE_START) -> TextRow:

@@ -48,10 +48,19 @@ class TextFileText(TextBase):
                 yield self._create_row(line, row_ref, flags)
                 line_num += 1
 
-    @property
-    def missing_rows_allowed(self) -> bool:
-        return False
-
     def count(self, include_empty: bool = True) -> int:
-        with open(self._filename, mode="rb") as file:
-            return sum(1 for line in file if include_empty or len(line.strip()) > 0)
+        if include_empty:
+            with open(self._filename, mode="rb") as file:
+                return sum(1 for _ in file)
+
+        with open(self._filename, mode="r", encoding="utf-8-sig") as file:
+            count = 0
+            for line in file:
+                line = line.rstrip("\r\n")
+                if len(line) > 0:
+                    columns = line.split("\t")
+                    if len(columns) > 1:
+                        line = columns[1]
+                    if len(line.strip()) > 0:
+                        count += 1
+            return count
