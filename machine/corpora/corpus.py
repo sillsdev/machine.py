@@ -23,10 +23,6 @@ class Corpus(ABC, Generic[Row], Iterable[Row]):
     def __iter__(self) -> ContextManagedGenerator[Row, None, None]:
         return self.get_rows()
 
-    @property
-    def missing_rows_allowed(self) -> bool:
-        return True
-
     def count(self, include_empty: bool = True) -> int:
         with self.get_rows() as rows:
             return sum(1 for row in rows if include_empty or not row.is_empty)

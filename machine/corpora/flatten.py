@@ -57,10 +57,6 @@ class _FlattenTextCorpus(TextCorpus):
     def is_tokenized(self) -> bool:
         return all(c.is_tokenized for c in self._corpora)
 
-    @property
-    def missing_rows_allowed(self) -> bool:
-        return any(c.missing_rows_allowed for c in self._corpora)
-
     def count(self, include_empty: bool = True) -> int:
         return sum(c.count(include_empty) for c in self._corpora)
 
@@ -77,10 +73,6 @@ class _FlattenAlignmentCorpus(AlignmentCorpus):
     @property
     def alignment_collections(self) -> Iterable[AlignmentCollection]:
         return chain.from_iterable(c.alignment_collections for c in self._corpora)
-
-    @property
-    def missing_rows_allowed(self) -> bool:
-        return any(c.missing_rows_allowed for c in self._corpora)
 
     def count(self, include_empty: bool = True) -> int:
         return sum(c.count(include_empty) for c in self._corpora)
@@ -102,10 +94,6 @@ class _FlattenParallelTextCorpus(ParallelTextCorpus):
     @property
     def is_target_tokenized(self) -> bool:
         return all(c.is_target_tokenized for c in self._corpora)
-
-    @property
-    def missing_rows_allowed(self) -> bool:
-        return any(c.missing_rows_allowed for c in self._corpora)
 
     def count(self, include_empty: bool = True) -> int:
         return sum(c.count(include_empty) for c in self._corpora)

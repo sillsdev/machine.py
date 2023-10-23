@@ -40,7 +40,7 @@ def test_get_rows_nonempty_text_no_refs() -> None:
     assert text is not None
     rows = list(text.get_rows())
 
-    assert len(rows) == 3
+    assert len(rows) == 4
 
     assert rows[0].ref == MultiKeyRef("Test3", [1])
     assert rows[0].text == "Line one."
@@ -60,3 +60,33 @@ def test_get_rows_empty_text() -> None:
     rows = list(text.get_rows())
 
     assert len(rows) == 0
+
+
+def test_count_nonempty_text_refs() -> None:
+    corpus = TextFileTextCorpus(TEXT_TEST_PROJECT_PATH)
+
+    text = corpus.get_text("Test1")
+    assert text is not None
+
+    assert text.count(include_empty=True) == 5
+    assert text.count(include_empty=False) == 4
+
+
+def test_count_nonempty_text_no_refs() -> None:
+    corpus = TextFileTextCorpus(TEXT_TEST_PROJECT_PATH)
+
+    text = corpus.get_text("Test3")
+    assert text is not None
+
+    assert text.count(include_empty=True) == 4
+    assert text.count(include_empty=False) == 3
+
+
+def test_count_empty_text() -> None:
+    corpus = TextFileTextCorpus(TEXT_TEST_PROJECT_PATH)
+
+    text = corpus.get_text("Test2")
+    assert text is not None
+
+    assert text.count(include_empty=True) == 0
+    assert text.count(include_empty=False) == 0

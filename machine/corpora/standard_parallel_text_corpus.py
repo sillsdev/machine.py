@@ -61,21 +61,6 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
     def all_target_rows(self) -> bool:
         return self._all_target_rows
 
-    @property
-    def missing_rows_allowed(self) -> bool:
-        if self._source_corpus.missing_rows_allowed or self._target_corpus.missing_rows_allowed:
-            return True
-        source_text_ids = {t.id for t in self._source_corpus.texts}
-        target_text_ids = {t.id for t in self._target_corpus.texts}
-        return source_text_ids != target_text_ids
-
-    def count(self, include_empty: bool = True) -> int:
-        if self.missing_rows_allowed:
-            return super().count(include_empty)
-        if include_empty:
-            return self._source_corpus.count(include_empty)
-        return min(self._source_corpus.count(include_empty), self._target_corpus.count(include_empty))
-
     def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
         source_text_ids = {t.id for t in self._source_corpus.texts}
         target_text_ids = {t.id for t in self._target_corpus.texts}
