@@ -201,7 +201,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 )
             else:
                 norm_tok = PreTrainedTokenizerFast.from_pretrained(
-                    "./machine/translation/huggingface/custom_normalizer", use_fast=True
+                    str(Path(os.path.dirname(os.path.abspath(__file__))) / "custom_normalizer"),
+                    use_fast=True,
                 )
                 # using unofficially supported behavior to set the normalizer
                 tokenizer.backend_tokenizer.normalizer = norm_tok.backend_tokenizer.normalizer  # type: ignore
