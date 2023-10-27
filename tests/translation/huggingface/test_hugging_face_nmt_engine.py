@@ -5,7 +5,7 @@ if sys.platform == "darwin":
 
     skip("skipping Hugging Face tests on MacOS", allow_module_level=True)
 
-from pytest import approx
+from pytest import approx, raises
 
 from machine.translation.huggingface import HuggingFaceNmtEngine
 
@@ -36,3 +36,8 @@ def test_translate_greedy() -> None:
     assert result.translation == "skaberskaber Dollar Dollar Dollar ፤ gerekir gerekir"
     assert result.confidences[0] == approx(1.08e-05, 0.01)
     assert str(result.alignment) == "2-0 2-1 2-2 2-3 4-4 4-5 4-6 4-7"
+
+
+def test_construct_invalid_lang() -> None:
+    with raises(ValueError):
+        HuggingFaceNmtEngine("stas/tiny-m2m_100", src_lang="qaa", tgt_lang="es")
