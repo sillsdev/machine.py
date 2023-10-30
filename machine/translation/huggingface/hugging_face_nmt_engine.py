@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import gc
 from math import exp, prod
-from typing import Iterable, List, Sequence, Tuple, Union, cast
+from typing import Any, Iterable, List, Sequence, Tuple, Union, cast
 
 import torch  # pyright: ignore[reportMissingImports]
 from transformers import AutoConfig, AutoModelForSeq2SeqLM, AutoTokenizer, PreTrainedModel, TranslationPipeline
@@ -30,15 +30,32 @@ class HuggingFaceNmtEngine(TranslationEngine):
             model_config = AutoConfig.from_pretrained(str(model), label2id={}, id2label={}, num_labels=0)
             model = cast(PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(str(model), config=model_config))
         self._tokenizer = AutoTokenizer.from_pretrained(model.name_or_path, use_fast=True)
-        if "prefix" not in pipeline_kwargs:
+
+        src_lang = pipeline_kwargs.get("src_lang")
+        tgt_lang = pipeline_kwargs.get("tgt_lang")
+        if (
+            src_lang is not None
+            and tgt_lang is not None
+            and "prefix" not in pipeline_kwargs
+            and (model.name_or_path.startswith("t5-") or model.name_or_path.startswith("google/mt5-"))
+        ):
+            pipeline_kwargs["prefix"] = f"translate {src_lang} to {tgt_lang}: "
+        else:
+            additional_special_tokens = self._tokenizer.additional_special_tokens
             if (
-                "src_lang" in pipeline_kwargs
-                and "tgt_lang" in pipeline_kwargs
-                and (model.name_or_path.startswith("t5-") or model.name_or_path.startswith("google/mt5-"))
+                src_lang is not None
+                and src_lang not in cast(Any, self._tokenizer).lang_code_to_id
+                and src_lang not in additional_special_tokens
             ):
-                src_lang = pipeline_kwargs["src_lang"]
-                tgt_lang = pipeline_kwargs["tgt_lang"]
-                pipeline_kwargs["prefix"] = f"translate {src_lang} to {tgt_lang}: "
+                raise ValueError(f"'{src_lang}' is not a valid language code.")
+
+            if (
+                tgt_lang is not None
+                and tgt_lang not in cast(Any, self._tokenizer).lang_code_to_id
+                and tgt_lang not in additional_special_tokens
+            ):
+                raise ValueError(f"'{tgt_lang}' is not a valid language code.")
+
         self._pipeline = _TranslationPipeline(
             model=model,
             tokenizer=self._tokenizer,
