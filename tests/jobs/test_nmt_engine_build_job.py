@@ -10,7 +10,7 @@ from machine.annotations import Range
 from machine.corpora import DictionaryTextCorpus
 from machine.jobs import NmtEngineBuildJob, NmtModelFactory, PretranslationInfo, PretranslationWriter, SharedFileService
 from machine.translation import Phrase, Trainer, TrainStats, TranslationResult, TranslationSources, WordAlignmentMatrix
-from machine.translation.translation_engine import TranslationEngine
+from machine.translation.nmt_translation_engine import NmtTranslationEngine
 from machine.utils import CanceledError, ContextManagedGenerator
 
 
@@ -45,8 +45,9 @@ class _TestEnvironment:
         stats.metrics["bleu"] = 30.0
         decoy.when(self.model_trainer.stats).then_return(stats)
 
-        self.engine = decoy.mock(cls=TranslationEngine)
+        self.engine = decoy.mock(cls=NmtTranslationEngine)
         decoy.when(self.engine.__enter__()).then_return(self.engine)
+        decoy.when(self.engine.get_batch_size()).then_return(16)
         decoy.when(self.engine.translate_batch(matchers.Anything())).then_return(
             [
                 TranslationResult(

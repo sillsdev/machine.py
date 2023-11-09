@@ -11,14 +11,14 @@ from transformers.tokenization_utils import BatchEncoding, TruncationStrategy
 
 from ...annotations.range import Range
 from ...utils.typeshed import StrPath
-from ..translation_engine import TranslationEngine
+from ..nmt_translation_engine import NmtTranslationEngine
 from ..translation_result import TranslationResult
 from ..translation_result_builder import TranslationResultBuilder
 from ..translation_sources import TranslationSources
 from ..word_alignment_matrix import WordAlignmentMatrix
 
 
-class HuggingFaceNmtEngine(TranslationEngine):
+class HuggingFaceNmtEngine(NmtTranslationEngine):
     def __init__(
         self,
         model: Union[PreTrainedModel, StrPath, str],
@@ -56,7 +56,11 @@ class HuggingFaceNmtEngine(TranslationEngine):
             ):
                 raise ValueError(f"'{tgt_lang}' is not a valid language code.")
 
-        self._batch_size = int(pipeline_kwargs.get("batch_size"))  # type: ignore[assignment]
+        batch_size = pipeline_kwargs.get("batch_size")
+        if batch_size is not None:
+            self._batch_size = int(batch_size)  # type: ignore[assignment]
+        else:
+            self._batch_size = 16
 
         self._pipeline = _TranslationPipeline(
             model=model,

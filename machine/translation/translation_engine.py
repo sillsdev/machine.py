@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from types import TracebackType
-from typing import ContextManager, Optional, Sequence, Type, Union
+from typing import Optional, Sequence, Type, Union
 
 from .translation_result import TranslationResult
 
 
-class TranslationEngine(ContextManager["TranslationEngine"]):
+class TranslationEngine:
     @abstractmethod
     def translate(self, segment: Union[str, Sequence[str]]) -> TranslationResult:
         ...
@@ -18,10 +18,6 @@ class TranslationEngine(ContextManager["TranslationEngine"]):
 
     @abstractmethod
     def translate_batch(self, segments: Sequence[Union[str, Sequence[str]]]) -> Sequence[TranslationResult]:
-        ...
-
-    @abstractmethod
-    def get_batch_size(self) -> int:
         ...
 
     @abstractmethod

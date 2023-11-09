@@ -3,7 +3,7 @@ from contextlib import ExitStack
 from typing import Any, Callable, Optional, Sequence
 
 from ..corpora.corpora_utils import batch
-from ..translation.translation_engine import TranslationEngine
+from ..translation.nmt_translation_engine import NmtTranslationEngine
 from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
 from ..utils.progress_status import ProgressStatus
 from .nmt_model_factory import NmtModelFactory
@@ -102,7 +102,7 @@ class TranslateBatch:
     def __init__(self, stack: ExitStack, nmt_model_factory: NmtModelFactory):
         self._stack = stack
         self._nmt_model_factory = nmt_model_factory
-        self._engine = self._stack.enter_context(self._nmt_model_factory.create_engine())
+        self._engine: NmtTranslationEngine = self._stack.enter_context(self._nmt_model_factory.create_engine())
 
     def translate(
         self,
