@@ -21,6 +21,10 @@ class TranslationEngine(ContextManager["TranslationEngine"]):
         ...
 
     @abstractmethod
+    def get_batch_size(self) -> int:
+        ...
+
+    @abstractmethod
     def translate_n_batch(
         self, n: int, segments: Sequence[Union[str, Sequence[str]]]
     ) -> Sequence[Sequence[TranslationResult]]:

@@ -56,6 +56,8 @@ class HuggingFaceNmtEngine(TranslationEngine):
             ):
                 raise ValueError(f"'{tgt_lang}' is not a valid language code.")
 
+        self._batch_size = int(pipeline_kwargs.get("batch_size"))  # type: ignore[assignment]
+
         self._pipeline = _TranslationPipeline(
             model=model,
             tokenizer=self._tokenizer,
@@ -70,6 +72,9 @@ class HuggingFaceNmtEngine(TranslationEngine):
 
     def translate_batch(self, segments: Sequence[Union[str, Sequence[str]]]) -> Sequence[TranslationResult]:
         return [results[0] for results in self.translate_n_batch(1, segments)]
+
+    def get_batch_size(self) -> int:
+        return self._batch_size
 
     def translate_n_batch(
         self, n: int, segments: Sequence[Union[str, Sequence[str]]]

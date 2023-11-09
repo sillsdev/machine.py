@@ -81,17 +81,16 @@ class NmtEngineBuildJob:
             inference_step_count = sum(1 for _ in src_pretranslations)
         with ExitStack() as stack:
             phase_progress = stack.enter_context(progress_reporter.start_next_phase())
-            engine = stack.enter_context(self._nmt_model_factory.create_engine())
             src_pretranslations = stack.enter_context(self._shared_file_service.get_source_pretranslations())
             writer = stack.enter_context(self._shared_file_service.open_target_pretranslation_writer())
             current_inference_step = 0
             phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
             batch_size = self._config["batch_size"]
-            translate_batch = TranslateBatch(batch_size)
+            translate_batch = TranslateBatch(stack, self._nmt_model_factory)
             for pi_batch in batch(src_pretranslations, batch_size):
                 if check_canceled is not None:
                     check_canceled()
-                translate_batch.translate(engine, pi_batch, writer)
+                translate_batch.translate(pi_batch, writer)
                 current_inference_step += len(pi_batch)
                 phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
 
@@ -100,12 +99,13 @@ batch_divisor = 1
 
 
 class TranslateBatch:
-    def __init__(self, initial_batch_size):
-        self.batch_size = initial_batch_size
+    def __init__(self, stack: ExitStack, nmt_model_factory: NmtModelFactory):
+        self._stack = stack
+        self._nmt_model_factory = nmt_model_factory
+        self._engine = self._stack.enter_context(self._nmt_model_factory.create_engine())
 
     def translate(
         self,
-        engine: TranslationEngine,
         batch: Sequence[PretranslationInfo],
         writer: PretranslationWriter,
     ) -> None:
@@ -113,12 +113,16 @@ class TranslateBatch:
             source_segments = [pi["translation"] for pi in batch]
             outer_batch_size = len(source_segments)
             try:
-                for step in range(0, outer_batch_size, self.batch_size):
-                    for i, result in enumerate(engine.translate_batch(source_segments[step : step + self.batch_size])):
+                for step in range(0, outer_batch_size, self._engine.get_batch_size()):
+                    for i, result in enumerate(
+                        self._engine.translate_batch(source_segments[step : step + self._engine.get_batch_size()])
+                    ):
                         batch[i + step]["translation"] = result.translation
                 for i in range(len(source_segments)):
                     writer.write(batch[i])
                 break
             except Exception:
-                self.batch_size = max(self.batch_size // 2, 1)
-                logger.info(f"Out of memory error, reducing batch size to {self.batch_size}")
+                logger.info(f"Out of memory error, reducing batch size to {self._engine.get_batch_size() // 2}")
+                self._engine = self._stack.enter_context(
+                    self._nmt_model_factory.create_engine(half_previous_batch_size=True)
+                )

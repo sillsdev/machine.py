@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Any, cast
 
@@ -14,6 +15,8 @@ from ...translation.trainer import Trainer
 from ...translation.translation_engine import TranslationEngine
 from ..nmt_model_factory import NmtModelFactory
 from ..shared_file_service import SharedFileService
+
+logger = logging.getLogger(__name__)
 
 
 class HuggingFaceNmtModelFactory(NmtModelFactory):
@@ -67,7 +70,11 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
             add_unk_trg_tokens=self._config.huggingface.tokenizer.add_unk_trg_tokens,
         )
 
-    def create_engine(self) -> TranslationEngine:
+    def create_engine(self, half_previous_batch_size=False) -> TranslationEngine:
+        if half_previous_batch_size:
+            self._config.huggingface.generate_params.batch_size = max(
+                self._config.huggingface.generate_params.batch_size // 2, 1
+            )
         return HuggingFaceNmtEngine(
             self._model,
             src_lang=self._config.src_lang,
