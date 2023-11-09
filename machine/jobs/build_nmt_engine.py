@@ -30,7 +30,7 @@ def run(args: dict) -> None:
         task = Task.init()
 
         def clearml_check_canceled() -> None:
-            if task.get_status() in {"stopped", "stopping"}:
+            if task.get_status() == "stopped":
                 raise CanceledError
 
         check_canceled = clearml_check_canceled
@@ -72,7 +72,10 @@ def run(args: dict) -> None:
         logger.info("Finished")
     except Exception as e:
         if task:
-            task.mark_failed(status_reason=type(e).__name__, status_message=str(e))
+            if task.get_status() == "stopped":
+                return
+            else:
+                task.mark_failed(status_reason=type(e).__name__, status_message=str(e))
         raise e
 
 
