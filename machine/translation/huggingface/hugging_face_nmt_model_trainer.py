@@ -382,21 +382,21 @@ class _ProgressCallback(TrainerCallback):
         self._check_canceled = check_canceled
 
     def on_train_begin(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs) -> None:
+        if self._check_canceled is not None:
+            self._check_canceled()
+
         if self._progress is not None and state.is_local_process_zero:
             self._progress(
                 ProgressStatus(0) if self._max_steps is None else ProgressStatus.from_step(0, self._max_steps)
             )
 
+    def on_step_end(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs) -> None:
         if self._check_canceled is not None:
             self._check_canceled()
 
-    def on_step_end(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs) -> None:
         if self._progress is not None and state.is_local_process_zero:
             self._progress(
                 ProgressStatus(state.global_step)
                 if self._max_steps is None
                 else ProgressStatus.from_step(state.global_step, self._max_steps)
             )
-
-        if self._check_canceled is not None:
-            self._check_canceled()
