@@ -1,4 +1,3 @@
-import re
 from typing import Dict, List, Set, Union
 
 from .canon import book_id_to_number
