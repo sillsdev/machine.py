@@ -40,7 +40,7 @@ def get_books(books: Union[str, List[str]]) -> Set[int]:
 
 
 # Output format: { book_num: [chapters] }
-# An empty list, i.e. book_num: [] signifies the inclusion of all chapters, while the absence of an entry means the book is not included
+# An empty list, i.e. book_num: [] signifies the inclusion of all chapters
 def get_chapters(chapter_selections: str) -> dict:
     versification = Versification.create("Original")
     chapters = {}
@@ -138,9 +138,10 @@ def get_chapters(chapter_selections: str) -> dict:
             else:
                 chapters[book].discard(int(chapter_num))
 
-        # Delete entry if no chapter numbers are left or make entry the empty set again if all chapters are still present
+        # Delete entry if no chapter numbers are left
         if len(chapters[book]) == 0:
             del chapters[book]
+        # Make entry the empty set again if all chapters are still present
         elif len(chapters[book]) == versification.get_last_chapter(book):
             chapters[book] = set()
 
