@@ -8,13 +8,13 @@ from .canon import (
     NON_CANONICAL_IDS,
     book_id_to_number,
     book_number_to_id,
-    get_books,
     is_book_id_valid,
     is_canonical,
     is_nt,
     is_ot,
     is_ot_nt,
 )
+from .parse import get_books, get_chapters
 from .verse_ref import (
     NULL_VERSIFICATION,
     VERSE_RANGE_SEPARATOR,
@@ -52,6 +52,7 @@ __all__ = [
     "FIRST_BOOK",
     "get_bbbcccvvv",
     "get_books",
+    "get_chapters",
     "is_book_id_valid",
     "is_canonical",
     "is_nt",
