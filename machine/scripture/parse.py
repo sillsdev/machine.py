@@ -1,9 +1,8 @@
-from typing import List, Set, Union
 import re
+from typing import List, Set, Union
 
-from .verse_ref import Versification
 from .canon import book_id_to_number
-
+from .verse_ref import Versification
 
 USFM_FILE_PATTERN = re.compile(r"(?<=[A-Z]{3})\d+\.usfm")
 BOOK_SPAN = re.compile(r"[A-Z]{3}-[A-Z]{3}")
