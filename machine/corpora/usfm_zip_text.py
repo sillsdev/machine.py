@@ -43,4 +43,4 @@ def _get_id(archive_filename: StrPath, path: str, encoding: str) -> str:
                     if index != -1:
                         id = id[:index]
                     return id.strip().upper()
-    raise RuntimeError("The USFM does not contain and 'id' marker.")
+    raise RuntimeError("The USFM does not contain an 'id' marker.")

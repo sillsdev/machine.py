@@ -136,3 +136,19 @@ def test_get_rows_include_markers() -> None:
 
     assert verse_ref(rows[16]).exact_equals(VerseRef.from_string("MAT 2:10", corpus.versification))
     assert rows[16].text == "\\tc3-4 Chapter 2 verse 10"
+
+
+def test_usfm_file_text_corpus_lowercase_usfm_id() -> None:
+    corpus = UsfmFileTextCorpus(USFM_TEST_PROJECT_PATH)
+
+    text = corpus.get_text("LEV")
+    assert text is not None
+    rows = list(text)
+
+    assert len(rows) == 2
+
+    assert verse_ref(rows[0]).exact_equals(VerseRef.from_string("LEV 14:55", corpus.versification))
+    assert rows[0].text == "Chapter fourteen, verse fifty-five. Segment b."
+
+    assert verse_ref(rows[1]).exact_equals(VerseRef.from_string("LEV 14:56", corpus.versification))
+    assert rows[1].text == "Chapter fourteen, verse fifty-six."
