@@ -50,6 +50,7 @@ def test_get_chapters() -> None:
     assert get_chapters("MAT400-500") == {}
     assert get_chapters("MAT1-4,12,9,100") == {40: [1, 2, 3, 4, 9, 12]}
     assert get_chapters("MAT-LUK") == {40: [], 41: [], 42: []}
+    assert get_chapters("MAT1,2,3;MAT-LUK") == {40: [1, 2, 3], 41: [], 42: []}
     assert get_chapters("2JN-3JN;EXO1,8,3-5;GEN") == {1: [], 2: [1, 3, 4, 5, 8], 63: [], 64: []}
 
     assert get_chapters("NT;OT;-MRK;-EXO") == whole_bible

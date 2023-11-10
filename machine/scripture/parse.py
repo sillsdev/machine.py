@@ -109,7 +109,7 @@ def get_chapters(chapter_selections: str) -> dict:
             raise RuntimeError(f"{span} is an invalid book range.")
 
         for i in range(book_id_to_number(ends[0]), book_id_to_number(ends[1]) + 1):
-            if not i in chapters:
+            if i not in chapters:
                 chapters[i] = set()
 
     for subtraction in subtractions:
