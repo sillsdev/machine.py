@@ -47,14 +47,18 @@ class HuggingFaceNmtEngine(TranslationEngine):
                 and src_lang not in cast(Any, self._tokenizer).lang_code_to_id
                 and src_lang not in additional_special_tokens
             ):
-                raise ValueError(f"'{src_lang}' is not a valid language code.")
+                raise ValueError(
+                    f"'{src_lang}' is not a valid language code. This error can happen when there is no matching training data and the language code is not in the NLLB-200."
+                )
 
             if (
                 tgt_lang is not None
                 and tgt_lang not in cast(Any, self._tokenizer).lang_code_to_id
                 and tgt_lang not in additional_special_tokens
             ):
-                raise ValueError(f"'{tgt_lang}' is not a valid language code.")
+                raise ValueError(
+                    f"'{tgt_lang}' is not a valid language code. This error can happen when there is no matching training data and the language code is not in the NLLB-200."
+                )
 
         self._pipeline = _TranslationPipeline(
             model=model,
