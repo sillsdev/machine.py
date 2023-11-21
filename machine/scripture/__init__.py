@@ -1,5 +1,3 @@
-from typing import Any
-
 from .canon import (
     ALL_BOOK_IDS,
     BOOK_NUMBERS,
@@ -34,14 +32,6 @@ from .verse_ref import (
     are_overlapping_verse_ranges,
     get_bbbcccvvv,
 )
-
-
-def __getattr__(name: str) -> Any:
-    if name.endswith("_VERSIFICATION"):
-        index = name.rindex("_")
-        return Versification.get_builtin(name[:index])
-    raise AttributeError
-
 
 __all__ = [
     "ALL_BOOK_IDS",
