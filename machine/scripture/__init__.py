@@ -14,6 +14,14 @@ from .canon import (
     is_ot,
     is_ot_nt,
 )
+from .constants import (
+    ENGLISH_VERSIFICATION,
+    ORIGINAL_VERSIFICATION,
+    RUSSIAN_ORTHODOX_VERSIFICATION,
+    RUSSIAN_PROTESTANT_VERSIFICATION,
+    SEPTUAGINT_VERSIFICATION,
+    VULGATE_VERSIFICATION,
+)
 from .parse import get_books, get_chapters
 from .verse_ref import (
     NULL_VERSIFICATION,
@@ -26,13 +34,6 @@ from .verse_ref import (
     are_overlapping_verse_ranges,
     get_bbbcccvvv,
 )
-
-ORIGINAL_VERSIFICATION: Versification
-ENGLISH_VERSIFICATION: Versification
-SEPTUAGINT_VERSIFICATION: Versification
-VULGATE_VERSIFICATION: Versification
-RUSSIAN_ORTHODOX_VERSIFICATION: Versification
-RUSSIAN_PROTESTANT_VERSIFICATION: Versification
 
 
 def __getattr__(name: str) -> Any:

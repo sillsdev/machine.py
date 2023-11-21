@@ -1,6 +1,7 @@
 from typing import Dict, List, Set, Union
 
 from .canon import book_id_to_number
+from .constants import ORIGINAL_VERSIFICATION
 from .verse_ref import Versification
 
 
@@ -37,7 +38,7 @@ def get_books(books: Union[str, List[str]]) -> Set[int]:
 # Output format: { book_num: [chapters] }
 # An empty list, i.e. book_num: [] signifies the inclusion of all chapters
 def get_chapters(
-    chapter_selections: str, versification: Versification = Versification.create("Original")
+    chapter_selections: str, versification: Versification = ORIGINAL_VERSIFICATION
 ) -> Dict[int, List[int]]:
     chapters = {}
 
