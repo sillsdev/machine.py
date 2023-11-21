@@ -38,8 +38,10 @@ def load_smt_model(word_alignment_model_type: ThotWordAlignmentModelType, parame
         model_type = ta.AlignmentModelType.IBM4
 
     model = tt.SmtModel(model_type)
-    model.load_translation_model(parameters.translation_model_filename_prefix)
-    model.load_language_model(parameters.language_model_filename_prefix)
+    if not model.load_translation_model(parameters.translation_model_filename_prefix):
+        raise RuntimeError("Unable to load translation model.")
+    if not model.load_language_model(parameters.language_model_filename_prefix):
+        raise RuntimeError("Unable to load language model.")
     model.non_monotonicity = parameters.model_non_monotonicity
     model.w = parameters.model_w
     model.a = parameters.model_a

@@ -3,8 +3,8 @@ from contextlib import contextmanager
 from io import StringIO
 from typing import Iterator
 
-import pytest
 from decoy import Decoy, matchers
+from pytest import raises
 
 from machine.annotations import Range
 from machine.corpora import DictionaryTextCorpus
@@ -27,7 +27,7 @@ def test_run(decoy: Decoy) -> None:
 def test_cancel(decoy: Decoy) -> None:
     env = _TestEnvironment(decoy)
     checker = _CancellationChecker(3)
-    with pytest.raises(CanceledError):
+    with raises(CanceledError):
         env.job.run(check_canceled=checker.check_canceled)
 
     assert env.target_pretranslations == ""

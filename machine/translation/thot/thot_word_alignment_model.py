@@ -61,15 +61,16 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
         prefix_filename = Path(prefix_filename)
         if not (prefix_filename.parent / (prefix_filename.name + ".src")).is_file():
             raise FileNotFoundError("The word alignment model configuration could not be found.")
-        self._prefix_filename = prefix_filename
         self._model.clear()
-        self._model.load(str(prefix_filename))
+        if not self._model.load(str(prefix_filename)):
+            raise RuntimeError("Unable to load word alignment model.")
+        self._prefix_filename = prefix_filename
 
     def create_new(self, prefix_filename: StrPath) -> None:
         if self._owned:
             raise RuntimeError("The word alignment model is owned by an SMT model.")
-        self._prefix_filename = Path(prefix_filename)
         self._model.clear()
+        self._prefix_filename = Path(prefix_filename)
 
     def save(self) -> None:
         if self._prefix_filename is not None:

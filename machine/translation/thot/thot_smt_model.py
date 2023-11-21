@@ -71,6 +71,10 @@ class ThotSmtModel(InteractiveTranslationModel):
         else:
             self._config_filename = Path(config)
             parameters = ThotSmtParameters.load(config)
+        if not Path(parameters.translation_model_filename_prefix + ".ttable").is_file():
+            raise FileNotFoundError("The translation model could not be found.")
+        if not Path(parameters.language_model_filename_prefix).is_file():
+            raise FileNotFoundError("The language model could not be found.")
         self._parameters = parameters
         self.source_tokenizer = source_tokenizer
         self.target_tokenizer = target_tokenizer

@@ -1,11 +1,11 @@
-import pytest
+from pytest import raises
 from testutils.corpora_test_helpers import TEXT_TEST_PROJECT_PATH
 
 from machine.corpora import TextFileTextCorpus
 
 
 def test_does_not_exist() -> None:
-    with pytest.raises(FileNotFoundError):
+    with raises(FileNotFoundError):
         TextFileTextCorpus("does-not-exist.txt")
 
 
