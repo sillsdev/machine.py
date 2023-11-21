@@ -101,6 +101,8 @@ class HuggingFaceNmtEngine(TranslationEngine):
             except Exception as e:
                 # The out or memory error is not inherited from
                 if self._oom_batch_size_backoff_multiplier >= 0.9999:
+                    # FIXME after upgrading to Pytorch 2.1, this should be changed to OutOfMemoryError
+                    # see https://github.com/sillsdev/machine.py/issues/67
                     raise Exception(
                         "Likely an Out of Memory Error.  Change oom_batch_size_backoff_multiplier "
                         + "to < 1 to gracefuly handle these type of errors."
