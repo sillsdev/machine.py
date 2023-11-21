@@ -10,9 +10,9 @@ from ...corpora.parallel_text_corpus import ParallelTextCorpus
 from ...corpora.text_corpus import TextCorpus
 from ...translation.huggingface.hugging_face_nmt_engine import HuggingFaceNmtEngine
 from ...translation.huggingface.hugging_face_nmt_model_trainer import HuggingFaceNmtModelTrainer
-from ...translation.nmt_translation_engine import NmtTranslationEngine
 from ...translation.null_trainer import NullTrainer
 from ...translation.trainer import Trainer
+from ...translation.translation_engine import TranslationEngine
 from ..nmt_model_factory import NmtModelFactory
 from ..shared_file_service import SharedFileService
 
@@ -70,7 +70,7 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
             add_unk_trg_tokens=self._config.huggingface.tokenizer.add_unk_trg_tokens,
         )
 
-    def create_engine(self, half_previous_batch_size=False) -> NmtTranslationEngine:
+    def create_engine(self, half_previous_batch_size=False) -> TranslationEngine:
         if half_previous_batch_size:
             self._config.huggingface.generate_params.batch_size = max(
                 self._config.huggingface.generate_params.batch_size // 2, 1

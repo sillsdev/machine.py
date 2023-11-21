@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from ..corpora.text_corpus import TextCorpus
-from ..translation.nmt_translation_engine import NmtTranslationEngine
 from ..translation.trainer import Trainer
+from ..translation.translation_engine import TranslationEngine
 
 
 class NmtModelFactory(ABC):
@@ -29,7 +29,7 @@ class NmtModelFactory(ABC):
         ...
 
     @abstractmethod
-    def create_engine(self, half_previous_batch_size=False) -> NmtTranslationEngine:
+    def create_engine(self, half_previous_batch_size=False) -> TranslationEngine:
         ...
 
     @abstractmethod

@@ -12,7 +12,7 @@ from transformers.tokenization_utils import BatchEncoding, TruncationStrategy
 
 from ...annotations.range import Range
 from ...utils.typeshed import StrPath
-from ..nmt_translation_engine import NmtTranslationEngine
+from ..translation_engine import TranslationEngine
 from ..translation_result import TranslationResult
 from ..translation_result_builder import TranslationResultBuilder
 from ..translation_sources import TranslationSources
@@ -21,7 +21,7 @@ from ..word_alignment_matrix import WordAlignmentMatrix
 logger = logging.getLogger(__name__)
 
 
-class HuggingFaceNmtEngine(NmtTranslationEngine):
+class HuggingFaceNmtEngine(TranslationEngine):
     def __init__(
         self,
         model: Union[PreTrainedModel, StrPath, str],
@@ -63,11 +63,7 @@ class HuggingFaceNmtEngine(NmtTranslationEngine):
             ):
                 raise ValueError(f"'{tgt_lang}' is not a valid language code.")
 
-        batch_size = self._pipeline_kwargs.pop("batch_size")
-        if batch_size is not None:
-            self._batch_size = int(batch_size)  # type: ignore[assignment]
-        else:
-            self._batch_size = 16
+        self._batch_size = int(self._pipeline_kwargs.pop("batch_size", 1))
 
         # If not set, default to not backing off (1.0).
         self._oom_batch_size_backoff_multiplier = self._pipeline_kwargs.pop("oom_batch_size_backoff_multiplier", 1.0)
@@ -88,9 +84,6 @@ class HuggingFaceNmtEngine(NmtTranslationEngine):
     def translate_batch(self, segments: Sequence[Union[str, Sequence[str]]]) -> Sequence[TranslationResult]:
         return [results[0] for results in self.translate_n_batch(1, segments)]
 
-    def get_batch_size(self) -> int:
-        return self._batch_size
-
     def translate_n_batch(
         self, n: int, segments: Sequence[Union[str, Sequence[str]]]
     ) -> Sequence[Sequence[TranslationResult]]:
@@ -106,13 +99,19 @@ class HuggingFaceNmtEngine(NmtTranslationEngine):
                     all_results.extend(self._try_translate_n_batch(n, segments[step : step + self._batch_size]))
                 return all_results
             except Exception as e:
+                # The out or memory error is not inherited from
                 if self._oom_batch_size_backoff_multiplier >= 0.9999:
                     raise Exception(
-                        "Likely an Out of Memory Error.  Change oom_batch_size_backoff_multiplier to < 1 to gracefuly handle these type of errors."
+                        "Likely an Out of Memory Error.  Change oom_batch_size_backoff_multiplier "
+                        + "to < 1 to gracefuly handle these type of errors."
                     ) from e
+                if self._batch_size == 1:
+                    # Could it be another error?
+                    raise e
                 self._batch_size = max(int(round(self._batch_size * self._oom_batch_size_backoff_multiplier)), 1)
                 logger.info(
-                    f"Out of memory error caught, reducing batch size to {self._batch_size}.  Remaking translation pipeline."
+                    f"Out of memory error caught with message {e.args[0]}, reducing batch size to {self._batch_size}.  "
+                    + "Remaking translation pipeline."
                 )
                 self._pipeline = _TranslationPipeline(
                     model=self._model,

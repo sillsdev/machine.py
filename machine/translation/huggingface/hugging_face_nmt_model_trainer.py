@@ -134,7 +134,6 @@ class HuggingFaceNmtModelTrainer(Trainer):
         # Set seed before initializing model.
         set_seed(self._training_args.seed)
 
-        logger.info("Initializing tokenizer.")
         if isinstance(self._model, PreTrainedModel):
             model = self._model
             self._original_use_cache = model.config.use_cache
@@ -148,6 +147,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 num_labels=0,
             )
             model = cast(PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(self._model, config=config))
+
+        logger.info("Initializing tokenizer")
         tokenizer = AutoTokenizer.from_pretrained(model.name_or_path, use_fast=True)
 
         src_lang = self._src_lang
@@ -194,8 +195,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
             logger.info(f"Added {len(missing_tokens)} tokens to the tokenizer: {missing_tokens}")
             return AutoTokenizer.from_pretrained(str(tokenizer_dir), use_fast=True)
 
-        logger.info("Checking for missing tokens.")
         if self._add_unk_src_tokens or self._add_unk_trg_tokens:
+            logger.info("Checking for missing tokens")
             if not isinstance(tokenizer, PreTrainedTokenizerFast):
                 logger.warning(
                     f"Tokenizer can not be updated from default configuration: \
@@ -235,8 +236,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 tokenizer.lang_token_to_id[lang_code] = lang_id
                 tokenizer.id_to_lang_token[lang_id] = lang_code
 
-        logger.info("Add new language codes as tokens.")
         if isinstance(tokenizer, MULTILINGUAL_TOKENIZERS):
+            logger.info("Add new language codes as tokens")
             if self._src_lang is not None:
                 add_lang_code_to_tokenizer(tokenizer, self._src_lang)
             if self._tgt_lang is not None:
@@ -312,7 +313,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
             model_inputs["labels"] = labels["input_ids"]
             return model_inputs
 
-        logger.info("Run tokenizer.")
+        logger.info("Run tokenizer")
         train_dataset = train_dataset.map(
             preprocess_function,
             batched=True,
@@ -343,7 +344,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
             ],
         )
 
-        logger.info("Train NMT model.")
+        logger.info("Train NMT model")
         ckpt = None
         if self._training_args.resume_from_checkpoint is not None:
             ckpt = self._training_args.resume_from_checkpoint
@@ -357,7 +358,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
         self._metrics["train_samples"] = len(train_dataset)
 
         self._trainer.log_metrics("train", self._metrics)
-        logger.info("Model training finished.")
+        logger.info("Model training finished")
 
     def save(self) -> None:
         if self._trainer is None:

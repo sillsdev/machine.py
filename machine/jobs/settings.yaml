@@ -34,7 +34,5 @@ staging:
   max_steps: 10
   huggingface:
     parent_model_name: facebook/nllb-200-distilled-600M
-    train_params:
-      group_by_length: false
     generate_params:
       num_beams: 1
