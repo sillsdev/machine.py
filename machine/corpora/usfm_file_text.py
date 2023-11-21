@@ -35,5 +35,5 @@ def _get_id(filename: StrPath, encoding: str) -> str:
                 index = id.find(" ")
                 if index != -1:
                     id = id[:index]
-                return id.strip()
-    raise RuntimeError("The USFM does not contain and 'id' marker.")
+                return id.strip().upper()
+    raise RuntimeError("The USFM does not contain an 'id' marker.")
