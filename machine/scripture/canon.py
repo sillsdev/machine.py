@@ -1,4 +1,4 @@
-from typing import List, Set, Union
+from typing import Union
 
 ALL_BOOK_IDS = [
     "GEN",
@@ -159,36 +159,6 @@ def book_number_to_id(number: int, error_value: str = "***") -> str:
 
 def book_id_to_number(id: str) -> int:
     return BOOK_NUMBERS.get(id.upper(), 0)
-
-
-def get_books(books: Union[str, List[str]]) -> Set[int]:
-    if isinstance(books, str):
-        books = books.split(",")
-    book_set: Set[int] = set()
-    for book_id in books:
-        book_id = book_id.strip().strip("*").upper()
-        if book_id == "NT":
-            book_set.update(range(40, 67))
-        elif book_id == "OT":
-            book_set.update(range(1, 40))
-        elif book_id.startswith("-"):
-            # remove the book from the set
-            book_id = book_id[1:]
-            book_num = book_id_to_number(book_id)
-            if book_num == 0:
-                raise RuntimeError(f"{book_id} is an invalid book ID.")
-            elif book_num not in book_set:
-                raise RuntimeError(
-                    f"{book_id}:{book_num} cannot be removed as it is not in the existing book set of {book_set}"
-                )
-            else:
-                book_set.remove(book_num)
-        else:
-            book_num = book_id_to_number(book_id)
-            if book_num == 0:
-                raise RuntimeError(f"{book_id} is an invalid book ID.")
-            book_set.add(book_num)
-    return book_set
 
 
 def is_nt(book_num: int) -> bool:
