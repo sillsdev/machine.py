@@ -47,14 +47,14 @@ class HuggingFaceNmtEngine(TranslationEngine):
                 and src_lang not in cast(Any, self._tokenizer).lang_code_to_id
                 and src_lang not in additional_special_tokens
             ):
-                raise ValueError(f"'{src_lang}' is not a valid language code.")
+                raise ValueError(f"The specified model does not support the language code '{src_lang}'")
 
             if (
                 tgt_lang is not None
                 and tgt_lang not in cast(Any, self._tokenizer).lang_code_to_id
                 and tgt_lang not in additional_special_tokens
             ):
-                raise ValueError(f"'{tgt_lang}' is not a valid language code.")
+                raise ValueError(f"The specified model does not support the language code '{tgt_lang}'")
 
         self._pipeline = _TranslationPipeline(
             model=model,
