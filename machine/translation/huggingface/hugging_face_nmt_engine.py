@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import gc
+import logging
 from math import exp, prod
 from typing import Any, Iterable, List, Sequence, Tuple, Union, cast
 
@@ -17,29 +18,36 @@ from ..translation_result_builder import TranslationResultBuilder
 from ..translation_sources import TranslationSources
 from ..word_alignment_matrix import WordAlignmentMatrix
 
+logger = logging.getLogger(__name__)
+
 
 class HuggingFaceNmtEngine(TranslationEngine):
     def __init__(
         self,
         model: Union[PreTrainedModel, StrPath, str],
+        oom_batch_size_backoff_mult: float = 1.0,
         **pipeline_kwargs,
     ) -> None:
-        if isinstance(model, PreTrainedModel):
-            model.eval()
+        self._model = model
+        self._pipeline_kwargs = pipeline_kwargs
+        if isinstance(self._model, PreTrainedModel):
+            self._model.eval()
         else:
-            model_config = AutoConfig.from_pretrained(str(model), label2id={}, id2label={}, num_labels=0)
-            model = cast(PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(str(model), config=model_config))
-        self._tokenizer = AutoTokenizer.from_pretrained(model.name_or_path, use_fast=True)
+            model_config = AutoConfig.from_pretrained(str(self._model), label2id={}, id2label={}, num_labels=0)
+            self._model = cast(
+                PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(str(self._model), config=model_config)
+            )
+        self._tokenizer = AutoTokenizer.from_pretrained(self._model.name_or_path, use_fast=True)
 
-        src_lang = pipeline_kwargs.get("src_lang")
-        tgt_lang = pipeline_kwargs.get("tgt_lang")
+        src_lang = self._pipeline_kwargs.get("src_lang")
+        tgt_lang = self._pipeline_kwargs.get("tgt_lang")
         if (
             src_lang is not None
             and tgt_lang is not None
-            and "prefix" not in pipeline_kwargs
-            and (model.name_or_path.startswith("t5-") or model.name_or_path.startswith("google/mt5-"))
+            and "prefix" not in self._pipeline_kwargs
+            and (self._model.name_or_path.startswith("t5-") or self._model.name_or_path.startswith("google/mt5-"))
         ):
-            pipeline_kwargs["prefix"] = f"translate {src_lang} to {tgt_lang}: "
+            self._pipeline_kwargs["prefix"] = f"translate {src_lang} to {tgt_lang}: "
         else:
             additional_special_tokens = self._tokenizer.additional_special_tokens
             if (
@@ -56,10 +64,15 @@ class HuggingFaceNmtEngine(TranslationEngine):
             ):
                 raise ValueError(f"The specified model does not support the language code '{tgt_lang}'")
 
+        self._batch_size = int(self._pipeline_kwargs.pop("batch_size", 1))
+
+        self._oom_batch_size_backoff_mult = oom_batch_size_backoff_mult
+
         self._pipeline = _TranslationPipeline(
-            model=model,
+            model=self._model,
             tokenizer=self._tokenizer,
-            **pipeline_kwargs,
+            batch_size=self._batch_size,
+            **self._pipeline_kwargs,
         )
 
     def translate(self, segment: Union[str, Sequence[str]]) -> TranslationResult:
@@ -72,6 +85,32 @@ class HuggingFaceNmtEngine(TranslationEngine):
         return [results[0] for results in self.translate_n_batch(1, segments)]
 
     def translate_n_batch(
+        self, n: int, segments: Sequence[Union[str, Sequence[str]]]
+    ) -> Sequence[Sequence[TranslationResult]]:
+        while True:
+            if type(segments) is str:
+                segments = [segments]
+            else:
+                segments = [segment for segment in segments]
+            outer_batch_size = len(segments)
+            all_results: List[Sequence[TranslationResult]] = []
+            try:
+                for step in range(0, outer_batch_size, self._batch_size):
+                    all_results.extend(self._try_translate_n_batch(n, segments[step : step + self._batch_size]))
+                return all_results
+            except torch.cuda.OutOfMemoryError:  # type: ignore[reportGeneralTypeIssues]
+                if self._oom_batch_size_backoff_mult >= 0.9999 or self._batch_size <= 1:
+                    raise
+                self._batch_size = max(int(round(self._batch_size * self._oom_batch_size_backoff_mult)), 1)
+                logger.warning(f"Out of memory error caught. Reducing batch size to {self._batch_size} and retrying.")
+                self._pipeline = _TranslationPipeline(
+                    model=self._model,
+                    tokenizer=self._tokenizer,
+                    batch_size=self._batch_size,
+                    **self._pipeline_kwargs,
+                )
+
+    def _try_translate_n_batch(
         self, n: int, segments: Sequence[Union[str, Sequence[str]]]
     ) -> Sequence[Sequence[TranslationResult]]:
         all_results: List[List[TranslationResult]] = []

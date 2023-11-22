@@ -29,7 +29,7 @@ class NmtModelFactory(ABC):
         ...
 
     @abstractmethod
-    def create_engine(self) -> TranslationEngine:
+    def create_engine(self, half_previous_batch_size=False) -> TranslationEngine:
         ...
 
     @abstractmethod
