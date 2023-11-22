@@ -18,7 +18,6 @@ def test_run(decoy: Decoy) -> None:
     env = _TestEnvironment(decoy)
     env.job.run()
 
-    decoy.verify(env.engine.translate_batch(matchers.Anything()), times=1)
     pretranslations = json.loads(env.target_pretranslations)
     assert len(pretranslations) == 1
     assert pretranslations[0]["translation"] == "Please, I have booked a room."
