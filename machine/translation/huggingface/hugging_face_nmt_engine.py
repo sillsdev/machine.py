@@ -25,6 +25,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
     def __init__(
         self,
         model: Union[PreTrainedModel, StrPath, str],
+        oom_batch_size_backoff_multiplier: float = 1.0,
         **pipeline_kwargs,
     ) -> None:
         self._model = model
@@ -65,8 +66,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
 
         self._batch_size = int(self._pipeline_kwargs.pop("batch_size", 1))
 
-        # If not set, default to not backing off (1.0).
-        self._oom_batch_size_backoff_multiplier = self._pipeline_kwargs.pop("oom_batch_size_backoff_multiplier", 1.0)
+        self._oom_batch_size_backoff_multiplier = oom_batch_size_backoff_multiplier
 
         self._pipeline = _TranslationPipeline(
             model=self._model,
@@ -98,23 +98,11 @@ class HuggingFaceNmtEngine(TranslationEngine):
                 for step in range(0, outer_batch_size, self._batch_size):
                     all_results.extend(self._try_translate_n_batch(n, segments[step : step + self._batch_size]))
                 return all_results
-            except Exception as e:
-                # The out or memory error is not inherited from
-                if self._oom_batch_size_backoff_multiplier >= 0.9999:
-                    # FIXME after upgrading to Pytorch 2.1, this should be changed to OutOfMemoryError
-                    # see https://github.com/sillsdev/machine.py/issues/67
-                    raise Exception(
-                        "Likely an Out of Memory Error.  Change oom_batch_size_backoff_multiplier "
-                        + "to < 1 to gracefuly handle these type of errors."
-                    ) from e
-                if self._batch_size == 1:
-                    # Could it be another error?
-                    raise e
+            except torch.cuda.OutOfMemoryError:  # type: ignore[reportGeneralTypeIssues]
+                if self._oom_batch_size_backoff_multiplier >= 0.9999 or self._batch_size == 1:
+                    raise
                 self._batch_size = max(int(round(self._batch_size * self._oom_batch_size_backoff_multiplier)), 1)
-                logger.info(
-                    f"Out of memory error caught with message {e.args[0]}, reducing batch size to {self._batch_size}.  "
-                    + "Remaking translation pipeline."
-                )
+                logger.warn(f"Out of memory error caught, reducing batch size to {self._batch_size} and retrying.")
                 self._pipeline = _TranslationPipeline(
                     model=self._model,
                     tokenizer=self._tokenizer,
