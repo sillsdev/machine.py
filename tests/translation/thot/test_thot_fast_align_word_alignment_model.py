@@ -1,4 +1,7 @@
-from pytest import approx
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from pytest import approx, raises
 from testutils.thot_test_helpers import TOY_CORPUS_FAST_ALIGN_PATH
 
 from machine.translation import WordAlignmentMatrix
@@ -107,3 +110,11 @@ def test_get_avg_translation_score_symmetrized() -> None:
         matrix = model.align(source_segment, target_segment)
         score = model.get_avg_translation_score(source_segment, target_segment, matrix)
         assert score == approx(0.36, abs=0.01)
+
+
+def test_constructor_model_corrupted() -> None:
+    with TemporaryDirectory() as temp_dir:
+        temp_dir_path = Path(temp_dir)
+        (temp_dir_path / "src_trg_invswm.src").write_text("corrupted", encoding="utf-8")
+        with raises(RuntimeError):
+            ThotFastAlignWordAlignmentModel(temp_dir_path / "src_trg_invswm")
