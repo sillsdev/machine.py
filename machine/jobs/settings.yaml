@@ -3,7 +3,6 @@ default:
   max_steps: 20000
   data_dir: ~/machine
   batch_size: 1024
-  oom_batch_size_backoff_multiplier: 0.5
   huggingface:
     parent_model_name: facebook/nllb-200-distilled-1.3B
     train_params:
@@ -21,6 +20,7 @@ default:
       device: 0
       num_beams: 2
       batch_size: 16
+      oom_batch_size_backoff_mult: 0.5
     tokenizer:
       add_unk_src_tokens: true
       add_unk_trg_tokens: true
