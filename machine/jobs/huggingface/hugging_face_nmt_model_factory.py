@@ -70,11 +70,7 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
             add_unk_trg_tokens=self._config.huggingface.tokenizer.add_unk_trg_tokens,
         )
 
-    def create_engine(self, half_previous_batch_size=False) -> TranslationEngine:
-        if half_previous_batch_size:
-            self._config.huggingface.generate_params.batch_size = max(
-                self._config.huggingface.generate_params.batch_size // 2, 1
-            )
+    def create_engine(self) -> TranslationEngine:
         return HuggingFaceNmtEngine(
             self._model,
             src_lang=self._config.src_lang,
