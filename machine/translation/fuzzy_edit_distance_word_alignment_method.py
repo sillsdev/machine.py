@@ -18,13 +18,15 @@ def _get_word_indices(sequence: Sequence[str]) -> Tuple[Iterable[int], int, int]
 def _compute_distance_score(i1: int, i2: int, source_length: int) -> float:
     if source_length == 1:
         return 0.1
-    return abs(i1 - i2) / (source_length - 1)
+    return min(1.0, abs(i1 - i2) / (source_length - 1))
 
 
 class FuzzyEditDistanceWordAlignmentMethod(WordAlignmentMethod):
-    def __init__(self) -> None:
-        self._score_selector: Optional[Callable[[Sequence[str], int, Sequence[str], int], float]] = None
-        self._scorer: Optional[SegmentScorer] = None
+    def __init__(
+        self, score_selector: Optional[Callable[[Sequence[str], int, Sequence[str], int], float]] = None
+    ) -> None:
+        self._score_selector = score_selector
+        self._scorer = None if self._score_selector is None else SegmentScorer(self._score_selector)
         self.max_distance = _DEFAULT_MAX_DISTANCE
         self.alpha = _DEFAULT_ALPHA
 
@@ -71,7 +73,7 @@ class FuzzyEditDistanceWordAlignmentMethod(WordAlignmentMethod):
                     max_index = alignment[0, c].last + 1
 
                 best_index = -1
-                for i in reversed(range(max(0, min_index - self.max_distance), min_index + 1)):
+                for i in range(min_index, max(0, min_index - self.max_distance) - 1, -1):
                     prob = self._score_selector(source_segment, i, target_segment, j)
                     distance_score = _compute_distance_score(i, min_index + 1, len(source_segment))
                     score = self._compute_alignment_score(prob, distance_score)
