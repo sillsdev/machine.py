@@ -244,8 +244,8 @@ class ThotSmtModel(InteractiveTranslationModel):
         arcs: List[WordGraphArc] = []
         for thot_arc_id in range(thot_word_graph.num_arcs):
             thot_arc = thot_word_graph.get_arc(thot_arc_id)
-            src_phrase_len = thot_arc.source_end_index - thot_arc.source_start_index
-            source_segment_range = Range[int].create(thot_arc.source_start_index, thot_arc.source_end_index + 1)
+            src_phrase_len = thot_arc.source_end_index - (thot_arc.source_start_index - 1)
+            source_segment_range = Range[int].create(thot_arc.source_start_index - 1, thot_arc.source_end_index)
             normalized_tokens: List[str] = []
             confidences: List[float] = []
             for word in thot_arc.words:
@@ -256,7 +256,8 @@ class ThotSmtModel(InteractiveTranslationModel):
                 wa_matrix = WordAlignmentMatrix.from_word_pairs(1, 1, {(0, 0)})
             else:
                 wa_matrix = self._word_aligner.align(
-                    normalized_source_tokens[thot_arc.source_start_index : thot_arc.source_end_index], normalized_tokens
+                    normalized_source_tokens[thot_arc.source_start_index - 1 : thot_arc.source_end_index],
+                    normalized_tokens,
                 )
 
             arcs.append(
@@ -266,7 +267,7 @@ class ThotSmtModel(InteractiveTranslationModel):
                     thot_arc.score,
                     self._denormalize_target(normalized_tokens),
                     wa_matrix,
-                    Range[int].create(thot_arc.source_start_index, thot_arc.source_end_index + 1),
+                    Range[int].create(thot_arc.source_start_index - 1, thot_arc.source_end_index),
                     [TranslationSources.NONE if thot_arc.is_unknown else TranslationSources.SMT]
                     * len(normalized_tokens),
                     confidences,
