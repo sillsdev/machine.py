@@ -134,3 +134,17 @@ def _create_hmm_model() -> ThotSmtModel:
 
 def _create_fast_align_model() -> ThotSmtModel:
     return ThotSmtModel(ThotWordAlignmentModelType.FAST_ALIGN, TOY_CORPUS_FAST_ALIGN_CONFIG_FILENAME)
+
+
+def test_get_word_graph_hmm() -> None:
+    with _create_hmm_model() as smt_model:
+        word_graph = smt_model.get_word_graph("voy a marcharme hoy por la tarde .")
+        assert len(word_graph.arcs) == 2
+        assert len(word_graph.final_states) == 1
+
+
+def test_get_word_graph_fast_align() -> None:
+    with _create_fast_align_model() as smt_model:
+        word_graph = smt_model.get_word_graph("voy a marcharme hoy por la tarde .")
+        assert len(word_graph.arcs) == 2
+        assert len(word_graph.final_states) == 1
