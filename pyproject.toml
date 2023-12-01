@@ -60,7 +60,7 @@ charset-normalizer = "^2.1.1"
 
 ### extras
 sentencepiece = "^0.1.95"
-sil-thot = "^3.4.2"
+sil-thot = "^3.4.3"
 # huggingface extras
 transformers = "^4.34.0"
 datasets = "^2.4.0"
