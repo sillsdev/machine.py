@@ -123,8 +123,8 @@ def test_update_tokenizer_missing_char() -> None:
             "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
-            src_lang="en",
-            tgt_lang="es",
+            src_lang="en_XX",
+            tgt_lang="es_XX",
             max_source_length=20,
             max_target_length=20,
             add_unk_src_tokens=False,
@@ -133,7 +133,7 @@ def test_update_tokenizer_missing_char() -> None:
         trainer_nochar.train()
         trainer_nochar.save()
 
-        finetuned_engine_nochar = HuggingFaceNmtEngine(temp_dir, src_lang="en", tgt_lang="es", max_length=20)
+        finetuned_engine_nochar = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
         finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode(
             "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
         )
@@ -142,8 +142,8 @@ def test_update_tokenizer_missing_char() -> None:
             "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
-            src_lang="en",
-            tgt_lang="es",
+            src_lang="en_XX",
+            tgt_lang="es_XX",
             max_source_length=20,
             max_target_length=20,
             add_unk_src_tokens=True,
@@ -152,7 +152,7 @@ def test_update_tokenizer_missing_char() -> None:
         trainer_char.train()
         trainer_char.save()
 
-        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="en", tgt_lang="es", max_length=20)
+        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
         finetuned_result_char = finetuned_engine_char._tokenizer.encode(
             "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
         )
@@ -280,8 +280,8 @@ def test_update_tokenizer_missing_char_src() -> None:
             "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
-            src_lang="eng_Latn",
-            tgt_lang="spa_Latn",
+            src_lang="en_XX",
+            tgt_lang="es_XX",
             max_source_length=20,
             max_target_length=20,
             add_unk_src_tokens=False,
@@ -290,9 +290,7 @@ def test_update_tokenizer_missing_char_src() -> None:
         trainer_nochar.train()
         trainer_nochar.save()
 
-        finetuned_engine_nochar = HuggingFaceNmtEngine(
-            temp_dir, src_lang="eng_Latn", tgt_lang="spa_Latn", max_length=20
-        )
+        finetuned_engine_nochar = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
         finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode(
             "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
         )
@@ -301,8 +299,8 @@ def test_update_tokenizer_missing_char_src() -> None:
             "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
-            src_lang="eng_Latn",
-            tgt_lang="spa_Latn",
+            src_lang="en_XX",
+            tgt_lang="es_XX",
             max_source_length=20,
             max_target_length=20,
             add_unk_src_tokens=True,
@@ -311,7 +309,7 @@ def test_update_tokenizer_missing_char_src() -> None:
         trainer_char.train()
         trainer_char.save()
 
-        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="eng_Latn", tgt_lang="spa_Latn", max_length=20)
+        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
         finetuned_result_char = finetuned_engine_char._tokenizer.encode(
             "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
         )
@@ -354,8 +352,8 @@ def test_update_tokenizer_missing_char_trg() -> None:
             "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
-            src_lang="eng_Latn",
-            tgt_lang="spa_Latn",
+            src_lang="en_XX",
+            tgt_lang="es_XX",
             max_source_length=20,
             max_target_length=20,
             add_unk_src_tokens=False,
@@ -364,9 +362,7 @@ def test_update_tokenizer_missing_char_trg() -> None:
         trainer_nochar.train()
         trainer_nochar.save()
 
-        finetuned_engine_nochar = HuggingFaceNmtEngine(
-            temp_dir, src_lang="eng_Latn", tgt_lang="spa_Latn", max_length=20
-        )
+        finetuned_engine_nochar = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
         finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode(
             "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
         )
@@ -375,8 +371,8 @@ def test_update_tokenizer_missing_char_trg() -> None:
             "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
-            src_lang="eng_Latn",
-            tgt_lang="spa_Latn",
+            src_lang="en_XX",
+            tgt_lang="es_XX",
             max_source_length=20,
             max_target_length=20,
             add_unk_src_tokens=False,
@@ -385,7 +381,7 @@ def test_update_tokenizer_missing_char_trg() -> None:
         trainer_char.train()
         trainer_char.save()
 
-        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="eng_Latn", tgt_lang="spa_Latn", max_length=20)
+        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
         finetuned_result_char = finetuned_engine_char._tokenizer.encode(
             "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
         )
@@ -428,8 +424,8 @@ def test_update_tokenizer_no_missing_char() -> None:
             "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
-            src_lang="eng_Latn",
-            tgt_lang="spa_Latn",
+            src_lang="en_XX",
+            tgt_lang="es_XX",
             max_source_length=20,
             max_target_length=20,
             add_unk_src_tokens=False,
@@ -438,17 +434,15 @@ def test_update_tokenizer_no_missing_char() -> None:
         trainer_nochar.train()
         trainer_nochar.save()
 
-        finetuned_engine_nochar = HuggingFaceNmtEngine(
-            temp_dir, src_lang="eng_Latn", tgt_lang="spa_Latn", max_length=20
-        )
+        finetuned_engine_nochar = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
         finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode("una habitación individual por semana")
 
         trainer_char = HuggingFaceNmtModelTrainer(
             "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
-            src_lang="eng_Latn",
-            tgt_lang="spa_Latn",
+            src_lang="en_XX",
+            tgt_lang="es_XX",
             max_source_length=20,
             max_target_length=20,
             add_unk_src_tokens=True,
@@ -457,7 +451,7 @@ def test_update_tokenizer_no_missing_char() -> None:
         trainer_char.train()
         trainer_char.save()
 
-        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="eng_Latn", tgt_lang="spa_Latn", max_length=20)
+        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
         finetuned_result_char = finetuned_engine_char._tokenizer.encode("una habitación individual por semana")
 
         assert finetuned_result_nochar == finetuned_result_char
