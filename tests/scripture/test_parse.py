@@ -34,6 +34,7 @@ def test_get_books() -> None:
 
 
 def test_get_chapters() -> None:
+    assert get_chapters([]) == {}
     assert get_chapters("MAL") == {39: []}
     assert get_chapters("GEN,EXO") == {1: [], 2: []}
     assert get_chapters("1JN,2JN") == {62: [], 63: []}
