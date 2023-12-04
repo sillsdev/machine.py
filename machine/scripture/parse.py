@@ -38,19 +38,20 @@ def get_books(books: Union[str, List[str]]) -> Set[int]:
 # Output format: { book_num: [chapters] }
 # An empty list, i.e. book_num: [] signifies the inclusion of all chapters
 def get_chapters(
-    chapter_selections: str, versification: Versification = ORIGINAL_VERSIFICATION
+    chapter_selections: Union[str, List[str]], versification: Versification = ORIGINAL_VERSIFICATION
 ) -> Dict[int, List[int]]:
     chapters = {}
 
-    if ";" not in chapter_selections and not any(
-        s.isdigit() and (i == len(chapter_selections) - 1 or not chapter_selections[i + 1].isalpha())
-        for i, s in enumerate(chapter_selections)
-    ):  # Backwards compatibility with get_books syntax:
-        sections = chapter_selections.split(",")
-    else:
-        sections = chapter_selections.split(";")
+    if isinstance(chapter_selections, str):
+        if ";" not in chapter_selections and not any(
+            s.isdigit() and (i == len(chapter_selections) - 1 or not chapter_selections[i + 1].isalpha())
+            for i, s in enumerate(chapter_selections)
+        ):  # Backwards compatibility with get_books syntax:
+            chapter_selections = chapter_selections.split(",")
+        else:
+            chapter_selections = chapter_selections.split(";")
 
-    for section in sections:
+    for section in chapter_selections:
         section = section.strip()
 
         if section.startswith("-"):  # Subtraction
