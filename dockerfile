@@ -1,5 +1,5 @@
 #compatability with Tensorflow 2.6.0 as per https://www.tensorflow.org/install/source#gpu
-ARG PYTHON_VERSION=3.8
+ARG PYTHON_VERSION=3.11
 ARG UBUNTU_VERSION=focal
 ARG POETRY_VERSION=1.6.1
 ARG CUDA_VERSION=11.2.2-cudnn8-runtime-ubuntu20.04
@@ -34,11 +34,16 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 WORKDIR /root
 
 RUN apt-get update && \
+    apt-get install --no-install-recommends -y software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa -y && \
+    apt-get update && \
     apt-get install --no-install-recommends -y \
     python$PYTHON_VERSION \
-    python3-pip && \
+    python$PYTHON_VERSION-distutils \
     rm -rf /var/lib/apt/lists/* && \
     apt-get clean
+
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python$PYTHON_VERSION
 
 # make some useful symlinks that are expected to exist
 RUN ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python3  & \
