@@ -56,7 +56,7 @@ def get_chapters(
             chapter_selections = chapter_selections.split(",")
         elif chapter_selections.startswith("-"):
             raise ValueError(f"Cannot subtract before adding sections: {chapter_selections}")
-        elif re.match(BOOK_RANGE, chapter_selections):
+        elif re.search(BOOK_RANGE, chapter_selections):
             if len(chapter_selections) == 7:
                 chapter_selections = [chapter_selections]
             else:
