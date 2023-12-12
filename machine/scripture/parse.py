@@ -61,11 +61,13 @@ def get_chapters(
                 chapter_selections = [chapter_selections]
             else:
                 raise ValueError(
-                    f"Invalid syntax. If one of your selections is a range of books, selections must be seprated with semicolons."
+                    "Invalid syntax. If one of your selections is a range of books, \
+                    selections must be seprated with semicolons."
                 )
         elif re.fullmatch(CHAPTER_SELECTION, chapter_selections) is None:
             raise ValueError(
-                "Invalid syntax. If one of your selections includes specific chapters or subtraction, selections must be separated with semicolons."
+                "Invalid syntax. If one of your selections includes specific chapters or subtraction, \
+                selections must be separated with semicolons."
             )
         else:
             chapter_selections = [chapter_selections]
