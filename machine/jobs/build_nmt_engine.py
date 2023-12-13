@@ -45,20 +45,20 @@ def run(args: dict) -> None:
         logger.info("NMT Engine Build Job started")
 
         SETTINGS.update(args)
-        try:
-            SETTINGS.build_options = json.loads(args["build_options"])
-        except ValueError as e:
-            raise ValueError("Build options could not be parsed: Invalid JSON") from e
-        except TypeError as e:
-            raise TypeError(f"Build options could not be parsed: {e}") from e
-        if SETTINGS.build_options:
-            SETTINGS.update(SETTINGS.build_options)
+        model_type = cast(str, SETTINGS.model_type).lower()
+        if "build_options" in SETTINGS:
+            try:
+                build_options = json.loads(cast(str, SETTINGS.build_options))
+            except ValueError as e:
+                raise ValueError("Build options could not be parsed: Invalid JSON") from e
+            except TypeError as e:
+                raise TypeError(f"Build options could not be parsed: {e}") from e
+            SETTINGS.update({model_type: build_options})
         SETTINGS.data_dir = os.path.expanduser(cast(str, SETTINGS.data_dir))
 
         logger.info(f"Config: {SETTINGS.as_dict()}")
 
         shared_file_service = ClearMLSharedFileService(SETTINGS)
-        model_type = cast(str, SETTINGS.model_type).lower()
         nmt_model_factory: NmtModelFactory
         if model_type == "huggingface":
             from .huggingface.hugging_face_nmt_model_factory import HuggingFaceNmtModelFactory
@@ -87,7 +87,7 @@ def main() -> None:
     parser.add_argument("--src-lang", required=True, type=str, help="Source language tag")
     parser.add_argument("--trg-lang", required=True, type=str, help="Target language tag")
     parser.add_argument("--clearml", default=False, action="store_true", help="Initializes a ClearML task")
-    parser.add_argument("--build-options", default="{}", type=str, help="Build configurations")
+    parser.add_argument("--build-options", default=None, type=str, help="Build configurations")
     args = parser.parse_args()
 
     run({k: v for k, v in vars(args).items() if v is not None})

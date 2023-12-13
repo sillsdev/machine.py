@@ -1,8 +1,7 @@
 default:
   model_type: huggingface
-  max_steps: 20000
   data_dir: ~/machine
-  batch_size: 1024
+  pretranslation_batch_size: 1024
   huggingface:
     parent_model_name: facebook/nllb-200-distilled-1.3B
     train_params:
@@ -16,6 +15,7 @@ default:
       gradient_checkpointing: true
       fp16: true
       save_strategy: no
+      max_steps: 20000
     generate_params:
       device: 0
       num_beams: 2
@@ -31,8 +31,9 @@ development:
     generate_params:
       num_beams: 1
 staging:
-  max_steps: 10
   huggingface:
     parent_model_name: facebook/nllb-200-distilled-600M
+    train_params:
+      max_steps: 10
     generate_params:
       num_beams: 1

@@ -34,7 +34,7 @@ def test_cancel(decoy: Decoy) -> None:
 
 class _TestEnvironment:
     def __init__(self, decoy: Decoy) -> None:
-        config = {"src_lang": "es", "trg_lang": "en", "batch_size": 100}
+        config = {"src_lang": "es", "trg_lang": "en", "pretranslation_batch_size": 100}
         self.source_tokenizer_trainer = decoy.mock(cls=Trainer)
         self.target_tokenizer_trainer = decoy.mock(cls=Trainer)
 

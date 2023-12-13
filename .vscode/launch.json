@@ -18,26 +18,46 @@
       "request": "launch",
       "module": "machine.jobs.build_nmt_engine",
       "justMyCode": false,
-      "args": [
-        "--model-type",
-        "huggingface",
-        "--build-id",
-        "build1",
-        "--engine-id",
-        "engine1",
-        "--src-lang",
-        "spa_Latn",
-        "--trg-lang",
-        "eng_Latn",
-        "--clearml",
-        "--build-options",
-        "{\"max_steps\": 10}"
-      ]
+      "windows": {
+        "args": [
+          "--model-type",
+          "huggingface",
+          "--build-id",
+          "build1",
+          "--engine-id",
+          "engine1",
+          "--src-lang",
+          "spa_Latn",
+          "--trg-lang",
+          "eng_Latn",
+          "--build-options",
+          "{\\\"train_params\\\": {\\\"max_steps\\\": 10}}"
+        ]
+      },
+      "linux": {
+        "args": [
+          "--model-type",
+          "huggingface",
+          "--build-id",
+          "build1",
+          "--engine-id",
+          "engine1",
+          "--src-lang",
+          "spa_Latn",
+          "--trg-lang",
+          "eng_Latn",
+          "--build-options",
+          "{\"train_params\": {\"max_steps\": 10}}"
+        ]
+      }
     },
     {
-      "name": "Debug Unit Test",
+      "name": "Python: Debug Tests",
       "type": "python",
-      "request": "test",
+      "request": "launch",
+      "program": "${file}",
+      "purpose": ["debug-test"],
+      "console": "integratedTerminal",
       "justMyCode": false
     }
   ]
