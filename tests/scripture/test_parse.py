@@ -43,10 +43,6 @@ def test_get_chapters() -> None:
     whole_bible = {i: [] for i in range(1, 67)}
     assert get_chapters("NT,OT") == whole_bible
 
-    del whole_bible[2]  # EXO
-    del whole_bible[41]  # MRK
-    assert get_chapters("NT,OT,-MRK,-EXO") == whole_bible
-
     assert get_chapters("MAT;MRK") == {40: [], 41: []}
     assert get_chapters("MAT; MRK") == {40: [], 41: []}
     assert get_chapters("MAT1,2,3") == {40: [1, 2, 3]}
@@ -57,7 +53,10 @@ def test_get_chapters() -> None:
     assert get_chapters("2JN-3JN;EXO1,8,3-5;GEN") == {1: [], 2: [1, 3, 4, 5, 8], 63: [], 64: []}
     assert get_chapters("1JN 1;1JN 2;1JN 3-5") == {62: []}
     assert get_chapters("MAT-ROM;-ACT4-28") == {40: [], 41: [], 42: [], 43: [], 44: [1, 2, 3], 45: []}
+    assert get_chapters("2JN;-2JN 1") == {}
 
+    del whole_bible[2]  # EXO
+    del whole_bible[41]  # MRK
     assert get_chapters("NT;OT;-MRK;-EXO") == whole_bible
     test_bible = {i: [] for i in range(40, 67)}
     test_chapters_mat = [1, 2] + [i for i in range(6, 17)] + [i for i in range(18, 29)]
@@ -110,3 +109,11 @@ def test_get_chapters() -> None:
         get_chapters("NT;OT;-ABC")
     with raises(ValueError):
         get_chapters("MAT;-ABC 1")
+
+    # mixing old (comma-separated) and new syntax
+    with raises(ValueError):
+        get_chapters("NT,OT,-MRK,-EXO")
+    with raises(ValueError):
+        get_chapters("OT,MAT1")
+    with raises(ValueError):
+        get_chapters("OT,MAT-LUK")

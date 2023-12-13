@@ -1,8 +1,13 @@
+import re
 from typing import Dict, List, Set, Union
 
 from .canon import book_id_to_number
 from .constants import ORIGINAL_VERSIFICATION
 from .verse_ref import Versification
+
+COMMA_SEPARATED_BOOKS = re.compile(r"([A-Z\d]{3}|OT|NT)(, ?([A-Z\d]{3}|OT|NT))*")
+BOOK_RANGE = re.compile(r"[A-Z\d]{3}-[A-Z\d]{3}")
+CHAPTER_SELECTION = re.compile(r"[A-Z\d]{3} ?(\d+|\d+-\d+)(, ?(\d+|\d+-\d+))*")
 
 
 def get_books(books: Union[str, List[str]]) -> Set[int]:
@@ -43,13 +48,29 @@ def get_chapters(
     chapters = {}
 
     if isinstance(chapter_selections, str):
-        if ";" not in chapter_selections and not any(
-            s.isdigit() and (i == len(chapter_selections) - 1 or not chapter_selections[i + 1].isalpha())
-            for i, s in enumerate(chapter_selections)
-        ):  # Backwards compatibility with get_books syntax:
-            chapter_selections = chapter_selections.split(",")
-        else:
+        chapter_selections = chapter_selections.strip()
+
+        if ";" in chapter_selections:
             chapter_selections = chapter_selections.split(";")
+        elif re.fullmatch(COMMA_SEPARATED_BOOKS, chapter_selections) is not None:
+            chapter_selections = chapter_selections.split(",")
+        elif chapter_selections.startswith("-"):
+            raise ValueError(f"Cannot subtract before adding sections: {chapter_selections}")
+        elif re.search(BOOK_RANGE, chapter_selections):
+            if len(chapter_selections) == 7:
+                chapter_selections = [chapter_selections]
+            else:
+                raise ValueError(
+                    "Invalid syntax. If one of your selections is a range of books, \
+                    selections must be seprated with semicolons."
+                )
+        elif re.fullmatch(CHAPTER_SELECTION, chapter_selections) is None:
+            raise ValueError(
+                "Invalid syntax. If one of your selections includes specific chapters or subtraction, \
+                selections must be separated with semicolons."
+            )
+        else:
+            chapter_selections = [chapter_selections]
 
     for section in chapter_selections:
         section = section.strip()
