@@ -38,8 +38,9 @@ RUN apt-get update && \
     add-apt-repository ppa:deadsnakes/ppa -y && \
     apt-get update && \
     apt-get install --no-install-recommends -y \
+    curl \
     python$PYTHON_VERSION \
-    python$PYTHON_VERSION-distutils \
+    python$PYTHON_VERSION-distutils && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get clean
 
