@@ -1,9 +1,9 @@
 default:
   model_type: huggingface
-  max_steps: 20000
   data_dir: ~/machine
-  batch_size: 1024
   huggingface:
+    max_steps: 20000
+    batch_size: 1024
     parent_model_name: facebook/nllb-200-distilled-1.3B
     train_params:
       do_train: true
@@ -31,8 +31,8 @@ development:
     generate_params:
       num_beams: 1
 staging:
-  max_steps: 10
   huggingface:
+    max_steps: 10
     parent_model_name: facebook/nllb-200-distilled-600M
     generate_params:
       num_beams: 1
