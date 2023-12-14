@@ -26,12 +26,13 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
         args = config.huggingface.train_params.to_dict()
         args["output_dir"] = str(self._model_dir)
         args["overwrite_output_dir"] = True
-        if "max_steps" in self._config:
-            if self._config.max_steps > 50000:
-                raise ValueError("max_steps must be less than or equal to 50000")
-            args["max_steps"] = self._config.max_steps
+        # Use "max_steps" from root for backward compatibility
+        if "max_steps" in self._config.huggingface:
+            args["max_steps"] = self._config.huggingface.max_steps
         parser = HfArgumentParser(cast(Any, Seq2SeqTrainingArguments))
         self._training_args = cast(Seq2SeqTrainingArguments, parser.parse_dict(args)[0])
+        if self._training_args.max_steps > 50000:
+            raise ValueError("max_steps must be less than or equal to 50000")
         if (
             not config.clearml
             and self._training_args.report_to is not None

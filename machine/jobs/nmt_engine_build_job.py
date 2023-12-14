@@ -86,7 +86,7 @@ class NmtEngineBuildJob:
             writer = stack.enter_context(self._shared_file_service.open_target_pretranslation_writer())
             current_inference_step = 0
             phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
-            batch_size = self._config["batch_size"]
+            batch_size = self._config["pretranslation_batch_size"]
             for pi_batch in batch(src_pretranslations, batch_size):
                 if check_canceled is not None:
                     check_canceled()
