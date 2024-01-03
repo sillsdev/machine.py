@@ -32,7 +32,7 @@ development:
       num_beams: 1
 staging:
   huggingface:
-    parent_model_name: facebook/nllb-200-distilled-600M
+    parent_model_name: hf-internal-testing/tiny-random-nllb
     train_params:
       max_steps: 10
     generate_params:
