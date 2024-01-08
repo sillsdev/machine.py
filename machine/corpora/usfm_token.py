@@ -95,7 +95,6 @@ class UsfmToken:
             if default_attribute_name is not None:
                 self.attributes = [UsfmAttribute(default_attribute_name, default_value)]
                 self._default_attribute_name = default_attribute_name
-                self._is_default_attribute = True
                 return text
             return None
 

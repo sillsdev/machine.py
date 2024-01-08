@@ -108,7 +108,7 @@ def test_get_rows_include_markers() -> None:
     assert rows[5].text == "Chapter \\add two\\add*, verse \\f + \\fr 2:1: \\ft This is a footnote.\\f*one."
 
     assert verse_ref(rows[6]).exact_equals(VerseRef.from_string("MAT 2:2", corpus.versification))
-    assert rows[6].text == "Chapter two, verse \\fm ∆\\fm*two. Chapter two, verse three."
+    assert rows[6].text == "Chapter two, verse \\fm ∆\\fm*two. Chapter two, verse \\w three|lemma\\w*."
     assert rows[6].is_in_range
     assert rows[6].is_range_start
 
