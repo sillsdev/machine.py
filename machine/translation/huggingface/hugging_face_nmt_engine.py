@@ -2,11 +2,21 @@ from __future__ import annotations
 
 import gc
 import logging
+import re
 from math import exp, prod
 from typing import Any, Iterable, List, Sequence, Tuple, Union, cast
 
 import torch  # pyright: ignore[reportMissingImports]
-from transformers import AutoConfig, AutoModelForSeq2SeqLM, AutoTokenizer, PreTrainedModel, TranslationPipeline
+from sacremoses import MosesPunctNormalizer
+from transformers import (
+    AutoConfig,
+    AutoModelForSeq2SeqLM,
+    AutoTokenizer,
+    NllbTokenizer,
+    NllbTokenizerFast,
+    PreTrainedModel,
+    TranslationPipeline,
+)
 from transformers.generation import BeamSearchEncoderDecoderOutput, GreedySearchEncoderDecoderOutput
 from transformers.tokenization_utils import BatchEncoding, TruncationStrategy
 
@@ -158,6 +168,15 @@ class _TranslationPipeline(TranslationPipeline):
             else self.tokenizer.decode(self.tokenizer.convert_tokens_to_ids(s), use_source_tokenizer=True)
             for s in args
         ]
+        if isinstance(self.tokenizer, (NllbTokenizer, NllbTokenizerFast)):
+            mpn = MosesPunctNormalizer()
+            mpn.substitutions = [(re.compile(r), sub) for r, sub in mpn.substitutions]
+
+            def normalize_all(lines: Iterable[str]) -> Iterable[str]:
+                for line in lines:
+                    yield mpn.normalize(line)
+
+            sentences = list(normalize_all(sentences))
         inputs = cast(
             BatchEncoding, super().preprocess(*sentences, truncation=truncation, src_lang=src_lang, tgt_lang=tgt_lang)
         )

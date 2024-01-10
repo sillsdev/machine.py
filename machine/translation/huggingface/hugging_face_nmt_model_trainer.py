@@ -4,7 +4,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Union, cast
+from typing import Any, Callable, Iterable, List, Optional, Union, cast
 
 import datasets.utils.logging as datasets_logging
 import torch  # pyright: ignore[reportMissingImports]
@@ -305,8 +305,19 @@ class HuggingFaceNmtModelTrainer(Trainer):
             inputs = [ex[src_lang] for ex in examples["translation"]]
             targets = [ex[tgt_lang] for ex in examples["translation"]]
             inputs = [prefix + inp for inp in inputs]
-            model_inputs = tokenizer(inputs, max_length=max_source_length, truncation=True)
 
+            if isinstance(tokenizer, (NllbTokenizer, NllbTokenizerFast)):
+                mpn = MosesPunctNormalizer()
+                mpn.substitutions = [(re.compile(r), sub) for r, sub in mpn.substitutions]
+
+                def normalize_all(lines: Iterable[str]) -> Iterable[str]:
+                    for line in lines:
+                        yield mpn.normalize(line)
+
+                inputs = list(normalize_all(inputs))
+                targets = list(normalize_all(targets))
+
+            model_inputs = tokenizer(inputs, max_length=max_source_length, truncation=True)
             # Tokenize targets with the `text_target` keyword argument
             labels = tokenizer(text_target=targets, max_length=max_target_length, truncation=True)
 

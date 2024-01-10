@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Generator, Iterator, List, TextIO, TypedDict
 
 import json_stream
+from clearml.storage.helper import StorageHelper
 
 from ..corpora.text_corpus import TextCorpus
 from ..corpora.text_file_text_corpus import TextFileTextCorpus
@@ -63,8 +64,15 @@ class SharedFileService(ABC):
 
     @contextmanager
     def open_target_pretranslation_writer(self) -> Iterator[PretranslationWriter]:
+        def remove_prefix(text: str, prefix: str) -> str:
+            if text.startswith(prefix):
+                return text[len(prefix) :]
+            return text
+
         build_id: str = self._config.build_id
-        build_dir = self._data_dir / "builds" / build_id
+        bucket_dir = str(Path(self._shared_file_uri) / "builds" / build_id)
+        base_url = StorageHelper._resolve_base_url(bucket_dir)
+        build_dir = self._data_dir / Path(remove_prefix(bucket_dir[len(base_url) :], "/"))
         build_dir.mkdir(parents=True, exist_ok=True)
         target_pretranslate_path = build_dir / "pretranslate.trg.json"
         with target_pretranslate_path.open("w", encoding="utf-8", newline="\n") as file:
