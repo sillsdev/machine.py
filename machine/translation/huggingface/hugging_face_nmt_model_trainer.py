@@ -4,7 +4,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Any, Callable, Iterable, List, Optional, Union, cast
+from typing import Any, Callable, List, Optional, Union, cast
 
 import datasets.utils.logging as datasets_logging
 import torch  # pyright: ignore[reportMissingImports]
@@ -96,6 +96,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
         self.max_target_length = max_target_length
         self._add_unk_src_tokens = add_unk_src_tokens
         self._add_unk_trg_tokens = add_unk_trg_tokens
+        self._mpn = MosesPunctNormalizer()
+        self._mpn.substitutions = [(re.compile(r), sub) for r, sub in self._mpn.substitutions]
 
     @property
     def stats(self) -> TrainStats:
@@ -169,9 +171,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
             for lang_code in lang_codes:
                 for ex in train_dataset["translation"]:
                     charset = charset | set(ex[lang_code])
-            mpn = MosesPunctNormalizer()
-            mpn.substitutions = [(re.compile(r), sub) for r, sub in mpn.substitutions]
-            charset = {mpn.normalize(char) for char in charset}
+            charset = {self._mpn.normalize(char) for char in charset}
             charset = {tokenizer.backend_tokenizer.normalizer.normalize_str(char) for char in charset}
             charset = set(filter(None, {char.strip() for char in charset}))
             missing_characters = sorted(list(charset - vocab))
@@ -302,20 +302,12 @@ class HuggingFaceNmtModelTrainer(Trainer):
             )
 
         def preprocess_function(examples):
-            inputs = [ex[src_lang] for ex in examples["translation"]]
-            targets = [ex[tgt_lang] for ex in examples["translation"]]
-            inputs = [prefix + inp for inp in inputs]
-
             if isinstance(tokenizer, (NllbTokenizer, NllbTokenizerFast)):
-                mpn = MosesPunctNormalizer()
-                mpn.substitutions = [(re.compile(r), sub) for r, sub in mpn.substitutions]
-
-                def normalize_all(lines: Iterable[str]) -> Iterable[str]:
-                    for line in lines:
-                        yield mpn.normalize(line)
-
-                inputs = list(normalize_all(inputs))
-                targets = list(normalize_all(targets))
+                inputs = [self._mpn.normalize(prefix + ex[src_lang]) for ex in examples["translation"]]
+                targets = [self._mpn.normalize(ex[tgt_lang]) for ex in examples["translation"]]
+            else:
+                inputs = [prefix + ex[src_lang] for ex in examples["translation"]]
+                targets = [ex[tgt_lang] for ex in examples["translation"]]
 
             model_inputs = tokenizer(inputs, max_length=max_source_length, truncation=True)
             # Tokenize targets with the `text_target` keyword argument

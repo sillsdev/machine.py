@@ -4,7 +4,7 @@ import gc
 import logging
 import re
 from math import exp, prod
-from typing import Any, Iterable, List, Sequence, Tuple, Union, cast
+from typing import Any, Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 import torch  # pyright: ignore[reportMissingImports]
 from sacremoses import MosesPunctNormalizer
@@ -15,6 +15,8 @@ from transformers import (
     NllbTokenizer,
     NllbTokenizerFast,
     PreTrainedModel,
+    PreTrainedTokenizer,
+    PreTrainedTokenizerFast,
     TranslationPipeline,
 )
 from transformers.generation import BeamSearchEncoderDecoderOutput, GreedySearchEncoderDecoderOutput
@@ -48,6 +50,11 @@ class HuggingFaceNmtEngine(TranslationEngine):
                 PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(str(self._model), config=model_config)
             )
         self._tokenizer = AutoTokenizer.from_pretrained(self._model.name_or_path, use_fast=True)
+        if isinstance(self._tokenizer, (NllbTokenizer, NllbTokenizerFast)):
+            self._mpn = MosesPunctNormalizer()
+            self._mpn.substitutions = [(re.compile(r), sub) for r, sub in self._mpn.substitutions]
+        else:
+            self._mpn = None
 
         src_lang = self._pipeline_kwargs.get("src_lang")
         tgt_lang = self._pipeline_kwargs.get("tgt_lang")
@@ -81,6 +88,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
         self._pipeline = _TranslationPipeline(
             model=self._model,
             tokenizer=self._tokenizer,
+            mpn=self._mpn,
             batch_size=self._batch_size,
             **self._pipeline_kwargs,
         )
@@ -159,24 +167,34 @@ class HuggingFaceNmtEngine(TranslationEngine):
 
 
 class _TranslationPipeline(TranslationPipeline):
+    def __init__(
+        self,
+        model: Union[PreTrainedModel, StrPath, str],
+        tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast],
+        batch_size: int,
+        mpn: Optional[MosesPunctNormalizer] = None,
+        **kwargs,
+    ) -> None:
+        super().__init__(model=model, tokenizer=tokenizer, batch_size=batch_size, **kwargs)
+        self._mpn = mpn
+
     def preprocess(self, *args, truncation=TruncationStrategy.DO_NOT_TRUNCATE, src_lang=None, tgt_lang=None):
         if self.tokenizer is None:
             raise RuntimeError("No tokenizer is specified.")
-        sentences = [
-            s
-            if isinstance(s, str)
-            else self.tokenizer.decode(self.tokenizer.convert_tokens_to_ids(s), use_source_tokenizer=True)
-            for s in args
-        ]
-        if isinstance(self.tokenizer, (NllbTokenizer, NllbTokenizerFast)):
-            mpn = MosesPunctNormalizer()
-            mpn.substitutions = [(re.compile(r), sub) for r, sub in mpn.substitutions]
-
-            def normalize_all(lines: Iterable[str]) -> Iterable[str]:
-                for line in lines:
-                    yield mpn.normalize(line)
-
-            sentences = list(normalize_all(sentences))
+        if self._mpn:
+            sentences = [
+                self._mpn.normalize(s)
+                if isinstance(s, str)
+                else self.tokenizer.decode(self.tokenizer.convert_tokens_to_ids(s), use_source_tokenizer=True)
+                for s in args
+            ]
+        else:
+            sentences = [
+                s
+                if isinstance(s, str)
+                else self.tokenizer.decode(self.tokenizer.convert_tokens_to_ids(s), use_source_tokenizer=True)
+                for s in args
+            ]
         inputs = cast(
             BatchEncoding, super().preprocess(*sentences, truncation=truncation, src_lang=src_lang, tgt_lang=tgt_lang)
         )
