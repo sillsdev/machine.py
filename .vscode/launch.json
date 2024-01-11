@@ -31,7 +31,7 @@
           "--trg-lang",
           "eng_Latn",
           "--build-options",
-          "{\"train_params\":{\"max_steps\":10}}"
+          "{\\\"train_params\\\": {\\\"max_steps\\\": 10}}"
         ]
       },
       "linux": {
@@ -47,7 +47,7 @@
           "--trg-lang",
           "eng_Latn",
           "--build-options",
-          "{\"train_params\":{\"max_steps\":10}}"
+          "{\"train_params\": {\"max_steps\": 10}}"
         ]
       }
     },
