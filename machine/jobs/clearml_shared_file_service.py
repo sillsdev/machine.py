@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class ClearMLSharedFileService(SharedFileService):
     def _download_file(self, path: str, cache: bool = False) -> Path:
-        uri = f"{self._shared_file_uri}/{path}"
+        uri = f"{self._shared_file_uri}/{self._shared_file_folder}/{path}"
         local_folder: Optional[str] = None
         if not cache:
             local_folder = str(self._data_dir)
@@ -22,7 +22,7 @@ class ClearMLSharedFileService(SharedFileService):
         return Path(file_path)
 
     def _download_folder(self, path: str, cache: bool = False) -> Path:
-        uri = f"{self._shared_file_uri}/{path}"
+        uri = f"{self._shared_file_uri}/{self._shared_file_folder}/{path}"
         local_folder: Optional[str] = None
         if not cache:
             local_folder = str(self._data_dir)
@@ -32,22 +32,36 @@ class ClearMLSharedFileService(SharedFileService):
         return Path(folder_path) / path
 
     def _exists_file(self, path: str) -> bool:
-        uri = f"{self._shared_file_uri}/{path}"
+        uri = f"{self._shared_file_uri}/{self._shared_file_folder}/{path}"
         return try_n_times(lambda: StorageManager.exists_file(uri))  # type: ignore
 
     def _upload_file(self, path: str, local_file_path: Path) -> None:
         final_destination = try_n_times(
-            lambda: StorageManager.upload_file(str(local_file_path), f"{self._shared_file_uri}/{path}")
+            lambda: StorageManager.upload_file(
+                str(local_file_path), f"{self._shared_file_uri}/{self._shared_file_folder}/{path}"
+            )
         )
         if final_destination is None:
-            logger.error(f"Failed to upload file {str(local_file_path)} to {self._shared_file_uri}/{path}.")
+            logger.error(
+                (
+                    f"Failed to upload file {str(local_file_path)} "
+                    f"to {self._shared_file_uri}/{self._shared_file_folder}/{path}."
+                )
+            )
 
     def _upload_folder(self, path: str, local_folder_path: Path) -> None:
         final_destination = try_n_times(
-            lambda: StorageManager.upload_folder(str(local_folder_path), f"{self._shared_file_uri}/{path}")
+            lambda: StorageManager.upload_folder(
+                str(local_folder_path), f"{self._shared_file_uri}/{self._shared_file_folder}/{path}"
+            )
         )
         if final_destination is None:
-            logger.error(f"Failed to upload folder {str(local_folder_path)} to {self._shared_file_uri}/{path}.")
+            logger.error(
+                (
+                    f"Failed to upload folder {str(local_folder_path)} "
+                    f"to {self._shared_file_uri}/{self._shared_file_folder}/{path}."
+                )
+            )
 
 
 def try_n_times(func: Callable, n=10):

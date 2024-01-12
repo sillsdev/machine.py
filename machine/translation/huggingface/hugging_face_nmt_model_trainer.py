@@ -171,7 +171,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
             for lang_code in lang_codes:
                 for ex in train_dataset["translation"]:
                     charset = charset | set(ex[lang_code])
-            charset = {self._mpn.normalize(char) for char in charset}
+            if isinstance(tokenizer, (NllbTokenizerFast)):
+                charset = {self._mpn.normalize(char) for char in charset}
             charset = {tokenizer.backend_tokenizer.normalizer.normalize_str(char) for char in charset}
             charset = set(filter(None, {char.strip() for char in charset}))
             missing_characters = sorted(list(charset - vocab))
