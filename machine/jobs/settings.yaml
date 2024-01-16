@@ -1,6 +1,8 @@
 default:
   model_type: huggingface
   data_dir: ~/machine
+  shared_file_uri: s3://aqua-ml-data/
+  shared_file_folder: production
   pretranslation_batch_size: 1024
   huggingface:
     parent_model_name: facebook/nllb-200-distilled-1.3B
@@ -25,12 +27,13 @@ default:
       add_unk_src_tokens: true
       add_unk_trg_tokens: true
 development:
-  shared_file_uri: s3://aqua-ml-data/dev/
+  shared_file_folder: dev
   huggingface:
     parent_model_name: facebook/nllb-200-distilled-600M
     generate_params:
       num_beams: 1
 staging:
+  shared_file_folder: ext-qa
   huggingface:
     parent_model_name: hf-internal-testing/tiny-random-nllb
     train_params:
