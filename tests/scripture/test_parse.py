@@ -67,6 +67,30 @@ def test_get_chapters() -> None:
     assert get_chapters("MAT-JHN;-MAT-LUK") == {43: []}
 
     with raises(ValueError):
+        # wrong order of chapters
+        print(get_chapters("MAT3-1"))
+
+    with raises(ValueError):
+        # wrong order of books
+        print(get_chapters("MRK-MAT"))
+
+    with raises(ValueError):
+        # wrong order of books in subtraction
+        print(get_chapters("-MRK-MAT"))
+
+    with raises(ValueError):
+        # chapter 0
+        print(get_chapters("MAT0-10"))
+
+    with raises(ValueError):
+        # invalid book/length of book name
+        get_chapters("MAT-FLUM")
+
+    with raises(ValueError):
+        # invalid book/length of book name in subtraction
+        get_chapters("-MAT-FLUM")
+
+    with raises(ValueError):
         # empty string
         get_chapters("")
 
