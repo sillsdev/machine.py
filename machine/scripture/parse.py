@@ -1,13 +1,13 @@
 import re
 from typing import Dict, List, Set, Union
 
-from .canon import book_id_to_number
+from .canon import book_id_to_number, book_number_to_id
 from .constants import ORIGINAL_VERSIFICATION
 from .verse_ref import Versification
 
 COMMA_SEPARATED_BOOKS = re.compile(r"([A-Z\d]{3}|OT|NT)(, ?([A-Z\d]{3}|OT|NT))*")
-BOOK_RANGE = re.compile(r"[A-Z\d]{3}-[A-Z\d]{3}")
-CHAPTER_SELECTION = re.compile(r"[A-Z\d]{3} ?(\d+|\d+-\d+)(, ?(\d+|\d+-\d+))*")
+BOOK_RANGE = re.compile(r"-?[A-Z\d]{3}-[A-Z\d]{3}")
+CHAPTER_SELECTION = re.compile(r"-?[A-Z\d]{3} ?(\d+|\d+-\d+)(, ?(\d+|\d+-\d+))*")
 
 
 def get_books(books: Union[str, List[str]]) -> Set[int]:
@@ -50,36 +50,28 @@ def get_chapters(
     if isinstance(chapter_selections, str):
         chapter_selections = chapter_selections.strip()
 
+        delimiter = ";"
         if ";" in chapter_selections:
-            chapter_selections = chapter_selections.split(";")
+            delimiter = ";"
         elif re.fullmatch(COMMA_SEPARATED_BOOKS, chapter_selections) is not None:
-            chapter_selections = chapter_selections.split(",")
-        elif chapter_selections.startswith("-"):
-            raise ValueError(f"Cannot subtract before adding sections: {chapter_selections}")
-        elif re.search(BOOK_RANGE, chapter_selections):
-            if len(chapter_selections) == 7:
-                chapter_selections = [chapter_selections]
-            else:
-                raise ValueError(
-                    "Invalid syntax. If one of your selections is a range of books, \
-                    selections must be seprated with semicolons."
-                )
-        elif re.fullmatch(CHAPTER_SELECTION, chapter_selections) is None:
+            delimiter = ","
+        elif (
+            re.fullmatch(BOOK_RANGE, chapter_selections) is None
+            and re.fullmatch(CHAPTER_SELECTION, chapter_selections) is None
+        ):
             raise ValueError(
-                "Invalid syntax. If one of your selections includes specific chapters or subtraction, \
-                selections must be separated with semicolons."
+                "Invalid syntax. If you are providing multiple selections, e.g. a range of books  \
+                followed by a selection of chapters from a book, separate each selection with a semicolon."
             )
-        else:
-            chapter_selections = [chapter_selections]
+
+        chapter_selections = chapter_selections.split(delimiter)
 
     for section in chapter_selections:
         section = section.strip()
 
         if section.startswith("-"):  # Subtraction
             section = section[1:]
-            if any(
-                s.isdigit() and (i == len(section) - 1 or not section[i + 1].isalpha()) for i, s in enumerate(section)
-            ):  # Specific chapters from one book
+            if section[-1].isdigit():  # Specific chapters from one book
                 book = book_id_to_number(section[:3])
                 if book == 0:
                     raise ValueError(f"{section[:3]} is an invalid book ID.")
@@ -120,10 +112,13 @@ def get_chapters(
                 if len(ends) != 2 or book_id_to_number(ends[0]) == 0 or book_id_to_number(ends[1]) == 0:
                     raise ValueError(f"{section} is an invalid book range.")
 
+                if book_id_to_number(ends[0]) > book_id_to_number(ends[1]):
+                    raise ValueError(f"{section} is an invalid book range. {ends[1]} precedes {ends[0]}.")
+
                 for i in range(book_id_to_number(ends[0]), book_id_to_number(ends[1]) + 1):
                     if i not in chapters:
                         raise ValueError(
-                            f"{section[:3]} cannot be removed as it is not in the existing book selection."
+                            f"{book_number_to_id(i)} cannot be removed as it is not in the existing book selection."
                         )
 
                     del chapters[i]
@@ -135,9 +130,7 @@ def get_chapters(
                     raise ValueError(f"{section[:3]} cannot be removed as it is not in the existing book selection.")
 
                 del chapters[book]
-        elif any(
-            s.isdigit() and (i == len(section) - 1 or not section[i + 1].isalpha()) for i, s in enumerate(section)
-        ):  # Specific chapters from one book
+        elif section[-1].isdigit():  # Specific chapters from one book
             book = book_id_to_number(section[:3])
             if book == 0:
                 raise ValueError(f"{section[:3]} is an invalid book ID.")
@@ -155,13 +148,13 @@ def get_chapters(
                 chapter_num = chapter_num.strip()
                 if "-" in chapter_num:
                     start, end = chapter_num.split("-")
-                    if int(start) > last_chapter or int(end) > last_chapter:
+                    if int(start) == 0 or int(start) > last_chapter or int(end) > last_chapter or int(start) > int(end):
                         raise ValueError(f"{chapter_num} is an invalid chapter range.")
 
                     for i in range(int(start), int(end) + 1):
                         book_chapters.add(i)
                 else:
-                    if int(chapter_num) > last_chapter:
+                    if int(chapter_num) == 0 or int(chapter_num) > last_chapter:
                         raise ValueError(f"{chapter_num} is an invalid chapter number.")
 
                     book_chapters.add(int(chapter_num))
@@ -174,6 +167,9 @@ def get_chapters(
             ends = section.split("-")
             if len(ends) != 2 or book_id_to_number(ends[0]) == 0 or book_id_to_number(ends[1]) == 0:
                 raise ValueError(f"{section} is an invalid book range.")
+
+            if book_id_to_number(ends[0]) > book_id_to_number(ends[1]):
+                raise ValueError(f"{section} is an invalid book range. {ends[1]} precedes {ends[0]}.")
 
             for i in range(book_id_to_number(ends[0]), book_id_to_number(ends[1]) + 1):
                 chapters[i] = []
