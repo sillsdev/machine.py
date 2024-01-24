@@ -71,12 +71,32 @@ def test_get_chapters() -> None:
         print(get_chapters("MAT3-1"))
 
     with raises(ValueError):
+        # wrong order of chapters in subtraction
+        print(get_chapters("MRK;-MRK10-3"))
+
+    with raises(ValueError):
+        # chapter non-range
+        print(get_chapters("MAT1-1"))
+
+    with raises(ValueError):
+        # chapter non-range in subtraction
+        print(get_chapters("MRK;-MRK3-3"))
+
+    with raises(ValueError):
         # wrong order of books
         print(get_chapters("MRK-MAT"))
 
     with raises(ValueError):
         # wrong order of books in subtraction
         print(get_chapters("-MRK-MAT"))
+
+    with raises(ValueError):
+        # book non-range
+        print(get_chapters("MAT-MAT"))
+
+    with raises(ValueError):
+        # book non-range in subtraction
+        print(get_chapters("-MRK-MRK"))
 
     with raises(ValueError):
         # chapter 0
@@ -125,6 +145,8 @@ def test_get_chapters() -> None:
         get_chapters("MRK 2-5;-MRK 1-4")
     with raises(ValueError):
         get_chapters("MRK 2-5;-MRK 6")
+    with raises(ValueError):
+        get_chapters("MRK 1-3;-MRK")
     with raises(ValueError):
         get_chapters("OT;-MRK-LUK")
 
