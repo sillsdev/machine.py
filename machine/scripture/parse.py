@@ -40,149 +40,124 @@ def get_books(books: Union[str, List[str]]) -> Set[int]:
     return book_set
 
 
+def parse_selection(selection: str, versification: Versification) -> Dict[int, List[int]]:
+    selection = selection.strip()
+    chapters = {}
+
+    if selection[-1].isdigit():  # Specific chapters from one book
+        book = book_id_to_number(selection[:3])
+        if book == 0:
+            raise ValueError(f"{selection[:3]} is an invalid book ID.")
+
+        book_chapters = set()
+        last_chapter = versification.get_last_chapter(book)
+        chapter_nums = selection[3:].split(",")
+        for chapter_num in chapter_nums:
+            chapter_num = chapter_num.strip()
+            if "-" in chapter_num:
+                start, end = chapter_num.split("-")
+                if int(start) == 0 or int(end) > last_chapter or int(end) <= int(start):
+                    raise ValueError(f"{chapter_num} is an invalid chapter range.")
+
+                for i in range(int(start), int(end) + 1):
+                    book_chapters.add(i)
+            else:
+                if int(chapter_num) == 0 or int(chapter_num) > last_chapter:
+                    raise ValueError(f"{chapter_num} is an invalid chapter number.")
+
+                book_chapters.add(int(chapter_num))
+
+        if len(book_chapters) == last_chapter:
+            chapters[book] = []
+        else:
+            chapters[book] = sorted(list(book_chapters))
+    elif "-" in selection:  # Span of books
+        ends = selection.split("-")
+        if len(ends) != 2 or book_id_to_number(ends[0]) == 0 or book_id_to_number(ends[1]) == 0:
+            raise ValueError(f"{selection} is an invalid book range.")
+
+        if book_id_to_number(ends[0]) >= book_id_to_number(ends[1]):
+            raise ValueError(f"{selection} is an invalid book range. {ends[1]} precedes {ends[0]}.")
+
+        for i in range(book_id_to_number(ends[0]), book_id_to_number(ends[1]) + 1):
+            chapters[i] = []
+    elif selection == "OT":
+        for i in range(1, 40):
+            chapters[i] = []
+    elif selection == "NT":
+        for i in range(40, 67):
+            chapters[i] = []
+    else:  # Single whole book
+        book = book_id_to_number(selection)
+        if book == 0:
+            raise ValueError(f"{selection} is an invalid book ID.")
+        chapters[book] = []
+
+    return chapters
+
+
 # Output format: { book_num: [chapters] }
 # An empty list, i.e. book_num: [] signifies the inclusion of all chapters
 def get_chapters(
-    chapter_selections: Union[str, List[str]], versification: Versification = ORIGINAL_VERSIFICATION
+    selections: Union[str, List[str]], versification: Versification = ORIGINAL_VERSIFICATION
 ) -> Dict[int, List[int]]:
-    chapters = {}
-
-    if isinstance(chapter_selections, str):
-        chapter_selections = chapter_selections.strip()
+    if isinstance(selections, str):
+        selections = selections.strip()
 
         delimiter = ";"
-        if ";" in chapter_selections:
+        if ";" in selections:
             delimiter = ";"
-        elif re.fullmatch(COMMA_SEPARATED_BOOKS, chapter_selections) is not None:
+        elif re.fullmatch(COMMA_SEPARATED_BOOKS, selections) is not None:
             delimiter = ","
-        elif (
-            re.fullmatch(BOOK_RANGE, chapter_selections) is None
-            and re.fullmatch(CHAPTER_SELECTION, chapter_selections) is None
-        ):
+        elif re.fullmatch(BOOK_RANGE, selections) is None and re.fullmatch(CHAPTER_SELECTION, selections) is None:
             raise ValueError(
-                "Invalid syntax. If you are providing multiple selections, e.g. a range of books  \
-                followed by a selection of chapters from a book, separate each selection with a semicolon."
+                "Invalid syntax. If you are providing multiple selections, e.g. a range of books followed by a"
+                "selection of chapters from a book, separate each selection with a semicolon."
             )
 
-        chapter_selections = chapter_selections.split(delimiter)
+        selections = selections.split(delimiter)
 
-    for section in chapter_selections:
-        section = section.strip()
+    chapters = {}
+    for selection in selections:
+        selection = selection.strip()
 
-        if section.startswith("-"):  # Subtraction
-            section = section[1:]
-            if section[-1].isdigit():  # Specific chapters from one book
-                book = book_id_to_number(section[:3])
-                if book == 0:
-                    raise ValueError(f"{section[:3]} is an invalid book ID.")
+        if selection.startswith("-"):  # Subtraction
+            selection_chapters = parse_selection(selection[1:], versification)
+            for book in selection_chapters:
                 if book not in chapters:
-                    raise ValueError(f"{section[:3]} cannot be removed as it is not in the existing book selection.")
+                    raise ValueError(
+                        f"{book_number_to_id(book)} cannot be removed as it is not in the existing book selection."
+                    )
+
+                if selection_chapters[book] == []:
+                    selection_chapters[book] = [i + 1 for i in range(versification.get_last_chapter(book))]
 
                 if chapters[book] == []:
                     chapters[book] = [i + 1 for i in range(versification.get_last_chapter(book))]
 
-                last_chapter = versification.get_last_chapter(book)
-                chapter_nums = section[3:].split(",")
-                for chapter_num in chapter_nums:
-                    chapter_num = chapter_num.strip()
-                    if "-" in chapter_num:
-                        start, end = chapter_num.split("-")
-                        if int(start) > last_chapter or int(end) > last_chapter:
-                            raise ValueError(f"{chapter_num} is an invalid chapter range.")
-
-                        for i in range(int(start), int(end) + 1):
-                            if i not in chapters[book]:
-                                raise ValueError(
-                                    f"{i} cannot be removed as it is not in the existing chapter selection."
-                                )
-                            chapters[book].remove(i)
-                    else:
-                        if int(chapter_num) > last_chapter:
-                            raise ValueError(f"{int(chapter_num)} is an invalid chapter number.")
-                        if int(chapter_num) not in chapters[book]:
-                            raise ValueError(
-                                f"{chapter_num} cannot be removed as it is not in the existing chapter selection."
-                            )
-                        chapters[book].remove(int(chapter_num))
+                for chapter in selection_chapters[book]:
+                    try:
+                        chapters[book].remove(chapter)
+                    except ValueError:
+                        raise ValueError(
+                            f"{book_number_to_id(book)} {chapter} cannot be removed as it is not in the existing"
+                            "chapter selection."
+                        )
 
                 if len(chapters[book]) == 0:
                     del chapters[book]
-            elif "-" in section:  # Spans of books
-                ends = section.split("-")
-                if len(ends) != 2 or book_id_to_number(ends[0]) == 0 or book_id_to_number(ends[1]) == 0:
-                    raise ValueError(f"{section} is an invalid book range.")
+        else:
+            selection_chapters = parse_selection(selection, versification)
+            for book in selection_chapters:
+                if book in chapters:
+                    if chapters[book] == [] or selection_chapters[book] == []:
+                        chapters[book] = []
+                        continue
 
-                if book_id_to_number(ends[0]) > book_id_to_number(ends[1]):
-                    raise ValueError(f"{section} is an invalid book range. {ends[1]} precedes {ends[0]}.")
-
-                for i in range(book_id_to_number(ends[0]), book_id_to_number(ends[1]) + 1):
-                    if i not in chapters:
-                        raise ValueError(
-                            f"{book_number_to_id(i)} cannot be removed as it is not in the existing book selection."
-                        )
-
-                    del chapters[i]
-            else:  # Single whole book
-                book = book_id_to_number(section)
-                if book == 0:
-                    raise ValueError(f"{section} is an invalid book ID.")
-                if book not in chapters:
-                    raise ValueError(f"{section[:3]} cannot be removed as it is not in the existing book selection.")
-
-                del chapters[book]
-        elif section[-1].isdigit():  # Specific chapters from one book
-            book = book_id_to_number(section[:3])
-            if book == 0:
-                raise ValueError(f"{section[:3]} is an invalid book ID.")
-
-            if book in chapters:
-                if chapters[book] == []:
-                    continue
-                book_chapters = set(chapters[book])
-            else:
-                book_chapters = set()
-
-            last_chapter = versification.get_last_chapter(book)
-            chapter_nums = section[3:].split(",")
-            for chapter_num in chapter_nums:
-                chapter_num = chapter_num.strip()
-                if "-" in chapter_num:
-                    start, end = chapter_num.split("-")
-                    if int(start) == 0 or int(start) > last_chapter or int(end) > last_chapter or int(start) > int(end):
-                        raise ValueError(f"{chapter_num} is an invalid chapter range.")
-
-                    for i in range(int(start), int(end) + 1):
-                        book_chapters.add(i)
+                    chapters[book] = list(set(chapters[book] + selection_chapters[book]))
+                    if len(chapters[book]) == versification.get_last_chapter(book):
+                        chapters[book] = []
                 else:
-                    if int(chapter_num) == 0 or int(chapter_num) > last_chapter:
-                        raise ValueError(f"{chapter_num} is an invalid chapter number.")
-
-                    book_chapters.add(int(chapter_num))
-
-            if len(book_chapters) == last_chapter:
-                chapters[book] = []
-            else:
-                chapters[book] = sorted(list(book_chapters))
-        elif "-" in section:  # Spans of books
-            ends = section.split("-")
-            if len(ends) != 2 or book_id_to_number(ends[0]) == 0 or book_id_to_number(ends[1]) == 0:
-                raise ValueError(f"{section} is an invalid book range.")
-
-            if book_id_to_number(ends[0]) > book_id_to_number(ends[1]):
-                raise ValueError(f"{section} is an invalid book range. {ends[1]} precedes {ends[0]}.")
-
-            for i in range(book_id_to_number(ends[0]), book_id_to_number(ends[1]) + 1):
-                chapters[i] = []
-        elif section == "OT":
-            for i in range(1, 40):
-                chapters[i] = []
-        elif section == "NT":
-            for i in range(40, 67):
-                chapters[i] = []
-        else:  # Single whole book
-            book = book_id_to_number(section)
-            if book == 0:
-                raise ValueError(f"{section} is an invalid book ID.")
-            chapters[book] = []
+                    chapters[book] = selection_chapters[book]
 
     return chapters
