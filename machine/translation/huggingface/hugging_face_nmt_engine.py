@@ -116,7 +116,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
                 for step in range(0, outer_batch_size, self._batch_size):
                     all_results.extend(self._try_translate_n_batch(n, segments[step : step + self._batch_size]))
                 return all_results
-            except torch.cuda.OutOfMemoryError:  # type: ignore[reportGeneralTypeIssues]
+            except torch.cuda.OutOfMemoryError:
                 if self._oom_batch_size_backoff_mult >= 0.9999 or self._batch_size <= 1:
                     raise
                 self._batch_size = max(int(round(self._batch_size * self._oom_batch_size_backoff_mult)), 1)
