@@ -76,8 +76,11 @@ class SharedFileService(ABC):
     def get_parent_model(self, language_tag: str) -> Path:
         return self._download_folder(f"parent_models/{language_tag}", cache=True)
 
-    def save_model(self, model_dir: Path) -> None:
-        self._upload_folder(f"models/{self._engine_id}", model_dir)
+    def save_model(self, model_path: Path) -> None:
+        if model_path.is_file():
+            self._upload_file(f"models/{self._build_id}" + "".join(model_path.suffixes), model_path)
+        else:
+            self._upload_folder(f"models/{self._build_id}", model_path)
 
     @property
     def _data_dir(self) -> Path:
@@ -102,21 +105,16 @@ class SharedFileService(ABC):
         return shared_file_folder.rstrip("/")
 
     @abstractmethod
-    def _download_file(self, path: str, cache: bool = False) -> Path:
-        ...
+    def _download_file(self, path: str, cache: bool = False) -> Path: ...
 
     @abstractmethod
-    def _download_folder(self, path: str, cache: bool = False) -> Path:
-        ...
+    def _download_folder(self, path: str, cache: bool = False) -> Path: ...
 
     @abstractmethod
-    def _exists_file(self, path: str) -> bool:
-        ...
+    def _exists_file(self, path: str) -> bool: ...
 
     @abstractmethod
-    def _upload_file(self, path: str, local_file_path: Path) -> None:
-        ...
+    def _upload_file(self, path: str, local_file_path: Path) -> None: ...
 
     @abstractmethod
-    def _upload_folder(self, path: str, local_folder_path: Path) -> None:
-        ...
+    def _upload_folder(self, path: str, local_folder_path: Path) -> None: ...
