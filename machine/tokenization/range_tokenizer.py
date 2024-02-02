@@ -11,5 +11,4 @@ Token = TypeVar("Token")
 
 class RangeTokenizer(Tokenizer[Data, Offset, Token]):
     @abstractmethod
-    def tokenize_as_ranges(self, data: Data, data_range: Optional[Range[Offset]] = None) -> Iterable[Range[Offset]]:
-        ...
+    def tokenize_as_ranges(self, data: Data, data_range: Optional[Range[Offset]] = None) -> Iterable[Range[Offset]]: ...

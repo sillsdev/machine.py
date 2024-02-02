@@ -181,9 +181,11 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
                             range_info,
                             src_row,
                             trg_row,
-                            alignment.aligned_word_pairs
-                            if alignment is not None and src_row.ref == alignment.ref
-                            else None,
+                            (
+                                alignment.aligned_word_pairs
+                                if alignment is not None and src_row.ref == alignment.ref
+                                else None
+                            ),
                         )
 
                     source_same_ref_rows.append(src_row)

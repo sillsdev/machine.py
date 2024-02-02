@@ -39,7 +39,10 @@ class ThotFastAlignWordAlignmentModel(ThotWordAlignmentModel, Ibm2WordAlignmentM
         return self.thot_model.alignment_log_prob(target_index + 1, source_length, target_length, source_index + 1)
 
     def compute_aligned_word_pair_scores(
-        self, source_segment: Sequence[str], target_segment: Sequence[str], word_pairs: Collection[AlignedWordPair]
+        self,
+        source_segment: Sequence[str],
+        target_segment: Sequence[str],
+        word_pairs: Collection[AlignedWordPair],
     ) -> None:
         for word_pair in word_pairs:
             if word_pair.target_index == -1:

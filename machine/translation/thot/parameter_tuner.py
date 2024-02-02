@@ -15,5 +15,4 @@ class ParameterTuner(ABC):
         tune_target_corpus: Sequence[Sequence[str]],
         stats: TrainStats,
         progress: ProgressStatus,
-    ) -> ThotSmtParameters:
-        ...
+    ) -> ThotSmtParameters: ...

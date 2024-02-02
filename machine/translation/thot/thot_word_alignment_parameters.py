@@ -28,7 +28,10 @@ class ThotWordAlignmentParameters:
 
     def get_ibm2_iteration_count(self, model_type: ThotWordAlignmentModelType) -> int:
         return _get_ibm_iteration_count(
-            model_type, ThotWordAlignmentModelType.IBM2, self.ibm2_iteration_count, default_init_iteration_count=0
+            model_type,
+            ThotWordAlignmentModelType.IBM2,
+            self.ibm2_iteration_count,
+            default_init_iteration_count=0,
         )
 
     def get_hmm_iteration_count(self, model_type: ThotWordAlignmentModelType) -> int:

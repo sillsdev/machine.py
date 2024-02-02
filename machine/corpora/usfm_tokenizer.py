@@ -376,7 +376,10 @@ def _find_matching_start_marker(usfm: str, tokens: List[UsfmToken], next_marker_
     if expected_start_marker is None:
         return None
 
-    if expected_start_marker == "" and tokens[-1].type in {UsfmTokenType.MILESTONE, UsfmTokenType.MILESTONE_END}:
+    if expected_start_marker == "" and tokens[-1].type in {
+        UsfmTokenType.MILESTONE,
+        UsfmTokenType.MILESTONE_END,
+    }:
         return tokens[-1]
 
     nesting_level = 0

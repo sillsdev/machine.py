@@ -18,7 +18,9 @@ _MAX_BATCH_SIZE = 10240
 
 class ThotSymmetrizedWordAlignmentModel(SymmetrizedWordAlignmentModel):
     def __init__(
-        self, direct_word_alignment_model: ThotWordAlignmentModel, inverse_word_alignment_model: ThotWordAlignmentModel
+        self,
+        direct_word_alignment_model: ThotWordAlignmentModel,
+        inverse_word_alignment_model: ThotWordAlignmentModel,
     ) -> None:
         super().__init__(direct_word_alignment_model, inverse_word_alignment_model)
         self._reset_aligner()

@@ -12,5 +12,4 @@ T = TypeVar("T")
 
 class RootedHierarchicalClusterer(ABC, Generic[T]):
     @abstractmethod
-    def generate_clusters(self, data_objects: Iterable[T]) -> DiGraph[Cluster[T]]:
-        ...
+    def generate_clusters(self, data_objects: Iterable[T]) -> DiGraph[Cluster[T]]: ...

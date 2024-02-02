@@ -29,8 +29,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
         source_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
         target_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
         max_corpus_count: int = sys.maxsize,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @overload
     def __init__(
@@ -41,8 +40,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
         parameters: ThotWordAlignmentParameters = ThotWordAlignmentParameters(),
         source_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
         target_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def __init__(
         self,

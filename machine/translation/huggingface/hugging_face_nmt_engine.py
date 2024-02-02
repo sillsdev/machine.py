@@ -183,20 +183,25 @@ class _TranslationPipeline(TranslationPipeline):
             raise RuntimeError("No tokenizer is specified.")
         if self._mpn:
             sentences = [
-                self._mpn.normalize(s)
-                if isinstance(s, str)
-                else self.tokenizer.decode(self.tokenizer.convert_tokens_to_ids(s), use_source_tokenizer=True)
+                (
+                    self._mpn.normalize(s)
+                    if isinstance(s, str)
+                    else self.tokenizer.decode(self.tokenizer.convert_tokens_to_ids(s), use_source_tokenizer=True)
+                )
                 for s in args
             ]
         else:
             sentences = [
-                s
-                if isinstance(s, str)
-                else self.tokenizer.decode(self.tokenizer.convert_tokens_to_ids(s), use_source_tokenizer=True)
+                (
+                    s
+                    if isinstance(s, str)
+                    else self.tokenizer.decode(self.tokenizer.convert_tokens_to_ids(s), use_source_tokenizer=True)
+                )
                 for s in args
             ]
         inputs = cast(
-            BatchEncoding, super().preprocess(*sentences, truncation=truncation, src_lang=src_lang, tgt_lang=tgt_lang)
+            BatchEncoding,
+            super().preprocess(*sentences, truncation=truncation, src_lang=src_lang, tgt_lang=tgt_lang),
         )
         if inputs.is_fast:
             inputs["input_tokens"] = [
@@ -279,7 +284,8 @@ class _TranslationPipeline(TranslationPipeline):
             attentions = torch.cat(
                 (
                     torch.zeros(
-                        (attentions.shape[0], attentions.shape[1], 1, attentions.shape[3]), device=attentions.device
+                        (attentions.shape[0], attentions.shape[1], 1, attentions.shape[3]),
+                        device=attentions.device,
                     ),
                     attentions,
                 ),

@@ -6,12 +6,10 @@ from .text_corpus import TextCorpus
 
 class DictionaryTextCorpus(TextCorpus):
     @overload
-    def __init__(self, *texts: Text) -> None:
-        ...
+    def __init__(self, *texts: Text) -> None: ...
 
     @overload
-    def __init__(self, texts: Iterable[Text]) -> None:
-        ...
+    def __init__(self, texts: Iterable[Text]) -> None: ...
 
     def __init__(self, *args, **kwargs) -> None:
         texts: Iterable[Text]

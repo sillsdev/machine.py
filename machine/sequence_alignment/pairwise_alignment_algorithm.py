@@ -271,7 +271,12 @@ class PairwiseAlignmentAlgorithm(Generic[Seq, Item]):
 
             if self.transposition_enabled and i - 2 >= 0 and j - 2 >= 0:
                 op_score = self._scorer.get_transposition_score(
-                    self._sequence1, self._get1(i - 1), self._get1(i), self._sequence2, self._get2(j - 1), self._get2(j)
+                    self._sequence1,
+                    self._get1(i - 1),
+                    self._get1(i),
+                    self._sequence2,
+                    self._get2(j - 1),
+                    self._get2(j),
                 )
                 if self._sim[i - 2][j - 2] + op_score + score >= threshold:
                     for alignment in self._retrieve(i - 2, j - 2, score + op_score, threshold):

@@ -8,5 +8,4 @@ T = TypeVar("T")
 
 class FlatClusterer(ABC, Generic[T]):
     @abstractmethod
-    def generate_clusters(self, data_objects: Iterable[T]) -> Iterable[Cluster[T]]:
-        ...
+    def generate_clusters(self, data_objects: Iterable[T]) -> Iterable[Cluster[T]]: ...

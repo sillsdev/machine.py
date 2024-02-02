@@ -85,7 +85,8 @@ def test_target_words_index_len() -> None:
 
 def test_get_translation_table_symmetrized_no_threshold() -> None:
     with ThotSymmetrizedWordAlignmentModel(
-        ThotFastAlignWordAlignmentModel(DIRECT_MODEL_PATH), ThotFastAlignWordAlignmentModel(INVERSE_MODEL_PATH)
+        ThotFastAlignWordAlignmentModel(DIRECT_MODEL_PATH),
+        ThotFastAlignWordAlignmentModel(INVERSE_MODEL_PATH),
     ) as model:
         table = model.get_translation_table()
         assert len(table) == 500
@@ -94,7 +95,8 @@ def test_get_translation_table_symmetrized_no_threshold() -> None:
 
 def test_get_translation_table_symmetrized_threshold() -> None:
     with ThotSymmetrizedWordAlignmentModel(
-        ThotFastAlignWordAlignmentModel(DIRECT_MODEL_PATH), ThotFastAlignWordAlignmentModel(INVERSE_MODEL_PATH)
+        ThotFastAlignWordAlignmentModel(DIRECT_MODEL_PATH),
+        ThotFastAlignWordAlignmentModel(INVERSE_MODEL_PATH),
     ) as model:
         table = model.get_translation_table(0.2)
         assert len(table) == 500
@@ -103,7 +105,8 @@ def test_get_translation_table_symmetrized_threshold() -> None:
 
 def test_get_avg_translation_score_symmetrized() -> None:
     with ThotSymmetrizedWordAlignmentModel(
-        ThotFastAlignWordAlignmentModel(DIRECT_MODEL_PATH), ThotFastAlignWordAlignmentModel(INVERSE_MODEL_PATH)
+        ThotFastAlignWordAlignmentModel(DIRECT_MODEL_PATH),
+        ThotFastAlignWordAlignmentModel(INVERSE_MODEL_PATH),
     ) as model:
         source_segment = "por favor , ¿ podríamos ver otra habitación ?".split()
         target_segment = "could we see another room , please ?".split()

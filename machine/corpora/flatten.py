@@ -13,18 +13,15 @@ from .text_row import TextRow
 
 
 @overload
-def flatten(corpora: Iterable[TextCorpus]) -> TextCorpus:
-    ...
+def flatten(corpora: Iterable[TextCorpus]) -> TextCorpus: ...
 
 
 @overload
-def flatten(corpora: Iterable[AlignmentCorpus]) -> AlignmentCorpus:
-    ...
+def flatten(corpora: Iterable[AlignmentCorpus]) -> AlignmentCorpus: ...
 
 
 @overload
-def flatten(corpora: Iterable[ParallelTextCorpus]) -> ParallelTextCorpus:
-    ...
+def flatten(corpora: Iterable[ParallelTextCorpus]) -> ParallelTextCorpus: ...
 
 
 def flatten(corpora: Iterable[Corpus]) -> Corpus:
@@ -35,7 +32,7 @@ def flatten(corpora: Iterable[Corpus]) -> Corpus:
     if len(corpus_list) == 1:
         return corpus_list[0]
 
-    if any(type(corpus_list[0]) != type(corpus) for corpus in corpus_list[1:]):
+    if any(type(corpus_list[0]) != type(corpus) for corpus in corpus_list[1:]):  # noqa: E721
         raise TypeError("All corpora must be of the same type.")
 
     if isinstance(corpus_list[0], TextCorpus):

@@ -18,7 +18,16 @@ def test_tokenize_punctuation_at_end_of_word() -> None:
 
 def test_tokenize_punctuation_at_start_of_word() -> None:
     tokenizer = LatinWordTokenizer()
-    assert list(tokenizer.tokenize("Is this a test? (yes)")) == ["Is", "this", "a", "test", "?", "(", "yes", ")"]
+    assert list(tokenizer.tokenize("Is this a test? (yes)")) == [
+        "Is",
+        "this",
+        "a",
+        "test",
+        "?",
+        "(",
+        "yes",
+        ")",
+    ]
 
 
 def test_tokenize_punctuation_inside_word() -> None:

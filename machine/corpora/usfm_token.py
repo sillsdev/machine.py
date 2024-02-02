@@ -63,7 +63,11 @@ class UsfmToken:
         return attribute.value
 
     def set_attributes(
-        self, attributes_value: str, default_attribute_name: Optional[str], text: str, preserve_whitespace: bool = False
+        self,
+        attributes_value: str,
+        default_attribute_name: Optional[str],
+        text: str,
+        preserve_whitespace: bool = False,
     ) -> Optional[str]:
         if attributes_value is None or attributes_value == "" or self.marker is None:
             return None
@@ -119,7 +123,11 @@ class UsfmToken:
         if self.type == UsfmTokenType.ATTRIBUTE:
             total_length += len(self.to_attribute_string())
         elif self.marker is not None:
-            if include_newlines and self.type in {UsfmTokenType.PARAGRAPH, UsfmTokenType.CHAPTER, UsfmTokenType.VERSE}:
+            if include_newlines and self.type in {
+                UsfmTokenType.PARAGRAPH,
+                UsfmTokenType.CHAPTER,
+                UsfmTokenType.VERSE,
+            }:
                 total_length += 2
             total_length += len(self.marker) + 1  # marker and backslash
             if add_spaces and (len(self.marker) == 0 or self.marker[-1] != "*"):
@@ -150,7 +158,11 @@ class UsfmToken:
         if self.type == UsfmTokenType.ATTRIBUTE:
             to_return += self.to_attribute_string()
         elif self.marker is not None:
-            if include_newlines and self.type in {UsfmTokenType.PARAGRAPH, UsfmTokenType.CHAPTER, UsfmTokenType.VERSE}:
+            if include_newlines and self.type in {
+                UsfmTokenType.PARAGRAPH,
+                UsfmTokenType.CHAPTER,
+                UsfmTokenType.VERSE,
+            }:
                 to_return += "\r\n"
             to_return += "\\"
             if len(self.marker) > 0:

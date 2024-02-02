@@ -9,32 +9,25 @@ Item = TypeVar("Item")
 
 class EditDistance(ABC, Generic[Seq, Item]):
     @abstractmethod
-    def _get_count(self, seq: Seq) -> int:
-        ...
+    def _get_count(self, seq: Seq) -> int: ...
 
     @abstractmethod
-    def _get_item(self, seq: Seq, index: int) -> Item:
-        ...
+    def _get_item(self, seq: Seq, index: int) -> Item: ...
 
     @abstractmethod
-    def _get_hit_cost(self, x: Item, y: Item, is_complete: bool) -> float:
-        ...
+    def _get_hit_cost(self, x: Item, y: Item, is_complete: bool) -> float: ...
 
     @abstractmethod
-    def _get_substitution_cost(self, x: Item, y: Item, is_complete: bool) -> float:
-        ...
+    def _get_substitution_cost(self, x: Item, y: Item, is_complete: bool) -> float: ...
 
     @abstractmethod
-    def _get_deletion_cost(self, x: Item) -> float:
-        ...
+    def _get_deletion_cost(self, x: Item) -> float: ...
 
     @abstractmethod
-    def _get_insertion_cost(self, y: Item) -> float:
-        ...
+    def _get_insertion_cost(self, y: Item) -> float: ...
 
     @abstractmethod
-    def _is_hit(self, x: Item, y: Item, is_complete: bool) -> bool:
-        ...
+    def _is_hit(self, x: Item, y: Item, is_complete: bool) -> bool: ...
 
     def _init_dist_matrix(self, x: Seq, y: Seq) -> List[List[float]]:
         x_count = self._get_count(x)
@@ -59,7 +52,14 @@ class EditDistance(ABC, Generic[Seq, Item]):
         return dist_matrix[x_count][y_count], dist_matrix
 
     def _process_dist_matrix_cell(
-        self, x: Seq, y: Seq, dist_matrix: List[List[float]], use_prefix_del_op: bool, is_complete: bool, i: int, j: int
+        self,
+        x: Seq,
+        y: Seq,
+        dist_matrix: List[List[float]],
+        use_prefix_del_op: bool,
+        is_complete: bool,
+        i: int,
+        j: int,
     ) -> Tuple[float, int, int, EditOperation]:
         if i != 0 and j != 0:
             x_item = self._get_item(x, i - 1)

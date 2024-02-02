@@ -10,7 +10,10 @@ def test_correct_prefix_empty_uncorrected_prefix_appends_prefix() -> None:
     prefix = "this is a test".split()
     assert (
         ECM.correct_prefix(
-            builder, uncorrected_prefix_len=len(builder.target_tokens), prefix=prefix, is_last_word_complete=True
+            builder,
+            uncorrected_prefix_len=len(builder.target_tokens),
+            prefix=prefix,
+            is_last_word_complete=True,
         )
         == 4
     )
@@ -25,7 +28,10 @@ def test_correct_prefix_new_end_word_inserts_word_at_end() -> None:
     prefix = "this is a test".split()
     assert (
         ECM.correct_prefix(
-            builder, uncorrected_prefix_len=len(builder.target_tokens), prefix=prefix, is_last_word_complete=True
+            builder,
+            uncorrected_prefix_len=len(builder.target_tokens),
+            prefix=prefix,
+            is_last_word_complete=True,
         )
         == 1
     )
@@ -62,7 +68,10 @@ def test_correct_prefix_new_middle_word_inserts_word() -> None:
     prefix = "this is , a test".split()
     assert (
         ECM.correct_prefix(
-            builder, uncorrected_prefix_len=len(builder.target_tokens), prefix=prefix, is_last_word_complete=True
+            builder,
+            uncorrected_prefix_len=len(builder.target_tokens),
+            prefix=prefix,
+            is_last_word_complete=True,
         )
         == 0
     )
@@ -81,7 +90,10 @@ def test_correct_prefix_new_start_word_inserts_word_at_beginning() -> None:
     prefix = "yes this is a test".split()
     assert (
         ECM.correct_prefix(
-            builder, uncorrected_prefix_len=len(builder.target_tokens), prefix=prefix, is_last_word_complete=True
+            builder,
+            uncorrected_prefix_len=len(builder.target_tokens),
+            prefix=prefix,
+            is_last_word_complete=True,
         )
         == 0
     )
@@ -100,7 +112,10 @@ def test_correct_prefix_missing_end_word_deletes_world_at_end() -> None:
     prefix = "this is a".split()
     assert (
         ECM.correct_prefix(
-            builder, uncorrected_prefix_len=len(builder.target_tokens), prefix=prefix, is_last_word_complete=True
+            builder,
+            uncorrected_prefix_len=len(builder.target_tokens),
+            prefix=prefix,
+            is_last_word_complete=True,
         )
         == 0
     )
@@ -137,7 +152,10 @@ def test_correct_prefix_missing_middle_word_deletes_word() -> None:
     prefix = "this a test".split()
     assert (
         ECM.correct_prefix(
-            builder, uncorrected_prefix_len=len(builder.target_tokens), prefix=prefix, is_last_word_complete=True
+            builder,
+            uncorrected_prefix_len=len(builder.target_tokens),
+            prefix=prefix,
+            is_last_word_complete=True,
         )
         == 0
     )
@@ -156,7 +174,10 @@ def test_correct_prefix_missing_start_word_deletes_word_at_beginning() -> None:
     prefix = "this is a test".split()
     assert (
         ECM.correct_prefix(
-            builder, uncorrected_prefix_len=len(builder.target_tokens), prefix=prefix, is_last_word_complete=True
+            builder,
+            uncorrected_prefix_len=len(builder.target_tokens),
+            prefix=prefix,
+            is_last_word_complete=True,
         )
         == 0
     )

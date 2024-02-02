@@ -33,7 +33,9 @@ class _VersificationRefCorpusText(ScriptureText):
                     yield from self._create_rows(vref)
 
 
-def create_versification_ref_corpus(versification: Versification = ORIGINAL_VERSIFICATION) -> ScriptureTextCorpus:
+def create_versification_ref_corpus(
+    versification: Versification = ORIGINAL_VERSIFICATION,
+) -> ScriptureTextCorpus:
     return ScriptureTextCorpus(
         versification,
         (

@@ -59,7 +59,11 @@ def prepare_decoder_input_ids_from_labels(self: M2M100ForConditionalGeneration, 
     return shifted_input_ids
 
 
-setattr(M2M100ForConditionalGeneration, "prepare_decoder_input_ids_from_labels", prepare_decoder_input_ids_from_labels)
+setattr(
+    M2M100ForConditionalGeneration,
+    "prepare_decoder_input_ids_from_labels",
+    prepare_decoder_input_ids_from_labels,
+)
 
 MULTILINGUAL_TOKENIZERS = (
     MBartTokenizer,

@@ -87,13 +87,11 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
     @property
     @abstractmethod
-    def is_source_tokenized(self) -> bool:
-        ...
+    def is_source_tokenized(self) -> bool: ...
 
     @property
     @abstractmethod
-    def is_target_tokenized(self) -> bool:
-        ...
+    def is_target_tokenized(self) -> bool: ...
 
     def invert(self) -> ParallelTextCorpus:
         def _invert(row: ParallelTextRow) -> ParallelTextRow:
@@ -304,7 +302,11 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
         return _TakeParallelTextCorpus(self, count)
 
     def split(
-        self, percent: Optional[float] = None, size: Optional[int] = None, include_empty: bool = True, seed: Any = None
+        self,
+        percent: Optional[float] = None,
+        size: Optional[int] = None,
+        include_empty: bool = True,
+        seed: Any = None,
     ) -> Tuple[ParallelTextCorpus, ParallelTextCorpus, int, int]:
         corpus_size = self.count(include_empty)
         split_indices = get_split_indices(corpus_size, percent, size, seed)
@@ -594,7 +596,12 @@ class _PandasParallelTextCorpus(ParallelTextCorpus):
                     AlignedWordPair.from_string(v) if isinstance(v, str) else [AlignedWordPair(t[0], t[1]) for t in v]
                 )
             yield ParallelTextRow(
-                text_id, refs, refs, [source] if len(source) > 0 else [], [target] if len(target) > 0 else [], alignment
+                text_id,
+                refs,
+                refs,
+                [source] if len(source) > 0 else [],
+                [target] if len(target) > 0 else [],
+                alignment,
             )
 
 
@@ -670,7 +677,12 @@ class _DatasetParallelTextCorpus(ParallelTextCorpus):
                 alignment = [AlignedWordPair(si, ti) for (si, ti) in zip(src_indices, trg_indices)]
 
             yield ParallelTextRow(
-                text_id, refs, refs, [source] if len(source) > 0 else [], [target] if len(target) > 0 else [], alignment
+                text_id,
+                refs,
+                refs,
+                [source] if len(source) > 0 else [],
+                [target] if len(target) > 0 else [],
+                alignment,
             )
             index += 1
 

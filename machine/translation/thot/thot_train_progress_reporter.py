@@ -19,7 +19,9 @@ _TRAIN_PHASES = [
 
 class ThotTrainProgressReporter(PhasedProgressReporter):
     def __init__(
-        self, progress: Optional[Callable[[ProgressStatus], None]], check_canceled: Optional[Callable[[], None]]
+        self,
+        progress: Optional[Callable[[ProgressStatus], None]],
+        check_canceled: Optional[Callable[[], None]],
     ) -> None:
         super().__init__(progress, _TRAIN_PHASES)
         self._check_canceled = check_canceled

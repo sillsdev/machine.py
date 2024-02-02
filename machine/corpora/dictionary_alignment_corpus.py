@@ -6,12 +6,10 @@ from .alignment_corpus import AlignmentCorpus
 
 class DictionaryAlignmentCorpus(AlignmentCorpus):
     @overload
-    def __init__(self, *alignment_collections: AlignmentCollection) -> None:
-        ...
+    def __init__(self, *alignment_collections: AlignmentCollection) -> None: ...
 
     @overload
-    def __init__(self, alignment_collections: Iterable[AlignmentCollection]) -> None:
-        ...
+    def __init__(self, alignment_collections: Iterable[AlignmentCollection]) -> None: ...
 
     def __init__(self, *args, **kwargs) -> None:
         alignment_collections: Iterable[AlignmentCollection]

@@ -31,9 +31,7 @@ def test_detokenize_punctuation() -> None:
 
 def test_detokenize_punctuation_inside_word() -> None:
     detokenizer = ZwspWordDetokenizer()
-    assert (
-        detokenizer.detokenize(["เริ่ม", "ต้น", "ที่", " ", "7,999", " ", "บาท"]) == "เริ่ม\u200bต้น\u200bที่ 7,999 บาท"
-    )
+    assert detokenizer.detokenize(["เริ่ม", "ต้น", "ที่", " ", "7,999", " ", "บาท"]) == "เริ่ม\u200bต้น\u200bที่ 7,999 บาท"
 
 
 def test_detokenize_multiple_spaces() -> None:
