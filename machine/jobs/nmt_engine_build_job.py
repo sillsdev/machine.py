@@ -94,6 +94,10 @@ class NmtEngineBuildJob:
                 current_inference_step += len(pi_batch)
                 phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
 
+        if self._config["save_model"]:
+            logger.info("Saving model")
+            self._nmt_model_factory.save_model()
+
 
 def _translate_batch(
     engine: TranslationEngine,

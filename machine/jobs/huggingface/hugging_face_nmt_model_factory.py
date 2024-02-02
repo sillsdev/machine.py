@@ -1,4 +1,5 @@
 import logging
+import tarfile
 from pathlib import Path
 from typing import Any, cast
 
@@ -84,7 +85,12 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
         )
 
     def save_model(self) -> None:
-        self._shared_file_service.save_model(self._model_dir)
+        tar_file_path = Path(self._config.data_dir, "builds", self._config.build_id, "model.tar.gz")
+        with tarfile.open(tar_file_path, "w:gz") as tar:
+            for path in self._model_dir.iterdir():
+                if path.is_file():
+                    tar.add(path, arcname=path.name)
+        self._shared_file_service.save_model(tar_file_path)
 
     @property
     def _model_dir(self) -> Path:
