@@ -31,13 +31,18 @@ class UsfmTextBase(ScriptureText):
         self._include_markers = include_markers
 
     @abstractmethod
-    def _create_stream_container(self) -> StreamContainer:
-        ...
+    def _create_stream_container(self) -> StreamContainer: ...
 
     def _get_rows(self) -> Generator[TextRow, None, None]:
         usfm = self._read_usfm()
         row_collector = _TextRowCollector(self)
-        parse_usfm(usfm, row_collector, self._stylesheet, self.versification, preserve_whitespace=self._include_markers)
+        parse_usfm(
+            usfm,
+            row_collector,
+            self._stylesheet,
+            self.versification,
+            preserve_whitespace=self._include_markers,
+        )
         return gen(row_collector.rows)
 
     def _read_usfm(self) -> str:
@@ -62,13 +67,23 @@ class _TextRowCollector(UsfmParserHandler):
         return self._rows
 
     def chapter(
-        self, state: UsfmParserState, number: str, marker: str, alt_number: Optional[str], pub_number: Optional[str]
+        self,
+        state: UsfmParserState,
+        number: str,
+        marker: str,
+        alt_number: Optional[str],
+        pub_number: Optional[str],
     ) -> None:
         self._verse_completed(next_sentence_start=True)
         self._verse_ref = None
 
     def verse(
-        self, state: UsfmParserState, number: str, marker: str, alt_number: Optional[str], pub_number: Optional[str]
+        self,
+        state: UsfmParserState,
+        number: str,
+        marker: str,
+        alt_number: Optional[str],
+        pub_number: Optional[str],
     ) -> None:
         if self._verse_ref is None:
             self._verse_ref = state.verse_ref.copy()
@@ -87,7 +102,11 @@ class _TextRowCollector(UsfmParserHandler):
         self._next_para_tokens.clear()
 
     def start_para(
-        self, state: UsfmParserState, marker: str, unknown: bool, attributes: Optional[Sequence[UsfmAttribute]]
+        self,
+        state: UsfmParserState,
+        marker: str,
+        unknown: bool,
+        attributes: Optional[Sequence[UsfmAttribute]],
     ) -> None:
         self._handle_para(state)
 

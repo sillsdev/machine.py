@@ -76,6 +76,9 @@ class ErrorCorrectionModel:
             return len(prefix)
 
         _, word_ops, char_ops = self._segment_edit_distance.compute_prefix(
-            builder.target_tokens[:uncorrected_prefix_len], prefix, is_last_word_complete, use_prefix_del_op=False
+            builder.target_tokens[:uncorrected_prefix_len],
+            prefix,
+            is_last_word_complete,
+            use_prefix_del_op=False,
         )
         return builder.correct_prefix(word_ops, char_ops, prefix, is_last_word_complete)

@@ -13,8 +13,7 @@ from .corpus import Corpus
 class AlignmentCorpus(Corpus[AlignmentRow]):
     @property
     @abstractmethod
-    def alignment_collections(self) -> Iterable[AlignmentCollection]:
-        ...
+    def alignment_collections(self) -> Iterable[AlignmentCollection]: ...
 
     def get_rows(self, text_ids: Optional[Iterable[str]] = None) -> ContextManagedGenerator[AlignmentRow, None, None]:
         return ContextManagedGenerator(self._get_rows(text_ids))

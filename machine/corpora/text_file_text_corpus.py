@@ -9,12 +9,10 @@ from .text_file_text import TextFileText
 
 class TextFileTextCorpus(DictionaryTextCorpus):
     @overload
-    def __init__(self, file_patterns: Iterable[StrPath]) -> None:
-        ...
+    def __init__(self, file_patterns: Iterable[StrPath]) -> None: ...
 
     @overload
-    def __init__(self, *file_patterns: StrPath) -> None:
-        ...
+    def __init__(self, *file_patterns: StrPath) -> None: ...
 
     def __init__(self, *args, **kwargs) -> None:
         file_patterns: Iterable[str]

@@ -7,5 +7,4 @@ Token = TypeVar("Token")
 
 class Detokenizer(ABC, Generic[Data, Token]):
     @abstractmethod
-    def detokenize(self, tokens: Iterable[Token]) -> Data:
-        ...
+    def detokenize(self, tokens: Iterable[Token]) -> Data: ...

@@ -113,7 +113,13 @@ class SegmentEditDistance(EditDistance[Sequence[str], str]):
         for j_incr in range(len(y_incr)):
             j = start_pos + j_incr
             dist, _, _, op = self._process_dist_matrix_cell(
-                x, y, dist_matrix, use_prefix_del_op=False, is_complete=j != len(y) or is_last_item_complete, i=1, j=j
+                x,
+                y,
+                dist_matrix,
+                use_prefix_del_op=False,
+                is_complete=j != len(y) or is_last_item_complete,
+                i=1,
+                j=j,
             )
             scores[j] = dist
             dist_matrix[1][j] = dist

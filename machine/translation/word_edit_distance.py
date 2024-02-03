@@ -29,7 +29,13 @@ class WordEditDistance(EditDistance[str, str]):
     ) -> Tuple[float, Iterable[EditOperation]]:
         dist, dist_matrix = self._compute_dist_matrix(x, y, is_last_item_complete, use_prefix_del_op)
         ops = self._get_operations(
-            x, y, dist_matrix, is_last_item_complete, use_prefix_del_op, i=self._get_count(x), j=self._get_count(y)
+            x,
+            y,
+            dist_matrix,
+            is_last_item_complete,
+            use_prefix_del_op,
+            i=self._get_count(x),
+            j=self._get_count(y),
         )
         return (dist, ops)
 

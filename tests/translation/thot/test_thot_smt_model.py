@@ -104,7 +104,8 @@ def test_constructor_model_not_found() -> None:
         ThotSmtModel(
             ThotWordAlignmentModelType.HMM,
             ThotSmtParameters(
-                translation_model_filename_prefix="does-not-exist", language_model_filename_prefix="does-not-exist"
+                translation_model_filename_prefix="does-not-exist",
+                language_model_filename_prefix="does-not-exist",
             ),
         )
 

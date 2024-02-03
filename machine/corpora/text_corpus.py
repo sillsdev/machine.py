@@ -19,13 +19,11 @@ from .token_processors import escape_spaces, lowercase, normalize, unescape_spac
 class TextCorpus(Corpus[TextRow]):
     @property
     @abstractmethod
-    def texts(self) -> Iterable[Text]:
-        ...
+    def texts(self) -> Iterable[Text]: ...
 
     @property
     @abstractmethod
-    def is_tokenized(self) -> bool:
-        ...
+    def is_tokenized(self) -> bool: ...
 
     def get_rows(self, text_ids: Optional[Iterable[str]] = None) -> ContextManagedGenerator[TextRow, None, None]:
         return ContextManagedGenerator(self._get_rows(text_ids))
@@ -132,7 +130,11 @@ class TextCorpus(Corpus[TextRow]):
         return _TakeTextCorpus(self, count)
 
     def split(
-        self, percent: Optional[float] = None, size: Optional[int] = None, include_empty: bool = True, seed: Any = None
+        self,
+        percent: Optional[float] = None,
+        size: Optional[int] = None,
+        include_empty: bool = True,
+        seed: Any = None,
     ) -> Tuple[TextCorpus, TextCorpus, int, int]:
         corpus_size = self.count(include_empty)
         split_indices = get_split_indices(corpus_size, percent, size, seed)

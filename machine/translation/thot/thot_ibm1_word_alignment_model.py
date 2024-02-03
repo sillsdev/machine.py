@@ -26,7 +26,10 @@ class ThotIbm1WordAlignmentModel(ThotWordAlignmentModel):
         return log(self.get_alignment_probability(source_length))
 
     def compute_aligned_word_pair_scores(
-        self, source_segment: Sequence[str], target_segment: Sequence[str], word_pairs: Collection[AlignedWordPair]
+        self,
+        source_segment: Sequence[str],
+        target_segment: Sequence[str],
+        word_pairs: Collection[AlignedWordPair],
     ) -> None:
         alignment_score = self.get_alignment_probability(len(source_segment))
         for word_pair in word_pairs:

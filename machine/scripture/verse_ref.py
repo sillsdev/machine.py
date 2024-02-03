@@ -645,7 +645,10 @@ class Versification:
         return _parse_versification(stream, filename, versification, fallback_name)
 
     def __init__(
-        self, name: str, filename: Optional[StrPath] = None, base_versification: Optional[Versification] = None
+        self,
+        name: str,
+        filename: Optional[StrPath] = None,
+        base_versification: Optional[Versification] = None,
     ) -> None:
         self._name = name
         self._type = VersificationType.UNKNOWN

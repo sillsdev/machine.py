@@ -37,8 +37,7 @@ class StringDetokenizer(Detokenizer[str, str]):
         return None
 
     @abstractmethod
-    def _get_operation(self, ctxt: Any, token: str) -> DetokenizeOperation:
-        ...
+    def _get_operation(self, ctxt: Any, token: str) -> DetokenizeOperation: ...
 
     def _get_separator(self, tokens: List[str], ops: List[DetokenizeOperation], index: int) -> str:
         return " "

@@ -29,7 +29,10 @@ def test_train_non_empty_corpus() -> None:
                         _row(3, "¿ le importaría cambiarme a otra habitación más tranquila ?"),
                         _row(4, "por favor , tengo reservada una habitación ."),
                         _row(5, "me parece que existe un problema ."),
-                        _row(6, "¿ tiene habitaciones libres con televisión , aire acondicionado y caja fuerte ?"),
+                        _row(
+                            6,
+                            "¿ tiene habitaciones libres con televisión , aire acondicionado y caja fuerte ?",
+                        ),
                         _row(7, "¿ le importaría mostrarnos una habitación con televisión ?"),
                         _row(8, "¿ tiene teléfono ?"),
                         _row(9, "voy a marcharme el dos a las ocho de la noche ."),

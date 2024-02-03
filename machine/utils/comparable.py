@@ -4,8 +4,7 @@ from typing import TypeVar
 
 class Comparable(ABC):
     @abstractmethod
-    def compare_to(self, other: object) -> int:
-        ...
+    def compare_to(self, other: object) -> int: ...
 
     def __eq__(self, other: object) -> bool:
         try:

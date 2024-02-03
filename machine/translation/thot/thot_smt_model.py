@@ -181,7 +181,10 @@ class ThotSmtModel(InteractiveTranslationModel):
         ]
 
     def train_segment(
-        self, source_segment: Union[str, Sequence[str]], target_segment: Sequence[str], sentence_start: bool = True
+        self,
+        source_segment: Union[str, Sequence[str]],
+        target_segment: Sequence[str],
+        sentence_start: bool = True,
     ) -> None:
         normalized_source_tokens = self._normalize_source(self._tokenize_source(source_segment))
         target_tokens = self._tokenize_target(target_segment)
@@ -235,7 +238,10 @@ class ThotSmtModel(InteractiveTranslationModel):
         )
 
     def _create_word_graph(
-        self, source_tokens: Sequence[str], normalized_source_tokens: Sequence[str], thot_word_graph: tt.WordGraph
+        self,
+        source_tokens: Sequence[str],
+        normalized_source_tokens: Sequence[str],
+        thot_word_graph: tt.WordGraph,
     ) -> WordGraph:
         confidence_estimator = Ibm1WordConfidenceEstimator(
             self._symmetrized_word_alignment_model.get_translation_score, normalized_source_tokens

@@ -28,7 +28,10 @@ class ThotHmmWordAlignmentModel(ThotIbm1WordAlignmentModel, HmmWordAlignmentMode
         return self.thot_model.hmm_alignment_log_prob(prev_source_index + 1, source_length, source_index + 1)
 
     def compute_aligned_word_pair_scores(
-        self, source_segment: Sequence[str], target_segment: Sequence[str], word_pairs: Collection[AlignedWordPair]
+        self,
+        source_segment: Sequence[str],
+        target_segment: Sequence[str],
+        word_pairs: Collection[AlignedWordPair],
     ) -> None:
         source_indices = [-2] * len(target_segment)
         prev_source_index = -1

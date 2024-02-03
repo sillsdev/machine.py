@@ -5,8 +5,7 @@ from .translation_model import TranslationModel
 
 
 class InteractiveTranslationModel(TranslationModel, InteractiveTranslationEngine):
-    def save(self) -> None:
-        ...
+    def save(self) -> None: ...
 
     def __enter__(self) -> InteractiveTranslationModel:
         return self

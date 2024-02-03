@@ -24,8 +24,7 @@ class SentencePieceTrainer(Trainer):
         else:
             sp.SentencePieceTrainer.Train(**self._kwargs)
 
-    def save(self) -> None:
-        ...
+    def save(self) -> None: ...
 
     def stats(self) -> TrainStats:
         raise NotImplementedError

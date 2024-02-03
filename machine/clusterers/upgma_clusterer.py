@@ -97,5 +97,6 @@ def get_all_data_objects_count(tree: DiGraph[Cluster[T]], cluster: Cluster[T]) -
     if tree.out_degree(cluster) == 0:
         return len(cluster.data_objects)
     return sum(
-        (get_all_data_objects_count(tree, edge[1]) for edge in tree.out_edges(cluster)), len(cluster.data_objects)
+        (get_all_data_objects_count(tree, edge[1]) for edge in tree.out_edges(cluster)),
+        len(cluster.data_objects),
     )

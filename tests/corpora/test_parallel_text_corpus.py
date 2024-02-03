@@ -868,13 +868,19 @@ def test_get_segments_same_verse_ref_one_to_many() -> None:
             "MAT",
             [
                 text_row(
-                    "MAT", VerseRef.from_string("MAT 1:1", ORIGINAL_VERSIFICATION), "source chapter one, verse one ."
+                    "MAT",
+                    VerseRef.from_string("MAT 1:1", ORIGINAL_VERSIFICATION),
+                    "source chapter one, verse one .",
                 ),
                 text_row(
-                    "MAT", VerseRef.from_string("MAT 1:2", ORIGINAL_VERSIFICATION), "source chapter one, verse two ."
+                    "MAT",
+                    VerseRef.from_string("MAT 1:2", ORIGINAL_VERSIFICATION),
+                    "source chapter one, verse two .",
                 ),
                 text_row(
-                    "MAT", VerseRef.from_string("MAT 1:3", ORIGINAL_VERSIFICATION), "source chapter one, verse three ."
+                    "MAT",
+                    VerseRef.from_string("MAT 1:3", ORIGINAL_VERSIFICATION),
+                    "source chapter one, verse three .",
                 ),
             ],
         )
@@ -918,16 +924,24 @@ def test_get_rows_verse_ref_out_of_order() -> None:
             "MAT",
             [
                 text_row(
-                    "MAT", VerseRef.from_string("MAT 1:1", ORIGINAL_VERSIFICATION), "source chapter one, verse one ."
+                    "MAT",
+                    VerseRef.from_string("MAT 1:1", ORIGINAL_VERSIFICATION),
+                    "source chapter one, verse one .",
                 ),
                 text_row(
-                    "MAT", VerseRef.from_string("MAT 1:2", ORIGINAL_VERSIFICATION), "source chapter one, verse two ."
+                    "MAT",
+                    VerseRef.from_string("MAT 1:2", ORIGINAL_VERSIFICATION),
+                    "source chapter one, verse two .",
                 ),
                 text_row(
-                    "MAT", VerseRef.from_string("MAT 1:3", ORIGINAL_VERSIFICATION), "source chapter one, verse three ."
+                    "MAT",
+                    VerseRef.from_string("MAT 1:3", ORIGINAL_VERSIFICATION),
+                    "source chapter one, verse three .",
                 ),
                 text_row(
-                    "MAT", VerseRef.from_string("MAT 1:4", ORIGINAL_VERSIFICATION), "source chapter one, verse four ."
+                    "MAT",
+                    VerseRef.from_string("MAT 1:4", ORIGINAL_VERSIFICATION),
+                    "source chapter one, verse four .",
                 ),
             ],
         )

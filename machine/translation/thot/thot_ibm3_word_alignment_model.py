@@ -33,7 +33,10 @@ class ThotIbm3WordAlignmentModel(ThotIbm2WordAlignmentModel):
         return self.thot_model.distortion_log_prob(source_index + 1, source_length, target_length, target_index + 1)
 
     def compute_aligned_word_pair_scores(
-        self, source_segment: Sequence[str], target_segment: Sequence[str], word_pairs: Collection[AlignedWordPair]
+        self,
+        source_segment: Sequence[str],
+        target_segment: Sequence[str],
+        word_pairs: Collection[AlignedWordPair],
     ) -> None:
         for word_pair in word_pairs:
             if word_pair.target_index == -1:

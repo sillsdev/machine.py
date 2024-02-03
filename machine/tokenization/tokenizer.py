@@ -10,5 +10,4 @@ Token = TypeVar("Token")
 
 class Tokenizer(ABC, Generic[Data, Offset, Token]):
     @abstractmethod
-    def tokenize(self, data: Data, data_range: Optional[Range[Offset]] = None) -> Iterable[Token]:
-        ...
+    def tokenize(self, data: Data, data_range: Optional[Range[Offset]] = None) -> Iterable[Token]: ...

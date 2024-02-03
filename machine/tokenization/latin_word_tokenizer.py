@@ -88,7 +88,10 @@ class LatinWordTokenizer(WhitespaceTokenizer):
                     ctxt.index += len(match.group())
                     return token_ranges
 
-                token_ranges = (Range.create(ctxt.word_start, ctxt.index), Range.create(ctxt.index, end_index))
+                token_ranges = (
+                    Range.create(ctxt.word_start, ctxt.index),
+                    Range.create(ctxt.index, end_index),
+                )
                 ctxt.word_start = -1
         elif ctxt.word_start == -1:
             ctxt.word_start = ctxt.index

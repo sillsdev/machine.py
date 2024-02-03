@@ -17,34 +17,28 @@ from .word_vocabulary import WordVocabulary
 class WordAlignmentModel(ContextManager["WordAlignmentModel"], WordAligner):
     @property
     @abstractmethod
-    def source_words(self) -> WordVocabulary:
-        ...
+    def source_words(self) -> WordVocabulary: ...
 
     @property
     @abstractmethod
-    def target_words(self) -> WordVocabulary:
-        ...
+    def target_words(self) -> WordVocabulary: ...
 
     @property
     @abstractmethod
-    def special_symbol_indices(self) -> Collection[int]:
-        ...
+    def special_symbol_indices(self) -> Collection[int]: ...
 
     @abstractmethod
-    def create_trainer(self, corpus: ParallelTextCorpus) -> Trainer:
-        ...
+    def create_trainer(self, corpus: ParallelTextCorpus) -> Trainer: ...
 
     @abstractmethod
     def get_translations(
         self, source_word: Optional[Union[str, int]], threshold: float = 0
-    ) -> Iterable[Tuple[int, float]]:
-        ...
+    ) -> Iterable[Tuple[int, float]]: ...
 
     @abstractmethod
     def get_translation_score(
         self, source_word: Optional[Union[str, int]], target_word: Optional[Union[str, int]]
-    ) -> float:
-        ...
+    ) -> float: ...
 
     def get_translation_table(self, threshold: float = 0) -> Dict[str, Dict[str, float]]:
         results: Dict[str, Dict[str, float]] = {}
@@ -77,7 +71,10 @@ class WordAlignmentModel(ContextManager["WordAlignmentModel"], WordAligner):
         return results
 
     def compute_aligned_word_pair_scores(
-        self, source_segment: Sequence[str], target_segment: Sequence[str], word_pairs: Collection[AlignedWordPair]
+        self,
+        source_segment: Sequence[str],
+        target_segment: Sequence[str],
+        word_pairs: Collection[AlignedWordPair],
     ) -> None:
         alignment_score = 1.0 / (len(source_segment) + 1)
         for word_pair in word_pairs:
@@ -115,8 +112,7 @@ class WordAlignmentModel(ContextManager["WordAlignmentModel"], WordAligner):
         alignment = self.align_parallel_text_row(row)
         return alignment.to_giza_format(row.source_segment, row.target_segment)
 
-    def close(self) -> None:
-        ...
+    def close(self) -> None: ...
 
     def __enter__(self) -> WordAlignmentModel:
         return self

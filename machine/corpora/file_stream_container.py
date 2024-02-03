@@ -13,11 +13,9 @@ class FileStreamContainer(StreamContainer):
     def __enter__(self) -> FileStreamContainer:
         return self
 
-    def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
-        ...
+    def __exit__(self, type: Any, value: Any, traceback: Any) -> None: ...
 
     def open_stream(self) -> BinaryIO:
         return open(self._filename, "rb")
 
-    def close(self) -> None:
-        ...
+    def close(self) -> None: ...

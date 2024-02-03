@@ -52,8 +52,7 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
 
     @property
     @abstractmethod
-    def type(self) -> ThotWordAlignmentModelType:
-        ...
+    def type(self) -> ThotWordAlignmentModelType: ...
 
     def load(self, prefix_filename: StrPath) -> None:
         if self._owned:

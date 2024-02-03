@@ -5,12 +5,10 @@ T = TypeVar("T")
 
 class Cluster(Generic[T]):
     @overload
-    def __init__(self, *data_objects: T, noise: bool = False, description: Optional[str] = None) -> None:
-        ...
+    def __init__(self, *data_objects: T, noise: bool = False, description: Optional[str] = None) -> None: ...
 
     @overload
-    def __init__(self, data_objects: Iterable[T], noise: bool = False, description: Optional[str] = None) -> None:
-        ...
+    def __init__(self, data_objects: Iterable[T], noise: bool = False, description: Optional[str] = None) -> None: ...
 
     def __init__(self, *args, **kwargs) -> None:
         self._data_objects: FrozenSet[T]

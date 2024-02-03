@@ -9,8 +9,7 @@ from .translation_engine import TranslationEngine
 
 class TranslationModel(TranslationEngine):
     @abstractmethod
-    def create_trainer(self, corpus: ParallelTextCorpus) -> Trainer:
-        ...
+    def create_trainer(self, corpus: ParallelTextCorpus) -> Trainer: ...
 
     def __enter__(self) -> TranslationModel:
         return self

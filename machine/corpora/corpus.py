@@ -17,8 +17,7 @@ class Corpus(ABC, Generic[Row], Iterable[Row]):
         return ContextManagedGenerator(self._get_rows())
 
     @abstractmethod
-    def _get_rows(self) -> Generator[Row, None, None]:
-        ...
+    def _get_rows(self) -> Generator[Row, None, None]: ...
 
     def __iter__(self) -> ContextManagedGenerator[Row, None, None]:
         return self.get_rows()
@@ -28,7 +27,11 @@ class Corpus(ABC, Generic[Row], Iterable[Row]):
             return sum(1 for row in rows if include_empty or not row.is_empty)
 
     def interleaved_split(
-        self, percent: Optional[float] = None, size: Optional[int] = None, include_empty: bool = True, seed: Any = None
+        self,
+        percent: Optional[float] = None,
+        size: Optional[int] = None,
+        include_empty: bool = True,
+        seed: Any = None,
     ) -> Tuple[ContextManagedGenerator[Tuple[Row, bool], None, None], int, int]:
         corpus_size = self.count(include_empty)
         split_indices = get_split_indices(corpus_size, percent, size, seed)

@@ -13,5 +13,4 @@ class TranslationSuggester(ABC):
     @abstractmethod
     def get_suggestions(
         self, n: int, prefix_count: int, is_last_word_complete: bool, results: Iterable[TranslationResult]
-    ) -> Sequence[TranslationSuggestion]:
-        ...
+    ) -> Sequence[TranslationSuggestion]: ...

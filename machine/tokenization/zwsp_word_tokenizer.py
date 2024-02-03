@@ -38,7 +38,10 @@ class ZwspWordTokenizer(LatinWordTokenizer):
                 )
                 ctxt.word_start = ctxt.index
             else:
-                token_ranges = (Range.create(ctxt.word_start, ctxt.index), Range.create(ctxt.index, end_index))
+                token_ranges = (
+                    Range.create(ctxt.word_start, ctxt.index),
+                    Range.create(ctxt.index, end_index),
+                )
                 ctxt.word_start = -1
             ctxt.inner_word_punct = -1
             ctxt.index = end_index

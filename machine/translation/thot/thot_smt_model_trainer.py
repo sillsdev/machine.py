@@ -301,7 +301,11 @@ class ThotSmtModelTrainer(Trainer):
                 file.write(segment_str + "\n")
 
     def _train_translation_model(
-        self, tm_prefix: Path, train_corpus: ParallelTextCorpus, train_count: int, reporter: ThotTrainProgressReporter
+        self,
+        tm_prefix: Path,
+        train_corpus: ParallelTextCorpus,
+        train_count: int,
+        reporter: ThotTrainProgressReporter,
     ) -> None:
         invswm_prefix = tm_prefix.parent / f"{tm_prefix.name}_invswm"
         self._generate_word_alignment_model(invswm_prefix, train_corpus, train_count, reporter)
@@ -337,7 +341,11 @@ class ThotSmtModelTrainer(Trainer):
             file.write("Geometric")
 
     def _generate_word_alignment_model(
-        self, swm_prefix: Path, train_corpus: ParallelTextCorpus, train_count: int, reporter: ThotTrainProgressReporter
+        self,
+        swm_prefix: Path,
+        train_corpus: ParallelTextCorpus,
+        train_count: int,
+        reporter: ThotTrainProgressReporter,
     ) -> None:
         with reporter.start_next_phase() as phase_progress:
             self._train_word_alignment_model(swm_prefix, train_corpus, phase_progress, reporter.check_canceled)
@@ -360,7 +368,11 @@ class ThotSmtModelTrainer(Trainer):
 
         with reporter.start_next_phase() as phase_progress:
             self._generate_best_alignments(
-                swm_prefix, swm_prefix.parent / f"{swm_prefix.name}.bestal", train_corpus, train_count, phase_progress
+                swm_prefix,
+                swm_prefix.parent / f"{swm_prefix.name}.bestal",
+                train_corpus,
+                train_count,
+                phase_progress,
             )
 
     def _train_word_alignment_model(

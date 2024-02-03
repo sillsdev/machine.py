@@ -119,7 +119,9 @@ class NelderMeadSimplex:
         self.scale = scale
 
     def find_minimum(
-        self, objective_function: Callable[[np.ndarray, int], float], initial_guess: Union[np.ndarray, Sequence[float]]
+        self,
+        objective_function: Callable[[np.ndarray, int], float],
+        initial_guess: Union[np.ndarray, Sequence[float]],
     ) -> MinimizationResult:
         """Finds the minimum of the objective function with an intial pertubation"""
 

@@ -11,7 +11,11 @@ class TextRowFlags(Flag):
 
 class TextRow(Sequence[str]):
     def __init__(
-        self, text_id: str, ref: Any, segment: Sequence[str] = [], flags: TextRowFlags = TextRowFlags.SENTENCE_START
+        self,
+        text_id: str,
+        ref: Any,
+        segment: Sequence[str] = [],
+        flags: TextRowFlags = TextRowFlags.SENTENCE_START,
     ) -> None:
         self._text_id = text_id
         self._ref = ref

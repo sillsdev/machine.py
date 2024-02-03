@@ -349,7 +349,11 @@ class ErrorCorrectionWordGraphProcessor:
             for i in range(len(arc.target_tokens)):
                 esi = esis[i]
                 self._ecm.extend_esi(
-                    esi, prev_esi, "" if arc.is_unknown else arc.target_tokens[i], prefix_diff, is_last_word_complete
+                    esi,
+                    prev_esi,
+                    "" if arc.is_unknown else arc.target_tokens[i],
+                    prefix_diff,
+                    is_last_word_complete,
                 )
                 prev_esi = esi
 

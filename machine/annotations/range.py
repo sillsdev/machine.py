@@ -69,8 +69,7 @@ class Range(Generic[Offset], Sized, Iterable[Offset], Comparable):
 class _RangeFactory(ABC, Generic[Offset]):
     @property
     @abstractmethod
-    def include_endpoint(self) -> bool:
-        ...
+    def include_endpoint(self) -> bool: ...
 
     def create(self, start: Offset, end: Optional[Offset]) -> Range[Offset]:
         if end is None:
@@ -78,16 +77,13 @@ class _RangeFactory(ABC, Generic[Offset]):
         return Range(self, start, end)
 
     @abstractmethod
-    def get_length(self, start: Offset, end: Offset) -> int:
-        ...
+    def get_length(self, start: Offset, end: Offset) -> int: ...
 
     @abstractmethod
-    def iterate(self, start: Offset, end: Offset) -> Iterable[Offset]:
-        ...
+    def iterate(self, start: Offset, end: Offset) -> Iterable[Offset]: ...
 
     @abstractmethod
-    def offset_compare(self, x: Offset, y: Offset) -> int:
-        ...
+    def offset_compare(self, x: Offset, y: Offset) -> int: ...
 
 
 class _IntRangeFactory(_RangeFactory[int]):

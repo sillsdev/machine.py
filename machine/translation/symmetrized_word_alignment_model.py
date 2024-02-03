@@ -12,7 +12,9 @@ from .word_alignment_model import WordAlignmentModel
 
 class SymmetrizedWordAlignmentModel(SymmetrizedWordAligner, WordAlignmentModel):
     def __init__(
-        self, direct_word_alignment_model: WordAlignmentModel, inverse_word_alignment_model: WordAlignmentModel
+        self,
+        direct_word_alignment_model: WordAlignmentModel,
+        inverse_word_alignment_model: WordAlignmentModel,
     ) -> None:
         super().__init__(direct_word_alignment_model, inverse_word_alignment_model)
         self._direct_word_alignment_model = direct_word_alignment_model
@@ -61,7 +63,10 @@ class SymmetrizedWordAlignmentModel(SymmetrizedWordAligner, WordAlignmentModel):
         return SymmetrizedWordAlignmentModelTrainer(direct_trainer, inverse_trainer)
 
     def compute_aligned_word_pair_scores(
-        self, source_segment: Sequence[str], target_segment: Sequence[str], word_pairs: Collection[AlignedWordPair]
+        self,
+        source_segment: Sequence[str],
+        target_segment: Sequence[str],
+        word_pairs: Collection[AlignedWordPair],
     ) -> None:
         inverse_word_pairs = [wp.invert() for wp in word_pairs]
         self.direct_word_alignment_model.compute_aligned_word_pair_scores(source_segment, target_segment, word_pairs)

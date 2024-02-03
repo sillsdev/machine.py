@@ -14,8 +14,7 @@ class UsxTextBase(ScriptureText):
         self._parser = UsxVerseParser()
 
     @abstractmethod
-    def _create_stream_container(self) -> StreamContainer:
-        ...
+    def _create_stream_container(self) -> StreamContainer: ...
 
     def _get_rows(self) -> Generator[TextRow, None, None]:
         with self._create_stream_container() as stream_container, stream_container.open_stream() as stream:

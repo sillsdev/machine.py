@@ -20,7 +20,10 @@ class WordAlignmentMatrix:
 
     @classmethod
     def from_word_pairs(
-        cls, row_count: int, column_count: int, set_values: Collection[Union[AlignedWordPair, Tuple[int, int]]] = set()
+        cls,
+        row_count: int,
+        column_count: int,
+        set_values: Collection[Union[AlignedWordPair, Tuple[int, int]]] = set(),
     ) -> WordAlignmentMatrix:
         matrix = np.full((row_count, column_count), False)
         for i, j in set_values:
@@ -282,7 +285,10 @@ class WordAlignmentMatrix:
         return False
 
     def _och_grow(
-        self, grow_condition: Callable[[int, int], bool], orig: WordAlignmentMatrix, other: WordAlignmentMatrix
+        self,
+        grow_condition: Callable[[int, int], bool],
+        orig: WordAlignmentMatrix,
+        other: WordAlignmentMatrix,
     ) -> None:
         added = True
         while added:
@@ -298,7 +304,10 @@ class WordAlignmentMatrix:
                             added = True
 
     def _koehn_grow(
-        self, grow_condition: Callable[[int, int], bool], orig: WordAlignmentMatrix, other: WordAlignmentMatrix
+        self,
+        grow_condition: Callable[[int, int], bool],
+        orig: WordAlignmentMatrix,
+        other: WordAlignmentMatrix,
     ) -> None:
         p = cast(Set[Tuple[int, int]], SortedSet())
         for i in range(self.row_count):
