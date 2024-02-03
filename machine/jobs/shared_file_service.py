@@ -76,8 +76,11 @@ class SharedFileService(ABC):
     def get_parent_model(self, language_tag: str) -> Path:
         return self._download_folder(f"parent_models/{language_tag}", cache=True)
 
-    def save_model(self, model_dir: Path) -> None:
-        self._upload_folder(f"models/{self._engine_id}", model_dir)
+    def save_model(self, model_path: Path, name: str) -> None:
+        if model_path.is_file():
+            self._upload_file(f"models/{name}", model_path)
+        else:
+            self._upload_folder(f"models/{name}", model_path)
 
     @property
     def _data_dir(self) -> Path:
