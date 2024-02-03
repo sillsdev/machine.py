@@ -85,7 +85,7 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
         )
 
     def save_model(self) -> None:
-        if self._config.save_model is None:
+        if "save_model" not in self._config:
             return
 
         tar_file_path = Path(self._config.data_dir, "builds", self._config.build_id, "model.tar.gz")
