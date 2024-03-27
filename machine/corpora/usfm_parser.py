@@ -49,7 +49,6 @@ class UsfmParser:
         self.state = UsfmParserState(self.stylesheet, versification, tokens)
         self.handler = handler
         self.tokens_preserve_whitespace = tokens_preserve_whitespace
-        self._skip = 0
 
     def process_tokens(self) -> None:
         while self.process_token():
@@ -73,8 +72,8 @@ class UsfmParser:
             self.state.verse_offset += self.state.prev_token.get_length(add_spaces=not self.tokens_preserve_whitespace)
 
         # Skip over tokens that are to be skipped, ensuring that special_token state is True.
-        if self._skip > 0:
-            self._skip -= 1
+        if self.state.special_token_count > 0:
+            self.state.special_token_count -= 1
             self.state.special_token = True
             return True
 
@@ -197,22 +196,22 @@ class UsfmParser:
                     and alt_chapter_end_token.marker == "ca*"
                 ):
                     alt_chapter = alt_chapter_num_token.text.strip()
-                    self._skip += 3
+                    self.state.special_token_count += 3
 
                     # Skip blank space after if present
-                    if self.state.index + self._skip < len(self.state.tokens) - 1:
-                        blank_token = self.state.tokens[self.state.index + self._skip + 1]
+                    if self.state.index + self.state.special_token_count < len(self.state.tokens) - 1:
+                        blank_token = self.state.tokens[self.state.index + self.state.special_token_count + 1]
                         if blank_token.text is not None and len(blank_token.text.strip()) == 0:
-                            self._skip += 1
+                            self.state.special_token_count += 1
 
             # Get publishable chapter number
             pub_chapter: Optional[str] = None
-            if self.state.index + self._skip < len(self.state.tokens) - 2:
-                pub_chapter_token = self.state.tokens[self.state.index + self._skip + 1]
-                pub_chapter_num_token = self.state.tokens[self.state.index + self._skip + 2]
+            if self.state.index + self.state.special_token_count < len(self.state.tokens) - 2:
+                pub_chapter_token = self.state.tokens[self.state.index + self.state.special_token_count + 1]
+                pub_chapter_num_token = self.state.tokens[self.state.index + self.state.special_token_count + 2]
                 if pub_chapter_token.marker == "cp" and pub_chapter_num_token.text is not None:
                     pub_chapter = pub_chapter_num_token.text.strip()
-                    self._skip += 2
+                    self.state.special_token_count += 2
 
             assert token.data is not None
             verse_ref = self.state.verse_ref
@@ -238,21 +237,21 @@ class UsfmParser:
                     and alt_verse_end_token.marker == "va*"
                 ):
                     alt_verse = alt_verse_num_token.text.strip()
-                    self._skip += 3
+                    self.state.special_token_count += 3
 
             # Get publishable verse number
             pub_verse: Optional[str] = None
-            if self.state.index + self._skip < len(self.state.tokens) - 3:
-                pub_verse_token = self.state.tokens[self.state.index + self._skip + 1]
-                pub_verse_num_token = self.state.tokens[self.state.index + self._skip + 2]
-                pub_verse_end_token = self.state.tokens[self.state.index + self._skip + 3]
+            if self.state.index + self.state.special_token_count < len(self.state.tokens) - 3:
+                pub_verse_token = self.state.tokens[self.state.index + self.state.special_token_count + 1]
+                pub_verse_num_token = self.state.tokens[self.state.index + self.state.special_token_count + 2]
+                pub_verse_end_token = self.state.tokens[self.state.index + self.state.special_token_count + 3]
                 if (
                     pub_verse_token.marker == "vp"
                     and pub_verse_num_token.text is not None
                     and pub_verse_end_token.marker == "vp*"
                 ):
                     pub_chapter = pub_verse_num_token.text.strip()
-                    self._skip += 3
+                    self.state.special_token_count += 3
 
             assert token.data is not None
             verse_ref = self.state.verse_ref
@@ -292,7 +291,7 @@ class UsfmParser:
                         and category_end_token.marker == "esbc*"
                     ):
                         category = category_value_token.text.strip()
-                        self._skip += 3
+                        self.state.special_token_count += 3
 
                 if self.handler is not None:
                     self.handler.start_sidebar(self.state, token.marker, category)
@@ -332,7 +331,7 @@ class UsfmParser:
 
                 display, target = self._parse_display_and_target()
 
-                self._skip += 2
+                self.state.special_token_count += 2
 
                 if self.handler is not None:
                     self.handler.ref(self.state, token.marker, display, target)
@@ -369,7 +368,7 @@ class UsfmParser:
                     and category_end_token.marker == "cat*"
                 ):
                     category = category_value_token.text.strip()
-                    self._skip += 3
+                    self.state.special_token_count += 3
 
             self.state.push(UsfmParserElement(UsfmElementType.NOTE, token.marker))
 

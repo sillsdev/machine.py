@@ -40,9 +40,9 @@ class UsfmAttribute:
 @dataclass
 class UsfmToken:
     type: UsfmTokenType
-    marker: Optional[str]
-    text: Optional[str]
-    end_marker: Optional[str]
+    marker: Optional[str] = None
+    text: Optional[str] = None
+    end_marker: Optional[str] = None
     data: Optional[str] = None
 
     @property

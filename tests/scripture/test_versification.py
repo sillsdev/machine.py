@@ -1,4 +1,4 @@
-from io import StringIO
+from io import BytesIO, StringIO
 
 from pytest import raises
 from testutils.corpora_test_helpers import CUSTOM_VERS_PATH
@@ -63,6 +63,17 @@ def test_custom_versification() -> None:
     assert reference.bbbcccvvv == 41006001
 
 
-def test_utf_16_encoding() -> None:
+def test_utf_16_encoding_filename() -> None:
     versification = Versification.load(CUSTOM_VERS_PATH, ENGLISH_VERSIFICATION, "custom")
     assert versification.get_last_verse(47, 13) == 13
+
+
+def test_utf_16_encoding_stream() -> None:
+    with open(CUSTOM_VERS_PATH, "rb") as stream:
+        versification = Versification.load(stream, ENGLISH_VERSIFICATION, "custom")
+        assert versification.get_last_verse(47, 13) == 13
+
+    with open(CUSTOM_VERS_PATH, "rb") as stream:
+        stream = BytesIO(stream.read())
+        versification = Versification.load(stream, ENGLISH_VERSIFICATION, "custom")
+        assert versification.get_last_verse(47, 13) == 13

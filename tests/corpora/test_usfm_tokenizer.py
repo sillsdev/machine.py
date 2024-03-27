@@ -7,7 +7,7 @@ def test_tokenize() -> None:
     usfm = _read_usfm()
     usfm_tokenizer = UsfmTokenizer()
     tokens = usfm_tokenizer.tokenize(usfm)
-    assert len(tokens) == 136
+    assert len(tokens) == 151
 
     assert tokens[0].type is UsfmTokenType.BOOK
     assert tokens[0].marker == "id"
