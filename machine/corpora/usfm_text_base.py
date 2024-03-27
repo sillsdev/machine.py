@@ -10,7 +10,7 @@ from .stream_container import StreamContainer
 from .text_row import TextRow
 from .usfm_parser import parse_usfm
 from .usfm_parser_handler import UsfmParserHandler
-from .usfm_parser_state import UsfmParserState
+from .usfm_parser_state import UsfmElementType, UsfmParserState
 from .usfm_stylesheet import UsfmStylesheet
 from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
 
@@ -154,18 +154,24 @@ class _TextRowCollector(UsfmParserHandler):
         if closed:
             self._output_marker(state)
 
+    def opt_break(self, state: UsfmParserState) -> None:
+        if not self._text._include_markers:
+            self._verse_text = self._verse_text.rstrip()
+
     def text(self, state: UsfmParserState, text: str) -> None:
         if self._verse_ref is None or not state.is_verse_para:
             return
 
         if self._text._include_markers:
             text = text.rstrip("\r\n")
-            if len(text) > 0:
+            if len(text) > 0 and not any(e.type == UsfmElementType.SIDEBAR for e in state.stack):
                 if not text.isspace():
                     for token in self._next_para_tokens:
                         self._verse_text += str(token)
                     self._next_para_tokens.clear()
                     self._next_para_text_started = True
+                if len(self._verse_text) == 0 or self._verse_text[-1].isspace():
+                    text = text.lstrip()
                 self._verse_text += text
         elif state.is_verse_text and len(text) > 0:
             if (

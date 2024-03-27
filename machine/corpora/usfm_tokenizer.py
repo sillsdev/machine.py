@@ -217,10 +217,8 @@ class UsfmTokenizer:
             if token.type in {UsfmTokenType.BOOK, UsfmTokenType.CHAPTER, UsfmTokenType.PARAGRAPH}:
                 # Strip space from end of string before CR/LF
                 if len(usfm) > 0:
-                    if (
-                        usfm[-1] == " "
-                        and (prev_token is not None and prev_token.to_usfm().strip() != "")
-                        or not tokens_have_whitespace
+                    if usfm[-1] == " " and (
+                        (prev_token is not None and prev_token.to_usfm().strip() != "") or not tokens_have_whitespace
                     ):
                         usfm = usfm[:-1]
                     if not tokens_have_whitespace:
@@ -229,10 +227,8 @@ class UsfmTokenizer:
             elif token.type is UsfmTokenType.VERSE:
                 # Add newline if after anything other than [ or (
                 if len(usfm) > 0 and usfm[-1] != "[" and usfm[-1] != "(":
-                    if (
-                        usfm[-1] == " "
-                        and (prev_token is not None and prev_token.to_usfm().strip() != "")
-                        or not tokens_have_whitespace
+                    if usfm[-1] == " " and (
+                        (prev_token is not None and prev_token.to_usfm().strip() != "") or not tokens_have_whitespace
                     ):
                         usfm = usfm[:-1]
                     if not tokens_have_whitespace:

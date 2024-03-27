@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, IntEnum, auto
-from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Set, TextIO, Tuple, Union, cast
+from io import TextIOWrapper
+from pathlib import Path, PurePath
+from typing import BinaryIO, Dict, Iterable, List, Optional, Set, TextIO, Tuple, Union, cast
 
 import regex as re
 
 from ..utils.comparable import Comparable
-from ..utils.file_utils import detect_encoding
+from ..utils.file_utils import detect_encoding, detect_encoding_from_stream
 from ..utils.string_utils import is_integer, parse_integer
 from ..utils.typeshed import StrPath
 from .canon import LAST_BOOK, book_id_to_number, book_number_to_id, is_canonical
@@ -608,31 +609,44 @@ class Versification:
     @classmethod
     def load(
         cls,
-        filename: StrPath,
+        file: Union[StrPath, BinaryIO],
         base_versification: Optional[Versification] = None,
         fallback_name: Optional[str] = None,
     ) -> Versification:
         try:
-            return cls._load(filename, base_versification, fallback_name, "utf-8-sig")
-        except UnicodeDecodeError:
-            encoding = detect_encoding(filename)
-            return cls._load(filename, base_versification, fallback_name, encoding)
+            return cls._load(file, base_versification, fallback_name, "utf-8-sig")
+        except UnicodeError:
+            if isinstance(file, PurePath) or isinstance(file, str):
+                encoding = detect_encoding(file)
+            else:
+                file.seek(0)
+                encoding = detect_encoding_from_stream(file)
+                file.seek(0)
+            return cls._load(file, base_versification, fallback_name, encoding)
 
     @classmethod
     def _load(
         cls,
-        filename: StrPath,
+        file: Union[StrPath, BinaryIO],
         base_versification: Optional[Versification],
         fallback_name: Optional[str],
         encoding: str,
     ) -> Versification:
-        with open(filename, "r", encoding=encoding) as file:
-            versification = (
-                None
-                if base_versification is None or fallback_name is None
-                else Versification(fallback_name, filename, base_versification)
-            )
-            return cls.parse(file, filename, versification, fallback_name)
+        if isinstance(file, PurePath) or isinstance(file, str):
+            with open(file, "r", encoding=encoding) as file_stream:
+                versification = (
+                    None
+                    if base_versification is None or fallback_name is None
+                    else Versification(fallback_name, file, base_versification)
+                )
+                return cls.parse(file_stream, file, versification, fallback_name)
+        file_stream = TextIOWrapper(file, encoding=encoding)
+        versification = (
+            None
+            if base_versification is None or fallback_name is None
+            else Versification(fallback_name, None, base_versification)
+        )
+        return cls.parse(file_stream, None, versification, fallback_name)
 
     @classmethod
     def parse(
