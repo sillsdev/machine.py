@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod
-from typing import Any, BinaryIO
+from typing import BinaryIO
 
 from ..scripture.verse_ref import Versification
 from ..utils.string_utils import parse_integer
@@ -10,12 +10,6 @@ from .usfm_stylesheet import UsfmStylesheet
 
 
 class ParatextProjectSettingsParserBase(ABC):
-
-    @abstractmethod
-    def __enter__(self) -> "ParatextProjectSettingsParserBase": ...
-
-    @abstractmethod
-    def __exit__(self, type: Any, value: Any, traceback: Any) -> None: ...
 
     @abstractmethod
     def exists(self, file_name: str) -> bool: ...

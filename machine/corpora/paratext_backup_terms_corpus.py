@@ -9,10 +9,11 @@ from .memory_text import MemoryText
 from .text_row import TextRow
 from .zip_paratext_project_settings_parser import ZipParatextProjectSettingsParser
 
+_PREDEFINED_TERMS_LIST_TYPES = ["Major", "All", "SilNt", "Pt6"]
+
 
 class ParatextBackupTermsCorpus(DictionaryTextCorpus):
     def __init__(self, filename: str, term_categories: List[str]) -> None:
-        self._predefined_terms_list_types = ["Major", "All", "SilNt", "Pt6"]
         rows: List[TextRow] = []
         with ZipFile(filename, "r") as archive:
             terms_file_entry = get_entry(archive, "TermRenderings.xml")
@@ -25,10 +26,10 @@ class ParatextBackupTermsCorpus(DictionaryTextCorpus):
                 term_renderings_tree = ET.parse(key_terms_file)
 
             biblical_terms_file_entry = get_entry(archive, settings.biblical_terms_file_name)
-            if settings.biblical_terms_list_type in self._predefined_terms_list_types:
+            if settings.biblical_terms_list_type in _PREDEFINED_TERMS_LIST_TYPES:
                 with open(settings.biblical_terms_file_name, "rb") as key_terms_file:
                     biblical_terms_tree = ET.parse(key_terms_file)
-                    term_id_to_category_dict = self._get_category_per_id(biblical_terms_tree)
+                    term_id_to_category_dict = _get_category_per_id(biblical_terms_tree)
             elif (
                 settings.biblical_terms_list_type == "Project"
                 and settings.biblical_terms_project_name == settings.name
@@ -36,7 +37,7 @@ class ParatextBackupTermsCorpus(DictionaryTextCorpus):
             ):
                 with archive.open(biblical_terms_file_entry) as key_terms_file:
                     biblical_terms_tree = ET.parse(key_terms_file)
-                    term_id_to_category_dict = self._get_category_per_id(biblical_terms_tree)
+                    term_id_to_category_dict = _get_category_per_id(biblical_terms_tree)
             else:
                 term_id_to_category_dict = {}
 
@@ -53,51 +54,52 @@ class ParatextBackupTermsCorpus(DictionaryTextCorpus):
                     continue
                 term_id = term_id.replace("\n", "&#xA")
                 rendering = e.findtext("Renderings", "")
-                renderings = self._get_renderings(rendering)
+                renderings = _get_renderings(rendering)
                 rows.append(TextRow(text_id, term_id, segment=renderings))
             text = MemoryText(text_id, rows)
             self._add_text(text)
 
-    def _get_renderings(self, rendering: str) -> List[str]:
-        # If entire term rendering is surrounded in square brackets, remove them
-        match = re.match(r"^\[(.+?)\]$", rendering)
-        if match:
-            rendering = match.group(1)
-        rendering = rendering.replace("?", "")
-        rendering = rendering.replace("*", "")
-        rendering = rendering.replace("/", " ")
-        rendering = rendering.strip()
-        rendering = self._strip_parens(rendering)
-        rendering = self._strip_parens(rendering, left="[", right="]")
-        rx = re.compile(r"\s+\d+(\.\d+)*$")
-        for match in rx.findall(rendering):
-            rendering = rendering.replace(match, "")
-        glosses = re.split(r"\|\|", rendering)
-        glosses = list(set(g.strip() for g in glosses if g.strip() != ""))
-        return glosses
 
-    def _strip_parens(self, term_string: str, left: str = "(", right: str = ")") -> str:
-        parens = 0
-        end = -1
-        for i in range(len(term_string) - 1, -1, -1):
-            c = term_string[i]
-            if c == right:
+def _get_renderings(rendering: str) -> List[str]:
+    # If entire term rendering is surrounded in square brackets, remove them
+    match = re.match(r"^\[(.+?)\]$", rendering)
+    if match:
+        rendering = match.group(1)
+    rendering = rendering.replace("?", "")
+    rendering = rendering.replace("*", "")
+    rendering = rendering.replace("/", " ")
+    rendering = rendering.strip()
+    rendering = _strip_parens(rendering)
+    rendering = _strip_parens(rendering, left="[", right="]")
+    rx = re.compile(r"\s+\d+(\.\d+)*$")
+    for match in rx.findall(rendering):
+        rendering = rendering.replace(match, "")
+    glosses = re.split(r"\|\|", rendering)
+    glosses = list(set(g.strip() for g in glosses if g.strip() != ""))
+    return glosses
+
+
+def _strip_parens(term_string: str, left: str = "(", right: str = ")") -> str:
+    parens = 0
+    end = -1
+    for i in range(len(term_string) - 1, -1, -1):
+        c = term_string[i]
+        if c == right:
+            if parens == 0:
+                end = i + 1
+            parens += 1
+        elif c == left:
+            if parens > 0:
+                parens -= 1
                 if parens == 0:
-                    end = i + 1
-                parens += 1
-            elif c == left:
-                if parens > 0:
-                    parens -= 1
-                    if parens == 0:
-                        term_string = term_string[:i] + term_string[end:]
-        return term_string
+                    term_string = term_string[:i] + term_string[end:]
+    return term_string
 
-    def _get_category_per_id(self, biblical_terms_tree: ET.ElementTree) -> Dict[str, Optional[str]]:
-        term_id_to_category_dict = {}
-        for e in biblical_terms_tree.iter(".//Term"):
-            category_element = e.find("Category")
-            category = (
-                category_element.text if category_element is not None and category_element.text is not None else ""
-            )
-            term_id_to_category_dict[e.attrib["Id"]] = category
-        return term_id_to_category_dict
+
+def _get_category_per_id(biblical_terms_tree: ET.ElementTree) -> Dict[str, Optional[str]]:
+    term_id_to_category_dict = {}
+    for e in biblical_terms_tree.iter(".//Term"):
+        category_element = e.find("Category")
+        category = category_element.text if category_element is not None and category_element.text is not None else ""
+        term_id_to_category_dict[e.attrib["Id"]] = category
+    return term_id_to_category_dict

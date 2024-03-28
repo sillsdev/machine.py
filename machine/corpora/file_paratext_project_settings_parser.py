@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, BinaryIO, Optional
+from typing import BinaryIO, Optional
 
 from ..utils.typeshed import StrPath
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
@@ -9,11 +9,6 @@ from .usfm_stylesheet import UsfmStylesheet
 class FileParatextProjectSettingsParser(ParatextProjectSettingsParserBase):
     def __init__(self, project_dir: StrPath) -> None:
         self._project_dir = Path(project_dir)
-
-    def __enter__(self) -> "FileParatextProjectSettingsParser":
-        return self
-
-    def __exit__(self, type: Any, value: Any, traceback: Any) -> None: ...
 
     def create_stylesheet(self, file_name: StrPath) -> UsfmStylesheet:
         custom_stylesheet_filename = self._project_dir / file_name
