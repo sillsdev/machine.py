@@ -1,4 +1,3 @@
-from abc import ABC
 from dataclasses import dataclass
 
 from ..scripture.canon import book_id_to_number
@@ -7,7 +6,7 @@ from .usfm_stylesheet import UsfmStylesheet
 
 
 @dataclass
-class ParatextProjectSettings(ABC):
+class ParatextProjectSettings:
     name: str
     full_name: str
     encoding: str

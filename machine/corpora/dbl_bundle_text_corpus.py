@@ -4,7 +4,8 @@ from io import TextIOWrapper
 from typing import List
 from zipfile import ZipFile
 
-from ..scripture.verse_ref import Versification, VersificationType
+from ..scripture import ENGLISH_VERSIFICATION
+from ..scripture.verse_ref import Versification
 from ..utils.typeshed import StrPath
 from .scripture_text_corpus import ScriptureTextCorpus
 from .usx_zip_text import UsxZipText
@@ -32,7 +33,7 @@ class DblBundleTextCorpus(ScriptureTextCorpus):
                         TextIOWrapper(stream, encoding="utf-8-sig"), "versification.vrs", fallback_name=abbr
                     )
             else:
-                versification = Versification.get_builtin(VersificationType.ENGLISH)
+                versification = ENGLISH_VERSIFICATION
 
         texts: List[UsxZipText] = []
         for content_elem in doc.getroot().findall("./publications/publication[@default='true']/structure/content"):

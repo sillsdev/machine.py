@@ -2,8 +2,9 @@ from typing import Optional, Sequence, Tuple, Union
 
 import regex as re
 
+from ..scripture import ENGLISH_VERSIFICATION
 from ..scripture.canon import book_id_to_number
-from ..scripture.verse_ref import Versification, VersificationType
+from ..scripture.verse_ref import Versification
 from ..utils.typeshed import StrPath
 from .usfm_parser_handler import UsfmParserHandler
 from .usfm_parser_state import UsfmElementType, UsfmParserElement, UsfmParserState
@@ -45,7 +46,7 @@ class UsfmParser:
         else:
             tokens = usfm
         if versification is None:
-            versification = Versification.get_builtin(VersificationType.ENGLISH)
+            versification = ENGLISH_VERSIFICATION
         self.state = UsfmParserState(self.stylesheet, versification, tokens)
         self.handler = handler
         self.tokens_preserve_whitespace = tokens_preserve_whitespace
