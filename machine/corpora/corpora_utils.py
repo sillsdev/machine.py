@@ -8,8 +8,9 @@ from zipfile import ZipFile, ZipInfo
 
 import regex as re
 
+from ..scripture import ENGLISH_VERSIFICATION
 from ..scripture.canon import book_id_to_number
-from ..scripture.verse_ref import VERSE_RANGE_SEPARATOR, VERSE_SEQUENCE_INDICATOR, Versification, VersificationType
+from ..scripture.verse_ref import VERSE_RANGE_SEPARATOR, VERSE_SEQUENCE_INDICATOR, Versification
 
 T = TypeVar("T")
 
@@ -107,7 +108,7 @@ def get_usx_versification(project_dir: Path, versification: Optional[Versificati
     if versification is None and versification_filename.is_file():
         versification_name = project_dir.name
         versification = Versification.load(versification_filename, fallback_name=versification_name)
-    return Versification.get_builtin(VersificationType.ENGLISH) if versification is None else versification
+    return ENGLISH_VERSIFICATION if versification is None else versification
 
 
 def merge_verse_ranges(verse1: str, verse2: str) -> str:

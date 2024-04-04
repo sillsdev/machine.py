@@ -35,6 +35,7 @@ class UsfmParserState:
         self._tokens = tokens
         self.index = -1
         self.special_token = False
+        self._special_token_count: int = 0
 
     @property
     def stylesheet(self) -> UsfmStylesheet:
@@ -123,6 +124,14 @@ class UsfmParserState:
     @property
     def is_special_text(self) -> bool:
         return self.special_token
+
+    @property
+    def special_token_count(self) -> int:
+        return self._special_token_count
+
+    @special_token_count.setter
+    def special_token_count(self, value: int) -> None:
+        self._special_token_count = value
 
     def peek(self) -> UsfmParserElement:
         return self._stack[-1]

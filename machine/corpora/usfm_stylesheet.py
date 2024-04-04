@@ -104,6 +104,7 @@ _STYLE_MAPPINGS = {
     "character": UsfmStyleType.CHARACTER,
     "paragraph": UsfmStyleType.PARAGRAPH,
     "note": UsfmStyleType.NOTE,
+    "milestone": UsfmStyleType.MILESTONE,
 }
 
 _TEXT_TYPE_MAPPINGS = {
@@ -318,6 +319,11 @@ def _parse_tag_entry(tag: UsfmTag, entries: List[Tuple[str, str]], entry_index: 
         end_marker = UsfmTag(end_marker_str)
         end_marker.style_type = UsfmStyleType.END
         tag.end_marker = end_marker_str
+    elif tag.style_type == UsfmStyleType.MILESTONE:
+        if end_marker is not None:
+            end_marker.style_type = UsfmStyleType.MILESTONE_END
+            tag.attributes.append(UsfmStyleAttribute("eid", False))
+            end_marker.name = tag.name
 
     # Special cases
     if (

@@ -1,6 +1,7 @@
 from typing import Generator, List, Optional
 
-from ..scripture.verse_ref import VerseRef, Versification, VersificationType
+from ..scripture import ENGLISH_VERSIFICATION
+from ..scripture.verse_ref import VerseRef, Versification
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .corpora_utils import gen, get_scripture_text_sort_key
 from .text_base import TextBase
@@ -10,9 +11,7 @@ from .text_row import TextRow, TextRowFlags
 class ScriptureText(TextBase):
     def __init__(self, id: str, versification: Optional[Versification] = None) -> None:
         super().__init__(id, get_scripture_text_sort_key(id))
-        self._versification = (
-            Versification.get_builtin(VersificationType.ENGLISH) if versification is None else versification
-        )
+        self._versification = ENGLISH_VERSIFICATION if versification is None else versification
 
     @property
     def versification(self) -> Versification:
