@@ -172,12 +172,13 @@ class HuggingFaceNmtModelTrainer(Trainer):
         def find_missing_characters(tokenizer: Any, train_dataset: Dataset, lang_codes: List[str]) -> List[str]:
             vocab = tokenizer.get_vocab().keys()
             charset = set()
-            for lang_code in lang_codes:
-                for ex in train_dataset["translation"]:
-                    charset = charset | set(ex[lang_code])
-            if isinstance(tokenizer, (NllbTokenizerFast)):
-                charset = {self._mpn.normalize(char) for char in charset}
-            charset = {tokenizer.backend_tokenizer.normalizer.normalize_str(char) for char in charset}
+            for ex in train_dataset["translation"]:
+                for lang_code in lang_codes:
+                    ex_text = ex[lang_code]
+                    if isinstance(tokenizer, (NllbTokenizerFast)):
+                        ex_text = self._mpn.normalize(ex_text)
+                    ex_text = tokenizer.backend_tokenizer.normalizer.normalize_str(ex_text)
+                    charset = charset | set(ex_text)
             charset = set(filter(None, {char.strip() for char in charset}))
             missing_characters = sorted(list(charset - vocab))
             return missing_characters

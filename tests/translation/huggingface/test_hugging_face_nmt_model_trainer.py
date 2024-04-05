@@ -95,8 +95,8 @@ def test_update_tokenizer_missing_char() -> None:
                 MemoryText(
                     "text1",
                     [
-                        _row(1, "Ḻ ḻ Ṉ"),
-                        _row(2, "d e f"),
+                        _row(1, "Ḏ Ḻ ḻ Ṉ"),
+                        _row(2, "d e f g"),
                     ],
                 )
             ]
@@ -137,6 +137,7 @@ def test_update_tokenizer_missing_char() -> None:
         finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode(
             "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
         )
+        finetuned_result_nochar_composite = finetuned_engine_nochar._tokenizer.encode("Ḏ is a composite character")
 
         trainer_char = HuggingFaceNmtModelTrainer(
             "hf-internal-testing/tiny-random-nllb",
@@ -156,6 +157,7 @@ def test_update_tokenizer_missing_char() -> None:
         finetuned_result_char = finetuned_engine_char._tokenizer.encode(
             "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
         )
+        finetuned_result_char_composite = finetuned_engine_char._tokenizer.encode("Ḏ is a composite character")
 
         assert isinstance(finetuned_engine_nochar._tokenizer, PreTrainedTokenizerFast) and isinstance(
             finetuned_engine_char._tokenizer, PreTrainedTokenizerFast
@@ -171,6 +173,7 @@ def test_update_tokenizer_missing_char() -> None:
         assert normalized_result_nochar2 != normalized_result_char2
 
         assert finetuned_result_nochar != finetuned_result_char
+        assert finetuned_result_nochar_composite != finetuned_result_char_composite
 
 
 def test_update_tokenizer_missing_char_skip() -> None:
