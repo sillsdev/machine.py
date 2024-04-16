@@ -44,7 +44,7 @@ def parse_selection(selection: str, versification: Versification) -> Dict[int, L
     selection = selection.strip()
     chapters = {}
 
-    if selection[-1].isdigit():  # Specific chapters from one book
+    if selection[-1].isdigit() and len(selection) > 3:  # Specific chapters from one book
         book = book_id_to_number(selection[:3])
         if book == 0:
             raise ValueError(f"{selection[:3]} is an invalid book ID.")
