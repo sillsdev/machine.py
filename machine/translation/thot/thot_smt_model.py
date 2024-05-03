@@ -5,6 +5,8 @@ from typing import List, Optional, Sequence, Tuple, Union
 
 import thot.translation as tt
 
+from machine.translation.unigram_truecaser import UnigramTruecaser
+
 from ...annotations.range import Range
 from ...corpora import ParallelTextCorpus
 from ...corpora.token_processors import lowercase
@@ -81,7 +83,10 @@ class ThotSmtModel(InteractiveTranslationModel):
         self.target_detokenizer = target_detokenizer
         self.lowercase_source = lowercase_source
         self.lowercase_target = lowercase_target
+
         self.truecaser = truecaser
+        if self.truecaser is None:
+            self.truecaser = UnigramTruecaser()
 
         self._word_alignment_model_type = word_alignment_model_type
         self._direct_word_alignment_model = create_thot_word_alignment_model(self._word_alignment_model_type)
