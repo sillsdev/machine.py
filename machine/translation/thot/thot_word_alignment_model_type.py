@@ -8,3 +8,11 @@ class ThotWordAlignmentModelType(IntEnum):
     HMM = auto()
     IBM3 = auto()
     IBM4 = auto()
+
+
+def getThotWordAlignmentModelType(str) -> ThotWordAlignmentModelType:
+    return ThotWordAlignmentModelType.__dict__[str.upper()]
+
+
+def checkThotWordAlignmentModelType(str) -> bool:
+    return str.upper() in ThotWordAlignmentModelType.__dict__

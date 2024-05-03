@@ -19,7 +19,7 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-logger = logging.getLogger(__package__ + ".build_nmt_engine")
+logger = logging.getLogger(str(__package__) + ".build_nmt_engine")
 
 
 def run(args: dict) -> None:
