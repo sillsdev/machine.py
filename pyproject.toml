@@ -67,7 +67,7 @@ datasets = "^2.4.0"
 sacremoses = "^0.0.53"
 # job extras
 clearml = { extras = ["s3"], version = "^1.13.1" }
-dynaconf = "^3.1.9"
+dynaconf = "^3.2.5"
 json-stream = "^1.3.0"
 
 [tool.poetry.group.dev.dependencies]
@@ -79,7 +79,7 @@ pytest-cov = "^4.1.0"
 ipykernel = "^6.7.0"
 jupyter = "^1.0.0"
 pandas = "^2.0.3"
-pyright = "^1.1.349"
+pyright = "^1.1.362"
 decoy = "^2.1.0"
 
 [tool.poetry.group.gpu.dependencies]

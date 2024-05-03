@@ -31,6 +31,7 @@ from .translation_result_builder import TranslationResultBuilder
 from .translation_sources import TranslationSources
 from .translation_suggester import TranslationSuggester
 from .translation_suggestion import TranslationSuggestion
+from .unigram_truecaser import UnigramTruecaser, UnigramTruecaserTrainer
 from .word_aligner import WordAligner
 from .word_alignment_matrix import WordAlignmentMatrix
 from .word_alignment_method import WordAlignmentMethod
@@ -75,6 +76,8 @@ __all__ = [
     "TranslationSources",
     "TranslationSuggester",
     "TranslationSuggestion",
+    "UnigramTruecaser",
+    "UnigramTruecaserTrainer",
     "word_align_corpus",
     "WordAligner",
     "WordAlignmentMatrix",

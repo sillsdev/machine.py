@@ -34,6 +34,15 @@ from .thot_word_alignment_model_utils import create_thot_word_alignment_model
 from .thot_word_alignment_parameters import ThotWordAlignmentParameters
 
 
+def getThotWordAlignmentModelType(model_type) -> ThotWordAlignmentModelType:
+    if not model_type.upper() in ThotWordAlignmentModelType.__dict__:
+        raise RuntimeError(
+            f"The model type of {model_type} is invalid.  Only the following models are supported:"
+            + ", ".join([model.name for model in ThotWordAlignmentModelType])
+        )
+    return ThotWordAlignmentModelType.__dict__[model_type.upper()]
+
+
 def _is_segment_valid(segment: ParallelTextRow) -> bool:
     return (
         not segment.is_empty
@@ -144,7 +153,7 @@ def _filter_phrase_table_using_corpus(filename: Path, source_corpus: Sequence[Se
 class ThotSmtModelTrainer(Trainer):
     def __init__(
         self,
-        word_alignment_model_type: ThotWordAlignmentModelType,
+        word_alignment_model_type: Union[ThotWordAlignmentModelType, str],
         corpus: ParallelTextCorpus,
         config: Optional[Union[ThotSmtParameters, StrPath]] = None,
         source_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
@@ -161,13 +170,15 @@ class ThotSmtModelTrainer(Trainer):
             self._config_filename = Path(config)
             parameters = ThotSmtParameters.load(config)
         self._parameters = parameters
-        self._word_alignment_model_type = word_alignment_model_type
+        if type(word_alignment_model_type) is str:
+            word_alignment_model_type = getThotWordAlignmentModelType(word_alignment_model_type)
+        self._word_alignment_model_type: ThotWordAlignmentModelType = word_alignment_model_type  # type: ignore
         self._corpus = corpus
         self.source_tokenizer = source_tokenizer
         self.target_tokenizer = target_tokenizer
         self.lowercase_source = lowercase_source
         self.lowercase_target = lowercase_target
-        self._model_weight_tuner = SimplexModelWeightTuner(word_alignment_model_type)
+        self._model_weight_tuner = SimplexModelWeightTuner(self._word_alignment_model_type)
 
         self._temp_dir = TemporaryDirectory(prefix="thot-smt-train-")
 

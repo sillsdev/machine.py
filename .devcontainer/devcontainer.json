@@ -17,7 +17,8 @@
 		"AWS_ACCESS_KEY_ID": "${localEnv:AWS_ACCESS_KEY_ID}",
 		"AWS_SECRET_ACCESS_KEY": "${localEnv:AWS_SECRET_ACCESS_KEY}",
 		"CLEARML_API_ACCESS_KEY": "${localEnv:CLEARML_API_ACCESS_KEY}",
-		"CLEARML_API_SECRET_KEY": "${localEnv:CLEARML_API_SECRET_KEY}"
+		"CLEARML_API_SECRET_KEY": "${localEnv:CLEARML_API_SECRET_KEY}",
+		"ENV_FOR_DYNACONF": "development"
 	},
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
