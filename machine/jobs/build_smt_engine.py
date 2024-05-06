@@ -1,19 +1,14 @@
 import argparse
-import json
 import logging
-import os
-import tarfile
-from pathlib import Path
-from tempfile import NamedTemporaryFile, TemporaryDirectory, TemporaryFile
-from typing import Callable, Optional, cast
+from typing import Callable, Optional
 
 from clearml import Task
 
-from ..translation.thot.thot_smt_model import ThotSmtModel, ThotSmtParameters, ThotWordAlignmentModelType
 from ..utils.canceled_error import CanceledError
 from ..utils.progress_status import ProgressStatus
 from .clearml_shared_file_service import ClearMLSharedFileService
 from .config import SETTINGS
+from .smt_engine_build_job import SmtEngineBuildJob
 
 # Setup logging
 logging.basicConfig(
@@ -47,54 +42,10 @@ def run(args: dict) -> None:
         logger.info("SMT Engine Build Job started")
 
         SETTINGS.update(args)
-        model_type = cast(str, SETTINGS.model_type).lower()
-        if "build_options" in SETTINGS:
-            try:
-                build_options = json.loads(cast(str, SETTINGS.build_options))
-            except ValueError as e:
-                raise ValueError("Build options could not be parsed: Invalid JSON") from e
-            except TypeError as e:
-                raise TypeError(f"Build options could not be parsed: {e}") from e
-            SETTINGS.update({model_type: build_options})
-        SETTINGS.data_dir = os.path.expanduser(cast(str, SETTINGS.data_dir))
-
-        logger.info(f"Config: {SETTINGS.as_dict()}")
-
         shared_file_service = ClearMLSharedFileService(SETTINGS)
-        if model_type.upper() not in ThotWordAlignmentModelType:
-            raise RuntimeError(
-                "The model type is invalid.  Only the following models are supported:"
-                + ", ".join([model.name for model in ThotWordAlignmentModelType])
-            )
-
-        if "save_model" not in SETTINGS:
-            raise RuntimeError("The save_model parameter is required for SMT build jobs.")
-
-        if "smt_model" not in SETTINGS:
-            raise RuntimeError("The save_model parameter is required for SMT build jobs.")
-
-        with TemporaryDirectory() as temp_dir:
-
-            parameters = ThotSmtParameters(
-                translation_model_filename_prefix=os.path.join(temp_dir, "tm", "src_trg"),
-                language_model_filename_prefix=os.path.join(temp_dir, "lm", "trg.lm"),
-            )
-            smt_model = ThotSmtModel(
-                word_alignment_model_type=ThotWordAlignmentModelType[model_type.upper()], config=parameters
-            )
-            trainer = smt_model.create_trainer(shared_file_service)
-            trainer.train(progress=progress, check_canceled=check_canceled)
-            trainer.save()
-            # zip temp_dir using gzip
-            with NamedTemporaryFile(mode="w:gz") as temp_zip_file:
-                with tarfile.open(temp_zip_file.name, mode="w:gz") as tar:
-                    for path in Path(temp_dir).iterdir():
-                        if path.is_file():
-                            tar.add(path, arcname=path.name)
-
-                shared_file_service.save_model(Path(temp_zip_file.name), str(SETTINGS.save_model) + ".tar.gz")
-
-                logger.info("Finished")
+        smt_engine_build_job = SmtEngineBuildJob(SETTINGS, shared_file_service)
+        smt_engine_build_job.run(progress=progress, check_canceled=check_canceled)
+        logger.info("Finished")
     except Exception as e:
         if task:
             if task.get_status() == "stopped":
@@ -105,18 +56,17 @@ def run(args: dict) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Trains an NMT model.")
+    parser = argparse.ArgumentParser(description="Trains an SMT model.")
     parser.add_argument("--model-type", required=True, type=str, help="Model type")
-    parser.add_argument("--engine-id", required=True, type=str, help="Engine id")
     parser.add_argument("--build-id", required=True, type=str, help="Build id")
-    parser.add_argument("--src-lang", required=True, type=str, help="Source language tag")
-    parser.add_argument("--trg-lang", required=True, type=str, help="Target language tag")
     parser.add_argument("--clearml", default=False, action="store_true", help="Initializes a ClearML task")
     parser.add_argument("--build-options", default=None, type=str, help="Build configurations")
     parser.add_argument("--save-model", default=None, type=str, help="Save the model using the specified base name")
     args = parser.parse_args()
 
-    run({k: v for k, v in vars(args).items() if v is not None})
+    input_args = {k: v for k, v in vars(args).items() if v is not None}
+
+    run(input_args)
 
 
 if __name__ == "__main__":
