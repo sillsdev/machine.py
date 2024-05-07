@@ -5,9 +5,21 @@ on:
     tags:
       - "docker_*"
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
   docker:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - dockerfile: ./dockerfile
+            image: ghcr.io/sillsdev/machine.py
+          - dockerfile: ./dockerfile.cpu_only
+            image: ghcr.io/sillsdev/machine.py.cpu_only
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -21,8 +33,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: |
-            ghcr.io/${{ github.repository }}
+          images: ${{ matrix.image }}
           tags: |
             type=match,pattern=docker_(.*),group=1
           flavor: |
