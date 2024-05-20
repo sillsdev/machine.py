@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import shutil
 import sys
@@ -32,6 +33,8 @@ from .thot_word_alignment_model_trainer import ThotWordAlignmentModelTrainer
 from .thot_word_alignment_model_type import ThotWordAlignmentModelType
 from .thot_word_alignment_model_utils import create_thot_word_alignment_model
 from .thot_word_alignment_parameters import ThotWordAlignmentParameters
+
+logger = logging.getLogger(__name__)
 
 
 def getThotWordAlignmentModelType(model_type) -> ThotWordAlignmentModelType:
@@ -229,9 +232,11 @@ class ThotSmtModelTrainer(Trainer):
         self._train_tm_dir.mkdir()
         train_tm_prefix = self._train_tm_dir / self._tm_file_prefix
 
+        logger.info("Training Language Model")
         with reporter.start_next_phase():
             self._train_language_model(train_lm_prefix, 3, train_corpus)
 
+        logger.info("Training Translation Model")
         self._train_translation_model(train_tm_prefix, train_corpus, train_count, reporter)
 
         reporter.check_canceled()
@@ -247,9 +252,11 @@ class ThotSmtModelTrainer(Trainer):
                 tune_source_corpus.append(row.source_segment)
                 tune_target_corpus.append(row.target_segment)
 
+        logger.info("Tuning Language Model")
         with reporter.start_next_phase():
             self._tune_language_model(train_lm_prefix, tune_target_corpus, 3)
 
+        logger.info("Tuning Translation Model")
         with reporter.start_next_phase() as phase_progress:
             self._tune_translation_model(
                 tune_tm_prefix, train_lm_prefix, tune_source_corpus, tune_target_corpus, phase_progress

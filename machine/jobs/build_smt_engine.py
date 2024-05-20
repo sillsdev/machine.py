@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import logging
 from typing import Callable, Optional
 
@@ -32,11 +33,36 @@ def run(args: dict) -> None:
 
         check_canceled = clearml_check_canceled
 
+        # get current time
+        last_update_time = datetime.datetime.now()
+        last_message = ""
+
         def clearml_progress(status: ProgressStatus) -> None:
+            nonlocal last_update_time  # Add this line to access the outer variable
+            nonlocal last_message  # Add this line to access the outer variable
             if status.percent_completed is not None:
-                task.get_logger().report_single_value(name="progress", value=round(status.percent_completed, 4))
+                if status.message != last_message or (datetime.datetime.now() - last_update_time).seconds > 1:
+                    last_update_time = datetime.datetime.now()
+                    last_message = status.message
+                    task.get_logger().report_single_value(name="progress", value=round(status.percent_completed, 4))
+                    task.get_logger().report_text(f"Step: {status.step} Message: {status.message}")
 
         progress = clearml_progress
+    else:
+
+        # get current time
+        last_update_time = datetime.datetime.now()
+        last_message = ""
+
+        def local_progress(status: ProgressStatus) -> None:
+            nonlocal last_update_time  # Add this line to access the outer variable
+            nonlocal last_message  # Add this line to access the outer variable
+            if status.message != last_message or (datetime.datetime.now() - last_update_time).seconds > 1:
+                last_update_time = datetime.datetime.now()
+                last_message = status.message
+                logger.info(f"Step: {status.step} Message: {status.message}")
+
+        progress = local_progress
 
     try:
         logger.info("SMT Engine Build Job started")
