@@ -7,7 +7,7 @@ from .null_tokenizer import NullTokenizer
 from .range_tokenizer import RangeTokenizer
 from .string_detokenizer import StringDetokenizer
 from .string_tokenizer import StringTokenizer
-from .tokenization_utils import get_ranges, split
+from .tokenization_utils import create_detokenizer, create_tokenizer, get_ranges, split
 from .tokenizer import Tokenizer
 from .whitespace_detokenizer import WHITESPACE_DETOKENIZER, WhitespaceDetokenizer
 from .whitespace_tokenizer import WHITESPACE_TOKENIZER, WhitespaceTokenizer
@@ -16,7 +16,9 @@ from .zwsp_word_tokenizer import ZwspWordTokenizer
 
 __all__ = [
     "Detokenizer",
+    "create_detokenizer",
     "get_ranges",
+    "create_tokenizer",
     "LatinSentenceTokenizer",
     "LatinWordDetokenizer",
     "LatinWordTokenizer",

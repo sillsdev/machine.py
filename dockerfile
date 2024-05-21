@@ -51,9 +51,10 @@ RUN ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python3  & \
     ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python
 
 COPY --from=builder /src/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt && rm requirements.txt
+RUN --mount=type=cache,target=/root/.cache \
+    pip install --no-cache-dir -r requirements.txt && rm requirements.txt
 
 COPY . .
-RUN pip install --no-deps . && rm -r *
+RUN pip install --no-deps . && rm -r /root/*
 
 CMD ["bash"]

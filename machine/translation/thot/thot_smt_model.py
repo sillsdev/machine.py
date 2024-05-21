@@ -81,6 +81,7 @@ class ThotSmtModel(InteractiveTranslationModel):
         self.target_detokenizer = target_detokenizer
         self.lowercase_source = lowercase_source
         self.lowercase_target = lowercase_target
+
         self.truecaser = truecaser
 
         self._word_alignment_model_type = word_alignment_model_type

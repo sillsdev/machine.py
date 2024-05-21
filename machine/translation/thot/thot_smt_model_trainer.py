@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import shutil
 import sys
@@ -32,6 +33,17 @@ from .thot_word_alignment_model_trainer import ThotWordAlignmentModelTrainer
 from .thot_word_alignment_model_type import ThotWordAlignmentModelType
 from .thot_word_alignment_model_utils import create_thot_word_alignment_model
 from .thot_word_alignment_parameters import ThotWordAlignmentParameters
+
+logger = logging.getLogger(__name__)
+
+
+def get_thot_word_alignment_model_type(model_type) -> ThotWordAlignmentModelType:
+    if not model_type.upper() in ThotWordAlignmentModelType.__dict__:
+        raise RuntimeError(
+            f"The model type of {model_type} is invalid.  Only the following models are supported:"
+            + ", ".join([model.name for model in ThotWordAlignmentModelType])
+        )
+    return ThotWordAlignmentModelType.__dict__[model_type.upper()]
 
 
 def _is_segment_valid(segment: ParallelTextRow) -> bool:
@@ -144,7 +156,7 @@ def _filter_phrase_table_using_corpus(filename: Path, source_corpus: Sequence[Se
 class ThotSmtModelTrainer(Trainer):
     def __init__(
         self,
-        word_alignment_model_type: ThotWordAlignmentModelType,
+        word_alignment_model_type: Union[ThotWordAlignmentModelType, str],
         corpus: ParallelTextCorpus,
         config: Optional[Union[ThotSmtParameters, StrPath]] = None,
         source_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
@@ -161,13 +173,18 @@ class ThotSmtModelTrainer(Trainer):
             self._config_filename = Path(config)
             parameters = ThotSmtParameters.load(config)
         self._parameters = parameters
-        self._word_alignment_model_type = word_alignment_model_type
+        if type(word_alignment_model_type) is str:
+            self._word_alignment_model_type = get_thot_word_alignment_model_type(word_alignment_model_type)
+        elif type(word_alignment_model_type) is ThotWordAlignmentModelType:
+            self._word_alignment_model_type: ThotWordAlignmentModelType = word_alignment_model_type
+        else:
+            raise ValueError("word_alignment_model_type must be a ThotWordAlignmentModelType or a string")
         self._corpus = corpus
         self.source_tokenizer = source_tokenizer
         self.target_tokenizer = target_tokenizer
         self.lowercase_source = lowercase_source
         self.lowercase_target = lowercase_target
-        self._model_weight_tuner = SimplexModelWeightTuner(word_alignment_model_type)
+        self._model_weight_tuner = SimplexModelWeightTuner(self._word_alignment_model_type)
 
         self._temp_dir = TemporaryDirectory(prefix="thot-smt-train-")
 
@@ -218,9 +235,11 @@ class ThotSmtModelTrainer(Trainer):
         self._train_tm_dir.mkdir()
         train_tm_prefix = self._train_tm_dir / self._tm_file_prefix
 
+        logger.info("Training Language Model")
         with reporter.start_next_phase():
             self._train_language_model(train_lm_prefix, 3, train_corpus)
 
+        logger.info("Training Translation Model")
         self._train_translation_model(train_tm_prefix, train_corpus, train_count, reporter)
 
         reporter.check_canceled()
@@ -236,9 +255,11 @@ class ThotSmtModelTrainer(Trainer):
                 tune_source_corpus.append(row.source_segment)
                 tune_target_corpus.append(row.target_segment)
 
+        logger.info("Tuning Language Model")
         with reporter.start_next_phase():
             self._tune_language_model(train_lm_prefix, tune_target_corpus, 3)
 
+        logger.info("Tuning Translation Model")
         with reporter.start_next_phase() as phase_progress:
             self._tune_translation_model(
                 tune_tm_prefix, train_lm_prefix, tune_source_corpus, tune_target_corpus, phase_progress

@@ -12,8 +12,8 @@ from ..utils.context_managed_generator import ContextManagedGenerator
 
 
 class PretranslationInfo(TypedDict):
-    corpusId: str
-    textId: str
+    corpus_id: str
+    text_id: str
     refs: List[str]
     translation: str
 

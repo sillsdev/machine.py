@@ -1,7 +1,7 @@
 import os
-import xml.etree.ElementTree as etree
 from io import TextIOWrapper
 from typing import List
+from xml.etree import ElementTree
 from zipfile import ZipFile
 
 from ..scripture import ENGLISH_VERSIFICATION
@@ -17,7 +17,7 @@ class DblBundleTextCorpus(ScriptureTextCorpus):
     def __init__(self, filename: StrPath) -> None:
         with ZipFile(filename, "r") as archive:
             with archive.open("metadata.xml", "r") as stream:
-                doc = etree.parse(stream)
+                doc = ElementTree.parse(stream)
             version = doc.getroot().get("version", "2.0")
             parts = version.split(".", maxsplit=3)
             if f"{parts[0]}.{parts[1]}" not in DblBundleTextCorpus._SUPPORTED_VERSIONS:

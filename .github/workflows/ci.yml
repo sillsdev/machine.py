@@ -50,12 +50,12 @@ jobs:
       - name: Lint with isort
         run: poetry run isort . --check-only
       - name: Setup Node for pyright
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: "12"
+          node-version: "14"
       - name: Lint with pyright
         run: |
-          npm install -g pyright@1.1.313
+          npm install -g pyright@1.1.362
           poetry run pyright
       - name: Test with pytest
         run: poetry run pytest --cov --cov-report=xml
