@@ -11,6 +11,7 @@ from typing import (
     Generator,
     Iterable,
     List,
+    Literal,
     Optional,
     Sequence,
     Tuple,
@@ -185,7 +186,7 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
         return self.transform(_detokenize, is_target_tokenized=False)
 
-    def normalize(self, normalization_form: str) -> ParallelTextCorpus:
+    def normalize(self, normalization_form: Literal["NFC", "NFD", "NFKC", "NFKD"]) -> ParallelTextCorpus:
         def _normalize(row: ParallelTextRow) -> ParallelTextRow:
             row.source_segment = normalize(normalization_form, row.source_segment)
             row.target_segment = normalize(normalization_form, row.target_segment)
@@ -193,14 +194,14 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
 
         return self.transform(_normalize)
 
-    def normalize_source(self, normalization_form: str) -> ParallelTextCorpus:
+    def normalize_source(self, normalization_form: Literal["NFC", "NFD", "NFKC", "NFKD"]) -> ParallelTextCorpus:
         def _normalize(row: ParallelTextRow) -> ParallelTextRow:
             row.source_segment = normalize(normalization_form, row.source_segment)
             return row
 
         return self.transform(_normalize)
 
-    def normalize_target(self, normalization_form: str) -> ParallelTextCorpus:
+    def normalize_target(self, normalization_form: Literal["NFC", "NFD", "NFKC", "NFKD"]) -> ParallelTextCorpus:
         def _normalize(row: ParallelTextRow) -> ParallelTextRow:
             row.target_segment = normalize(normalization_form, row.target_segment)
             return row

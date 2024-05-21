@@ -1,16 +1,25 @@
 import json
 from contextlib import contextmanager
 from io import StringIO
+from pathlib import Path
 from typing import Iterator
 
 from decoy import Decoy, matchers
 from pytest import raises
+from testutils.mock_settings import MockSettings
 
 from machine.annotations import Range
 from machine.corpora import DictionaryTextCorpus
 from machine.jobs import NmtEngineBuildJob, NmtModelFactory, PretranslationInfo, PretranslationWriter, SharedFileService
-from machine.translation import Phrase, Trainer, TrainStats, TranslationResult, TranslationSources, WordAlignmentMatrix
-from machine.translation.translation_engine import TranslationEngine
+from machine.translation import (
+    Phrase,
+    Trainer,
+    TrainStats,
+    TranslationEngine,
+    TranslationResult,
+    TranslationSources,
+    WordAlignmentMatrix,
+)
 from machine.utils import CanceledError, ContextManagedGenerator
 
 
@@ -21,6 +30,7 @@ def test_run(decoy: Decoy) -> None:
     pretranslations = json.loads(env.target_pretranslations)
     assert len(pretranslations) == 1
     assert pretranslations[0]["translation"] == "Please, I have booked a room."
+    decoy.verify(env.shared_file_service.save_model(Path("model.tar.gz"), "save-model.tar.gz"), times=1)
 
 
 def test_cancel(decoy: Decoy) -> None:
@@ -34,7 +44,6 @@ def test_cancel(decoy: Decoy) -> None:
 
 class _TestEnvironment:
     def __init__(self, decoy: Decoy) -> None:
-        config = {"src_lang": "es", "trg_lang": "en", "pretranslation_batch_size": 100}
         self.source_tokenizer_trainer = decoy.mock(cls=Trainer)
         self.target_tokenizer_trainer = decoy.mock(cls=Trainer)
 
@@ -81,6 +90,7 @@ class _TestEnvironment:
         )
         decoy.when(self.nmt_model_factory.create_model_trainer(matchers.Anything())).then_return(self.model_trainer)
         decoy.when(self.nmt_model_factory.create_engine()).then_return(self.engine)
+        decoy.when(self.nmt_model_factory.save_model()).then_return(Path("model.tar.gz"))
 
         self.shared_file_service = decoy.mock(cls=SharedFileService)
         decoy.when(self.shared_file_service.create_source_corpus()).then_return(DictionaryTextCorpus())
@@ -117,7 +127,13 @@ class _TestEnvironment:
             lambda: open_target_pretranslation_writer(self)
         )
 
-        self.job = NmtEngineBuildJob(config, self.nmt_model_factory, self.shared_file_service)
+        self.job = NmtEngineBuildJob(
+            MockSettings(
+                {"src_lang": "es", "trg_lang": "en", "save_model": "save-model", "pretranslation_batch_size": 100}
+            ),
+            self.nmt_model_factory,
+            self.shared_file_service,
+        )
 
 
 class _CancellationChecker:

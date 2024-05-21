@@ -1,6 +1,6 @@
-import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod
 from typing import BinaryIO
+from xml.etree import ElementTree
 
 from ..scripture.verse_ref import Versification
 from ..utils.string_utils import parse_integer
@@ -30,7 +30,7 @@ class ParatextProjectSettingsParserBase(ABC):
         if not settings_file_name:
             raise ValueError("The project does not contain a settings file.")
         with self.open(settings_file_name) as stream:
-            settings_tree = ET.parse(stream)
+            settings_tree = ElementTree.parse(stream)
 
         name = settings_tree.getroot().findtext("Name", "")
         full_name = settings_tree.getroot().findtext("FullName", "")

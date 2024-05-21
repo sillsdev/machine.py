@@ -19,7 +19,7 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-logger = logging.getLogger(__package__ + ".build_nmt_engine")
+logger = logging.getLogger(str(__package__) + ".build_nmt_engine")
 
 
 def run(args: dict) -> None:
@@ -37,7 +37,7 @@ def run(args: dict) -> None:
 
         def clearml_progress(status: ProgressStatus) -> None:
             if status.percent_completed is not None:
-                task.get_logger().report_single_value(name="progress", value=round(status.percent_completed, 4))
+                task.set_progress(round(status.percent_completed * 100))
 
         progress = clearml_progress
 
@@ -63,12 +63,14 @@ def run(args: dict) -> None:
         if model_type == "huggingface":
             from .huggingface.hugging_face_nmt_model_factory import HuggingFaceNmtModelFactory
 
-            nmt_model_factory = HuggingFaceNmtModelFactory(SETTINGS, shared_file_service)
+            nmt_model_factory = HuggingFaceNmtModelFactory(SETTINGS)
         else:
             raise RuntimeError("The model type is invalid.")
 
         job = NmtEngineBuildJob(SETTINGS, nmt_model_factory, shared_file_service)
-        job.run(progress, check_canceled)
+        train_corpus_size = job.run(progress, check_canceled)
+        if task is not None:
+            task.get_logger().report_single_value(name="train_corpus_size", value=train_corpus_size)
         logger.info("Finished")
     except Exception as e:
         if task:

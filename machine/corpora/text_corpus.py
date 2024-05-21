@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from itertools import islice
-from typing import Any, Callable, Generator, Iterable, Optional, Tuple
+from typing import Any, Callable, Generator, Iterable, Literal, Optional, Tuple
 
 from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
@@ -60,7 +60,7 @@ class TextCorpus(Corpus[TextRow]):
 
         return self.transform(_detokenize, is_tokenized=False)
 
-    def normalize(self, normalization_form: str) -> TextCorpus:
+    def normalize(self, normalization_form: Literal["NFC", "NFD", "NFKC", "NFKD"]) -> TextCorpus:
         def _normalize(row: TextRow) -> TextRow:
             row.segment = normalize(normalization_form, row.segment)
             return row

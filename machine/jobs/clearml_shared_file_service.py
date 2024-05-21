@@ -1,7 +1,7 @@
 import logging
 import time
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 from clearml import StorageManager
 
@@ -11,21 +11,17 @@ logger = logging.getLogger(__name__)
 
 
 class ClearMLSharedFileService(SharedFileService):
-    def _download_file(self, path: str, cache: bool = False) -> Path:
+    def _download_file(self, path: str) -> Path:
         uri = f"{self._shared_file_uri}/{self._shared_file_folder}/{path}"
-        local_folder: Optional[str] = None
-        if not cache:
-            local_folder = str(self._data_dir)
+        local_folder = str(self._data_dir)
         file_path = try_n_times(lambda: StorageManager.download_file(uri, local_folder, skip_zero_size_check=True))
         if file_path is None:
             raise RuntimeError(f"Failed to download file: {uri}")
         return Path(file_path)
 
-    def _download_folder(self, path: str, cache: bool = False) -> Path:
+    def _download_folder(self, path: str) -> Path:
         uri = f"{self._shared_file_uri}/{self._shared_file_folder}/{path}"
-        local_folder: Optional[str] = None
-        if not cache:
-            local_folder = str(self._data_dir)
+        local_folder = str(self._data_dir)
         folder_path = try_n_times(lambda: StorageManager.download_folder(uri, local_folder))
         if folder_path is None:
             raise RuntimeError(f"Failed to download folder: {uri}")

@@ -6,7 +6,7 @@
   "configurations": [
     {
       "name": "Python: Current File",
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
@@ -14,7 +14,7 @@
     },
     {
       "name": "build_nmt_engine",
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "module": "machine.jobs.build_nmt_engine",
       "justMyCode": false,
@@ -52,8 +52,23 @@
       }
     },
     {
+      "name": "build_smt_engine",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "machine.jobs.build_smt_engine",
+      "justMyCode": false,
+      "args": [
+        "--model-type",
+        "thot",
+        "--build-id",
+        "build1",
+        "--save-model",
+        "myModelName"
+      ]
+    },
+    {
       "name": "Python: Debug Tests",
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "program": "${file}",
       "purpose": ["debug-test"],

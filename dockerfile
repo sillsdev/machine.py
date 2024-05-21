@@ -40,7 +40,9 @@ RUN apt-get update && \
     apt-get install --no-install-recommends -y \
     curl \
     python$PYTHON_VERSION \
-    python$PYTHON_VERSION-distutils && \
+    python$PYTHON_VERSION-distutils \
+# these are needed for ClearML
+    git libsm6 libxext6 libxrender-dev libglib2.0-0 && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get clean
 
@@ -51,9 +53,10 @@ RUN ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python3  & \
     ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python
 
 COPY --from=builder /src/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt && rm requirements.txt
+RUN --mount=type=cache,target=/root/.cache \
+    pip install --no-cache-dir -r requirements.txt && rm requirements.txt
 
 COPY . .
-RUN pip install --no-deps . && rm -r *
+RUN pip install --no-deps . && rm -r /root/*
 
 CMD ["bash"]
