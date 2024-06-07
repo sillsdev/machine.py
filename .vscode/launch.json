@@ -61,9 +61,7 @@
         "--model-type",
         "thot",
         "--build-id",
-        "build1",
-        "--save-model",
-        "myModelName"
+        "build1"
       ]
     },
     {
@@ -71,7 +69,9 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${file}",
-      "purpose": ["debug-test"],
+      "purpose": [
+        "debug-test"
+      ],
       "console": "integratedTerminal",
       "justMyCode": false
     }

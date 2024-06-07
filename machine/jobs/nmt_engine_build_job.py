@@ -97,7 +97,9 @@ class NmtEngineBuildJob:
         if "save_model" in self._config and self._config.save_model is not None:
             logger.info("Saving model")
             model_path = self._nmt_model_factory.save_model()
-            self._shared_file_service.save_model(model_path, self._config.save_model + "".join(model_path.suffixes))
+            self._shared_file_service.save_model(
+                model_path, f"models/{self._config.save_model + ''.join(model_path.suffixes)}"
+            )
         return parallel_corpus_size
 
 

@@ -84,10 +84,12 @@ class SmtEngineBuildJob:
                 current_inference_step += len(pi_batch)
                 phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
 
-        if "save_model" in self._config and self._config.save_model is not None:
-            logger.info("Saving model")
-            model_path = self._smt_model_factory.save_model()
-            self._shared_file_service.save_model(model_path, self._config.save_model + "".join(model_path.suffixes))
+        logger.info("Saving model")
+        model_path = self._smt_model_factory.save_model()
+        self._shared_file_service.save_model(
+            model_path, f"builds/{self._config['build_id']}/model{''.join(model_path.suffixes)}"
+        )
+
         return train_corpus_size, confidence
 
 

@@ -32,7 +32,9 @@ def test_run(decoy: Decoy) -> None:
     pretranslations = json.loads(env.target_pretranslations)
     assert len(pretranslations) == 1
     assert pretranslations[0]["translation"] == "Please, I have booked a room."
-    decoy.verify(env.shared_file_service.save_model(Path("model.tar.gz"), "save-model.tar.gz"), times=1)
+    decoy.verify(
+        env.shared_file_service.save_model(matchers.Anything(), f"builds/{env.job._config.build_id}/model.zip"), times=1
+    )
 
 
 def test_cancel(decoy: Decoy) -> None:
@@ -97,7 +99,7 @@ class _TestEnvironment:
             self.smt_model_factory.create_truecaser_trainer(matchers.Anything(), matchers.Anything())
         ).then_return(self.truecaser_trainer)
         decoy.when(self.smt_model_factory.create_truecaser()).then_return(self.truecaser)
-        decoy.when(self.smt_model_factory.save_model()).then_return(Path("model.tar.gz"))
+        decoy.when(self.smt_model_factory.save_model()).then_return(Path("model.zip"))
 
         self.shared_file_service = decoy.mock(cls=SharedFileService)
         decoy.when(self.shared_file_service.create_source_corpus()).then_return(
@@ -157,7 +159,7 @@ class _TestEnvironment:
         )
 
         self.job = SmtEngineBuildJob(
-            MockSettings({"save_model": "save-model", "pretranslation_batch_size": 100}),
+            MockSettings({"build_id": "mybuild", "pretranslation_batch_size": 100}),
             self.smt_model_factory,
             self.shared_file_service,
         )

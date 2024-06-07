@@ -30,7 +30,7 @@ def test_run(decoy: Decoy) -> None:
     pretranslations = json.loads(env.target_pretranslations)
     assert len(pretranslations) == 1
     assert pretranslations[0]["translation"] == "Please, I have booked a room."
-    decoy.verify(env.shared_file_service.save_model(Path("model.tar.gz"), "save-model.tar.gz"), times=1)
+    decoy.verify(env.shared_file_service.save_model(Path("model.tar.gz"), "models/save-model.tar.gz"), times=1)
 
 
 def test_cancel(decoy: Decoy) -> None:

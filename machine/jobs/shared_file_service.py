@@ -73,11 +73,11 @@ class SharedFileService(ABC):
             file.write("\n]\n")
         self._upload_file(f"builds/{self._build_id}/pretranslate.trg.json", target_pretranslate_path)
 
-    def save_model(self, model_path: Path, name: str) -> None:
+    def save_model(self, model_path: Path, destination: str) -> None:
         if model_path.is_file():
-            self._upload_file(f"models/{name}", model_path)
+            self._upload_file(destination, model_path)
         else:
-            self._upload_folder(f"models/{name}", model_path)
+            self._upload_folder(destination, model_path)
 
     @property
     def _data_dir(self) -> Path:

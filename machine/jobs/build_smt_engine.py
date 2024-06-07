@@ -170,7 +170,6 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Trains an SMT model.")
     parser.add_argument("--model-type", required=True, type=str, help="Model type")
     parser.add_argument("--build-id", required=True, type=str, help="Build id")
-    parser.add_argument("--save-model", required=True, type=str, help="Save the model using the specified base name")
     parser.add_argument("--clearml", default=False, action="store_true", help="Initializes a ClearML task")
     parser.add_argument("--build-options", default=None, type=str, help="Build configurations")
     args = parser.parse_args()
