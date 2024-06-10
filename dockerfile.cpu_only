@@ -29,7 +29,7 @@ WORKDIR /root
 # these are needed for ClearML
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
-    git libsm6 libxext6 libxrender-dev libglib2.0-0 && \
+    git libsm6 libxext6 libxrender-dev libglib2.0-0
 
 COPY --from=builder /src/requirements.txt .
 RUN --mount=type=cache,target=/root/.cache \
