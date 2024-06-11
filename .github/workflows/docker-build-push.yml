@@ -37,7 +37,7 @@ jobs:
           tags: |
             type=match,pattern=docker_(.*),group=1,suffix=${{ matrix.suffix }}
           flavor: |
-            latest=true
+            latest=true,suffix=${{ matrix.suffix }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Login to GitHub Container Registry
