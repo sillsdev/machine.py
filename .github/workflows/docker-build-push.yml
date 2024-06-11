@@ -35,9 +35,9 @@ jobs:
         with:
           images: ghcr.io/sillsdev/machine.py
           tags: |
-            type=match,pattern=docker_(.*),group=1,suffix=${{ matrix.suffix }}
+            type=match,pattern=docker_(.*),group=1
           flavor: |
-            latest=true,suffix=${{ matrix.suffix }}
+            latest=true,suffix=${{ matrix.suffix }},onlatest=true
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Login to GitHub Container Registry
