@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import xml.etree.ElementTree as etree
 from dataclasses import dataclass, field
 from typing import BinaryIO, Iterable, List, Optional
+from xml.etree import ElementTree
 
 from ..scripture.verse_ref import are_overlapping_verse_ranges
 from ..utils.string_utils import has_sentence_ending, is_integer
@@ -17,7 +17,7 @@ class UsxVerseParser:
 
     def parse(self, stream: BinaryIO) -> Iterable[UsxVerse]:
         ctxt = _ParseContext()
-        tree = etree.parse(stream)
+        tree = ElementTree.parse(stream)
         root_elem = tree.find(".//book/..")
         if root_elem is None:
             raise RuntimeError("USX does not contain a book element.")
@@ -28,7 +28,7 @@ class UsxVerseParser:
         if ctxt.chapter is not None and ctxt.verse is not None:
             yield ctxt.create_verse()
 
-    def _parse_element(self, elem: etree.Element, ctxt: _ParseContext) -> Iterable[UsxVerse]:
+    def _parse_element(self, elem: ElementTree.Element, ctxt: _ParseContext) -> Iterable[UsxVerse]:
         if elem.text is not None and ctxt.chapter is not None and ctxt.verse is not None:
             ctxt.add_token(elem.text)
         for e in elem:
@@ -93,7 +93,7 @@ def _is_numbered_style(style_prefix: str, style: str) -> bool:
     return style.startswith(style_prefix) and is_integer(style[len(style_prefix) :])
 
 
-def _is_verse_para(para_elem: etree.Element) -> bool:
+def _is_verse_para(para_elem: ElementTree.Element) -> bool:
     style = para_elem.get("style", "")
     if style in _NONVERSE_PARA_STYLES:
         return False
@@ -112,10 +112,10 @@ class _ParseContext:
     chapter: Optional[str] = None
     verse: Optional[str] = None
     is_sentence_start: bool = True
-    para_element: Optional[etree.Element] = None
+    para_element: Optional[ElementTree.Element] = None
     _verse_tokens: List[UsxToken] = field(default_factory=list)
 
-    def add_token(self, text: str, elem: Optional[etree.Element] = None) -> None:
+    def add_token(self, text: str, elem: Optional[ElementTree.Element] = None) -> None:
         assert self.para_element is not None
         self._verse_tokens.append(UsxToken(self.para_element, text, elem))
 

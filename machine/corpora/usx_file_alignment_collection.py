@@ -1,8 +1,8 @@
-import xml.etree.ElementTree as etree
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import DefaultDict, Generator, List, Optional, Sequence, Set, Tuple
+from xml.etree import ElementTree
 
 from ..annotations.range import Range
 from ..scripture.verse_ref import VerseRef, Versification
@@ -127,7 +127,7 @@ class _RangeInfo:
 
 
 def _get_links(word_tokenizer: RangeTokenizer[str, int, str], tokens: Sequence[UsxToken]) -> DefaultDict[str, Set[int]]:
-    prev_para_elem: Optional[etree.Element] = None
+    prev_para_elem: Optional[ElementTree.Element] = None
     text = ""
     link_strs: List[Tuple[Range[int], str]] = []
     for token in tokens:

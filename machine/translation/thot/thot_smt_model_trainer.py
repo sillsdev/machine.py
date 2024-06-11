@@ -144,7 +144,7 @@ def _filter_phrase_table_using_corpus(filename: Path, source_corpus: Sequence[Se
 class ThotSmtModelTrainer(Trainer):
     def __init__(
         self,
-        word_alignment_model_type: ThotWordAlignmentModelType,
+        word_alignment_model_type: Union[ThotWordAlignmentModelType, str],
         corpus: ParallelTextCorpus,
         config: Optional[Union[ThotSmtParameters, StrPath]] = None,
         source_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
@@ -161,13 +161,15 @@ class ThotSmtModelTrainer(Trainer):
             self._config_filename = Path(config)
             parameters = ThotSmtParameters.load(config)
         self._parameters = parameters
+        if isinstance(word_alignment_model_type, str):
+            word_alignment_model_type = ThotWordAlignmentModelType[word_alignment_model_type.upper()]
         self._word_alignment_model_type = word_alignment_model_type
         self._corpus = corpus
         self.source_tokenizer = source_tokenizer
         self.target_tokenizer = target_tokenizer
         self.lowercase_source = lowercase_source
         self.lowercase_target = lowercase_target
-        self._model_weight_tuner = SimplexModelWeightTuner(word_alignment_model_type)
+        self._model_weight_tuner = SimplexModelWeightTuner(self._word_alignment_model_type)
 
         self._temp_dir = TemporaryDirectory(prefix="thot-smt-train-")
 

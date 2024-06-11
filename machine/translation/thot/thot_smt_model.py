@@ -56,7 +56,7 @@ class _Trainer(ThotSmtModelTrainer):
 class ThotSmtModel(InteractiveTranslationModel):
     def __init__(
         self,
-        word_alignment_model_type: ThotWordAlignmentModelType,
+        word_alignment_model_type: Union[ThotWordAlignmentModelType, str],
         config: Union[ThotSmtParameters, StrPath],
         source_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
         target_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
@@ -81,8 +81,11 @@ class ThotSmtModel(InteractiveTranslationModel):
         self.target_detokenizer = target_detokenizer
         self.lowercase_source = lowercase_source
         self.lowercase_target = lowercase_target
+
         self.truecaser = truecaser
 
+        if isinstance(word_alignment_model_type, str):
+            word_alignment_model_type = ThotWordAlignmentModelType[word_alignment_model_type.upper()]
         self._word_alignment_model_type = word_alignment_model_type
         self._direct_word_alignment_model = create_thot_word_alignment_model(self._word_alignment_model_type)
         self._inverse_word_alignment_model = create_thot_word_alignment_model(self._word_alignment_model_type)
