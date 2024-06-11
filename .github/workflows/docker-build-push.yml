@@ -17,9 +17,9 @@ jobs:
       matrix:
         include:
           - dockerfile: ./dockerfile
-            image: ghcr.io/sillsdev/machine.py
+            suffix:
           - dockerfile: ./dockerfile.cpu_only
-            image: ghcr.io/sillsdev/machine.py.cpu_only
+            suffix: .cpu_only
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -33,9 +33,9 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ${{ matrix.image }}
+          images: ghcr.io/sillsdev/machine.py
           tags: |
-            type=match,pattern=docker_(.*),group=1
+            type=match,pattern=docker_(.*),group=1,suffix=${{ matrix.suffix }}
           flavor: |
             latest=true
       - name: Set up Docker Buildx
