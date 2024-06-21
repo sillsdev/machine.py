@@ -20,7 +20,7 @@ ENV PATH="${PATH}:${POETRY_VENV}/bin"
 
 WORKDIR /src
 COPY poetry.lock pyproject.toml /src
-RUN poetry export --with=gpu --without-hashes -f requirements.txt > requirements.txt
+RUN poetry export --extras="thot jobs" --without-hashes -f requirements.txt > requirements.txt
 
 
 FROM python:$PYTHON_VERSION
