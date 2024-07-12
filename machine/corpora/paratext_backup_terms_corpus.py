@@ -1,6 +1,6 @@
 import re
-import xml.etree.ElementTree as ET
 from typing import Dict, List, Optional
+from xml.etree import ElementTree
 from zipfile import ZipFile
 
 from .corpora_utils import get_entry
@@ -23,12 +23,12 @@ class ParatextBackupTermsCorpus(DictionaryTextCorpus):
             settings = settings_parser.parse()
 
             with archive.open(terms_file_entry) as key_terms_file:
-                term_renderings_tree = ET.parse(key_terms_file)
+                term_renderings_tree = ElementTree.parse(key_terms_file)
 
             biblical_terms_file_entry = get_entry(archive, settings.biblical_terms_file_name)
             if settings.biblical_terms_list_type in _PREDEFINED_TERMS_LIST_TYPES:
                 with open(settings.biblical_terms_file_name, "rb") as key_terms_file:
-                    biblical_terms_tree = ET.parse(key_terms_file)
+                    biblical_terms_tree = ElementTree.parse(key_terms_file)
                     term_id_to_category_dict = _get_category_per_id(biblical_terms_tree)
             elif (
                 settings.biblical_terms_list_type == "Project"
@@ -36,7 +36,7 @@ class ParatextBackupTermsCorpus(DictionaryTextCorpus):
                 and biblical_terms_file_entry is not None
             ):
                 with archive.open(biblical_terms_file_entry) as key_terms_file:
-                    biblical_terms_tree = ET.parse(key_terms_file)
+                    biblical_terms_tree = ElementTree.parse(key_terms_file)
                     term_id_to_category_dict = _get_category_per_id(biblical_terms_tree)
             else:
                 term_id_to_category_dict = {}
@@ -96,7 +96,7 @@ def _strip_parens(term_string: str, left: str = "(", right: str = ")") -> str:
     return term_string
 
 
-def _get_category_per_id(biblical_terms_tree: ET.ElementTree) -> Dict[str, Optional[str]]:
+def _get_category_per_id(biblical_terms_tree: ElementTree.ElementTree) -> Dict[str, Optional[str]]:
     term_id_to_category_dict = {}
     for e in biblical_terms_tree.iter(".//Term"):
         category_element = e.find("Category")

@@ -15,15 +15,13 @@ from ...translation.null_trainer import NullTrainer
 from ...translation.trainer import Trainer
 from ...translation.translation_engine import TranslationEngine
 from ..nmt_model_factory import NmtModelFactory
-from ..shared_file_service import SharedFileService
 
 logger = logging.getLogger(__name__)
 
 
 class HuggingFaceNmtModelFactory(NmtModelFactory):
-    def __init__(self, config: Any, shared_file_service: SharedFileService) -> None:
+    def __init__(self, config: Any) -> None:
         self._config = config
-        self._shared_file_service = shared_file_service
         args = config.huggingface.train_params.to_dict()
         args["output_dir"] = str(self._model_dir)
         args["overwrite_output_dir"] = True
@@ -84,20 +82,19 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
             oom_batch_size_backoff_mult=self._config.huggingface.generate_params.oom_batch_size_backoff_mult,
         )
 
-    def save_model(self) -> None:
-        if "save_model" not in self._config:
-            return
-
-        tar_file_path = Path(self._config.data_dir, "builds", self._config.build_id, "model.tar.gz")
+    def save_model(self) -> Path:
+        tar_file_path = Path(
+            self._config.data_dir, self._config.shared_file_folder, "builds", self._config.build_id, "model.tar.gz"
+        )
         with tarfile.open(tar_file_path, "w:gz") as tar:
             for path in self._model_dir.iterdir():
                 if path.is_file():
                     tar.add(path, arcname=path.name)
-        self._shared_file_service.save_model(tar_file_path, self._config.save_model + ".tar.gz")
+        return tar_file_path
 
     @property
     def _model_dir(self) -> Path:
-        return Path(self._config.data_dir, "builds", self._config.build_id, "model")
+        return Path(self._config.data_dir, self._config.shared_file_folder, "builds", self._config.build_id, "model")
 
 
 # FIXME - remove this code when the fix is applied to Huggingface

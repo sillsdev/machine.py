@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from pathlib import Path
 
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from ..corpora.text_corpus import TextCorpus
@@ -27,4 +28,4 @@ class NmtModelFactory(ABC):
     def create_engine(self) -> TranslationEngine: ...
 
     @abstractmethod
-    def save_model(self) -> None: ...
+    def save_model(self) -> Path: ...

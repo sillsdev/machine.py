@@ -22,7 +22,7 @@ class NmtEngineBuildJob:
         self,
         progress: Optional[Callable[[ProgressStatus], None]] = None,
         check_canceled: Optional[Callable[[], None]] = None,
-    ) -> None:
+    ) -> int:
         if check_canceled is not None:
             check_canceled()
 
@@ -96,7 +96,11 @@ class NmtEngineBuildJob:
 
         if "save_model" in self._config and self._config.save_model is not None:
             logger.info("Saving model")
-            self._nmt_model_factory.save_model()
+            model_path = self._nmt_model_factory.save_model()
+            self._shared_file_service.save_model(
+                model_path, f"models/{self._config.save_model + ''.join(model_path.suffixes)}"
+            )
+        return parallel_corpus_size
 
 
 def _translate_batch(

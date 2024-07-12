@@ -12,8 +12,8 @@ from ..utils.context_managed_generator import ContextManagedGenerator
 
 
 class PretranslationInfo(TypedDict):
-    corpusId: str
-    textId: str
+    corpusId: str  # noqa: N815
+    textId: str  # noqa: N815
     refs: List[str]
     translation: str
 
@@ -73,14 +73,11 @@ class SharedFileService(ABC):
             file.write("\n]\n")
         self._upload_file(f"builds/{self._build_id}/pretranslate.trg.json", target_pretranslate_path)
 
-    def get_parent_model(self, language_tag: str) -> Path:
-        return self._download_folder(f"parent_models/{language_tag}", cache=True)
-
-    def save_model(self, model_path: Path, name: str) -> None:
+    def save_model(self, model_path: Path, destination: str) -> None:
         if model_path.is_file():
-            self._upload_file(f"models/{name}", model_path)
+            self._upload_file(destination, model_path)
         else:
-            self._upload_folder(f"models/{name}", model_path)
+            self._upload_folder(destination, model_path)
 
     @property
     def _data_dir(self) -> Path:
@@ -105,10 +102,10 @@ class SharedFileService(ABC):
         return shared_file_folder.rstrip("/")
 
     @abstractmethod
-    def _download_file(self, path: str, cache: bool = False) -> Path: ...
+    def _download_file(self, path: str) -> Path: ...
 
     @abstractmethod
-    def _download_folder(self, path: str, cache: bool = False) -> Path: ...
+    def _download_folder(self, path: str) -> Path: ...
 
     @abstractmethod
     def _exists_file(self, path: str) -> bool: ...

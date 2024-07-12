@@ -22,7 +22,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
     @overload
     def __init__(
         self,
-        model_type: ThotWordAlignmentModelType,
+        model_type: Union[ThotWordAlignmentModelType, str],
         corpus: ParallelTextCorpus,
         prefix_filename: Optional[StrPath],
         parameters: ThotWordAlignmentParameters = ThotWordAlignmentParameters(),
@@ -34,7 +34,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
     @overload
     def __init__(
         self,
-        model_type: ThotWordAlignmentModelType,
+        model_type: Union[ThotWordAlignmentModelType, str],
         corpus: Tuple[StrPath, StrPath],
         prefix_filename: Optional[StrPath],
         parameters: ThotWordAlignmentParameters = ThotWordAlignmentParameters(),
@@ -44,7 +44,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
 
     def __init__(
         self,
-        model_type: ThotWordAlignmentModelType,
+        model_type: Union[ThotWordAlignmentModelType, str],
         corpus: Union[ParallelTextCorpus, Tuple[StrPath, StrPath]],
         prefix_filename: Optional[StrPath],
         parameters: ThotWordAlignmentParameters = ThotWordAlignmentParameters(),
@@ -62,6 +62,8 @@ class ThotWordAlignmentModelTrainer(Trainer):
         self.target_tokenizer = target_tokenizer
         self._stats = TrainStats()
 
+        if isinstance(model_type, str):
+            model_type = ThotWordAlignmentModelType[model_type.upper()]
         self._models: List[Tuple[ta.AlignmentModel, int]] = []
         if model_type is ThotWordAlignmentModelType.FAST_ALIGN:
             fast_align = ta.FastAlignModel()
