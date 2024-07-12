@@ -101,8 +101,12 @@ def parse_selection(selection: str, versification: Versification) -> Dict[int, L
 def get_chapters(
     selections: Union[str, List[str]], versification: Versification = ORIGINAL_VERSIFICATION
 ) -> Dict[int, List[int]]:
+    chapters = {}
     if isinstance(selections, str):
         selections = selections.strip()
+
+        if len(selections) == 0:
+            return chapters
 
         delimiter = ";"
         if ";" in selections:
@@ -117,7 +121,6 @@ def get_chapters(
 
         selections = selections.split(delimiter)
 
-    chapters = {}
     for selection in selections:
         selection = selection.strip()
 
