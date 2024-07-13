@@ -14,6 +14,7 @@ from .alignment_row import AlignmentRow
 from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .parallel_text_corpus import ParallelTextCorpus
 from .parallel_text_row import ParallelTextRow
+from .scripture_text_corpus import ScriptureTextCorpus
 from .text_corpus import TextCorpus
 from .text_row import TextRow, TextRowFlags
 
@@ -81,6 +82,12 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
             alignment_iterator = stack.enter_context(self._alignment_corpus.get_rows(text_ids))
 
             range_info = _RangeInfo()
+            if isinstance(self._target_corpus, ScriptureTextCorpus) and isinstance(
+                self._source_corpus, ScriptureTextCorpus
+            ):
+                range_info.versification = self._target_corpus.versification
+            else:
+                range_info.versification = None
             source_same_ref_rows: List[TextRow] = []
             target_same_ref_rows: List[TextRow] = []
 
@@ -241,6 +248,16 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
         else:
             raise ValueError("Either a source or target must be specified.")
 
+        src_refs = [] if src_row is None else [src_row.ref]
+        trg_refs = [] if trg_row is None else [trg_row.ref]
+
+        if len(trg_refs) == 0 and isinstance(self._target_corpus, ScriptureTextCorpus):
+            for r in src_refs:
+                r: VerseRef
+                t = r.copy()
+                t.change_versification(self._target_corpus.versification)
+                trg_refs.append(t)
+
         if src_row is None:
             source_flags = TextRowFlags.IN_RANGE if force_source_in_range else TextRowFlags.NONE
         else:
@@ -253,8 +270,8 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
 
         yield ParallelTextRow(
             text_id,
-            [] if src_row is None else [src_row.ref],
-            [] if trg_row is None else [trg_row.ref],
+            src_refs,
+            trg_refs,
             [] if src_row is None else src_row.segment,
             [] if trg_row is None else trg_row.segment,
             aligned_word_pairs,
@@ -300,12 +317,19 @@ class _RangeInfo:
     is_target_sentence_start: bool = field(default=False, init=False)
     is_source_empty: bool = field(default=True, init=False)
     is_target_empty: bool = field(default=True, init=False)
+    versification: Optional[Versification] = field(default=None, init=False)
 
     @property
     def is_in_range(self) -> bool:
         return len(self.source_refs) > 0 and len(self.target_refs) > 0
 
     def create_row(self) -> ParallelTextRow:
+        if len(self.target_refs) == 0 and self.versification is not None:
+            for r in self.source_refs:
+                r: VerseRef
+                t = r.copy()
+                t.change_versification(self.versification)
+                self.target_refs.append(t)
         row = ParallelTextRow(
             self.text_id,
             self.source_refs.copy(),
