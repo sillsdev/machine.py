@@ -321,7 +321,7 @@ class _RangeInfo:
 
     @property
     def is_in_range(self) -> bool:
-        return len(self.source_refs) > 0 and len(self.target_refs) > 0
+        return len(self.source_refs) > 0 or len(self.target_refs) > 0
 
     def create_row(self) -> ParallelTextRow:
         if len(self.target_refs) == 0 and self.versification is not None:
