@@ -66,6 +66,7 @@ def test_get_chapters() -> None:
     test_bible[66] = test_chapters_rev
     assert get_chapters("NT;-MAT3-5,17;-REV21,22") == test_bible
     assert get_chapters("MAT-JHN;-MAT-LUK") == {43: []}
+    assert get_chapters("") == {}
 
     with raises(ValueError):
         # wrong order of chapters
@@ -110,10 +111,6 @@ def test_get_chapters() -> None:
     with raises(ValueError):
         # invalid book/length of book name in subtraction
         get_chapters("-MAT-FLUM")
-
-    with raises(ValueError):
-        # empty string
-        get_chapters("")
 
     with raises(ValueError):
         # invalid name
