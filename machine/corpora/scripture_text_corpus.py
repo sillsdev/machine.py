@@ -99,3 +99,7 @@ def extract_scripture_corpus(
                 yield "<range>" if cur_trg_line_range else cur_trg_line, cur_ref, cur_trg_ref
 
     return ContextManagedGenerator(extract())
+
+
+def is_scripture(text_corpus: TextCorpus) -> bool:
+    return isinstance(text_corpus, ScriptureTextCorpus)
