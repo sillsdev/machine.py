@@ -8,7 +8,7 @@ from .usfm_file_text import UsfmFileText
 
 
 class ParatextTextCorpus(ScriptureTextCorpus):
-    def __init__(self, project_dir: StrPath, include_markers: bool = False) -> None:
+    def __init__(self, project_dir: StrPath, include_markers: bool = False, include_all_text: bool = False) -> None:
         parser = FileParatextProjectSettingsParser(project_dir)
         settings = parser.parse()
 
@@ -17,7 +17,14 @@ class ParatextTextCorpus(ScriptureTextCorpus):
         texts: List[UsfmFileText] = []
         for sfm_filename in Path(project_dir).glob(f"{settings.file_name_prefix}*{settings.file_name_suffix}"):
             texts.append(
-                UsfmFileText(settings.stylesheet, settings.encoding, sfm_filename, versification, include_markers)
+                UsfmFileText(
+                    settings.stylesheet,
+                    settings.encoding,
+                    sfm_filename,
+                    versification,
+                    include_markers,
+                    include_all_text,
+                )
             )
 
         super().__init__(versification, texts)

@@ -17,8 +17,11 @@ class UsfmFileText(UsfmTextBase):
         filename: StrPath,
         versification: Optional[Versification] = None,
         include_markers: bool = False,
+        include_all_text: bool = False,
     ) -> None:
-        super().__init__(_get_id(filename, encoding), stylesheet, encoding, versification, include_markers)
+        super().__init__(
+            _get_id(filename, encoding), stylesheet, encoding, versification, include_markers, include_all_text
+        )
 
         self._filename = Path(filename)
 

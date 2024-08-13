@@ -1,7 +1,8 @@
 from typing import Generator, Iterable, Optional, Tuple, cast
 
-from ..scripture import ORIGINAL_VERSIFICATION
+from ..scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION
 from ..scripture.canon import book_id_to_number, book_number_to_id, is_canonical
+from ..scripture.scripture_ref import ScriptureRef
 from ..scripture.verse_ref import VerseRef, Versification
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .dictionary_text_corpus import DictionaryTextCorpus
@@ -11,7 +12,9 @@ from .text_row import TextRow
 
 
 class ScriptureTextCorpus(DictionaryTextCorpus):
-    def __init__(self, versification: Versification, texts: Iterable[ScriptureText] = []) -> None:
+    def __init__(
+        self, versification: Versification = ENGLISH_VERSIFICATION, texts: Iterable[ScriptureText] = []
+    ) -> None:
         super().__init__(texts)
         self._versification = versification
 
@@ -64,21 +67,25 @@ def extract_scripture_corpus(
             cur_trg_line = ""
             cur_trg_line_range = True
             for row in rows:
-                ref: VerseRef = row.ref
-                if cur_ref is not None and ref.compare_to(cur_ref, compare_segments=False) != 0:
+                scripture_ref: ScriptureRef = cast(ScriptureRef, row.ref)
+                if not scripture_ref.is_verse:
+                    continue
+
+                vref: VerseRef = scripture_ref.verse_ref
+                if cur_ref is not None and vref.compare_to(cur_ref, compare_segments=False) != 0:
                     yield "<range>" if cur_trg_line_range else cur_trg_line, cur_ref, cur_trg_ref
                     cur_trg_line_range = cur_trg_line_range or len(cur_trg_line) > 0
                     cur_trg_line = ""
                     cur_trg_ref = None
 
-                cur_ref = ref
+                cur_ref = vref
                 if cur_trg_ref is None and len(row.target_refs) > 0:
-                    cur_trg_ref = cast(VerseRef, row.target_refs[0])
+                    cur_trg_ref = cast(ScriptureRef, row.target_refs[0]).verse_ref
                 elif cur_trg_ref is not None and len(row.target_refs) > 0 and cur_trg_ref != row.target_refs[0]:
                     cur_trg_ref = cur_trg_ref.copy()
                     cur_trg_ref.simplify()
-                    trg_ref = cast(VerseRef, row.target_refs[0])
-                    if cur_trg_ref < row.target_refs[0]:
+                    trg_ref = cast(ScriptureRef, row.target_refs[0]).verse_ref
+                    if cur_trg_ref < trg_ref:
                         start_ref = cur_trg_ref
                         end_ref = trg_ref
                     else:
@@ -102,4 +109,4 @@ def extract_scripture_corpus(
 
 
 def is_scripture(text_corpus: TextCorpus) -> bool:
-    return isinstance(text_corpus, ScriptureTextCorpus)
+    return text_corpus.versification is not None

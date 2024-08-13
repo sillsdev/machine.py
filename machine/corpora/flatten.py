@@ -1,6 +1,7 @@
 from itertools import chain
 from typing import Generator, Iterable, List, Optional, cast, overload
 
+from ..scripture.verse_ref import Versification
 from .alignment_collection import AlignmentCollection
 from .alignment_corpus import AlignmentCorpus
 from .alignment_row import AlignmentRow
@@ -53,6 +54,10 @@ class _FlattenTextCorpus(TextCorpus):
     @property
     def is_tokenized(self) -> bool:
         return all(c.is_tokenized for c in self._corpora)
+
+    @property
+    def versification(self) -> Optional[Versification]:
+        return self._corpora[0].versification if len(self._corpora) > 0 else None
 
     def count(self, include_empty: bool = True) -> int:
         return sum(c.count(include_empty) for c in self._corpora)

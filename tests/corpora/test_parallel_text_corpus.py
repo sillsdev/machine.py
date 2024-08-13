@@ -16,7 +16,7 @@ from machine.corpora import (
     TextRow,
     TextRowFlags,
 )
-from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, VerseRef, Versification
+from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, ScriptureRef, Versification
 
 
 def test_get_rows_no_rows() -> None:
@@ -869,46 +869,49 @@ def test_get_segments_same_verse_ref_one_to_many() -> None:
             [
                 text_row(
                     "MAT",
-                    VerseRef.from_string("MAT 1:1", ORIGINAL_VERSIFICATION),
+                    ScriptureRef.parse("MAT 1:1", ORIGINAL_VERSIFICATION),
                     "source chapter one, verse one .",
                 ),
                 text_row(
                     "MAT",
-                    VerseRef.from_string("MAT 1:2", ORIGINAL_VERSIFICATION),
+                    ScriptureRef.parse("MAT 1:2", ORIGINAL_VERSIFICATION),
                     "source chapter one, verse two .",
                 ),
                 text_row(
                     "MAT",
-                    VerseRef.from_string("MAT 1:3", ORIGINAL_VERSIFICATION),
+                    ScriptureRef.parse("MAT 1:3", ORIGINAL_VERSIFICATION),
                     "source chapter one, verse three .",
                 ),
             ],
         )
     )
+    source_corpus.versification = ORIGINAL_VERSIFICATION
+
     target_corpus = DictionaryTextCorpus(
         MemoryText(
             "MAT",
             [
-                text_row("MAT", VerseRef.from_string("MAT 1:1", versification), "target chapter one, verse one ."),
+                text_row("MAT", ScriptureRef.parse("MAT 1:1", versification), "target chapter one, verse one ."),
                 text_row(
                     "MAT",
-                    VerseRef.from_string("MAT 1:2", versification),
+                    ScriptureRef.parse("MAT 1:2", versification),
                     "target chapter one, verse two . target chapter one, verse three .",
                     TextRowFlags.SENTENCE_START | TextRowFlags.IN_RANGE | TextRowFlags.RANGE_START,
                 ),
-                text_row("MAT", VerseRef.from_string("MAT 1:3", versification), flags=TextRowFlags.IN_RANGE),
-                text_row("MAT", VerseRef.from_string("MAT 1:4", versification), "target chapter one, verse four ."),
+                text_row("MAT", ScriptureRef.parse("MAT 1:3", versification), flags=TextRowFlags.IN_RANGE),
+                text_row("MAT", ScriptureRef.parse("MAT 1:4", versification), "target chapter one, verse four ."),
             ],
         )
     )
+    target_corpus.versification = versification
 
     parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus)
     rows = list(parallel_corpus)
     assert len(rows) == 3
-    assert rows[1].source_refs == [VerseRef.from_string("MAT 1:2", ORIGINAL_VERSIFICATION)]
+    assert rows[1].source_refs == [ScriptureRef.parse("MAT 1:2", ORIGINAL_VERSIFICATION)]
     assert rows[1].target_refs == [
-        VerseRef.from_string("MAT 1:2", versification),
-        VerseRef.from_string("MAT 1:3", versification),
+        ScriptureRef.parse("MAT 1:2", versification),
+        ScriptureRef.parse("MAT 1:3", versification),
     ]
     assert rows[1].source_segment == "source chapter one, verse two .".split()
     assert rows[1].target_segment == "target chapter one, verse two . target chapter one, verse three .".split()
@@ -925,58 +928,61 @@ def test_get_rows_verse_ref_out_of_order() -> None:
             [
                 text_row(
                     "MAT",
-                    VerseRef.from_string("MAT 1:1", ORIGINAL_VERSIFICATION),
+                    ScriptureRef.parse("MAT 1:1", ORIGINAL_VERSIFICATION),
                     "source chapter one, verse one .",
                 ),
                 text_row(
                     "MAT",
-                    VerseRef.from_string("MAT 1:2", ORIGINAL_VERSIFICATION),
+                    ScriptureRef.parse("MAT 1:2", ORIGINAL_VERSIFICATION),
                     "source chapter one, verse two .",
                 ),
                 text_row(
                     "MAT",
-                    VerseRef.from_string("MAT 1:3", ORIGINAL_VERSIFICATION),
+                    ScriptureRef.parse("MAT 1:3", ORIGINAL_VERSIFICATION),
                     "source chapter one, verse three .",
                 ),
                 text_row(
                     "MAT",
-                    VerseRef.from_string("MAT 1:4", ORIGINAL_VERSIFICATION),
+                    ScriptureRef.parse("MAT 1:4", ORIGINAL_VERSIFICATION),
                     "source chapter one, verse four .",
                 ),
             ],
         )
     )
+    source_corpus.versification = ORIGINAL_VERSIFICATION
+
     target_corpus = DictionaryTextCorpus(
         MemoryText(
             "MAT",
             [
-                text_row("MAT", VerseRef.from_string("MAT 1:1", versification), "target chapter one, verse one ."),
-                text_row("MAT", VerseRef.from_string("MAT 1:2", versification), "target chapter one, verse two ."),
-                text_row("MAT", VerseRef.from_string("MAT 1:3", versification), "target chapter one, verse three ."),
-                text_row("MAT", VerseRef.from_string("MAT 1:4", versification), "target chapter one, verse four ."),
-                text_row("MAT", VerseRef.from_string("MAT 1:5", versification), "target chapter one, verse five ."),
+                text_row("MAT", ScriptureRef.parse("MAT 1:1", versification), "target chapter one, verse one ."),
+                text_row("MAT", ScriptureRef.parse("MAT 1:2", versification), "target chapter one, verse two ."),
+                text_row("MAT", ScriptureRef.parse("MAT 1:3", versification), "target chapter one, verse three ."),
+                text_row("MAT", ScriptureRef.parse("MAT 1:4", versification), "target chapter one, verse four ."),
+                text_row("MAT", ScriptureRef.parse("MAT 1:5", versification), "target chapter one, verse five ."),
             ],
         )
     )
+    target_corpus.versification = versification
 
     parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus)
     rows = list(parallel_corpus)
     assert len(rows) == 4
 
-    assert rows[1].source_refs == [VerseRef.from_string("MAT 1:2", ORIGINAL_VERSIFICATION)]
-    assert rows[1].target_refs == [VerseRef.from_string("MAT 1:3", versification)]
+    assert rows[1].source_refs == [ScriptureRef.parse("MAT 1:2", ORIGINAL_VERSIFICATION)]
+    assert rows[1].target_refs == [ScriptureRef.parse("MAT 1:3", versification)]
     assert rows[1].source_segment == "source chapter one, verse two .".split()
     assert rows[1].target_segment == "target chapter one, verse three .".split()
 
-    assert rows[2].source_refs == [VerseRef.from_string("MAT 1:3", ORIGINAL_VERSIFICATION)]
-    assert rows[2].target_refs == [VerseRef.from_string("MAT 1:2", versification)]
+    assert rows[2].source_refs == [ScriptureRef.parse("MAT 1:3", ORIGINAL_VERSIFICATION)]
+    assert rows[2].target_refs == [ScriptureRef.parse("MAT 1:2", versification)]
     assert rows[2].source_segment == "source chapter one, verse three .".split()
     assert rows[2].target_segment == "target chapter one, verse two .".split()
 
-    assert rows[3].source_refs == [VerseRef.from_string("MAT 1:4", ORIGINAL_VERSIFICATION)]
+    assert rows[3].source_refs == [ScriptureRef.parse("MAT 1:4", ORIGINAL_VERSIFICATION)]
     assert rows[3].target_refs == [
-        VerseRef.from_string("MAT 1:4", versification),
-        VerseRef.from_string("MAT 1:5", versification),
+        ScriptureRef.parse("MAT 1:4", versification),
+        ScriptureRef.parse("MAT 1:5", versification),
     ]
     assert rows[3].source_segment == "source chapter one, verse four .".split()
     assert rows[3].target_segment == "target chapter one, verse four . target chapter one, verse five .".split()

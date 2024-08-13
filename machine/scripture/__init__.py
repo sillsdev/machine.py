@@ -21,6 +21,7 @@ from .constants import (
     VULGATE_VERSIFICATION,
 )
 from .parse import get_books, get_chapters
+from .scripture_ref import ScriptureRef
 from .verse_ref import (
     NULL_VERSIFICATION,
     VERSE_RANGE_SEPARATOR,
@@ -55,6 +56,7 @@ __all__ = [
     "ORIGINAL_VERSIFICATION",
     "RUSSIAN_ORTHODOX_VERSIFICATION",
     "RUSSIAN_PROTESTANT_VERSIFICATION",
+    "ScriptureRef",
     "SEPTUAGINT_VERSIFICATION",
     "ValidStatus",
     "VERSE_RANGE_SEPARATOR",

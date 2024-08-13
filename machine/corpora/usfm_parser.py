@@ -58,6 +58,7 @@ class UsfmParser:
     def process_token(self) -> bool:
         # If past end
         if self.state.index >= len(self.state.tokens) - 1:
+            self._close_all()
             if self.handler is not None:
                 self.handler.end_usfm(self.state)
             return False
