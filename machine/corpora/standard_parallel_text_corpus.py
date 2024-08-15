@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from queue import SimpleQueue
 from typing import Any, Collection, ContextManager, Generator, Iterable, List, Optional, Set, Tuple
 
-from ..scripture.scripture_ref import ScriptureRef
 from ..scripture.verse_ref import Versification
 from ..utils.comparable import compare
 from ..utils.context_managed_generator import ContextManagedGenerator
@@ -15,7 +14,8 @@ from .alignment_row import AlignmentRow
 from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .parallel_text_corpus import ParallelTextCorpus
 from .parallel_text_row import ParallelTextRow
-from .scripture_text_corpus import ScriptureTextCorpus
+from .scripture_ref import EMPTY_SCRIPTURE_REF, ScriptureRef
+from .scripture_text_corpus import is_scripture
 from .text_corpus import TextCorpus
 from .text_row import TextRow, TextRowFlags
 
@@ -252,7 +252,7 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
         src_refs = [] if src_row is None else [src_row.ref]
         trg_refs = [] if trg_row is None else [trg_row.ref]
 
-        if len(trg_refs) == 0 and isinstance(self._target_corpus, ScriptureTextCorpus):
+        if len(trg_refs) == 0 and is_scripture(self._target_corpus):
             for r in src_refs:
                 r: ScriptureRef
                 trg_refs.append(r.change_versification(self._target_corpus.versification))
@@ -400,7 +400,7 @@ class _TargetCorpusGenerator(ContextManager["_TargetCorpusGenerator"], Generator
         assert self._source_versification is not None
         seg_list: List[Tuple[ScriptureRef, TextRow]] = []
         out_of_order = False
-        prev_scr_ref = ScriptureRef.empty()
+        prev_scr_ref = EMPTY_SCRIPTURE_REF
         range_start_offset = -1
         while self._row is not None:
             row = self._row

@@ -1,8 +1,8 @@
 import shutil
 from pathlib import Path
 
-from machine.corpora import TextRow
-from machine.scripture import ScriptureRef, VerseRef
+from machine.corpora import ScriptureRef, TextRow
+from machine.scripture import VerseRef
 
 from . import TEST_DATA_PATH
 

@@ -377,7 +377,7 @@ class VerseRef(Comparable):
             return 1
         return 0
 
-    def __eq__(self, other: object) -> bool:
+    def exact_equals(self, other: object) -> bool:
         if not isinstance(other, VerseRef):
             return False
         if self is other:

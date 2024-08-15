@@ -2,10 +2,10 @@ from abc import ABC
 from enum import Enum, auto
 from typing import List, Optional, Sequence
 
-from ..scripture.scripture_element import ScriptureElement
-from ..scripture.scripture_ref import ScriptureRef
 from ..scripture.verse_ref import VerseRef, are_overlapping_verse_ranges
 from .corpora_utils import merge_verse_ranges
+from .scripture_element import ScriptureElement
+from .scripture_ref import ScriptureRef
 from .usfm_parser_handler import UsfmParserHandler
 from .usfm_parser_state import UsfmParserState
 from .usfm_token import UsfmAttribute

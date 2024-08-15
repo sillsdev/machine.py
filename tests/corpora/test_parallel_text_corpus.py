@@ -12,11 +12,12 @@ from machine.corpora import (
     MemoryAlignmentCollection,
     MemoryText,
     ParallelTextCorpus,
+    ScriptureRef,
     StandardParallelTextCorpus,
     TextRow,
     TextRowFlags,
 )
-from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, ScriptureRef, Versification
+from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, Versification
 
 
 def test_get_rows_no_rows() -> None:

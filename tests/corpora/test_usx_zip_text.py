@@ -1,7 +1,7 @@
 from testutils.corpora_test_helpers import scripture_ref
 from testutils.dbl_bundle_test_environment import DblBundleTestEnvironment
 
-from machine.scripture import ScriptureRef
+from machine.corpora import ScriptureRef
 
 
 def test_get_rows_nonempty_text() -> None:

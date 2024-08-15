@@ -3,10 +3,10 @@ from __future__ import annotations
 from functools import total_ordering
 from typing import List, Optional
 
+from ..scripture.constants import ENGLISH_VERSIFICATION
+from ..scripture.verse_ref import VerseRef, Versification, are_overlapping_verse_ranges
 from ..utils.comparable import Comparable
-from .constants import ENGLISH_VERSIFICATION
 from .scripture_element import ScriptureElement
-from .verse_ref import VerseRef, Versification, are_overlapping_verse_ranges
 
 
 @total_ordering
@@ -16,12 +16,6 @@ class ScriptureRef(Comparable):
         self._path: List[ScriptureElement] = path if path is not None else []
 
     _empty: Optional[ScriptureRef] = None
-
-    @classmethod
-    def empty(cls) -> ScriptureRef:
-        if cls._empty is None:
-            cls._empty = cls()
-        return cls._empty
 
     @classmethod
     def parse(cls, selection: str, versification: Optional[Versification] = None) -> ScriptureRef:
@@ -129,3 +123,6 @@ class ScriptureRef(Comparable):
 
     def __repr__(self) -> str:
         return f"{self.verse_ref}/{'/'.join(str(se) for se in self.path)}"
+
+
+EMPTY_SCRIPTURE_REF = ScriptureRef()

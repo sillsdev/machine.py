@@ -1,6 +1,6 @@
 from typing import List, Optional, Tuple, Union
 
-from ..scripture.scripture_ref import ScriptureRef
+from .scripture_ref import ScriptureRef
 from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler
 from .usfm_parser_state import UsfmParserState
 from .usfm_stylesheet import UsfmStylesheet

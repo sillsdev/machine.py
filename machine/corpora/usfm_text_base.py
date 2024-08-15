@@ -2,7 +2,7 @@ from abc import abstractmethod
 from io import TextIOWrapper
 from typing import Generator, Iterable, List, Optional, Sequence
 
-from machine.scripture.scripture_ref import ScriptureRef
+from machine.corpora.scripture_ref import ScriptureRef
 
 from ..scripture.verse_ref import Versification
 from ..utils.string_utils import has_sentence_ending
@@ -183,7 +183,7 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
 
     def _end_verse_text(self, state: UsfmParserState, scripture_refs: List[ScriptureRef]) -> None:
         text = self._row_texts_stack.pop()
-        self._rows.extend(self._text._create_rows(scripture_refs, text, self._sentence_start))
+        self._rows.extend(self._text._create_scripture_rows(scripture_refs, text, self._sentence_start))
         self._sentence_start = (state.token and state.token.marker == "c") or has_sentence_ending(text)
 
     def _start_non_verse_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
@@ -192,7 +192,7 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
     def _end_non_verse_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
         text = self._row_texts_stack.pop()
         if self._text._include_all_text:
-            self._rows.append(self._text._create_row(scripture_ref, text, self._sentence_start))
+            self._rows.append(self._text._create_scripture_row(scripture_ref, text, self._sentence_start))
 
     def _start_note_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
         if self._text._include_markers:
@@ -204,7 +204,7 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
             return
         text = self._row_texts_stack.pop()
         if self._text._include_all_text:
-            self._rows.append(self._text._create_row(scripture_ref, text, self._sentence_start))
+            self._rows.append(self._text._create_scripture_row(scripture_ref, text, self._sentence_start))
 
     def _output_marker(self, state: UsfmParserState) -> None:
         if not self._text._include_markers or len(self._row_texts_stack) == 0:

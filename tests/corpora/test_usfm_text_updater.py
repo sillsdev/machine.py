@@ -2,9 +2,8 @@ from typing import List, Optional, Tuple
 
 from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH
 
-from machine.corpora import parse_usfm
+from machine.corpora import ScriptureRef, parse_usfm
 from machine.corpora.usfm_text_updater import UsfmTextUpdater
-from machine.scripture import ScriptureRef
 
 
 def test_get_usfm_verse_char_style() -> None:

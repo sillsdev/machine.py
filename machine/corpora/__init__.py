@@ -15,7 +15,15 @@ from .parallel_text_corpus import ParallelTextCorpus
 from .parallel_text_row import ParallelTextRow
 from .paratext_backup_text_corpus import ParatextBackupTextCorpus
 from .paratext_text_corpus import ParatextTextCorpus
-from .scripture_text_corpus import ScriptureTextCorpus, create_versification_ref_corpus, extract_scripture_corpus
+from .scripture_element import ScriptureElement
+from .scripture_ref import EMPTY_SCRIPTURE_REF, ScriptureRef
+from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler, ScriptureTextType
+from .scripture_text_corpus import (
+    ScriptureTextCorpus,
+    create_versification_ref_corpus,
+    extract_scripture_corpus,
+    is_scripture,
+)
 from .standard_parallel_text_corpus import StandardParallelTextCorpus
 from .text import Text
 from .text_corpus import TextCorpus
@@ -41,6 +49,7 @@ from .usfm_parser_handler import UsfmParserHandler
 from .usfm_parser_state import UsfmElementType, UsfmParserElement, UsfmParserState
 from .usfm_stylesheet import UsfmStylesheet
 from .usfm_tag import UsfmJustification, UsfmStyleAttribute, UsfmStyleType, UsfmTag, UsfmTextProperties, UsfmTextType
+from .usfm_text_updater import UsfmTextUpdater
 from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
 from .usfm_tokenizer import RtlReferenceOrder, UsfmTokenizer
 from .usx_file_alignment_collection import UsxFileAlignmentCollection
@@ -60,9 +69,11 @@ __all__ = [
     "DblBundleTextCorpus",
     "DictionaryAlignmentCorpus",
     "DictionaryTextCorpus",
+    "EMPTY_SCRIPTURE_REF",
     "escape_spaces",
     "extract_scripture_corpus",
     "flatten",
+    "is_scripture",
     "lowercase",
     "MemoryAlignmentCollection",
     "MemoryText",
@@ -78,7 +89,11 @@ __all__ = [
     "ParatextTextCorpus",
     "parse_usfm",
     "RtlReferenceOrder",
+    "ScriptureElement",
+    "ScriptureRef",
+    "ScriptureRefUsfmParserHandler",
     "ScriptureTextCorpus",
+    "ScriptureTextType",
     "StandardParallelTextCorpus",
     "Text",
     "TextCorpus",
@@ -104,6 +119,7 @@ __all__ = [
     "UsfmTag",
     "UsfmTextProperties",
     "UsfmTextType",
+    "UsfmTextUpdater",
     "UsfmToken",
     "UsfmTokenizer",
     "UsfmTokenType",

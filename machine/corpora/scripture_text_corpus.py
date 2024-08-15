@@ -2,10 +2,10 @@ from typing import Generator, Iterable, Optional, Tuple, cast
 
 from ..scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION
 from ..scripture.canon import book_id_to_number, book_number_to_id, is_canonical
-from ..scripture.scripture_ref import ScriptureRef
 from ..scripture.verse_ref import VerseRef, Versification
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .dictionary_text_corpus import DictionaryTextCorpus
+from .scripture_ref import ScriptureRef
 from .scripture_text import ScriptureText
 from .text_corpus import TextCorpus
 from .text_row import TextRow
@@ -33,7 +33,7 @@ class _VersificationRefCorpusText(ScriptureText):
             for v in range(1, self.versification.get_last_verse(b, c) + 1):
                 vref = self._create_verse_ref(str(c), str(v))
                 if not self._versification.is_excluded(vref.bbbcccvvv):
-                    yield from self._create_rows(vref)
+                    yield from self._create_scripture_rows(vref)
 
 
 def create_versification_ref_corpus(

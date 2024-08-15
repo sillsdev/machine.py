@@ -1,10 +1,10 @@
 from typing import Generator, List, Optional, Union
 
 from ..scripture import ENGLISH_VERSIFICATION
-from ..scripture.scripture_ref import ScriptureElement, ScriptureRef
 from ..scripture.verse_ref import VerseRef, Versification
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .corpora_utils import gen, get_scripture_text_sort_key
+from .scripture_ref import ScriptureElement, ScriptureRef
 from .text_base import TextBase
 from .text_row import TextRow, TextRowFlags
 
@@ -33,15 +33,15 @@ class ScriptureText(TextBase):
             seg_list.sort(key=lambda r: r.ref)
         return ContextManagedGenerator(gen(seg_list))
 
-    def _create_rows(
+    def _create_scripture_rows(
         self, ref: Union[List[ScriptureRef], VerseRef], text: str = "", is_sentence_start: bool = True
     ) -> Generator[TextRow, None, None]:
         if isinstance(ref, VerseRef):
-            yield from self._create_rows_verse_ref(ref, text, is_sentence_start)
+            yield from self._create_scripture_rows_verse_ref(ref, text, is_sentence_start)
         else:
-            yield from self._create_rows_scripture_ref(ref, text, is_sentence_start)
+            yield from self._create_scripture_rows_scripture_ref(ref, text, is_sentence_start)
 
-    def _create_rows_scripture_ref(
+    def _create_scripture_rows_scripture_ref(
         self, scripture_refs: List[ScriptureRef], text: str = "", is_sentence_start: bool = True
     ) -> Generator[TextRow, None, None]:
         if len(scripture_refs) > 1:
@@ -51,16 +51,16 @@ class ScriptureText(TextBase):
                     flags: TextRowFlags = TextRowFlags.IN_RANGE | TextRowFlags.RANGE_START
                     if is_sentence_start:
                         flags |= TextRowFlags.SENTENCE_START
-                    yield super()._create_row(text, sref, flags)
+                    yield self._create_row(text, sref, flags)
                     first_verse = False
                 else:
                     yield self._create_empty_row(sref, TextRowFlags.IN_RANGE)
         else:
-            yield super()._create_row(
+            yield self._create_row(
                 text, scripture_refs[0], TextRowFlags.SENTENCE_START if is_sentence_start else TextRowFlags.NONE
             )
 
-    def _create_rows_verse_ref(
+    def _create_scripture_rows_verse_ref(
         self, verse_ref: VerseRef, text: str = "", is_sentence_start: bool = True
     ) -> Generator[TextRow, None, None]:
         if verse_ref.has_multiple:
@@ -70,16 +70,16 @@ class ScriptureText(TextBase):
                     flags = TextRowFlags.IN_RANGE | TextRowFlags.RANGE_START
                     if is_sentence_start:
                         flags |= TextRowFlags.SENTENCE_START
-                    yield super()._create_row(text, ScriptureRef(vref), flags)
+                    yield self._create_row(text, ScriptureRef(vref), flags)
                     first_verse = False
                 else:
                     yield self._create_empty_row(ScriptureRef(vref), TextRowFlags.IN_RANGE)
         else:
-            yield super()._create_row(
+            yield self._create_row(
                 text, ScriptureRef(verse_ref), TextRowFlags.SENTENCE_START if is_sentence_start else TextRowFlags.NONE
             )
 
-    def _create_row(
+    def _create_scripture_row(
         self,
         ref: Union[ScriptureRef, VerseRef],
         text: str,
@@ -87,13 +87,13 @@ class ScriptureText(TextBase):
         elements: Optional[List[ScriptureElement]] = None,
     ) -> TextRow:
         if isinstance(ref, VerseRef):
-            return super()._create_row(
+            return self._create_row(
                 text,
                 ScriptureRef(ref, elements),
                 TextRowFlags.SENTENCE_START if is_sentence_start else TextRowFlags.NONE,
             )
         else:
-            return super()._create_row(
+            return self._create_row(
                 text,
                 ref,
                 TextRowFlags.SENTENCE_START if is_sentence_start else TextRowFlags.NONE,

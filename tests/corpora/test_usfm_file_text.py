@@ -1,7 +1,6 @@
 from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH, scripture_ref
 
-from machine.corpora import UsfmFileTextCorpus
-from machine.scripture import ScriptureRef
+from machine.corpora import ScriptureRef, UsfmFileTextCorpus
 
 
 def test_get_rows_nonempty_text() -> None:
