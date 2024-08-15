@@ -5,7 +5,7 @@ from machine.scripture import ORIGINAL_VERSIFICATION, VerseRef
 
 
 def test_extract_scripture_corpus() -> None:
-    corpus = ParatextTextCorpus(USFM_TEST_PROJECT_PATH)
+    corpus = ParatextTextCorpus(USFM_TEST_PROJECT_PATH, include_all_text=True)
 
     lines = list(extract_scripture_corpus(corpus))
     assert len(lines) == 41899
@@ -13,7 +13,7 @@ def test_extract_scripture_corpus() -> None:
     text, orig_vref, corpus_vref = lines[0]
     assert text == ""
     assert orig_vref.exact_equals(VerseRef.from_string("GEN 1:1", ORIGINAL_VERSIFICATION))
-    assert corpus_vref is None
+    assert corpus_vref is not None and corpus_vref.exact_equals(VerseRef.from_string("GEN 1:1", corpus.versification))
 
     text, orig_vref, corpus_vref = lines[3167]
     assert text == "Chapter fourteen, verse fifty-five. Segment b."
@@ -28,7 +28,7 @@ def test_extract_scripture_corpus() -> None:
     text, orig_vref, corpus_vref = lines[10727]
     assert text == "<range>"
     assert orig_vref.exact_equals(VerseRef.from_string("1CH 12:4", ORIGINAL_VERSIFICATION))
-    assert corpus_vref is None
+    assert corpus_vref is not None and corpus_vref.exact_equals(VerseRef.from_string("1CH 12:4", corpus.versification))
 
     text, orig_vref, corpus_vref = lines[10731]
     assert text == "<range>"

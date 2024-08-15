@@ -2,15 +2,17 @@ from abc import abstractmethod
 from io import TextIOWrapper
 from typing import Generator, Iterable, List, Optional, Sequence
 
-from ..scripture.verse_ref import VerseRef, Versification, are_overlapping_verse_ranges
+from machine.corpora.scripture_ref import ScriptureRef
+
+from ..scripture.verse_ref import Versification
 from ..utils.string_utils import has_sentence_ending
-from .corpora_utils import gen, merge_verse_ranges
+from .corpora_utils import gen
+from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler, ScriptureTextType
 from .scripture_text import ScriptureText
 from .stream_container import StreamContainer
 from .text_row import TextRow
 from .usfm_parser import parse_usfm
-from .usfm_parser_handler import UsfmParserHandler
-from .usfm_parser_state import UsfmElementType, UsfmParserState
+from .usfm_parser_state import UsfmParserState
 from .usfm_stylesheet import UsfmStylesheet
 from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
 
@@ -23,12 +25,14 @@ class UsfmTextBase(ScriptureText):
         encoding: str,
         versification: Optional[Versification],
         include_markers: bool,
+        include_all_text: bool,
     ) -> None:
         super().__init__(id, versification)
 
         self._stylesheet = stylesheet
         self._encoding = encoding
         self._include_markers = include_markers
+        self._include_all_text = include_all_text
 
     @abstractmethod
     def _create_stream_container(self) -> StreamContainer: ...
@@ -52,30 +56,20 @@ class UsfmTextBase(ScriptureText):
             return reader.read()
 
 
-class _TextRowCollector(UsfmParserHandler):
+class _TextRowCollector(ScriptureRefUsfmParserHandler):
     def __init__(self, text: UsfmTextBase) -> None:
+        super().__init__()
+
         self._text = text
         self._rows: List[TextRow] = []
-        self._verse_text = ""
         self._next_para_tokens: List[UsfmToken] = []
-        self._verse_ref: Optional[VerseRef] = None
+        self._row_texts_stack: List[str] = []
         self._sentence_start: bool = False
         self._next_para_text_started = False
 
     @property
     def rows(self) -> Iterable[TextRow]:
         return self._rows
-
-    def chapter(
-        self,
-        state: UsfmParserState,
-        number: str,
-        marker: str,
-        alt_number: Optional[str],
-        pub_number: Optional[str],
-    ) -> None:
-        self._verse_completed(next_sentence_start=True)
-        self._verse_ref = None
 
     def verse(
         self,
@@ -85,19 +79,7 @@ class _TextRowCollector(UsfmParserHandler):
         alt_number: Optional[str],
         pub_number: Optional[str],
     ) -> None:
-        if self._verse_ref is None:
-            self._verse_ref = state.verse_ref.copy()
-        elif state.verse_ref.exact_equals(self._verse_ref):
-            self._verse_completed()
-
-            # ignore duplicate verse
-            self._verse_ref = None
-        elif are_overlapping_verse_ranges(number, self._verse_ref.verse):
-            # merge overlapping verse ranges in to one range
-            self._verse_ref.verse = merge_verse_ranges(number, self._verse_ref.verse)
-        else:
-            self._verse_completed()
-            self._verse_ref = state.verse_ref.copy()
+        super().verse(state, number, marker, alt_number, pub_number)
         self._next_para_text_started = True
         self._next_para_tokens.clear()
 
@@ -108,22 +90,25 @@ class _TextRowCollector(UsfmParserHandler):
         unknown: bool,
         attributes: Optional[Sequence[UsfmAttribute]],
     ) -> None:
+        super().start_para(state, marker, unknown, attributes)
         self._handle_para(state)
 
     def start_row(self, state: UsfmParserState, marker: str) -> None:
+        super().start_row(state, marker)
         self._handle_para(state)
 
     def start_cell(self, state: UsfmParserState, marker: str, align: str, colspan: int) -> None:
-        if self._verse_ref is None:
-            return
+        super().start_cell(state, marker, align, colspan)
 
         if self._text._include_markers:
             self._output_marker(state)
-        else:
-            if len(self._verse_text) > 0 and not self._verse_text[-1].isspace():
-                self._verse_text += " "
+        elif self._current_text_type == ScriptureTextType.VERSE:
+            verse_text: str = self._row_texts_stack[-1]
+            if len(verse_text) > 0 and not verse_text[-1].isspace():
+                self._row_texts_stack[-1] += " "
 
     def ref(self, state: UsfmParserState, marker: str, display: str, target: str) -> None:
+        super().ref(state, marker, display, target)
         self._output_marker(state)
 
     def start_char(
@@ -133,87 +118,116 @@ class _TextRowCollector(UsfmParserHandler):
         unknown: bool,
         attributes: Optional[Sequence[UsfmAttribute]],
     ) -> None:
+        super().start_char(state, marker_without_plus, unknown, attributes)
         self._output_marker(state)
 
     def end_char(
         self, state: UsfmParserState, marker: str, attributes: Optional[Sequence[UsfmAttribute]], closed: bool
     ) -> None:
         assert state.prev_token is not None
+        super().end_char(state, marker, attributes, closed)
         if self._text._include_markers and attributes is not None and state.prev_token.type == UsfmTokenType.ATTRIBUTE:
-            self._verse_text += str(state.prev_token)
+            self._row_texts_stack[-1] += str(state.prev_token)
 
         if closed:
             self._output_marker(state)
         if not self._text._include_markers and marker == "rq":
-            self._verse_text = self._verse_text.rstrip()
+            self._row_texts_stack[-1] = self._row_texts_stack[-1].rstrip()
 
     def start_note(self, state: UsfmParserState, marker: str, caller: str, category: Optional[str]) -> None:
+        super().start_note(state, marker, caller, category)
         self._output_marker(state)
 
     def end_note(self, state: UsfmParserState, marker: str, closed: bool) -> None:
+        super().end_note(state, marker, closed)
         if closed:
             self._output_marker(state)
 
     def opt_break(self, state: UsfmParserState) -> None:
-        if not self._text._include_markers:
-            self._verse_text = self._verse_text.rstrip()
+        super().opt_break(state)
+        if self._text._include_markers:
+            self._row_texts_stack[-1] += "//"
+        elif self._current_text_type != ScriptureTextType.VERSE or state.is_verse_text:
+            self._row_texts_stack[-1] = self._row_texts_stack[-1].rstrip()
 
     def text(self, state: UsfmParserState, text: str) -> None:
-        if self._verse_ref is None or not state.is_verse_para:
+        super().text(state, text)
+
+        if len(self._row_texts_stack) == 0:
             return
 
+        row_text = self._row_texts_stack[-1]
         if self._text._include_markers:
             text = text.rstrip("\r\n")
-            if len(text) > 0 and not any(e.type == UsfmElementType.SIDEBAR for e in state.stack):
+            if len(text) > 0:
                 if not text.isspace():
                     for token in self._next_para_tokens:
-                        self._verse_text += str(token)
+                        row_text += str(token)
                     self._next_para_tokens.clear()
                     self._next_para_text_started = True
-                if len(self._verse_text) == 0 or self._verse_text[-1].isspace():
+                if len(row_text) == 0 or row_text[-1].isspace():
                     text = text.lstrip()
-                self._verse_text += text
-        elif state.is_verse_text and len(text) > 0:
+                row_text += text
+        elif len(text) > 0 and (self._current_text_type != ScriptureTextType.VERSE or state.is_verse_text):
             if (
                 state.prev_token is not None
                 and state.prev_token.type == UsfmTokenType.END
-                and (self._verse_text == "" or self._verse_text[-1].isspace())
+                and (len(row_text) == 0 or row_text[-1].isspace())
             ):
                 text = text.lstrip()
-            self._verse_text += text
+            row_text += text
+        self._row_texts_stack[-1] = row_text
 
-    def end_usfm(self, state: UsfmParserState) -> None:
-        self._verse_completed()
+    def _start_verse_text(self, state: UsfmParserState, scripture_refs: List[ScriptureRef]) -> None:
+        self._row_texts_stack.append("")
+
+    def _end_verse_text(self, state: UsfmParserState, scripture_refs: List[ScriptureRef]) -> None:
+        text = self._row_texts_stack.pop()
+        self._rows.extend(self._text._create_scripture_rows(scripture_refs, text, self._sentence_start))
+        self._sentence_start = (state.token and state.token.marker == "c") or has_sentence_ending(text)
+
+    def _start_non_verse_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
+        self._row_texts_stack.append("")
+
+    def _end_non_verse_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
+        text = self._row_texts_stack.pop()
+        if self._text._include_all_text:
+            self._rows.append(self._text._create_scripture_row(scripture_ref, text, self._sentence_start))
+
+    def _start_note_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
+        if self._text._include_markers:
+            return
+        self._row_texts_stack.append("")
+
+    def _end_note_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
+        if self._text._include_markers:
+            return
+        text = self._row_texts_stack.pop()
+        if self._text._include_all_text:
+            self._rows.append(self._text._create_scripture_row(scripture_ref, text, self._sentence_start))
 
     def _output_marker(self, state: UsfmParserState) -> None:
-        if self._verse_ref is None or not self._text._include_markers:
+        if not self._text._include_markers or len(self._row_texts_stack) == 0:
             return
 
         assert state.token is not None
 
         if self._next_para_text_started:
-            self._verse_text += str(state.token)
+            self._row_texts_stack[-1] += str(state.token)
         else:
             self._next_para_tokens.append(state.token)
 
-    def _verse_completed(self, next_sentence_start: Optional[bool] = None) -> None:
-        if self._verse_ref is None:
-            return
-
-        self._rows.extend(self._text._create_rows(self._verse_ref, self._verse_text, self._sentence_start))
-        self._sentence_start = (
-            has_sentence_ending(self._verse_text) if next_sentence_start is None else next_sentence_start
-        )
-        self._verse_text = ""
-
     def _handle_para(self, state: UsfmParserState) -> None:
-        if self._verse_ref is None:
+        if len(self._row_texts_stack) == 0:
             return
 
         assert state.token is not None
 
-        if state.is_verse_para:
-            if len(self._verse_text) > 0 and not self._verse_text[-1].isspace():
-                self._verse_text += " "
+        for i, row_text in enumerate(self._row_texts_stack):
+            if len(row_text) > 0 and not row_text[-1].isspace():
+                self._row_texts_stack[i] += " "
+        if self._current_text_type == ScriptureTextType.VERSE:
             self._next_para_tokens.append(state.token)
             self._next_para_text_started = False
+        if not state.is_verse_para:
+            self._sentence_start = True

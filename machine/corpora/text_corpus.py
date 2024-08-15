@@ -4,6 +4,7 @@ from abc import abstractmethod
 from itertools import islice
 from typing import Any, Callable, Generator, Iterable, Literal, Optional, Tuple
 
+from ..scripture.verse_ref import Versification
 from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
 from ..utils.context_managed_generator import ContextManagedGenerator
@@ -24,6 +25,10 @@ class TextCorpus(Corpus[TextRow]):
     @property
     @abstractmethod
     def is_tokenized(self) -> bool: ...
+
+    @property
+    @abstractmethod
+    def versification(self) -> Versification: ...
 
     def get_rows(self, text_ids: Optional[Iterable[str]] = None) -> ContextManagedGenerator[TextRow, None, None]:
         return ContextManagedGenerator(self._get_rows(text_ids))
@@ -161,6 +166,10 @@ class _TransformTextCorpus(TextCorpus):
     def is_tokenized(self) -> bool:
         return self._is_tokenized
 
+    @property
+    def versification(self) -> Versification:
+        return self._corpus.versification
+
     def count(self, include_empty: bool = True) -> int:
         return self._corpus.count(include_empty)
 
@@ -182,6 +191,10 @@ class _TextFilterTextCorpus(TextCorpus):
     def is_tokenized(self) -> bool:
         return self._corpus.is_tokenized
 
+    @property
+    def versification(self) -> Versification:
+        return self._corpus.versification
+
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
         with self._corpus.get_rows((t.id for t in self.texts) if text_ids is None else text_ids) as rows:
             yield from rows
@@ -200,6 +213,10 @@ class _FilterTextCorpus(TextCorpus):
     def is_tokenized(self) -> bool:
         return self._corpus.is_tokenized
 
+    @property
+    def versification(self) -> Versification:
+        return self._corpus.versification
+
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
         with self._corpus.get_rows(text_ids) as rows:
             yield from (row for i, row in enumerate(rows) if self._predicate(row, i))
@@ -217,6 +234,10 @@ class _TakeTextCorpus(TextCorpus):
     @property
     def is_tokenized(self) -> bool:
         return self._corpus.is_tokenized
+
+    @property
+    def versification(self) -> Versification:
+        return self._corpus.versification
 
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
         with self._corpus.get_rows(text_ids) as rows:

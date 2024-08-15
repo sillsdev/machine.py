@@ -19,7 +19,7 @@ def is_cell_range(marker: str) -> Tuple[bool, str, int]:
         if col_span >= 2:
             return True, base_tag, col_span
 
-    return False, "", 0
+    return False, marker, 0
 
 
 class UsfmStylesheet:

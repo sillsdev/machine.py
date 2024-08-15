@@ -18,6 +18,8 @@ class ParallelTextRow(Sequence[Sequence[str]]):
         source_flags: TextRowFlags = TextRowFlags.SENTENCE_START,
         target_flags: TextRowFlags = TextRowFlags.SENTENCE_START,
     ) -> None:
+        if not text_id:
+            raise ValueError("A text_id must be set.")
         if len(source_refs) == 0 and len(target_refs) == 0:
             raise ValueError("Either a source or target ref must be set.")
         self._text_id = text_id

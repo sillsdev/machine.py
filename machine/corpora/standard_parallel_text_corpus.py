@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from queue import SimpleQueue
 from typing import Any, Collection, ContextManager, Generator, Iterable, List, Optional, Set, Tuple
 
-from ..scripture.verse_ref import VerseRef, Versification
+from ..scripture.verse_ref import Versification
 from ..utils.comparable import compare
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .aligned_word_pair import AlignedWordPair
@@ -14,6 +14,8 @@ from .alignment_row import AlignmentRow
 from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .parallel_text_corpus import ParallelTextCorpus
 from .parallel_text_row import ParallelTextRow
+from .scripture_ref import EMPTY_SCRIPTURE_REF, ScriptureRef
+from .scripture_text_corpus import is_scripture
 from .text_corpus import TextCorpus
 from .text_row import TextRow, TextRowFlags
 
@@ -77,16 +79,20 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
 
         with ExitStack() as stack:
             src_iterator = stack.enter_context(self._source_corpus.get_rows(text_ids))
-            trg_iterator = stack.enter_context(_TargetCorpusGenerator(self._target_corpus.get_rows(text_ids)))
+            trg_iterator = stack.enter_context(
+                _TargetCorpusGenerator(
+                    self._target_corpus.get_rows(text_ids),
+                    self._source_corpus.versification,
+                    self._target_corpus.versification,
+                )
+            )
             alignment_iterator = stack.enter_context(self._alignment_corpus.get_rows(text_ids))
 
-            range_info = _RangeInfo()
+            range_info = _RangeInfo(target_versification=self._target_corpus.versification)
             source_same_ref_rows: List[TextRow] = []
             target_same_ref_rows: List[TextRow] = []
 
             src_row = next(src_iterator, None)
-            if src_row is not None and isinstance(src_row.ref, VerseRef):
-                trg_iterator.source_versification = src_row.ref.versification
             trg_row = next(trg_iterator, None)
             alignment: Optional[AlignmentRow] = None
             while src_row is not None and trg_row is not None:
@@ -95,6 +101,7 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
                     if not self._all_target_rows and src_row.is_in_range:
                         if range_info.is_in_range and trg_row.is_in_range and len(trg_row.segment) > 0:
                             yield range_info.create_row()
+                        range_info.text_id = src_row.text_id
                         range_info.source_refs.append(src_row.ref)
                         target_same_ref_rows.clear()
                         range_info.source_segment.extend(src_row.segment)
@@ -117,6 +124,7 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
                     if not self._all_source_rows and trg_row.is_in_range:
                         if range_info.is_in_range and src_row.is_in_range and len(src_row.segment) > 0:
                             yield range_info.create_row()
+                        range_info.text_id = trg_row.text_id
                         range_info.target_refs.append(trg_row.ref)
                         source_same_ref_rows.clear()
                         range_info.target_segment.extend(trg_row.segment)
@@ -241,6 +249,14 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
         else:
             raise ValueError("Either a source or target must be specified.")
 
+        src_refs = [] if src_row is None else [src_row.ref]
+        trg_refs = [] if trg_row is None else [trg_row.ref]
+
+        if len(trg_refs) == 0 and is_scripture(self._target_corpus):
+            for r in src_refs:
+                r: ScriptureRef
+                trg_refs.append(r.change_versification(self._target_corpus.versification))
+
         if src_row is None:
             source_flags = TextRowFlags.IN_RANGE if force_source_in_range else TextRowFlags.NONE
         else:
@@ -253,8 +269,8 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
 
         yield ParallelTextRow(
             text_id,
-            [] if src_row is None else [src_row.ref],
-            [] if trg_row is None else [trg_row.ref],
+            src_refs,
+            trg_refs,
             [] if src_row is None else src_row.segment,
             [] if trg_row is None else trg_row.segment,
             aligned_word_pairs,
@@ -300,12 +316,17 @@ class _RangeInfo:
     is_target_sentence_start: bool = field(default=False, init=False)
     is_source_empty: bool = field(default=True, init=False)
     is_target_empty: bool = field(default=True, init=False)
+    target_versification: Optional[Versification] = field(default=None)
 
     @property
     def is_in_range(self) -> bool:
-        return len(self.source_refs) > 0 and len(self.target_refs) > 0
+        return len(self.source_refs) > 0 or len(self.target_refs) > 0
 
     def create_row(self) -> ParallelTextRow:
+        if len(self.target_refs) == 0 and self.target_versification is not None:
+            for r in self.source_refs:
+                r: ScriptureRef
+                self.target_refs.append(r.change_versification(self.target_versification))
         row = ParallelTextRow(
             self.text_id,
             self.source_refs.copy(),
@@ -329,31 +350,29 @@ class _RangeInfo:
 
 
 class _TargetCorpusGenerator(ContextManager["_TargetCorpusGenerator"], Generator[TextRow, None, None]):
-    def __init__(self, generator: ContextManagedGenerator[TextRow, None, None]) -> None:
+    def __init__(
+        self,
+        generator: ContextManagedGenerator[TextRow, None, None],
+        source_versification: Versification,
+        target_versification: Versification,
+    ) -> None:
         self._generator = generator
-        self._is_scripture = False
+        self._source_versification = source_versification
+        self._is_scripture = (
+            source_versification is not None
+            and target_versification is not None
+            and source_versification != target_versification
+        )
         self._is_enumerating = False
         self._verse_rows: SimpleQueue[TextRow] = SimpleQueue()
-        self.source_versification: Optional[Versification] = None
         self._row: Optional[TextRow] = None
 
     def send(self, value: None) -> TextRow:
-        if not self._is_enumerating:
-            self._is_enumerating = True
-            self._row = next(self._generator, None)
-            if (
-                self._row is not None
-                and isinstance(self._row.ref, VerseRef)
-                and self.source_versification != self._row.ref.versification
-            ):
-                self._is_scripture = True
-            elif self._row is not None:
-                return self._row
-            else:
-                raise StopIteration
-
         if self._is_scripture:
-            if self._verse_rows.empty():
+            if not self._is_enumerating:
+                self._row = next(self._generator, None)
+                self._is_enumerating = True
+            if self._verse_rows.empty() and self._row is not None:
                 self._collect_verses()
             if not self._verse_rows.empty():
                 return self._verse_rows.get()
@@ -378,21 +397,20 @@ class _TargetCorpusGenerator(ContextManager["_TargetCorpusGenerator"], Generator
         self.close()
 
     def _collect_verses(self) -> None:
-        assert self.source_versification is not None
-        seg_list: List[Tuple[VerseRef, TextRow]] = []
+        assert self._source_versification is not None
+        seg_list: List[Tuple[ScriptureRef, TextRow]] = []
         out_of_order = False
-        prev_verse_ref = VerseRef()
+        prev_scr_ref = EMPTY_SCRIPTURE_REF
         range_start_offset = -1
         while self._row is not None:
             row = self._row
-            verse_ref: VerseRef = row.ref
-            if not prev_verse_ref.is_default and verse_ref.book_num != prev_verse_ref.book_num:
+            scr_ref: ScriptureRef = row.ref
+            if not prev_scr_ref.is_empty and scr_ref.book_num != prev_scr_ref.book_num:
                 break
 
-            verse_ref = verse_ref.copy()
-            verse_ref.change_versification(self.source_versification)
+            scr_ref = scr_ref.change_versification(self._source_versification)
             # convert one-to-many mapping to a verse range
-            if verse_ref == prev_verse_ref:
+            if scr_ref == prev_scr_ref:
                 range_start_verse_ref, range_start_row = seg_list[range_start_offset]
                 flags = TextRowFlags.IN_RANGE
                 if range_start_row.is_sentence_start:
@@ -412,10 +430,10 @@ class _TargetCorpusGenerator(ContextManager["_TargetCorpusGenerator"], Generator
                 range_start_offset -= 1
             else:
                 range_start_offset = -1
-            seg_list.append((verse_ref, row))
-            if not out_of_order and verse_ref < prev_verse_ref:
+            seg_list.append((scr_ref, row))
+            if not out_of_order and scr_ref < prev_scr_ref:
                 out_of_order = True
-            prev_verse_ref = verse_ref
+            prev_scr_ref = scr_ref
             self._row = next(self._generator, None)
 
         if out_of_order:
@@ -433,6 +451,6 @@ def _check_same_ref_rows(same_ref_rows: List[TextRow], other_row: TextRow) -> bo
 
 
 def _compare_refs(source_ref: Any, target_ref: Any) -> int:
-    if isinstance(source_ref, VerseRef) and isinstance(target_ref, VerseRef):
+    if isinstance(source_ref, ScriptureRef) and isinstance(target_ref, ScriptureRef):
         return source_ref.compare_to(target_ref, compare_segments=False)
     return compare(source_ref, target_ref)

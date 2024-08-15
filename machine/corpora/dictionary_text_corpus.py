@@ -1,5 +1,6 @@
 from typing import Iterable, Optional, overload
 
+from ..scripture.verse_ref import Versification
 from .text import Text
 from .text_corpus import TextCorpus
 
@@ -21,6 +22,7 @@ class DictionaryTextCorpus(TextCorpus):
             texts = args[0]
         self._texts = {t.id: t for t in texts}
         self._is_tokenized = False
+        self._versification = None
 
     @property
     def texts(self) -> Iterable[Text]:
@@ -33,6 +35,14 @@ class DictionaryTextCorpus(TextCorpus):
     @is_tokenized.setter
     def is_tokenized(self, value: bool) -> None:
         self._is_tokenized = value
+
+    @property
+    def versification(self) -> Optional[Versification]:
+        return self._versification
+
+    @versification.setter
+    def versification(self, value: Versification) -> None:
+        self._versification = value
 
     def __getitem__(self, id: str) -> Optional[Text]:
         return self._texts.get(id)

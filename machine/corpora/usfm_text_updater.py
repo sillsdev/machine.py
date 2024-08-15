@@ -1,0 +1,276 @@
+from typing import List, Optional, Tuple, Union
+
+from .scripture_ref import ScriptureRef
+from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler
+from .usfm_parser_state import UsfmParserState
+from .usfm_stylesheet import UsfmStylesheet
+from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
+from .usfm_tokenizer import UsfmTokenizer
+
+
+class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
+    def __init__(
+        self,
+        rows: Optional[List[Tuple[List[ScriptureRef], str]]] = None,
+        id_text: Optional[str] = None,
+        strip_all_text: bool = False,
+        strict_comparison: bool = True,
+    ) -> None:
+        super().__init__()
+        self._rows = rows or []
+        self._tokens: List[UsfmToken] = []
+        self._id_text = id_text
+        self._strip_all_text = strip_all_text
+        self._strict_comparison = strict_comparison
+        self._replace_stack: List[bool] = []
+        self._row_index: int = 0
+        self._token_index: int = 0
+        self._replace_text: bool = False
+
+    @property
+    def tokens(self) -> List[UsfmToken]:
+        return self._tokens
+
+    @property
+    def replace_text(self) -> bool:
+        return self._strip_all_text or (len(self._replace_stack) > 0 and self._replace_stack[-1])
+
+    def start_book(self, state: UsfmParserState, marker: str, code: str) -> None:
+        self._collect_tokens(state)
+        if self._id_text is not None:
+            self._tokens.append(UsfmToken(UsfmTokenType.TEXT, text=self._id_text + " "))
+        self._replace_stack.append(self._id_text is not None)
+
+        super().start_book(state, marker, code)
+
+    def end_book(self, state: UsfmParserState, marker: str) -> None:
+        self._replace_stack.pop()
+
+        super().end_book(state, marker)
+
+    def start_para(
+        self,
+        state: UsfmParserState,
+        marker: str,
+        unknown: bool,
+        attributes: Optional[List[UsfmAttribute]],
+    ) -> None:
+        self._collect_tokens(state)
+
+        super().start_para(state, marker, unknown, attributes)
+
+    def start_row(self, state: UsfmParserState, marker: str) -> None:
+        self._collect_tokens(state)
+
+        super().start_row(state, marker)
+
+    def start_cell(self, state: UsfmParserState, marker: str, align: str, colspan: int) -> None:
+        self._collect_tokens(state)
+
+        super().start_cell(state, marker, align, colspan)
+
+    def end_cell(self, state: UsfmParserState, marker: str) -> None:
+        self._collect_tokens(state)
+
+        super().end_cell(state, marker)
+
+    def start_sidebar(self, state: UsfmParserState, marker: str, category: str) -> None:
+        self._collect_tokens(state)
+
+        super().start_sidebar(state, marker, category)
+
+    def end_sidebar(self, state: UsfmParserState, marker: str, closed: bool) -> None:
+        if closed:
+            self._collect_tokens(state)
+
+        super().end_sidebar(state, marker, closed)
+
+    def chapter(
+        self,
+        state: UsfmParserState,
+        number: str,
+        marker: str,
+        alt_number: str,
+        pub_number: str,
+    ) -> None:
+        self._collect_tokens(state)
+
+        super().chapter(state, number, marker, alt_number, pub_number)
+
+    def milestone(
+        self,
+        state: UsfmParserState,
+        marker: str,
+        start_milestone: bool,
+        attributes: List[UsfmAttribute],
+    ) -> None:
+        self._collect_tokens(state)
+
+        super().milestone(state, marker, start_milestone, attributes)
+
+    def verse(
+        self,
+        state: UsfmParserState,
+        number: str,
+        marker: str,
+        alt_number: str,
+        pub_number: str,
+    ) -> None:
+        self._collect_tokens(state)
+
+        super().verse(state, number, marker, alt_number, pub_number)
+
+    def start_char(
+        self,
+        state: UsfmParserState,
+        marker_without_plus: str,
+        unknown: bool,
+        attributes: List[UsfmAttribute],
+    ) -> None:
+        if self.replace_text:
+            self._skip_tokens(state)
+        else:
+            self._collect_tokens(state)
+
+        super().start_char(state, marker_without_plus, unknown, attributes)
+
+    def end_char(
+        self,
+        state: UsfmParserState,
+        marker: str,
+        attributes: List[UsfmAttribute],
+        closed: bool,
+    ) -> None:
+        if closed and self.replace_text:
+            self._skip_tokens(state)
+
+        super().end_char(state, marker, attributes, closed)
+
+    def start_note(
+        self,
+        state: UsfmParserState,
+        marker: str,
+        caller: str,
+        category: str,
+    ) -> None:
+        if self.replace_text:
+            self._skip_tokens(state)
+        else:
+            self._collect_tokens(state)
+
+        super().start_note(state, marker, caller, category)
+
+    def end_note(self, state: UsfmParserState, marker: str, closed: bool) -> None:
+        if closed and self.replace_text:
+            self._skip_tokens(state)
+
+        super().end_note(state, marker, closed)
+
+    def ref(self, state: UsfmParserState, marker: str, display: str, target: str) -> None:
+        if self.replace_text:
+            self._skip_tokens(state)
+        else:
+            self._collect_tokens(state)
+
+        super().ref(state, marker, display, target)
+
+    def text(self, state: UsfmParserState, text: str) -> None:
+        if self.replace_text:
+            self._skip_tokens(state)
+        else:
+            self._collect_tokens(state)
+
+        super().text(state, text)
+
+    def opt_break(self, state: UsfmParserState) -> None:
+        if self.replace_text:
+            self._skip_tokens(state)
+        else:
+            self._collect_tokens(state)
+
+        super().opt_break(state)
+
+    def unmatched(self, state: UsfmParserState, marker: str) -> None:
+        if self.replace_text:
+            self._skip_tokens(state)
+        else:
+            self._collect_tokens(state)
+
+        super().unmatched(state, marker)
+
+    def _start_verse_text(self, state: UsfmParserState, scripture_refs: List[ScriptureRef]) -> None:
+        row_texts: List[str] = self._advance_rows(scripture_refs)
+        self._tokens.extend(UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in row_texts)
+        self._replace_stack.append(len(row_texts) > 0)
+
+    def _end_verse_text(self, state: UsfmParserState, scripture_refs: List[ScriptureRef]) -> None:
+        self._replace_stack.pop()
+
+    def _start_non_verse_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
+        row_texts = self._advance_rows([scripture_ref])
+        self._tokens.extend(UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in row_texts)
+        self._replace_stack.append(len(row_texts) > 0)
+
+    def _end_non_verse_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
+        self._replace_stack.pop()
+
+    def _start_note_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
+        row_texts = self._advance_rows([scripture_ref])
+        if len(row_texts) > 0:
+            if state.token is None:
+                raise ValueError("Invalid parser state.")
+            self._tokens.append(state.token)
+            self._tokens.append(UsfmToken(UsfmTokenType.CHARACTER, "ft", None, "ft*"))
+            for i, text in enumerate(row_texts):
+                if i < len(row_texts) - 1:
+                    text += " "
+                self._tokens.append(UsfmToken(UsfmTokenType.TEXT, text=text))
+            self._tokens.append(UsfmToken(UsfmTokenType.END, state.token.end_marker, None, None))
+            self._replace_stack.append(True)
+        else:
+            self._replace_stack.append(self._replace_stack[-1])
+
+    def _end_note_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
+        self._replace_stack.pop()
+
+    def get_usfm(self, stylesheet: Union[str, UsfmStylesheet] = "usfm.sty") -> str:
+        if isinstance(stylesheet, str):
+            stylesheet = UsfmStylesheet(stylesheet)
+        tokenizer = UsfmTokenizer(stylesheet)
+        return tokenizer.detokenize(self._tokens)
+
+    def _advance_rows(self, seg_scr_refs: List[ScriptureRef]) -> List[str]:
+        row_texts: List[str] = []
+        i = 0
+        while self._row_index < len(self._rows) and i < len(seg_scr_refs):
+            row_scr_refs, text = self._rows[self._row_index]
+            stop = False
+            for row_scr_ref in row_scr_refs:
+                found = False
+                for seg_scr_ref in seg_scr_refs[i:]:
+                    compare = row_scr_ref.compare_to(
+                        seg_scr_refs[i], compare_segments=False, strict=self._strict_comparison
+                    )
+                    if compare == 0:
+                        row_texts.append(text)
+                        i += 1
+                        found = True
+                        break
+                    elif compare > 0:
+                        stop = True
+                        break
+                if stop or found:
+                    break
+            if stop:
+                break
+            else:
+                self._row_index += 1
+        return row_texts
+
+    def _collect_tokens(self, state: UsfmParserState) -> None:
+        while self._token_index <= state.index + state.special_token_count:
+            self._tokens.append(state.tokens[self._token_index])
+            self._token_index += 1
+
+    def _skip_tokens(self, state: UsfmParserState) -> None:
+        self._token_index = state.index + 1 + state.special_token_count

@@ -377,7 +377,12 @@ class VerseRef(Comparable):
             return 1
         return 0
 
-    def exact_equals(self, other: VerseRef) -> bool:
+    def exact_equals(self, other: object) -> bool:
+        if not isinstance(other, VerseRef):
+            return False
+        if self is other:
+            return True
+
         return (
             self.book_num == other.book_num
             and self.chapter_num == other.chapter_num
@@ -437,7 +442,16 @@ def get_bbbcccvvv(book_num: int, chapter_num: int, verse_num: int) -> int:
     )
 
 
-def are_overlapping_verse_ranges(verse1: str, verse2: str) -> bool:
+def are_overlapping_verse_ranges(verse1: Union[str, VerseRef], verse2: Union[str, VerseRef]) -> bool:
+    if isinstance(verse1, str) and isinstance(verse2, str):
+        return are_overlapping_verse_ranges_str(verse1, verse2)
+    elif isinstance(verse1, VerseRef) and isinstance(verse2, VerseRef):
+        return are_overlapping_verse_ranges_vref(verse1, verse2)
+    else:
+        raise TypeError("verse1 and verse2 are not both str or both VerseRef objects.")
+
+
+def are_overlapping_verse_ranges_str(verse1: str, verse2: str) -> bool:
     verse1_parts = verse1.split(VERSE_SEQUENCE_INDICATOR)
     verse2_parts = verse2.split(VERSE_SEQUENCE_INDICATOR)
 
@@ -468,6 +482,22 @@ def are_overlapping_verse_ranges(verse1: str, verse2: str) -> bool:
             ):
                 return True
     return False
+
+
+def are_overlapping_verse_ranges_vref(verse_ref1: VerseRef, verse_ref2: VerseRef) -> bool:
+    if verse_ref1.is_default or verse_ref2.is_default:
+        return False
+
+    if verse_ref1.versification != verse_ref2.versification:
+        raise ValueError("Versification of verse references does not match.")
+
+    if verse_ref1.book_num != verse_ref2.book_num or verse_ref1.chapter_num != verse_ref2.chapter_num:
+        return False
+
+    if not verse_ref1.verse and not verse_ref2.verse:
+        return verse_ref1.verse_num == verse_ref2.verse_num
+
+    return are_overlapping_verse_ranges_str(verse_ref1.verse, verse_ref2.verse)
 
 
 def _in_verse_range(

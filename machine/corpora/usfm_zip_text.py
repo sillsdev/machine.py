@@ -19,9 +19,15 @@ class UsfmZipText(UsfmTextBase):
         path: str,
         versification: Optional[Versification] = None,
         include_markers: bool = False,
+        include_all_text: bool = False,
     ) -> None:
         super().__init__(
-            _get_id(archive_filename, path, encoding), stylesheet, encoding, versification, include_markers
+            _get_id(archive_filename, path, encoding),
+            stylesheet,
+            encoding,
+            versification,
+            include_markers,
+            include_all_text,
         )
         self._archive_filename = archive_filename
         self._path = path

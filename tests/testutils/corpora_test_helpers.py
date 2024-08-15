@@ -1,7 +1,7 @@
 import shutil
 from pathlib import Path
 
-from machine.corpora import TextRow
+from machine.corpora import ScriptureRef, TextRow
 from machine.scripture import VerseRef
 
 from . import TEST_DATA_PATH
@@ -24,4 +24,9 @@ def create_test_paratext_backup(temp_dir: Path) -> Path:
 
 def verse_ref(segment: TextRow) -> VerseRef:
     assert isinstance(segment.ref, VerseRef)
+    return segment.ref
+
+
+def scripture_ref(segment: TextRow) -> ScriptureRef:
+    assert isinstance(segment.ref, ScriptureRef)
     return segment.ref

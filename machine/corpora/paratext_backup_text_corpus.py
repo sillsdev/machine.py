@@ -10,7 +10,7 @@ from .zip_paratext_project_settings_parser import ZipParatextProjectSettingsPars
 
 
 class ParatextBackupTextCorpus(ScriptureTextCorpus):
-    def __init__(self, filename: StrPath, include_markers: bool = False) -> None:
+    def __init__(self, filename: StrPath, include_markers: bool = False, include_all_text: bool = False) -> None:
         with ZipFile(filename, "r") as archive:
             parser = ZipParatextProjectSettingsParser(archive)
             settings = parser.parse()
@@ -28,6 +28,7 @@ class ParatextBackupTextCorpus(ScriptureTextCorpus):
                         sfm_entry.filename,
                         versification,
                         include_markers,
+                        include_all_text,
                     )
                 )
 

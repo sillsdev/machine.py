@@ -20,4 +20,4 @@ class UsxTextBase(ScriptureText):
         with self._create_stream_container() as stream_container, stream_container.open_stream() as stream:
             for verse in self._parser.parse(stream):
                 verse_ref = self._create_verse_ref(verse.chapter, verse.verse)
-                yield from self._create_rows(verse_ref, verse.text, verse.is_sentence_start)
+                yield from self._create_scripture_rows(verse_ref, verse.text, verse.is_sentence_start)
