@@ -10,7 +10,13 @@ from testutils.mock_settings import MockSettings
 
 from machine.annotations import Range
 from machine.corpora import DictionaryTextCorpus
-from machine.jobs import NmtEngineBuildJob, NmtModelFactory, PretranslationInfo, PretranslationWriter, SharedFileService
+from machine.jobs import (
+    DictToJsonWriter,
+    NmtEngineBuildJob,
+    NmtModelFactory,
+    PretranslationInfo,
+    TranslationFileService,
+)
 from machine.translation import (
     Phrase,
     Trainer,
@@ -30,7 +36,7 @@ def test_run(decoy: Decoy) -> None:
     pretranslations = json.loads(env.target_pretranslations)
     assert len(pretranslations) == 1
     assert pretranslations[0]["translation"] == "Please, I have booked a room."
-    decoy.verify(env.shared_file_service.save_model(Path("model.tar.gz"), "models/save-model.tar.gz"), times=1)
+    decoy.verify(env.translation_file_service.save_model(Path("model.tar.gz"), "models/save-model.tar.gz"), times=1)
 
 
 def test_cancel(decoy: Decoy) -> None:
@@ -92,12 +98,12 @@ class _TestEnvironment:
         decoy.when(self.nmt_model_factory.create_engine()).then_return(self.engine)
         decoy.when(self.nmt_model_factory.save_model()).then_return(Path("model.tar.gz"))
 
-        self.shared_file_service = decoy.mock(cls=SharedFileService)
-        decoy.when(self.shared_file_service.create_source_corpus()).then_return(DictionaryTextCorpus())
-        decoy.when(self.shared_file_service.create_target_corpus()).then_return(DictionaryTextCorpus())
-        decoy.when(self.shared_file_service.exists_source_corpus()).then_return(True)
-        decoy.when(self.shared_file_service.exists_target_corpus()).then_return(True)
-        decoy.when(self.shared_file_service.get_source_pretranslations()).then_do(
+        self.translation_file_service = decoy.mock(cls=TranslationFileService)
+        decoy.when(self.translation_file_service.create_source_corpus()).then_return(DictionaryTextCorpus())
+        decoy.when(self.translation_file_service.create_target_corpus()).then_return(DictionaryTextCorpus())
+        decoy.when(self.translation_file_service.exists_source_corpus()).then_return(True)
+        decoy.when(self.translation_file_service.exists_target_corpus()).then_return(True)
+        decoy.when(self.translation_file_service.get_source_pretranslations()).then_do(
             lambda: ContextManagedGenerator(
                 (
                     pi
@@ -116,23 +122,21 @@ class _TestEnvironment:
         self.target_pretranslations = ""
 
         @contextmanager
-        def open_target_pretranslation_writer(env: _TestEnvironment) -> Iterator[PretranslationWriter]:
+        def open_target_pretranslation_writer(env: _TestEnvironment) -> Iterator[DictToJsonWriter]:
             file = StringIO()
             file.write("[\n")
-            yield PretranslationWriter(file)
+            yield DictToJsonWriter(file)
             file.write("\n]\n")
             env.target_pretranslations = file.getvalue()
 
-        decoy.when(self.shared_file_service.open_target_pretranslation_writer()).then_do(
+        decoy.when(self.translation_file_service.open_target_pretranslation_writer()).then_do(
             lambda: open_target_pretranslation_writer(self)
         )
 
         self.job = NmtEngineBuildJob(
-            MockSettings(
-                {"src_lang": "es", "trg_lang": "en", "save_model": "save-model", "pretranslation_batch_size": 100}
-            ),
+            MockSettings({"src_lang": "es", "trg_lang": "en", "save_model": "save-model", "inference_batch_size": 100}),
             self.nmt_model_factory,
-            self.shared_file_service,
+            self.translation_file_service,
         )
 
 

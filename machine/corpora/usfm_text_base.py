@@ -2,11 +2,10 @@ from abc import abstractmethod
 from io import TextIOWrapper
 from typing import Generator, Iterable, List, Optional, Sequence
 
-from machine.corpora.scripture_ref import ScriptureRef
-
 from ..scripture.verse_ref import Versification
 from ..utils.string_utils import has_sentence_ending
 from .corpora_utils import gen
+from .scripture_ref import ScriptureRef
 from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler, ScriptureTextType
 from .scripture_text import ScriptureText
 from .stream_container import StreamContainer

@@ -10,18 +10,18 @@ from testutils.mock_settings import MockSettings
 
 from machine.annotations import Range
 from machine.corpora import DictionaryTextCorpus, MemoryText, TextRow
-from machine.jobs import PretranslationInfo, PretranslationWriter, SharedFileService, SmtEngineBuildJob, SmtModelFactory
-from machine.tokenization import WHITESPACE_DETOKENIZER, WHITESPACE_TOKENIZER
+from machine.jobs import DictToJsonWriter, PretranslationInfo, SmtEngineBuildJob, SmtModelFactory
+from machine.jobs.translation_file_service import TranslationFileService
 from machine.translation import (
     Phrase,
     Trainer,
     TrainStats,
-    TranslationEngine,
     TranslationResult,
     TranslationSources,
     Truecaser,
     WordAlignmentMatrix,
 )
+from machine.translation.translation_engine import TranslationEngine
 from machine.utils import CanceledError, ContextManagedGenerator
 
 
@@ -33,7 +33,8 @@ def test_run(decoy: Decoy) -> None:
     assert len(pretranslations) == 1
     assert pretranslations[0]["translation"] == "Please, I have booked a room."
     decoy.verify(
-        env.shared_file_service.save_model(matchers.Anything(), f"builds/{env.job._config.build_id}/model.zip"), times=1
+        env.translation_file_service.save_model(matchers.Anything(), f"builds/{env.job._config.build_id}/model.zip"),
+        times=1,
     )
 
 
@@ -87,8 +88,6 @@ class _TestEnvironment:
         self.truecaser = decoy.mock(cls=Truecaser)
 
         self.smt_model_factory = decoy.mock(cls=SmtModelFactory)
-        decoy.when(self.smt_model_factory.create_tokenizer()).then_return(WHITESPACE_TOKENIZER)
-        decoy.when(self.smt_model_factory.create_detokenizer()).then_return(WHITESPACE_DETOKENIZER)
         decoy.when(self.smt_model_factory.create_model_trainer(matchers.Anything(), matchers.Anything())).then_return(
             self.model_trainer
         )
@@ -101,8 +100,8 @@ class _TestEnvironment:
         decoy.when(self.smt_model_factory.create_truecaser()).then_return(self.truecaser)
         decoy.when(self.smt_model_factory.save_model()).then_return(Path("model.zip"))
 
-        self.shared_file_service = decoy.mock(cls=SharedFileService)
-        decoy.when(self.shared_file_service.create_source_corpus()).then_return(
+        self.translation_file_service = decoy.mock(cls=TranslationFileService)
+        decoy.when(self.translation_file_service.create_source_corpus()).then_return(
             DictionaryTextCorpus(
                 MemoryText(
                     "text1",
@@ -114,7 +113,7 @@ class _TestEnvironment:
                 )
             )
         )
-        decoy.when(self.shared_file_service.create_target_corpus()).then_return(
+        decoy.when(self.translation_file_service.create_target_corpus()).then_return(
             DictionaryTextCorpus(
                 MemoryText(
                     "text1",
@@ -126,9 +125,9 @@ class _TestEnvironment:
                 )
             )
         )
-        decoy.when(self.shared_file_service.exists_source_corpus()).then_return(True)
-        decoy.when(self.shared_file_service.exists_target_corpus()).then_return(True)
-        decoy.when(self.shared_file_service.get_source_pretranslations()).then_do(
+        decoy.when(self.translation_file_service.exists_source_corpus()).then_return(True)
+        decoy.when(self.translation_file_service.exists_target_corpus()).then_return(True)
+        decoy.when(self.translation_file_service.get_source_pretranslations()).then_do(
             lambda: ContextManagedGenerator(
                 (
                     pi
@@ -147,21 +146,21 @@ class _TestEnvironment:
         self.target_pretranslations = ""
 
         @contextmanager
-        def open_target_pretranslation_writer(env: _TestEnvironment) -> Iterator[PretranslationWriter]:
+        def open_target_pretranslation_writer(env: _TestEnvironment) -> Iterator[DictToJsonWriter]:
             file = StringIO()
             file.write("[\n")
-            yield PretranslationWriter(file)
+            yield DictToJsonWriter(file)
             file.write("\n]\n")
             env.target_pretranslations = file.getvalue()
 
-        decoy.when(self.shared_file_service.open_target_pretranslation_writer()).then_do(
+        decoy.when(self.translation_file_service.open_target_pretranslation_writer()).then_do(
             lambda: open_target_pretranslation_writer(self)
         )
 
         self.job = SmtEngineBuildJob(
-            MockSettings({"build_id": "mybuild", "pretranslation_batch_size": 100}),
+            MockSettings({"build_id": "mybuild", "inference_batch_size": 100, "thot": {"tokenizer": "latin"}}),
             self.smt_model_factory,
-            self.shared_file_service,
+            self.translation_file_service,
         )
 
 

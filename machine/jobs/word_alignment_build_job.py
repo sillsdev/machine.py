@@ -1,0 +1,135 @@
+import logging
+from contextlib import ExitStack
+from typing import Any, Callable, Optional
+
+from ..corpora.parallel_text_corpus import ParallelTextCorpus
+from ..corpora.text_corpus import TextCorpus
+from ..tokenization.tokenizer_factory import create_tokenizer
+from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
+from ..utils.progress_status import ProgressStatus
+from .word_alignment_file_service import WordAlignmentFileService, WordAlignmentInfo
+from .word_alignment_model_factory import WordAlignmentModelFactory
+
+logger = logging.getLogger(__name__)
+
+
+class WordAlignmentBuildJob:
+    def __init__(
+        self,
+        config: Any,
+        word_alignment_model_factory: WordAlignmentModelFactory,
+        word_alignment_file_service: WordAlignmentFileService,
+    ) -> None:
+        self._word_alignment_model_factory = word_alignment_model_factory
+        self._word_alignment_model_factory.init()
+        self._config = config
+        self._tokenizer = create_tokenizer(self._config.thot_align.tokenizer)
+        self._word_alignment_file_service = word_alignment_file_service
+        self._train_corpus_size = -1
+
+    def run(
+        self,
+        progress: Optional[Callable[[ProgressStatus], None]] = None,
+        check_canceled: Optional[Callable[[], None]] = None,
+    ) -> int:
+        if check_canceled is not None:
+            check_canceled()
+
+        progress_reporter = self._get_progress_reporter(progress)
+
+        if self.parallel_corpus_size == 0:
+            raise RuntimeError("No parallel corpus data found")
+
+        train_corpus_size = self._train_model(progress_reporter, check_canceled)
+
+        if check_canceled is not None:
+            check_canceled()
+
+        logger.info("Generating alignments")
+        self._batch_inference(progress_reporter, check_canceled)
+
+        self._save_model()
+        return train_corpus_size
+
+    def _get_progress_reporter(self, progress: Optional[Callable[[ProgressStatus], None]]) -> PhasedProgressReporter:
+        phases = [
+            Phase(message="Training Word Alignment model", percentage=0.9),
+            Phase(message="Aligning segments", percentage=0.1),
+        ]
+        return PhasedProgressReporter(progress, phases)
+
+    def _train_model(
+        self,
+        progress_reporter: PhasedProgressReporter,
+        check_canceled: Optional[Callable[[], None]],
+    ) -> int:
+
+        with progress_reporter.start_next_phase() as phase_progress, self._word_alignment_model_factory.create_model_trainer(
+            self._tokenizer, self.parallel_corpus
+        ) as trainer:
+            trainer.train(progress=phase_progress, check_canceled=check_canceled)
+            trainer.save()
+            train_corpus_size = trainer.stats.train_corpus_size
+
+        if check_canceled is not None:
+            check_canceled()
+        return train_corpus_size
+
+    def _batch_inference(
+        self,
+        progress_reporter: PhasedProgressReporter,
+        check_canceled: Optional[Callable[[], None]],
+    ) -> None:
+        inference_step_count = self.parallel_corpus.count(include_empty=False)
+
+        with ExitStack() as stack:
+            phase_progress = stack.enter_context(progress_reporter.start_next_phase())
+            alignment_model = stack.enter_context(self._word_alignment_model_factory.create_alignment_model())
+            writer = stack.enter_context(self._word_alignment_file_service.open_target_alignment_writer())
+            current_inference_step = 0
+            phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
+            batch_size = self._config["inference_batch_size"]
+            segment_batch = list(self.parallel_corpus.lowercase().tokenize(self._tokenizer).take(batch_size))
+            if check_canceled is not None:
+                check_canceled()
+            alignments = alignment_model.align_batch(segment_batch)
+            if check_canceled is not None:
+                check_canceled()
+            for row, alignment in zip(self.parallel_corpus.get_rows(), alignments):
+                writer.write(
+                    WordAlignmentInfo(
+                        refs=[str(ref) for ref in row.source_refs],
+                        column_count=alignment.column_count,
+                        row_count=alignment.row_count,
+                        alignment=str(alignment),
+                    )
+                )
+
+    def _save_model(self) -> None:
+        logger.info("Saving model")
+        model_path = self._word_alignment_model_factory.save_model()
+        self._word_alignment_file_service.save_model(
+            model_path, f"builds/{self._config['build_id']}/model{''.join(model_path.suffixes)}"
+        )
+
+    @property
+    def source_corpus(self) -> TextCorpus:
+        if "_source_corpus" not in self.__dict__:
+            self._source_corpus = self._word_alignment_file_service.create_source_corpus()
+        return self._source_corpus
+
+    @property
+    def target_corpus(self) -> TextCorpus:
+        if "_target_corpus" not in self.__dict__:
+            self._target_corpus = self._word_alignment_file_service.create_target_corpus()
+        return self._target_corpus
+
+    @property
+    def parallel_corpus(self) -> ParallelTextCorpus:
+        if "_parallel_corpus" not in self.__dict__:
+            self._parallel_corpus = self.source_corpus.align_rows(self.target_corpus)
+        return self._parallel_corpus
+
+    @property
+    def parallel_corpus_size(self) -> int:
+        return self.parallel_corpus.count(include_empty=False)
