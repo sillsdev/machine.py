@@ -9,6 +9,7 @@ from .string_detokenizer import StringDetokenizer
 from .string_tokenizer import StringTokenizer
 from .tokenization_utils import get_ranges, split
 from .tokenizer import Tokenizer
+from .tokenizer_factory import create_detokenizer, create_tokenizer
 from .whitespace_detokenizer import WHITESPACE_DETOKENIZER, WhitespaceDetokenizer
 from .whitespace_tokenizer import WHITESPACE_TOKENIZER, WhitespaceTokenizer
 from .zwsp_word_detokenizer import ZwspWordDetokenizer
@@ -27,6 +28,8 @@ __all__ = [
     "StringDetokenizer",
     "StringTokenizer",
     "Tokenizer",
+    "create_detokenizer",
+    "create_tokenizer",
     "WHITESPACE_DETOKENIZER",
     "WHITESPACE_TOKENIZER",
     "WhitespaceDetokenizer",

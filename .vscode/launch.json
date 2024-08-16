@@ -10,6 +10,9 @@
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/tests"
+      },
       "justMyCode": true
     },
     {
@@ -56,6 +59,19 @@
       "type": "debugpy",
       "request": "launch",
       "module": "machine.jobs.build_smt_engine",
+      "justMyCode": false,
+      "args": [
+        "--model-type",
+        "thot",
+        "--build-id",
+        "build1"
+      ]
+    },
+    {
+      "name": "build_word_alignment_model",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "machine.jobs.build_word_alignment_model",
       "justMyCode": false,
       "args": [
         "--model-type",
