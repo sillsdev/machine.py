@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Callable, Optional, cast
+from typing import Callable, Optional
 
 from clearml import Task
 
