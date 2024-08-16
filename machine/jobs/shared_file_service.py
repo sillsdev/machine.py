@@ -2,7 +2,7 @@ import json
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Generator, Iterator, List, TextIO, TypedDict
+from typing import Any, Generator, Iterator, List, MutableMapping, TextIO, TypedDict
 
 import json_stream
 
@@ -18,12 +18,20 @@ class PretranslationInfo(TypedDict):
     translation: str
 
 
-class PretranslationWriter:
+class WordAlignmentInfo(TypedDict):
+    refs: List[str]
+    column_count: int
+    row_count: int
+    alignmnent: str
+
+
+class DictToJsonWriter:
     def __init__(self, file: TextIO) -> None:
         self._file = file
         self._first = True
 
-    def write(self, pi: PretranslationInfo) -> None:
+    # Use MutableMapping rather than TypeDict to allow for more flexible input
+    def write(self, pi: MutableMapping) -> None:
         if not self._first:
             self._file.write(",\n")
         self._file.write("    " + json.dumps(pi))
@@ -31,23 +39,30 @@ class PretranslationWriter:
 
 
 class SharedFileService(ABC):
-    def __init__(self, config: Any) -> None:
+    def __init__(
+        self,
+        config: Any,
+        source_filename: str = "train.src.txt",
+        target_filename: str = "train.trg.txt",
+    ) -> None:
         self._config = config
+        self._source_filename = source_filename
+        self._target_filename = target_filename
 
     def create_source_corpus(self) -> TextCorpus:
-        return TextFileTextCorpus(self._download_file(f"builds/{self._build_id}/train.src.txt"))
+        return TextFileTextCorpus(self._download_file(f"{self._build_path}/{self._source_filename}"))
 
     def create_target_corpus(self) -> TextCorpus:
-        return TextFileTextCorpus(self._download_file(f"builds/{self._build_id}/train.trg.txt"))
+        return TextFileTextCorpus(self._download_file(f"{self._build_path}/{self._target_filename}"))
 
     def exists_source_corpus(self) -> bool:
-        return self._exists_file(f"builds/{self._build_id}/train.src.txt")
+        return self._exists_file(f"{self._build_path}/{self._source_filename}")
 
     def exists_target_corpus(self) -> bool:
-        return self._exists_file(f"builds/{self._build_id}/train.trg.txt")
+        return self._exists_file(f"{self._build_path}/{self._target_filename}")
 
     def get_source_pretranslations(self) -> ContextManagedGenerator[PretranslationInfo, None, None]:
-        src_pretranslate_path = self._download_file(f"builds/{self._build_id}/pretranslate.src.json")
+        src_pretranslate_path = self._download_file(f"{self._build_path}/pretranslate.src.json")
 
         def generator() -> Generator[PretranslationInfo, None, None]:
             with src_pretranslate_path.open("r", encoding="utf-8-sig") as file:
@@ -62,16 +77,22 @@ class SharedFileService(ABC):
         return ContextManagedGenerator(generator())
 
     @contextmanager
-    def open_target_pretranslation_writer(self) -> Iterator[PretranslationWriter]:
-        build_id: str = self._config.build_id
-        build_dir = self._data_dir / self._shared_file_folder / "builds" / build_id
+    def open_target_pretranslation_writer(self) -> Iterator[DictToJsonWriter]:
+        return self._open_target_writer("pretranslate.trg.json")
+
+    @contextmanager
+    def open_target_alignment_writer(self) -> Iterator[DictToJsonWriter]:
+        return self._open_target_writer("word_alignments.json")
+
+    def _open_target_writer(self, filename) -> Iterator[DictToJsonWriter]:
+        build_dir = self._data_dir / self._shared_file_folder / self._build_path
         build_dir.mkdir(parents=True, exist_ok=True)
-        target_pretranslate_path = build_dir / "pretranslate.trg.json"
-        with target_pretranslate_path.open("w", encoding="utf-8", newline="\n") as file:
+        target_path = build_dir / filename
+        with target_path.open("w", encoding="utf-8", newline="\n") as file:
             file.write("[\n")
-            yield PretranslationWriter(file)
+            yield DictToJsonWriter(file)
             file.write("\n]\n")
-        self._upload_file(f"builds/{self._build_id}/pretranslate.trg.json", target_pretranslate_path)
+        self._upload_file(f"{self._build_path}/{filename}", target_path)
 
     def save_model(self, model_path: Path, destination: str) -> None:
         if model_path.is_file():
@@ -84,8 +105,8 @@ class SharedFileService(ABC):
         return Path(self._config.data_dir)
 
     @property
-    def _build_id(self) -> str:
-        return self._config.build_id
+    def _build_path(self) -> str:
+        return f"builds/{self._config.build_id}"
 
     @property
     def _engine_id(self) -> str:

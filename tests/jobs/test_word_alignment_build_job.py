@@ -8,20 +8,17 @@ from decoy import Decoy, matchers
 from pytest import raises
 from testutils.mock_settings import MockSettings
 
-from machine.annotations import Range
 from machine.corpora import DictionaryTextCorpus, MemoryText, TextRow
-from machine.jobs import DictToJsonWriter, PretranslationInfo, SharedFileService, SmtEngineBuildJob, SmtModelFactory
-from machine.tokenization import WHITESPACE_DETOKENIZER, WHITESPACE_TOKENIZER
-from machine.translation import (
-    Phrase,
-    Trainer,
-    TrainStats,
-    TranslationEngine,
-    TranslationResult,
-    TranslationSources,
-    Truecaser,
-    WordAlignmentMatrix,
+from machine.jobs import (
+    DictToJsonWriter,
+    PretranslationInfo,
+    SharedFileService,
+    WordAlignmentBuildJob,
+    WordAlignmentModelFactory,
 )
+from machine.tokenization import WHITESPACE_TOKENIZER
+from machine.translation import Trainer, TrainStats, WordAlignmentMatrix
+from machine.translation.word_alignment_model import WordAlignmentModel
 from machine.utils import CanceledError, ContextManagedGenerator
 
 
@@ -29,9 +26,9 @@ def test_run(decoy: Decoy) -> None:
     env = _TestEnvironment(decoy)
     env.job.run()
 
-    pretranslations = json.loads(env.target_pretranslations)
-    assert len(pretranslations) == 1
-    assert pretranslations[0]["translation"] == "Please, I have booked a room."
+    alignments = json.loads(env.alignment_json)
+    assert len(alignments) == 1
+    assert alignments[0]["alignment"] == "0-0 1-1 2-2"
     decoy.verify(
         env.shared_file_service.save_model(matchers.Anything(), f"builds/{env.job._config.build_id}/model.zip"), times=1
     )
@@ -43,7 +40,7 @@ def test_cancel(decoy: Decoy) -> None:
     with raises(CanceledError):
         env.job.run(check_canceled=checker.check_canceled)
 
-    assert env.target_pretranslations == ""
+    assert env.alignment_json == ""
 
 
 class _TestEnvironment:
@@ -55,51 +52,21 @@ class _TestEnvironment:
         stats.metrics["bleu"] = 30.0
         decoy.when(self.model_trainer.stats).then_return(stats)
 
-        self.engine = decoy.mock(cls=TranslationEngine)
-        decoy.when(self.engine.__enter__()).then_return(self.engine)
-        decoy.when(self.engine.translate_batch(matchers.Anything())).then_return(
+        self.model = decoy.mock(cls=WordAlignmentModel)
+        decoy.when(self.model.__enter__()).then_return(self.model)
+        decoy.when(self.model.align_batch(matchers.Anything())).then_return(
             [
-                TranslationResult(
-                    translation="Please, I have booked a room.",
-                    source_tokens="Por favor , tengo reservada una habitación .".split(),
-                    target_tokens="Please , I have booked a room .".split(),
-                    confidences=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
-                    sources=[
-                        TranslationSources.SMT,
-                        TranslationSources.SMT,
-                        TranslationSources.SMT,
-                        TranslationSources.SMT,
-                        TranslationSources.SMT,
-                        TranslationSources.SMT,
-                        TranslationSources.SMT,
-                        TranslationSources.SMT,
-                    ],
-                    alignment=WordAlignmentMatrix.from_word_pairs(
-                        8, 8, {(0, 0), (1, 0), (2, 1), (3, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7)}
-                    ),
-                    phrases=[Phrase(Range.create(0, 8), 8)],
-                )
+                WordAlignmentMatrix.from_word_pairs(row_count=3, column_count=3, set_values=[(0, 0), (1, 1), (2, 2)]),
             ]
         )
 
-        self.truecaser_trainer = decoy.mock(cls=Trainer)
-        decoy.when(self.truecaser_trainer.__enter__()).then_return(self.truecaser_trainer)
-        self.truecaser = decoy.mock(cls=Truecaser)
-
-        self.smt_model_factory = decoy.mock(cls=SmtModelFactory)
-        decoy.when(self.smt_model_factory.create_tokenizer()).then_return(WHITESPACE_TOKENIZER)
-        decoy.when(self.smt_model_factory.create_detokenizer()).then_return(WHITESPACE_DETOKENIZER)
-        decoy.when(self.smt_model_factory.create_model_trainer(matchers.Anything(), matchers.Anything())).then_return(
-            self.model_trainer
-        )
+        self.word_alignment_model_factory = decoy.mock(cls=WordAlignmentModelFactory)
+        decoy.when(self.word_alignment_model_factory.create_tokenizer()).then_return(WHITESPACE_TOKENIZER)
         decoy.when(
-            self.smt_model_factory.create_engine(matchers.Anything(), matchers.Anything(), matchers.Anything())
-        ).then_return(self.engine)
-        decoy.when(
-            self.smt_model_factory.create_truecaser_trainer(matchers.Anything(), matchers.Anything())
-        ).then_return(self.truecaser_trainer)
-        decoy.when(self.smt_model_factory.create_truecaser()).then_return(self.truecaser)
-        decoy.when(self.smt_model_factory.save_model()).then_return(Path("model.zip"))
+            self.word_alignment_model_factory.create_model_trainer(matchers.Anything(), matchers.Anything())
+        ).then_return(self.model_trainer)
+        decoy.when(self.word_alignment_model_factory.create_alignment_model()).then_return(self.model)
+        decoy.when(self.word_alignment_model_factory.save_model()).then_return(Path("model.zip"))
 
         self.shared_file_service = decoy.mock(cls=SharedFileService)
         decoy.when(self.shared_file_service.create_source_corpus()).then_return(
@@ -144,23 +111,23 @@ class _TestEnvironment:
             )
         )
 
-        self.target_pretranslations = ""
+        self.alignment_json = ""
 
         @contextmanager
-        def open_target_pretranslation_writer(env: _TestEnvironment) -> Iterator[DictToJsonWriter]:
+        def open_target_alignment_writer(env: _TestEnvironment) -> Iterator[DictToJsonWriter]:
             file = StringIO()
             file.write("[\n")
             yield DictToJsonWriter(file)
             file.write("\n]\n")
-            env.target_pretranslations = file.getvalue()
+            env.alignment_json = file.getvalue()
 
-        decoy.when(self.shared_file_service.open_target_pretranslation_writer()).then_do(
-            lambda: open_target_pretranslation_writer(self)
+        decoy.when(self.shared_file_service.open_target_alignment_writer()).then_do(
+            lambda: open_target_alignment_writer(self)
         )
 
-        self.job = SmtEngineBuildJob(
+        self.job = WordAlignmentBuildJob(
             MockSettings({"build_id": "mybuild", "inference_batch_size": 100}),
-            self.smt_model_factory,
+            self.word_alignment_model_factory,
             self.shared_file_service,
         )
 

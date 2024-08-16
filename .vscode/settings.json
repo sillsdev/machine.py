@@ -5,9 +5,16 @@
   },
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
+  "python.analysis.extraPaths": [
+    "tests"
+  ],
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.formatOnSave": true
   },
-  "black-formatter.path": ["poetry", "run", "black"]
+  "black-formatter.path": [
+    "poetry",
+    "run",
+    "black"
+  ]
 }

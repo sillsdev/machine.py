@@ -10,7 +10,7 @@ from testutils.mock_settings import MockSettings
 
 from machine.annotations import Range
 from machine.corpora import DictionaryTextCorpus
-from machine.jobs import NmtEngineBuildJob, NmtModelFactory, PretranslationInfo, PretranslationWriter, SharedFileService
+from machine.jobs import DictToJsonWriter, NmtEngineBuildJob, NmtModelFactory, PretranslationInfo, SharedFileService
 from machine.translation import (
     Phrase,
     Trainer,
@@ -116,10 +116,10 @@ class _TestEnvironment:
         self.target_pretranslations = ""
 
         @contextmanager
-        def open_target_pretranslation_writer(env: _TestEnvironment) -> Iterator[PretranslationWriter]:
+        def open_target_pretranslation_writer(env: _TestEnvironment) -> Iterator[DictToJsonWriter]:
             file = StringIO()
             file.write("[\n")
-            yield PretranslationWriter(file)
+            yield DictToJsonWriter(file)
             file.write("\n]\n")
             env.target_pretranslations = file.getvalue()
 
@@ -128,9 +128,7 @@ class _TestEnvironment:
         )
 
         self.job = NmtEngineBuildJob(
-            MockSettings(
-                {"src_lang": "es", "trg_lang": "en", "save_model": "save-model", "pretranslation_batch_size": 100}
-            ),
+            MockSettings({"src_lang": "es", "trg_lang": "en", "save_model": "save-model", "inference_batch_size": 100}),
             self.nmt_model_factory,
             self.shared_file_service,
         )

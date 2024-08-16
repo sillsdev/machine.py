@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Sequence, cast
+from typing import List, Sequence, Union, cast
 
 import thot.alignment as ta
 
@@ -38,7 +38,9 @@ class ThotSymmetrizedWordAlignmentModel(SymmetrizedWordAlignmentModel):
         return cast(ThotWordAlignmentModel, self._inverse_word_alignment_model)
 
     @heuristic.setter
-    def heuristic(self, value: SymmetrizationHeuristic) -> None:
+    def heuristic(self, value: Union[SymmetrizationHeuristic, str]) -> None:
+        if isinstance(value, str):
+            value = SymmetrizationHeuristic[value.upper().replace("-", "_")]
         self._heuristic = value
         self._aligner.heuristic = _convert_heuristic(self._heuristic)
 
