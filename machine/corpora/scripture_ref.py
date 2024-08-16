@@ -4,7 +4,7 @@ from functools import total_ordering
 from typing import List, Optional
 
 from ..scripture.constants import ENGLISH_VERSIFICATION
-from ..scripture.verse_ref import VerseRef, Versification, are_overlapping_verse_ranges
+from ..scripture.verse_ref import VerseRef, Versification
 from ..utils.comparable import Comparable
 from .scripture_element import ScriptureElement
 
@@ -85,11 +85,6 @@ class ScriptureRef(Comparable):
         vr: VerseRef = self.verse_ref.copy()
         vr.change_versification(versification)
         return ScriptureRef(vr, self.path)
-
-    def overlaps(self, other: ScriptureRef) -> bool:
-        if not are_overlapping_verse_ranges(self.verse_ref, other.verse_ref):
-            return False
-        return self.path == other.path
 
     def compare_to(self, other: object, compare_segments: bool = True, strict: bool = True):
         if not isinstance(other, ScriptureRef):
