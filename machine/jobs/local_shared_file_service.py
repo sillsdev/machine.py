@@ -2,13 +2,13 @@ import logging
 import shutil
 from pathlib import Path
 
-from .shared_file_service import SharedFileService
+from .shared_file_service_base import SharedFileServiceBase
 
 logger = logging.getLogger(__name__)
 
 
-class LocalSharedFileService(SharedFileService):
-    def _download_file(self, path: str) -> Path:
+class LocalSharedFileService(SharedFileServiceBase):
+    def download_file(self, path: str) -> Path:
         src_path = self._get_path(path)
         dst_path = self._data_dir / self._shared_file_folder / path
         dst_path.parent.mkdir(parents=True, exist_ok=True)

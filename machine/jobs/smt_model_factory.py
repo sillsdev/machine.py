@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from pathlib import Path
+from typing import Optional
 
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from ..corpora.text_corpus import TextCorpus
@@ -8,24 +8,19 @@ from ..tokenization.tokenizer import Tokenizer
 from ..translation.trainer import Trainer
 from ..translation.translation_engine import TranslationEngine
 from ..translation.truecaser import Truecaser
+from .thot.thot_model_factory import ThotModelFactory
 
 
-class SmtModelFactory(ABC):
-    @abstractmethod
-    def init(self) -> None: ...
-
-    @abstractmethod
-    def create_tokenizer(self) -> Tokenizer[str, int, str]: ...
-
-    @abstractmethod
-    def create_detokenizer(self) -> Detokenizer[str, str]: ...
-
+class SmtModelFactory(ABC, ThotModelFactory):
     @abstractmethod
     def create_model_trainer(self, tokenizer: Tokenizer[str, int, str], corpus: ParallelTextCorpus) -> Trainer: ...
 
     @abstractmethod
     def create_engine(
-        self, tokenizer: Tokenizer[str, int, str], detokenizer: Detokenizer[str, str], truecaser: Truecaser
+        self,
+        tokenizer: Tokenizer[str, int, str],
+        detokenizer: Detokenizer[str, str],
+        truecaser: Optional[Truecaser] = None,
     ) -> TranslationEngine: ...
 
     @abstractmethod
@@ -33,6 +28,3 @@ class SmtModelFactory(ABC):
 
     @abstractmethod
     def create_truecaser(self) -> Truecaser: ...
-
-    @abstractmethod
-    def save_model(self) -> Path: ...

@@ -1,13 +1,21 @@
 {
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-    "source.organizeImports": "explicit"
+    "source.organizeImports": "explicit",
   },
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
+  "python.analysis.extraPaths": [
+    "tests"
+  ],
+  "python.analysis.importFormat": "relative",
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.formatOnSave": true
   },
-  "black-formatter.path": ["poetry", "run", "black"]
+  "black-formatter.path": [
+    "poetry",
+    "run",
+    "black"
+  ]
 }
