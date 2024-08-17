@@ -10,7 +10,7 @@ def test_get_rows_nonempty_text() -> None:
     assert text is not None
     rows = list(text)
 
-    assert len(rows) == 22
+    assert len(rows) == 23
 
     assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:1", corpus.versification)
     assert rows[0].text == "Chapter one, verse one."
@@ -65,7 +65,7 @@ def test_get_rows_nonempty_text_all_text() -> None:
     assert text is not None
     rows = list(text)
 
-    assert len(rows) == 39
+    assert len(rows) == 44
 
     assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:0/1:h", corpus.versification)
     assert rows[0].text == "Matthew"
@@ -126,7 +126,7 @@ def test_get_rows_sentence_start() -> None:
     assert text is not None
     rows = list(text)
 
-    assert len(rows) == 22
+    assert len(rows) == 23
 
     assert scripture_ref(rows[3]) == ScriptureRef.parse("MAT 1:4", corpus.versification)
     assert rows[3].text == "Chapter one, verse four,"
@@ -154,7 +154,7 @@ def test_get_rows_include_markers() -> None:
     assert text is not None
     rows = list(text)
 
-    assert len(rows) == 22
+    assert len(rows) == 23
 
     assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:1", corpus.versification)
     assert (
@@ -209,7 +209,7 @@ def test_get_rows_include_markers_all_text() -> None:
     assert text is not None
     rows = list(text)
 
-    assert len(rows) == 35
+    assert len(rows) == 40
 
     assert scripture_ref(rows[2]) == ScriptureRef.parse("MAT 1:0/3:ip", corpus.versification)
     assert rows[2].text == "An introduction to Matthew\\fe + \\ft This is an endnote.\\fe*"

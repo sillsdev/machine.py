@@ -61,7 +61,7 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     ) -> None:
         if self._cur_verse_ref.is_default:
             self._update_verse_ref(state.verse_ref, marker)
-        if not state.is_verse_text:
+        if not state.is_verse_text or self._current_text_type == ScriptureTextType.NONVERSE:
             self._start_parent_element(marker)
             self._start_non_verse_text_wrapper(state)
 
@@ -121,7 +121,7 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         self._start_verse_text(state, self._create_verse_refs())
 
     def _end_verse_text_wrapper(self, state: UsfmParserState) -> None:
-        if not self._duplicate_verse and self._cur_verse_ref.verse_num != 0:
+        if not self._duplicate_verse and self._cur_verse_ref.verse_num > 0:
             self._end_verse_text(state, self._create_verse_refs())
             self._cur_text_type_stack.pop()
 

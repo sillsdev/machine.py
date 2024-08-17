@@ -7,6 +7,8 @@ from machine.scripture import VerseRef
 from . import TEST_DATA_PATH
 
 USFM_TEST_PROJECT_PATH = TEST_DATA_PATH / "usfm" / "Tes"
+USFM_TARGET_PROJECT_PATH = TEST_DATA_PATH / "usfm" / "Target"
+USFM_SOURCE_PROJECT_PATH = TEST_DATA_PATH / "usfm" / "Source"
 USX_TEST_PROJECT_PATH = TEST_DATA_PATH / "usx" / "Tes"
 TEXT_TEST_PROJECT_PATH = TEST_DATA_PATH / "txt"
 CUSTOM_VERS_PATH = TEST_DATA_PATH / "custom.vrs"
