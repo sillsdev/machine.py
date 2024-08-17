@@ -30,6 +30,40 @@ def test_get_usfm_strip_all_text() -> None:
     assert "\\s\r\n" in target
 
 
+def test_get_usfm_prefer_existing():
+    rows = [
+        (
+            scr_ref("MAT 1:6"),
+            str("Text 6"),
+        ),
+        (
+            scr_ref("MAT 1:7"),
+            str("Text 7"),
+        ),
+    ]
+    target = update_usfm(rows, prefer_existing_text=True)
+    assert "\\id MAT - Test\r\n" in target
+    assert "\\v 6 Verse 6 content.\r\n" in target
+    assert "\\v 7 Text 7\r\n" in target
+
+
+def test_get_usfm_prefer_rows():
+    rows = [
+        (
+            scr_ref("MAT 1:6"),
+            str("Text 6"),
+        ),
+        (
+            scr_ref("MAT 1:7"),
+            str("Text 7"),
+        ),
+    ]
+    target = update_usfm(rows, prefer_existing_text=False)
+    assert "\\id MAT - Test\r\n" in target
+    assert "\\v 6 Text 6\r\n" in target
+    assert "\\v 7 Text 7\r\n" in target
+
+
 def test_get_usfm_verse_skip_note() -> None:
     rows = [
         (
@@ -306,9 +340,10 @@ def update_usfm(
     id_text: Optional[str] = None,
     strip_all_text: bool = False,
     strict_comparison: bool = True,
+    prefer_existing_text: bool = False,
 ) -> str:
     source = read_usfm()
-    updater = UsfmTextUpdater(rows, id_text, strip_all_text, strict_comparison)
+    updater = UsfmTextUpdater(rows, id_text, strip_all_text, strict_comparison, prefer_existing_text)
     parse_usfm(source, updater)
     return updater.get_usfm()
 

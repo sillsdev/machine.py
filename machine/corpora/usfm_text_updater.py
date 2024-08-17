@@ -15,36 +15,35 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
         id_text: Optional[str] = None,
         strip_all_text: bool = False,
         strict_comparison: bool = True,
+        prefer_existing_text: bool = False,
     ) -> None:
         super().__init__()
         self._rows = rows or []
         self._tokens: List[UsfmToken] = []
+        self._new_tokens: List[UsfmToken] = []
         self._id_text = id_text
         self._strip_all_text = strip_all_text
         self._strict_comparison = strict_comparison
+        self._prefer_existing_text = prefer_existing_text
         self._replace_stack: List[bool] = []
         self._row_index: int = 0
         self._token_index: int = 0
-        self._replace_text: bool = False
 
     @property
     def tokens(self) -> List[UsfmToken]:
         return self._tokens
 
-    @property
-    def replace_text(self) -> bool:
-        return self._strip_all_text or (len(self._replace_stack) > 0 and self._replace_stack[-1])
-
     def start_book(self, state: UsfmParserState, marker: str, code: str) -> None:
         self._collect_tokens(state)
+        start_book_tokens: List[UsfmToken] = []
         if self._id_text is not None:
-            self._tokens.append(UsfmToken(UsfmTokenType.TEXT, text=self._id_text + " "))
-        self._replace_stack.append(self._id_text is not None)
+            start_book_tokens.append(UsfmToken(UsfmTokenType.TEXT, text=self._id_text + " "))
+        self._push_new_tokens(start_book_tokens)
 
         super().start_book(state, marker, code)
 
     def end_book(self, state: UsfmParserState, marker: str) -> None:
-        self._replace_stack.pop()
+        self._pop_new_tokens()
 
         super().end_book(state, marker)
 
@@ -127,7 +126,7 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
         unknown: bool,
         attributes: List[UsfmAttribute],
     ) -> None:
-        if self.replace_text:
+        if self._replace_with_new_tokens(state):
             self._skip_tokens(state)
         else:
             self._collect_tokens(state)
@@ -141,7 +140,7 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
         attributes: List[UsfmAttribute],
         closed: bool,
     ) -> None:
-        if closed and self.replace_text:
+        if closed and self._replace_with_new_tokens(state):
             self._skip_tokens(state)
 
         super().end_char(state, marker, attributes, closed)
@@ -153,7 +152,7 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
         caller: str,
         category: str,
     ) -> None:
-        if self.replace_text:
+        if self._replace_with_new_tokens(state):
             self._skip_tokens(state)
         else:
             self._collect_tokens(state)
@@ -161,13 +160,13 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
         super().start_note(state, marker, caller, category)
 
     def end_note(self, state: UsfmParserState, marker: str, closed: bool) -> None:
-        if closed and self.replace_text:
+        if closed and self._replace_with_new_tokens(state):
             self._skip_tokens(state)
 
         super().end_note(state, marker, closed)
 
     def ref(self, state: UsfmParserState, marker: str, display: str, target: str) -> None:
-        if self.replace_text:
+        if self._replace_with_new_tokens(state):
             self._skip_tokens(state)
         else:
             self._collect_tokens(state)
@@ -175,7 +174,7 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
         super().ref(state, marker, display, target)
 
     def text(self, state: UsfmParserState, text: str) -> None:
-        if self.replace_text:
+        if self._replace_with_new_tokens(state):
             self._skip_tokens(state)
         else:
             self._collect_tokens(state)
@@ -183,7 +182,7 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
         super().text(state, text)
 
     def opt_break(self, state: UsfmParserState) -> None:
-        if self.replace_text:
+        if self._replace_with_new_tokens(state):
             self._skip_tokens(state)
         else:
             self._collect_tokens(state)
@@ -191,7 +190,7 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
         super().opt_break(state)
 
     def unmatched(self, state: UsfmParserState, marker: str) -> None:
-        if self.replace_text:
+        if self._replace_with_new_tokens(state):
             self._skip_tokens(state)
         else:
             self._collect_tokens(state)
@@ -200,38 +199,37 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
 
     def _start_verse_text(self, state: UsfmParserState, scripture_refs: List[ScriptureRef]) -> None:
         row_texts: List[str] = self._advance_rows(scripture_refs)
-        self._tokens.extend(UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in row_texts)
-        self._replace_stack.append(len(row_texts) > 0)
+        self._push_new_tokens([UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in row_texts])
 
     def _end_verse_text(self, state: UsfmParserState, scripture_refs: List[ScriptureRef]) -> None:
-        self._replace_stack.pop()
+        self._pop_new_tokens()
 
     def _start_non_verse_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
         row_texts = self._advance_rows([scripture_ref])
-        self._tokens.extend(UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in row_texts)
-        self._replace_stack.append(len(row_texts) > 0)
+        self._push_new_tokens([UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in row_texts])
 
     def _end_non_verse_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
-        self._replace_stack.pop()
+        self._pop_new_tokens()
 
     def _start_note_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
         row_texts = self._advance_rows([scripture_ref])
+        new_tokens: List[UsfmToken] = []
         if len(row_texts) > 0:
             if state.token is None:
                 raise ValueError("Invalid parser state.")
-            self._tokens.append(state.token)
-            self._tokens.append(UsfmToken(UsfmTokenType.CHARACTER, "ft", None, "ft*"))
+            new_tokens.append(state.token)
+            new_tokens.append(UsfmToken(UsfmTokenType.CHARACTER, "ft", None, "ft*"))
             for i, text in enumerate(row_texts):
                 if i < len(row_texts) - 1:
                     text += " "
-                self._tokens.append(UsfmToken(UsfmTokenType.TEXT, text=text))
-            self._tokens.append(UsfmToken(UsfmTokenType.END, state.token.end_marker, None, None))
-            self._replace_stack.append(True)
+                new_tokens.append(UsfmToken(UsfmTokenType.TEXT, text=text))
+            new_tokens.append(UsfmToken(UsfmTokenType.END, state.token.end_marker, None, None))
+            self._push_new_tokens(new_tokens)
         else:
-            self._replace_stack.append(self._replace_stack[-1])
+            self._push_token_as_previous()
 
     def _end_note_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
-        self._replace_stack.pop()
+        self._pop_new_tokens()
 
     def get_usfm(self, stylesheet: Union[str, UsfmStylesheet] = "usfm.sty") -> str:
         if isinstance(stylesheet, str):
@@ -268,9 +266,37 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
         return row_texts
 
     def _collect_tokens(self, state: UsfmParserState) -> None:
+        self._tokens.extend(self._new_tokens)
+        self._new_tokens.clear()
         while self._token_index <= state.index + state.special_token_count:
             self._tokens.append(state.tokens[self._token_index])
             self._token_index += 1
 
     def _skip_tokens(self, state: UsfmParserState) -> None:
         self._token_index = state.index + 1 + state.special_token_count
+
+    def _replace_with_new_tokens(self, state: UsfmParserState) -> bool:
+        new_text: bool = len(self._replace_stack) > 0 and self._replace_stack[-1]
+        token_end: int = state.index + state.special_token_count + 1
+        existing_text: bool = False
+        for index in range(self._token_index, token_end + 1):
+            if state.tokens[index].type == UsfmTokenType.TEXT and state.tokens[index].text:
+                existing_text = True
+                break
+        use_new_tokens: bool = (
+            self._strip_all_text or (new_text and not existing_text) or (new_text and not self._prefer_existing_text)
+        )
+        if use_new_tokens:
+            self._tokens.extend(self._new_tokens)
+        self._new_tokens.clear()
+        return use_new_tokens
+
+    def _push_new_tokens(self, tokens: List[UsfmToken]) -> None:
+        self._replace_stack.append(any(tokens))
+        self._new_tokens.extend(tokens)
+
+    def _push_token_as_previous(self) -> None:
+        self._replace_stack.append(self._replace_stack[-1])
+
+    def _pop_new_tokens(self) -> None:
+        self._replace_stack.pop()
