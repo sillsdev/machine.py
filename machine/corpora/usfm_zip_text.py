@@ -1,6 +1,4 @@
-from io import TextIOWrapper
 from typing import Optional
-from zipfile import ZipFile
 
 from ..scripture.verse_ref import Versification
 from ..utils.typeshed import StrPath
@@ -15,6 +13,7 @@ class UsfmZipText(UsfmTextBase):
         self,
         stylesheet: UsfmStylesheet,
         encoding: str,
+        id: str,
         archive_filename: StrPath,
         path: str,
         versification: Optional[Versification] = None,
@@ -22,7 +21,7 @@ class UsfmZipText(UsfmTextBase):
         include_all_text: bool = False,
     ) -> None:
         super().__init__(
-            _get_id(archive_filename, path, encoding),
+            id,
             stylesheet,
             encoding,
             versification,
@@ -34,19 +33,3 @@ class UsfmZipText(UsfmTextBase):
 
     def _create_stream_container(self) -> StreamContainer:
         return ZipEntryStreamContainer(self._archive_filename, self._path)
-
-
-def _get_id(archive_filename: StrPath, path: str, encoding: str) -> str:
-    with ZipFile(archive_filename, "r") as archive:
-        entry = next((zi for zi in archive.filelist if zi.filename == path))
-        with archive.open(entry, "r") as file:
-            stream = TextIOWrapper(file, encoding=encoding)
-            for line in stream:
-                line = line.strip()
-                if line.startswith("\\id "):
-                    id = line[4:]
-                    index = id.find(" ")
-                    if index != -1:
-                        id = id[:index]
-                    return id.strip().upper()
-    raise RuntimeError("The USFM does not contain an 'id' marker.")

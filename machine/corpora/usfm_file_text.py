@@ -14,29 +14,15 @@ class UsfmFileText(UsfmTextBase):
         self,
         stylesheet: UsfmStylesheet,
         encoding: str,
+        id: str,
         filename: StrPath,
         versification: Optional[Versification] = None,
         include_markers: bool = False,
         include_all_text: bool = False,
     ) -> None:
-        super().__init__(
-            _get_id(filename, encoding), stylesheet, encoding, versification, include_markers, include_all_text
-        )
+        super().__init__(id, stylesheet, encoding, versification, include_markers, include_all_text)
 
         self._filename = Path(filename)
 
     def _create_stream_container(self) -> StreamContainer:
         return FileStreamContainer(self._filename)
-
-
-def _get_id(filename: StrPath, encoding: str) -> str:
-    with open(filename, "r", encoding=encoding) as file:
-        for line in file:
-            line = line.strip()
-            if line.startswith("\\id "):
-                id = line[4:]
-                index = id.find(" ")
-                if index != -1:
-                    id = id[:index]
-                return id.strip().upper()
-    raise RuntimeError(f"The USFM file '{filename}' does not contain an 'id' marker.")
