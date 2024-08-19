@@ -239,29 +239,28 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
 
     def _advance_rows(self, seg_scr_refs: List[ScriptureRef]) -> List[str]:
         row_texts: List[str] = []
-        i = 0
-        while self._row_index < len(self._rows) and i < len(seg_scr_refs):
+        source_index: int = 0
+        while self._row_index < len(self._rows) and source_index < len(seg_scr_refs):
+            compare: int = 0
             row_scr_refs, text = self._rows[self._row_index]
-            stop = False
             for row_scr_ref in row_scr_refs:
-                found = False
-                for seg_scr_ref in seg_scr_refs[i:]:
+                while source_index < len(seg_scr_refs):
                     compare = row_scr_ref.compare_to(
-                        seg_scr_refs[i], compare_segments=False, strict=self._strict_comparison
+                        seg_scr_refs[source_index], compare_segments=False, strict=self._strict_comparison
                     )
-                    if compare == 0:
-                        row_texts.append(text)
-                        i += 1
-                        found = True
+                    if compare > 0:
+                        # source is ahead of row, increment source
+                        source_index += 1
+                    else:
                         break
-                    elif compare > 0:
-                        stop = True
-                        break
-                if stop or found:
+                if compare == 0:
+                    # source and row match
+                    # grab the text and increment both
+                    row_texts.append(text)
+                    source_index += 1
                     break
-            if stop:
-                break
-            else:
+            if compare <= 0:
+                # row is ahead of source, increment row
                 self._row_index += 1
         return row_texts
 

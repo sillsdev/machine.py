@@ -331,6 +331,50 @@ def test_get_usfm_nonverse_replace_note() -> None:
     assert "\\ip The introductory paragraph. \\fe + \\ft This is a new endnote.\\fe*\r\n" in target
 
 
+def test_get_usfm_verse_double_va_vp() -> None:
+    rows = [
+        (
+            scr_ref("MAT 3:1"),
+            str("Updating later in the book to start."),
+        )
+    ]
+    target = update_usfm(rows)
+    assert "\\id MAT - Test\r\n" in target
+    assert "\\v 1 \\va 2\\va*\\vp 1 (2)\\vp*Updating later in the book to start.\r\n" in target
+
+
+def test_get_usfm_verse_pretranslations_before_text() -> None:
+    rows = [
+        (
+            scr_ref("GEN 1:1"),
+            str("Pretranslations before the start"),
+        ),
+        (
+            scr_ref("GEN 1:2"),
+            str("Pretranslations before the start"),
+        ),
+        (
+            scr_ref("GEN 1:3"),
+            str("Pretranslations before the start"),
+        ),
+        (
+            scr_ref("GEN 1:4"),
+            str("Pretranslations before the start"),
+        ),
+        (
+            scr_ref("GEN 1:5"),
+            str("Pretranslations before the start"),
+        ),
+        (
+            scr_ref("MAT 1:0/3:ip"),
+            str("The introductory paragraph."),
+        ),
+    ]
+
+    target = update_usfm(rows)
+    assert "\\ip The introductory paragraph.\r\n" in target
+
+
 def scr_ref(*refs: str) -> List[ScriptureRef]:
     return [ScriptureRef.parse(ref) for ref in refs]
 

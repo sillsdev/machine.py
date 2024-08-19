@@ -52,6 +52,8 @@ coverage.xml
 .pytest_cache/
 tests/testutils/data/usfm/source/*
 tests/testutils/data/usfm/target/*
+tests/testutils/data/project/*
+tests/testutils/data/pretranslations.json
 
 # Translations
 *.mo

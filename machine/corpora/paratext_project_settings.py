@@ -21,6 +21,7 @@ class ParatextProjectSettings:
     biblical_terms_file_name: str
 
     def get_book_id(self, file_name: str) -> Optional[str]:
+        """Returns None when the file name doesn't match the pattern of a book file name for the project."""
         if not file_name.startswith(self.file_name_prefix) or not file_name.endswith(self.file_name_suffix):
             return None
 
