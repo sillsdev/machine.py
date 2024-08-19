@@ -39,7 +39,7 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         self, state: UsfmParserState, number: str, marker: str, alt_number: Optional[str], pub_number: Optional[str]
     ) -> None:
         if state.verse_ref == self._cur_verse_ref:
-            self._end_verse_text_wrapper(state)
+            self._end_verse_text(state, self._create_verse_refs())
             # ignore duplicate verses
             self._duplicate_verse = True
         elif are_overlapping_verse_ranges(number, self._cur_verse_ref.verse):
@@ -61,7 +61,7 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     ) -> None:
         if self._cur_verse_ref.is_default:
             self._update_verse_ref(state.verse_ref, marker)
-        if not state.is_verse_text or self._current_text_type == ScriptureTextType.NONVERSE:
+        if not state.is_verse_text or marker == "d":
             self._start_parent_element(marker)
             self._start_non_verse_text_wrapper(state)
 
@@ -123,6 +123,7 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     def _end_verse_text_wrapper(self, state: UsfmParserState) -> None:
         if not self._duplicate_verse and self._cur_verse_ref.verse_num > 0:
             self._end_verse_text(state, self._create_verse_refs())
+        if self._cur_verse_ref.verse_num > 0:
             self._cur_text_type_stack.pop()
 
     def _start_non_verse_text_wrapper(self, state: UsfmParserState) -> None:
