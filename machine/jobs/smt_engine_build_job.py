@@ -3,6 +3,7 @@ from contextlib import ExitStack
 from typing import Any, Callable, Optional, Sequence
 
 from ..corpora.corpora_utils import batch
+from ..tokenization.tokenizer_factory import create_detokenizer, create_tokenizer
 from ..translation.translation_engine import TranslationEngine
 from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
 from ..utils.progress_status import ProgressStatus
@@ -23,7 +24,7 @@ class SmtEngineBuildJob(TranslationEngineBuildJob):
 
     def _start_job(self) -> None:
         self._smt_model_factory.init()
-        self._tokenizer = self._smt_model_factory.create_tokenizer()
+        self._tokenizer = create_tokenizer(self._config.thot.tokenizer)
         logger.info(f"Tokenizer: {type(self._tokenizer).__name__}")
 
     def _get_progress_reporter(self, progress: Optional[Callable[[ProgressStatus], None]]) -> PhasedProgressReporter:
@@ -69,7 +70,7 @@ class SmtEngineBuildJob(TranslationEngineBuildJob):
             inference_step_count = sum(1 for _ in src_pretranslations)
 
         with ExitStack() as stack:
-            detokenizer = self._smt_model_factory.create_detokenizer()
+            detokenizer = create_detokenizer(self._config.thot.tokenizer)
             truecaser = self._smt_model_factory.create_truecaser()
             phase_progress = stack.enter_context(progress_reporter.start_next_phase())
             engine = stack.enter_context(self._smt_model_factory.create_engine(self._tokenizer, detokenizer, truecaser))

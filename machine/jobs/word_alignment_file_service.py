@@ -12,7 +12,7 @@ class WordAlignmentInfo(TypedDict):
     refs: List[str]
     column_count: int
     row_count: int
-    alignmnent: str
+    alignment: str
 
 
 class WordAlignmentFileService:

@@ -12,7 +12,6 @@ from machine.annotations import Range
 from machine.corpora import DictionaryTextCorpus, MemoryText, TextRow
 from machine.jobs import DictToJsonWriter, PretranslationInfo, SmtEngineBuildJob, SmtModelFactory
 from machine.jobs.translation_file_service import TranslationFileService
-from machine.tokenization import WHITESPACE_DETOKENIZER, WHITESPACE_TOKENIZER
 from machine.translation import (
     Phrase,
     Trainer,
@@ -89,8 +88,6 @@ class _TestEnvironment:
         self.truecaser = decoy.mock(cls=Truecaser)
 
         self.smt_model_factory = decoy.mock(cls=SmtModelFactory)
-        decoy.when(self.smt_model_factory.create_tokenizer()).then_return(WHITESPACE_TOKENIZER)
-        decoy.when(self.smt_model_factory.create_detokenizer()).then_return(WHITESPACE_DETOKENIZER)
         decoy.when(self.smt_model_factory.create_model_trainer(matchers.Anything(), matchers.Anything())).then_return(
             self.model_trainer
         )
@@ -161,7 +158,7 @@ class _TestEnvironment:
         )
 
         self.job = SmtEngineBuildJob(
-            MockSettings({"build_id": "mybuild", "inference_batch_size": 100}),
+            MockSettings({"build_id": "mybuild", "inference_batch_size": 100, "thot": {"tokenizer": "latin"}}),
             self.smt_model_factory,
             self.translation_file_service,
         )

@@ -11,7 +11,6 @@ from testutils.mock_settings import MockSettings
 from machine.corpora import DictionaryTextCorpus, MemoryText, TextRow
 from machine.jobs import DictToJsonWriter, WordAlignmentBuildJob, WordAlignmentModelFactory
 from machine.jobs.word_alignment_file_service import WordAlignmentFileService
-from machine.tokenization import WHITESPACE_TOKENIZER
 from machine.translation import Trainer, TrainStats, WordAlignmentMatrix
 from machine.translation.word_alignment_model import WordAlignmentModel
 from machine.utils import CanceledError
@@ -57,7 +56,6 @@ class _TestEnvironment:
         )
 
         self.word_alignment_model_factory = decoy.mock(cls=WordAlignmentModelFactory)
-        decoy.when(self.word_alignment_model_factory.create_tokenizer()).then_return(WHITESPACE_TOKENIZER)
         decoy.when(
             self.word_alignment_model_factory.create_model_trainer(matchers.Anything(), matchers.Anything())
         ).then_return(self.model_trainer)
@@ -107,7 +105,7 @@ class _TestEnvironment:
         )
 
         self.job = WordAlignmentBuildJob(
-            MockSettings({"build_id": "mybuild", "inference_batch_size": 100}),
+            MockSettings({"build_id": "mybuild", "inference_batch_size": 100, "thot": {"tokenizer": "latin"}}),
             self.word_alignment_model_factory,
             self.word_alignment_file_service,
         )

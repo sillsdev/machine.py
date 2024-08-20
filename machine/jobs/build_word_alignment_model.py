@@ -15,10 +15,10 @@ from .build_clearml_helper import (
     update_runtime_properties,
     update_settings,
 )
-from .clearml_shared_file_service import ClearMLSharedFileService
 from .config import SETTINGS
 from .thot.thot_word_alignment_model_factory import ThotWordAlignmentModelFactory
 from .word_alignment_build_job import WordAlignmentBuildJob
+from .word_alignment_file_service import WordAlignmentFileService
 from .word_alignment_model_factory import WordAlignmentModelFactory
 
 # Setup logging
@@ -55,14 +55,16 @@ def run(args: dict) -> None:
 
         logger.info(f"Config: {SETTINGS.as_dict()}")
 
-        shared_file_service = ClearMLSharedFileService(SETTINGS)
+        word_alignment_file_service = WordAlignmentFileService("ClearML", SETTINGS)
         word_alignment_model_factory: WordAlignmentModelFactory
         if SETTINGS.model_type == "thot":
             word_alignment_model_factory = ThotWordAlignmentModelFactory(SETTINGS)
         else:
             raise RuntimeError("The model type is invalid.")
 
-        word_alignment_build_job = WordAlignmentBuildJob(SETTINGS, word_alignment_model_factory, shared_file_service)
+        word_alignment_build_job = WordAlignmentBuildJob(
+            SETTINGS, word_alignment_model_factory, word_alignment_file_service
+        )
         train_corpus_size, confidence = word_alignment_build_job.run(progress, check_canceled)
         if scheduler is not None and task is not None:
             scheduler.schedule(

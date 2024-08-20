@@ -8,10 +8,10 @@ from clearml import Task
 
 from ..utils.canceled_error import CanceledError
 from ..utils.progress_status import ProgressStatus
-from .clearml_shared_file_service import ClearMLSharedFileService
 from .config import SETTINGS
 from .nmt_engine_build_job import NmtEngineBuildJob
 from .nmt_model_factory import NmtModelFactory
+from .translation_file_service import TranslationFileService
 
 # Setup logging
 logging.basicConfig(
@@ -58,7 +58,7 @@ def run(args: dict) -> None:
 
         logger.info(f"Config: {SETTINGS.as_dict()}")
 
-        shared_file_service = ClearMLSharedFileService(SETTINGS)
+        translation_file_service = TranslationFileService("ClearML", SETTINGS)
         nmt_model_factory: NmtModelFactory
         if model_type == "huggingface":
             from .huggingface.hugging_face_nmt_model_factory import HuggingFaceNmtModelFactory
@@ -67,7 +67,7 @@ def run(args: dict) -> None:
         else:
             raise RuntimeError("The model type is invalid.")
 
-        job = NmtEngineBuildJob(SETTINGS, nmt_model_factory, shared_file_service)
+        job = NmtEngineBuildJob(SETTINGS, nmt_model_factory, translation_file_service)
         train_corpus_size = job.run(progress, check_canceled)
         if task is not None:
             task.get_logger().report_single_value(name="train_corpus_size", value=train_corpus_size)

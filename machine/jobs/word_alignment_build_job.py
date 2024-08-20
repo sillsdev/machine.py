@@ -3,6 +3,7 @@ from contextlib import ExitStack
 from typing import Any, Callable, Optional, Tuple
 
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
+from ..tokenization.tokenizer_factory import create_tokenizer
 from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
 from ..utils.progress_status import ProgressStatus
 from .word_alignment_file_service import WordAlignmentFileService, WordAlignmentInfo
@@ -59,7 +60,7 @@ class WordAlignmentBuildJob:
 
     def _start_job(self) -> None:
         self._word_alignment_model_factory.init()
-        self._tokenizer = self._word_alignment_model_factory.create_tokenizer()
+        self._tokenizer = create_tokenizer(self._config.thot.tokenizer)
         logger.info(f"Tokenizer: {type(self._tokenizer).__name__}")
 
     def _get_progress_reporter(self, progress: Optional[Callable[[ProgressStatus], None]]) -> PhasedProgressReporter:
@@ -117,7 +118,7 @@ class WordAlignmentBuildJob:
                         column_count=alignment.column_count,
                         row_count=alignment.row_count,
                         alignment=str(alignment),
-                    )  # type: ignore
+                    )
                 )
 
     def _save_model(self) -> None:
