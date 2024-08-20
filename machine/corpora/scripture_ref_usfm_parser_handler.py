@@ -102,11 +102,13 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         self._end_parent_element()
 
     def start_note(self, state: UsfmParserState, marker: str, caller: str, category: Optional[str]) -> None:
-        self._next_element(marker)
-        self._start_note_text_wrapper(state)
+        if self._current_text_type != ScriptureTextType.NONE:
+            self._next_element(marker)
+            self._start_note_text_wrapper(state)
 
     def end_note(self, state: UsfmParserState, marker: str, closed: bool) -> None:
-        self._end_note_text_wrapper(state)
+        if self._current_text_type == ScriptureTextType.NOTE:
+            self._end_note_text_wrapper(state)
 
     def text(self, state: UsfmParserState, text: str) -> None:
         # if we hit text in a verse paragraph and we aren't in a verse, then start a non-verse segment

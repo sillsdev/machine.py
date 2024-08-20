@@ -7,22 +7,22 @@ def test_tokenize() -> None:
     usfm = _read_usfm()
     usfm_tokenizer = UsfmTokenizer()
     tokens = usfm_tokenizer.tokenize(usfm)
-    assert len(tokens) == 218
+    assert len(tokens) == 224
 
     assert tokens[0].type is UsfmTokenType.BOOK
     assert tokens[0].marker == "id"
     assert tokens[0].data == "MAT"
 
-    assert tokens[28].type is UsfmTokenType.TEXT
-    assert tokens[28].text == "Chapter One "
+    assert tokens[34].type is UsfmTokenType.TEXT
+    assert tokens[34].text == "Chapter One "
 
-    assert tokens[29].type is UsfmTokenType.VERSE
-    assert tokens[29].marker == "v"
-    assert tokens[29].data == "1"
+    assert tokens[35].type is UsfmTokenType.VERSE
+    assert tokens[35].marker == "v"
+    assert tokens[35].data == "1"
 
-    assert tokens[38].type is UsfmTokenType.NOTE
-    assert tokens[38].marker == "f"
-    assert tokens[38].data == "+"
+    assert tokens[44].type is UsfmTokenType.NOTE
+    assert tokens[44].marker == "f"
+    assert tokens[44].data == "+"
 
 
 def test_detokenize() -> None:
