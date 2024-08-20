@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 
 import aiofiles
 import pytest
@@ -55,28 +55,25 @@ async def test_create_usfm_file():
 
     # Read text from pretranslations file
     async with aiofiles.open(PRETRANSLATION_PATH, mode="r") as pretranslation_stream:
-        pretranslations = [
+        pretranslations_dto: List[PretranslationDto] = [
             PretranslationDto(text_id=item["textId"], refs=item["refs"], translation=item["translation"])
             for item in json.loads(await pretranslation_stream.read())
         ]
 
-    pretranslations_list = sorted(
-        [
-            ([ScriptureRef.parse(ref, settings.versification) for ref in p.refs], p.translation)
-            for p in pretranslations
-            if p is not None
-        ],
-        key=lambda x: x[0][0],
-    )
+    pretranslations: List[Tuple[List[ScriptureRef], str]] = [
+        (
+            [ScriptureRef.parse(ref, settings.versification).to_relaxed() for ref in p.refs] or [],
+            p.translation or "",
+        )
+        for p in pretranslations_dto
+    ]
 
     for sfm_file_name in Path(PARATEXT_PROJECT_PATH).rglob(f"{settings.file_name_prefix}*{settings.file_name_suffix}"):
-        updater = UsfmTextUpdater(
-            pretranslations_list, strip_all_text=True, strict_comparison=False, prefer_existing_text=True
-        )
+        updater = UsfmTextUpdater(pretranslations, strip_all_text=True, prefer_existing_text=True)
 
         async with aiofiles.open(sfm_file_name, mode="r") as sfm_file:
-            usfm = await sfm_file.read()
+            usfm: str = await sfm_file.read()
 
         parse_usfm(usfm, updater, settings.stylesheet, settings.versification)
-        new_usfm = updater.get_usfm(settings.stylesheet)
+        new_usfm: str = updater.get_usfm(settings.stylesheet)
         assert new_usfm is not None

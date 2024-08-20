@@ -14,7 +14,6 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
         rows: Optional[List[Tuple[List[ScriptureRef], str]]] = None,
         id_text: Optional[str] = None,
         strip_all_text: bool = False,
-        strict_comparison: bool = True,
         prefer_existing_text: bool = False,
     ) -> None:
         super().__init__()
@@ -23,7 +22,6 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
         self._new_tokens: List[UsfmToken] = []
         self._id_text = id_text
         self._strip_all_text = strip_all_text
-        self._strict_comparison = strict_comparison
         self._prefer_existing_text = prefer_existing_text
         self._replace_stack: List[bool] = []
         self._row_index: int = 0
@@ -245,9 +243,7 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
             row_scr_refs, text = self._rows[self._row_index]
             for row_scr_ref in row_scr_refs:
                 while source_index < len(seg_scr_refs):
-                    compare = row_scr_ref.compare_to(
-                        seg_scr_refs[source_index], compare_segments=False, strict=self._strict_comparison
-                    )
+                    compare = row_scr_ref.compare_to(seg_scr_refs[source_index], compare_segments=False)
                     if compare > 0:
                         # source is ahead of row, increment source
                         source_index += 1

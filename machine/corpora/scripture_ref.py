@@ -81,12 +81,15 @@ class ScriptureRef(Comparable):
     def is_verse(self) -> bool:
         return VerseRef.verse_num != 0 and len(self.path) == 0
 
+    def to_relaxed(self) -> ScriptureRef:
+        return ScriptureRef(self.verse_ref, [pe.to_relaxed() for pe in self.path])
+
     def change_versification(self, versification: Versification) -> ScriptureRef:
         vr: VerseRef = self.verse_ref.copy()
         vr.change_versification(versification)
         return ScriptureRef(vr, self.path)
 
-    def compare_to(self, other: object, compare_segments: bool = True, strict: bool = True):
+    def compare_to(self, other: object, compare_segments: bool = True) -> int:
         if not isinstance(other, ScriptureRef):
             raise TypeError("other is not a ScriptureRef object.")
         if self is other:
@@ -97,11 +100,11 @@ class ScriptureRef(Comparable):
             return res
 
         for se1, se2 in zip(self.path, other.path):
-            res = se1.compare_to(se2, strict=strict)
+            res = se1.compare_to(se2)
             if res != 0:
                 return res
 
-        return len(self.path) - len(other.path)
+        return (len(self.path) > len(other.path)) - (len(self.path) < len(other.path))
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ScriptureRef):

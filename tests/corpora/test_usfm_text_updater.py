@@ -250,7 +250,7 @@ def test_get_usfm_nonverse_relaxed() -> None:
             str("The third cell of the table."),
         ),
     ]
-    target = update_usfm(rows, strict_comparison=False)
+    target = update_usfm(rows)
     assert "\\s The first chapter.\r\n" in target
     assert "\\v 1 First verse of the first chapter.\r\n" in target
     assert "\\tr \\tc1 The first cell of the table. \\tc2 The second cell of the table.\r\n" in target
@@ -383,11 +383,10 @@ def update_usfm(
     rows: Optional[List[Tuple[List[ScriptureRef], str]]] = None,
     id_text: Optional[str] = None,
     strip_all_text: bool = False,
-    strict_comparison: bool = True,
     prefer_existing_text: bool = False,
 ) -> str:
     source = read_usfm()
-    updater = UsfmTextUpdater(rows, id_text, strip_all_text, strict_comparison, prefer_existing_text)
+    updater = UsfmTextUpdater(rows, id_text, strip_all_text, prefer_existing_text)
     parse_usfm(source, updater)
     return updater.get_usfm()
 

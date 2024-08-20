@@ -407,7 +407,7 @@ class VerseRef(Comparable):
             result = verse.compare_to(other_verse, compare_all_verses=False, compare_segments=compare_segments)
             if result != 0:
                 return result
-        return len(verse_list) - len(other_verse_list)
+        return (len(verse_list) > len(other_verse_list)) - (len(verse_list) < len(other_verse_list))
 
     def _validate_single_verse(self) -> ValidStatus:
         # Unknown versification is always invalid
