@@ -29,6 +29,7 @@ class ParatextBackupTextCorpus(ScriptureTextCorpus):
                             versification,
                             include_markers,
                             include_all_text,
+                            settings.name,
                         )
                     )
 

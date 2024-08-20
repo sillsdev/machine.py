@@ -19,8 +19,9 @@ class UsfmFileText(UsfmTextBase):
         versification: Optional[Versification] = None,
         include_markers: bool = False,
         include_all_text: bool = False,
+        project: Optional[str] = None,
     ) -> None:
-        super().__init__(id, stylesheet, encoding, versification, include_markers, include_all_text)
+        super().__init__(id, stylesheet, encoding, versification, include_markers, include_all_text, project)
 
         self._filename = Path(filename)
 

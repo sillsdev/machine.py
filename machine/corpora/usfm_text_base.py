@@ -11,7 +11,7 @@ from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler, Sc
 from .scripture_text import ScriptureText
 from .stream_container import StreamContainer
 from .text_row import TextRow
-from .usfm_parser import parse_usfm
+from .usfm_parser import UsfmParser
 from .usfm_parser_state import UsfmParserState
 from .usfm_stylesheet import UsfmStylesheet
 from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
@@ -26,6 +26,7 @@ class UsfmTextBase(ScriptureText):
         versification: Optional[Versification],
         include_markers: bool,
         include_all_text: bool,
+        project: Optional[str] = None,
     ) -> None:
         super().__init__(id, versification)
 
@@ -33,6 +34,7 @@ class UsfmTextBase(ScriptureText):
         self._encoding = encoding
         self._include_markers = include_markers
         self._include_all_text = include_all_text
+        self.project = project
 
     @abstractmethod
     def _create_stream_container(self) -> StreamContainer: ...
@@ -40,13 +42,16 @@ class UsfmTextBase(ScriptureText):
     def _get_rows(self) -> Generator[TextRow, None, None]:
         usfm = self._read_usfm()
         row_collector = _TextRowCollector(self)
-        parse_usfm(
-            usfm,
-            row_collector,
-            self._stylesheet,
-            self.versification,
-            preserve_whitespace=self._include_markers,
-        )
+        parser = UsfmParser(usfm, row_collector, self._stylesheet, self._versification, self._include_markers)
+        try:
+            parser.process_tokens()
+        except Exception as e:
+            error_message = (
+                f"An error occurred while parsing the text '{self.id}'"
+                f"{f' in project {self.project}' if self.project else ''}"
+                f". Verse: {parser.state.verse_ref}, offset: {parser.state.verse_offset}, error: '{e}'"
+            )
+            raise RuntimeError(error_message) from e
         return gen(row_collector.rows)
 
     def _read_usfm(self) -> str:
