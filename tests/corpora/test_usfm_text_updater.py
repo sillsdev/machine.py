@@ -219,7 +219,7 @@ def test_get_usfm_nonverse_char_style() -> None:
 def test_get_usfm_nonverse_paragraph() -> None:
     rows = [
         (
-            scr_ref("MAT 1:0/4:s"),
+            scr_ref("MAT 1:0/8:s"),
             str("The first chapter."),
         )
     ]

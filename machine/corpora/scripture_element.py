@@ -30,7 +30,15 @@ class ScriptureElement(Comparable):
             res = self.position - other.position
             if res != 0:
                 return res
+            return (self.name > other.name) - (self.name < other.name)
 
+        if self.name == other.name:
+            return 0
+        # position 0 is always greater than any other position
+        if self.position == 0 and other.position != 0:
+            return 1
+        if other.position == 0 and self.position != 0:
+            return -1
         return (self.name > other.name) - (self.name < other.name)
 
     def __eq__(self, other: ScriptureElement) -> bool:

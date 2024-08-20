@@ -12,6 +12,7 @@ from .usfm_token import UsfmAttribute
 
 
 class ScriptureTextType(Enum):
+    NONE = auto()
     NONVERSE = auto()
     VERSE = auto()
     NOTE = auto()
@@ -26,7 +27,7 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
 
     @property
     def _current_text_type(self) -> ScriptureTextType:
-        return ScriptureTextType.NONVERSE if len(self._cur_text_type_stack) == 0 else self._cur_text_type_stack[-1]
+        return ScriptureTextType.NONE if len(self._cur_text_type_stack) == 0 else self._cur_text_type_stack[-1]
 
     def end_usfm(self, state: UsfmParserState) -> None:
         self._end_verse_text_wrapper(state)
@@ -69,17 +70,23 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         if self._current_text_type == ScriptureTextType.NONVERSE:
             self._end_parent_element()
             self._end_non_verse_text_wrapper(state)
+        elif self._current_text_type == ScriptureTextType.NONE:
+            # empty verse paragraph
+            self._start_parent_element(marker)
+            self._start_non_verse_text_wrapper(state)
+            self._end_parent_element()
+            self._end_non_verse_text_wrapper(state)
 
     def start_row(self, state: UsfmParserState, marker: str) -> None:
-        if self._current_text_type == ScriptureTextType.NONVERSE:
+        if self._current_text_type == ScriptureTextType.NONVERSE or self._current_text_type == ScriptureTextType.NONE:
             self._start_parent_element(marker)
 
     def end_row(self, state: UsfmParserState, marker: str) -> None:
-        if self._current_text_type == ScriptureTextType.NONVERSE:
+        if self._current_text_type == ScriptureTextType.NONVERSE or self._current_text_type == ScriptureTextType.NONE:
             self._end_parent_element()
 
     def start_cell(self, state: UsfmParserState, marker: str, align: str, colspan: int) -> None:
-        if self._current_text_type == ScriptureTextType.NONVERSE:
+        if self._current_text_type == ScriptureTextType.NONVERSE or self._current_text_type == ScriptureTextType.NONE:
             self._start_parent_element(marker)
             self._start_non_verse_text_wrapper(state)
 
@@ -101,7 +108,19 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     def end_note(self, state: UsfmParserState, marker: str, closed: bool) -> None:
         self._end_note_text_wrapper(state)
 
-    def ref(self, state: UsfmParserState, marker: str, display: str, target: str) -> None: ...
+    def text(self, state: UsfmParserState, text: str) -> None:
+        # if we hit text in a verse paragraph and we aren't in a verse, then start a non-verse segment
+        para_tag = state.para_tag
+        if (
+            self._current_text_type == ScriptureTextType.NONE
+            and para_tag is not None
+            and para_tag.marker != "tr"
+            and state.is_verse_text
+            and self._cur_verse_ref.verse_num == 0
+            and len(text.strip()) > 0
+        ):
+            self._start_parent_element(para_tag.marker)
+            self._start_non_verse_text_wrapper(state)
 
     def _start_verse_text(self, state: UsfmParserState, scripture_refs: Optional[List[ScriptureRef]]) -> None: ...
 
