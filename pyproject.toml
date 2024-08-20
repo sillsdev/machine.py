@@ -72,7 +72,6 @@ json-stream = "^1.3.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
-pytest-asyncio = "0.23.8"
 black = "^24.1.1"       # match the vscode extension
 flake8 = "^7.0.0"
 isort = "^5.9.3"
@@ -83,7 +82,6 @@ pandas = "^2.0.3"
 pyright = "^1.1.362"
 decoy = "^2.1.0"
 pep8-naming = "^0.14.1"
-aiofiles = "^24.1.0"
 
 [tool.poetry.group.gpu.dependencies]
 # Torch is not included in the normal install to allow the user to choose the versions of these dependencies when

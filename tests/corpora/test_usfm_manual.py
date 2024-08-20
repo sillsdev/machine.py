@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Tuple
 
-import aiofiles
 import pytest
 from testutils.corpora_test_helpers import TEST_DATA_PATH, USFM_SOURCE_PROJECT_PATH, USFM_TARGET_PROJECT_PATH
 
@@ -48,16 +47,15 @@ PARATEXT_PROJECT_PATH = TEST_DATA_PATH / "project"
 
 
 @pytest.mark.skip(reason="This is for manual testing only. Remove this decorator to run the test.")
-@pytest.mark.asyncio
-async def test_create_usfm_file():
+def test_create_usfm_file():
     parser = FileParatextProjectSettingsParser(PARATEXT_PROJECT_PATH)
     settings: ParatextProjectSettings = parser.parse()
 
     # Read text from pretranslations file
-    async with aiofiles.open(PRETRANSLATION_PATH, mode="r") as pretranslation_stream:
+    with open(PRETRANSLATION_PATH, mode="r") as pretranslation_stream:
         pretranslations_dto: List[PretranslationDto] = [
             PretranslationDto(text_id=item["textId"], refs=item["refs"], translation=item["translation"])
-            for item in json.loads(await pretranslation_stream.read())
+            for item in json.loads(pretranslation_stream.read())
         ]
 
     pretranslations: List[Tuple[List[ScriptureRef], str]] = [
@@ -71,8 +69,8 @@ async def test_create_usfm_file():
     for sfm_file_name in Path(PARATEXT_PROJECT_PATH).rglob(f"{settings.file_name_prefix}*{settings.file_name_suffix}"):
         updater = UsfmTextUpdater(pretranslations, strip_all_text=True, prefer_existing_text=True)
 
-        async with aiofiles.open(sfm_file_name, mode="r") as sfm_file:
-            usfm: str = await sfm_file.read()
+        with open(sfm_file_name, mode="r") as sfm_file:
+            usfm: str = sfm_file.read()
 
         parse_usfm(usfm, updater, settings.stylesheet, settings.versification)
         new_usfm: str = updater.get_usfm(settings.stylesheet)
