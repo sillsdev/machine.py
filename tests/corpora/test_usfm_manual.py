@@ -26,6 +26,24 @@ def test_parse_parallel_corpus():
     rows = list(p_corpus.get_rows())
     assert rows
 
+    pretranslations: List[Tuple[List[ScriptureRef], str]] = [
+        ([ScriptureRef() for s in r.source_refs], r.source_text) for r in rows
+    ]
+
+    target_settings = FileParatextProjectSettingsParser(USFM_TARGET_PROJECT_PATH).parse()
+
+    for sfm_file_name in Path(USFM_TARGET_PROJECT_PATH).rglob(
+        f"{target_settings.file_name_prefix}*{target_settings.file_name_suffix}"
+    ):
+        updater = UsfmTextUpdater(pretranslations, strip_all_text=True, prefer_existing_text=False)
+
+        with open(sfm_file_name, mode="r") as sfm_file:
+            usfm: str = sfm_file.read()
+
+        parse_usfm(usfm, updater, target_settings.stylesheet, target_settings.versification)
+        new_usfm: str = updater.get_usfm(target_settings.stylesheet)
+        assert new_usfm is not None
+
 
 @dataclass
 class PretranslationDto:

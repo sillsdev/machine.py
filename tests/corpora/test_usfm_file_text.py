@@ -80,7 +80,7 @@ def test_get_rows_nonempty_text_all_text() -> None:
     assert rows[3].text == "This is an endnote."
 
     assert scripture_ref(rows[4]) == ScriptureRef.parse("Mat 1:0/4:p", corpus.versification)
-    assert rows[4].text == "Here is another paragraph."
+    assert rows[4].text == "MAT 1 Here is another paragraph."
 
     assert scripture_ref(rows[7]) == ScriptureRef.parse("MAT 1:0/7:weirdtaglookingthing", corpus.versification)
     assert rows[7].text == "that is not an actual tag."

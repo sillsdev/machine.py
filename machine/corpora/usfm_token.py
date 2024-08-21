@@ -44,6 +44,8 @@ class UsfmToken:
     text: Optional[str] = None
     end_marker: Optional[str] = None
     data: Optional[str] = None
+    line_number: int = -1
+    column_number: int = -1
 
     @property
     def nestless_marker(self) -> Optional[str]:

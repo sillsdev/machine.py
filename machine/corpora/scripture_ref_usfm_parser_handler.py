@@ -102,27 +102,26 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         self._end_parent_element()
 
     def start_note(self, state: UsfmParserState, marker: str, caller: str, category: Optional[str]) -> None:
-        if self._current_text_type != ScriptureTextType.NONE:
+        if self._current_text_type != ScriptureTextType.NONE and not self._duplicate_verse:
+            # if we hit a note in a verse paragraph and we aren't in a verse, then start a non-verse segment
+            self._check_convert_verse_para_to_non_verse(state)
             self._next_element(marker)
             self._start_note_text_wrapper(state)
 
     def end_note(self, state: UsfmParserState, marker: str, closed: bool) -> None:
-        if self._current_text_type == ScriptureTextType.NOTE:
+        if self._current_text_type == ScriptureTextType.NOTE and not self._duplicate_verse:
             self._end_note_text_wrapper(state)
 
     def text(self, state: UsfmParserState, text: str) -> None:
         # if we hit text in a verse paragraph and we aren't in a verse, then start a non-verse segment
-        para_tag = state.para_tag
-        if (
-            self._current_text_type == ScriptureTextType.NONE
-            and para_tag is not None
-            and para_tag.marker != "tr"
-            and state.is_verse_text
-            and self._cur_verse_ref.verse_num == 0
-            and len(text.strip()) > 0
-        ):
-            self._start_parent_element(para_tag.marker)
-            self._start_non_verse_text_wrapper(state)
+        if text.strip():
+            self._check_convert_verse_para_to_non_verse(state)
+
+    def start_char(
+        self, state: UsfmParserState, marker: str, unknown: bool, attributes: Optional[Sequence[UsfmAttribute]]
+    ) -> None:
+        # if we hit a character marker in a verse paragraph and we aren't in a verse, then start a non-verse segment
+        self._check_convert_verse_para_to_non_verse(state)
 
     def _start_verse_text(self, state: UsfmParserState, scripture_refs: Optional[List[ScriptureRef]]) -> None: ...
 
@@ -194,3 +193,15 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         # No need to reverse unlike in Machine, elements are already added in correct order
         path = [e for e in self._cur_elements_stack if e.position > 0]
         return ScriptureRef(verse_ref, path)
+
+    def _check_convert_verse_para_to_non_verse(self, state: UsfmParserState) -> None:
+        para_tag = state.para_tag
+        if (
+            self._current_text_type == ScriptureTextType.NONE
+            and para_tag is not None
+            and para_tag.marker != "tr"
+            and state.is_verse_para
+            and self._cur_verse_ref.verse_num == 0
+        ):
+            self._start_parent_element(para_tag.marker)
+            self._start_non_verse_text_wrapper(state)
