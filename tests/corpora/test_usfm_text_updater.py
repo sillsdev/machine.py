@@ -30,6 +30,40 @@ def test_get_usfm_strip_all_text() -> None:
     assert "\\s\r\n" in target
 
 
+def test_get_usfm_prefer_existing():
+    rows = [
+        (
+            scr_ref("MAT 1:6"),
+            str("Text 6"),
+        ),
+        (
+            scr_ref("MAT 1:7"),
+            str("Text 7"),
+        ),
+    ]
+    target = update_usfm(rows, prefer_existing_text=True)
+    assert "\\id MAT - Test\r\n" in target
+    assert "\\v 6 Verse 6 content.\r\n" in target
+    assert "\\v 7 Text 7\r\n" in target
+
+
+def test_get_usfm_prefer_rows():
+    rows = [
+        (
+            scr_ref("MAT 1:6"),
+            str("Text 6"),
+        ),
+        (
+            scr_ref("MAT 1:7"),
+            str("Text 7"),
+        ),
+    ]
+    target = update_usfm(rows, prefer_existing_text=False)
+    assert "\\id MAT - Test\r\n" in target
+    assert "\\v 6 Text 6\r\n" in target
+    assert "\\v 7 Text 7\r\n" in target
+
+
 def test_get_usfm_verse_skip_note() -> None:
     rows = [
         (
@@ -185,7 +219,7 @@ def test_get_usfm_nonverse_char_style() -> None:
 def test_get_usfm_nonverse_paragraph() -> None:
     rows = [
         (
-            scr_ref("MAT 1:0/4:s"),
+            scr_ref("MAT 1:0/8:s"),
             str("The first chapter."),
         )
     ]
@@ -216,7 +250,7 @@ def test_get_usfm_nonverse_relaxed() -> None:
             str("The third cell of the table."),
         ),
     ]
-    target = update_usfm(rows, strict_comparison=False)
+    target = update_usfm(rows)
     assert "\\s The first chapter.\r\n" in target
     assert "\\v 1 First verse of the first chapter.\r\n" in target
     assert "\\tr \\tc1 The first cell of the table. \\tc2 The second cell of the table.\r\n" in target
@@ -297,6 +331,50 @@ def test_get_usfm_nonverse_replace_note() -> None:
     assert "\\ip The introductory paragraph. \\fe + \\ft This is a new endnote.\\fe*\r\n" in target
 
 
+def test_get_usfm_verse_double_va_vp() -> None:
+    rows = [
+        (
+            scr_ref("MAT 3:1"),
+            str("Updating later in the book to start."),
+        )
+    ]
+    target = update_usfm(rows)
+    assert "\\id MAT - Test\r\n" in target
+    assert "\\v 1 \\va 2\\va*\\vp 1 (2)\\vp*Updating later in the book to start.\r\n" in target
+
+
+def test_get_usfm_verse_pretranslations_before_text() -> None:
+    rows = [
+        (
+            scr_ref("GEN 1:1"),
+            str("Pretranslations before the start"),
+        ),
+        (
+            scr_ref("GEN 1:2"),
+            str("Pretranslations before the start"),
+        ),
+        (
+            scr_ref("GEN 1:3"),
+            str("Pretranslations before the start"),
+        ),
+        (
+            scr_ref("GEN 1:4"),
+            str("Pretranslations before the start"),
+        ),
+        (
+            scr_ref("GEN 1:5"),
+            str("Pretranslations before the start"),
+        ),
+        (
+            scr_ref("MAT 1:0/3:ip"),
+            str("The introductory paragraph."),
+        ),
+    ]
+
+    target = update_usfm(rows)
+    assert "\\ip The introductory paragraph.\r\n" in target
+
+
 def scr_ref(*refs: str) -> List[ScriptureRef]:
     return [ScriptureRef.parse(ref) for ref in refs]
 
@@ -305,10 +383,10 @@ def update_usfm(
     rows: Optional[List[Tuple[List[ScriptureRef], str]]] = None,
     id_text: Optional[str] = None,
     strip_all_text: bool = False,
-    strict_comparison: bool = True,
+    prefer_existing_text: bool = False,
 ) -> str:
     source = read_usfm()
-    updater = UsfmTextUpdater(rows, id_text, strip_all_text, strict_comparison)
+    updater = UsfmTextUpdater(rows, id_text, strip_all_text, prefer_existing_text)
     parse_usfm(source, updater)
     return updater.get_usfm()
 

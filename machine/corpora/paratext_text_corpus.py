@@ -16,15 +16,19 @@ class ParatextTextCorpus(ScriptureTextCorpus):
 
         texts: List[UsfmFileText] = []
         for sfm_filename in Path(project_dir).glob(f"{settings.file_name_prefix}*{settings.file_name_suffix}"):
-            texts.append(
-                UsfmFileText(
-                    settings.stylesheet,
-                    settings.encoding,
-                    sfm_filename,
-                    versification,
-                    include_markers,
-                    include_all_text,
+            book_id = settings.get_book_id(sfm_filename.name)
+            if book_id:
+                texts.append(
+                    UsfmFileText(
+                        settings.stylesheet,
+                        settings.encoding,
+                        book_id,
+                        sfm_filename,
+                        versification,
+                        include_markers,
+                        include_all_text,
+                        settings.name,
+                    )
                 )
-            )
 
         super().__init__(versification, texts)

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from functools import total_ordering
-from typing import Optional
 
 from ..utils.comparable import Comparable
 
@@ -20,17 +19,27 @@ class ScriptureElement(Comparable):
     def name(self) -> str:
         return self._name
 
-    def compare_to(self, other: object, strict: Optional[bool] = True) -> int:
+    def to_relaxed(self) -> ScriptureElement:
+        return ScriptureElement(0, self.name)
+
+    def compare_to(self, other: object) -> int:
         if not isinstance(other, ScriptureElement):
             raise (TypeError("other is not a ScriptureElement object."))
         if self is other:
             return 0
 
-        if strict:
-            res = self.position - other.position
-            if res != 0:
-                return res
-
+        if self.position == 0 or other.position == 0:
+            if self.name == other.name:
+                return 0
+            # position 0 is always greater than any other position
+            if self.position == 0 and other.position != 0:
+                return 1
+            if other.position == 0 and self.position != 0:
+                return -1
+            return (self.name > other.name) - (self.name < other.name)
+        res = self.position - other.position
+        if res != 0:
+            return res
         return (self.name > other.name) - (self.name < other.name)
 
     def __eq__(self, other: ScriptureElement) -> bool:

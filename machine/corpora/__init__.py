@@ -7,13 +7,17 @@ from .corpus import Corpus
 from .dbl_bundle_text_corpus import DblBundleTextCorpus
 from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .dictionary_text_corpus import DictionaryTextCorpus
+from .file_paratext_project_settings_parser import FileParatextProjectSettingsParser
 from .flatten import flatten
 from .memory_alignment_collection import MemoryAlignmentCollection
 from .memory_text import MemoryText
 from .multi_key_ref import MultiKeyRef
 from .parallel_text_corpus import ParallelTextCorpus
 from .parallel_text_row import ParallelTextRow
+from .paratext_backup_terms_corpus import ParatextBackupTermsCorpus
 from .paratext_backup_text_corpus import ParatextBackupTextCorpus
+from .paratext_project_settings import ParatextProjectSettings
+from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
 from .paratext_text_corpus import ParatextTextCorpus
 from .scripture_element import ScriptureElement
 from .scripture_ref import EMPTY_SCRIPTURE_REF, ScriptureRef
@@ -57,6 +61,8 @@ from .usx_file_alignment_corpus import UsxFileAlignmentCorpus
 from .usx_file_text import UsxFileText
 from .usx_file_text_corpus import UsxFileTextCorpus
 from .usx_zip_text import UsxZipText
+from .zip_paratext_project_settings_parser import ZipParatextProjectSettingsParser
+from .zip_paratext_project_settings_parser_base import ZipParatextProjectSettingsParserBase
 
 __all__ = [
     "AlignedWordPair",
@@ -72,6 +78,7 @@ __all__ = [
     "EMPTY_SCRIPTURE_REF",
     "escape_spaces",
     "extract_scripture_corpus",
+    "FileParatextProjectSettingsParser",
     "flatten",
     "is_scripture",
     "lowercase",
@@ -85,7 +92,10 @@ __all__ = [
     "normalize",
     "ParallelTextCorpus",
     "ParallelTextRow",
+    "ParatextBackupTermsCorpus",
     "ParatextBackupTextCorpus",
+    "ParatextProjectSettings",
+    "ParatextProjectSettingsParserBase",
     "ParatextTextCorpus",
     "parse_usfm",
     "RtlReferenceOrder",
@@ -128,4 +138,6 @@ __all__ = [
     "UsxFileText",
     "UsxFileTextCorpus",
     "UsxZipText",
+    "ZipParatextProjectSettingsParser",
+    "ZipParatextProjectSettingsParserBase",
 ]

@@ -1,7 +1,11 @@
 \id MAT - Test
+\f + \fr 1.0 \ft \f*
 \h Matthew
 \mt Matthew
 \ip An introduction to Matthew\fe + \ft This is an endnote.\fe*
+\p Here is another paragraph.
+\p and with a \w keyword|a special concept\w* in it.
+\p and a \weirdtaglookingthing that is not an actual tag.
 \c 1
 \s Chapter One
 \v 1 Chapter \pn one\+pro WON\+pro*\pn*, verse one.\f + \fr 1:1: \ft This is a footnote.\f*
@@ -14,10 +18,14 @@
 \li2 verse four,
 \v 5 Chapter one,
 \li2 verse \fig Figure 1|src="image1.png" size="col" ref="1:5"\fig* five.
+\v 6 Verse 6 content.
+\v 7
+\v 8
 \c 2
 \tr \tc1 Row one, column one. \tc2 Row one, column two.
 \tr \tc1 Row two, column one. \tc2 Row two, column two.
 \s1 Chapter \it Two \it*
+\p
 \p
 \v 1 Chapter \add two\add*, verse \f + \fr 2:1: \ft This is a footnote.\f*one.
 \v 2-3 Chapter two, // verse \fm ∆\fm*two.
@@ -29,7 +37,9 @@
 \v 4b Chapter two, verse four.
 \p
 \v 6 Chapter two, verse \w six|strong="12345" \w*.
+\p
 \v 6 Bad verse.
+\p
 \v 5 Chapter two, verse five \rq (MAT 3:1)\rq*.
 \v 7a Chapter two, verse seven A,
 \s Section header \ts-s\*
@@ -44,3 +54,14 @@
 \v 10 \tc3-4 \qt-s |Jesus\*Chapter 2 verse 10\qt-e\*
 \v 11-12
 \restore restore information
+\c 3
+\cl PSALM 3
+\s1 Section 1
+\mt1 Major Title 1
+\d \va (1)\va* Description
+\q1
+\v 1 \va 2\va*\vp 1 (2)\vp* Chapter 3 verse 1.
+\q1 3.1 part 2
+\b
+\q1 3.1 part 3
+\q1 3.1 part 4

@@ -1,8 +1,6 @@
 from typing import List
 from zipfile import ZipFile
 
-import regex as re
-
 from ..utils.typeshed import StrPath
 from .scripture_text_corpus import ScriptureTextCorpus
 from .usfm_zip_text import UsfmZipText
@@ -16,20 +14,23 @@ class ParatextBackupTextCorpus(ScriptureTextCorpus):
             settings = parser.parse()
 
             versification = settings.versification
-            regex = re.compile(f"^{re.escape(settings.file_name_prefix)}.*{re.escape(settings.file_name_suffix)}$")
 
             texts: List[UsfmZipText] = []
-            for sfm_entry in (zi for zi in archive.filelist if regex.match(zi.filename)):
-                texts.append(
-                    UsfmZipText(
-                        settings.stylesheet,
-                        settings.encoding,
-                        filename,
-                        sfm_entry.filename,
-                        versification,
-                        include_markers,
-                        include_all_text,
+            for sfm_entry in archive.filelist:
+                book_id = settings.get_book_id(sfm_entry.filename)
+                if book_id:
+                    texts.append(
+                        UsfmZipText(
+                            settings.stylesheet,
+                            settings.encoding,
+                            book_id,
+                            filename,
+                            sfm_entry.filename,
+                            versification,
+                            include_markers,
+                            include_all_text,
+                            settings.name,
+                        )
                     )
-                )
 
         super().__init__(versification, texts)

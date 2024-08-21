@@ -25,7 +25,24 @@ class UsfmFileTextCorpus(ScriptureTextCorpus):
         stylesheet = UsfmStylesheet(stylesheet_filename)
         texts: List[UsfmFileText] = []
         for sfm_filename in Path(project_dir).glob(file_pattern):
-            texts.append(
-                UsfmFileText(stylesheet, encoding, sfm_filename, versification, include_markers, include_all_text)
-            )
+            id = _get_id(sfm_filename, encoding)
+            if id:
+                texts.append(
+                    UsfmFileText(
+                        stylesheet, encoding, id, sfm_filename, versification, include_markers, include_all_text
+                    )
+                )
         super().__init__(versification, texts)
+
+
+def _get_id(filename: StrPath, encoding: str) -> Optional[str]:
+    with open(filename, "r", encoding=encoding) as file:
+        for line in file:
+            line = line.strip()
+            if line.startswith("\\id "):
+                id = line[4:]
+                index = id.find(" ")
+                if index != -1:
+                    id = id[:index]
+                return id.strip().upper()
+    return None

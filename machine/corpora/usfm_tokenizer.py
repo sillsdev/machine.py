@@ -212,6 +212,7 @@ class UsfmTokenizer:
     def detokenize(self, tokens: Iterable[UsfmToken], tokens_have_whitespace: bool = False) -> str:
         prev_token: Optional[UsfmToken] = None
         usfm = ""
+        in_book = False
         for token in tokens:
             token_usfm = ""
             if token.type in {UsfmTokenType.BOOK, UsfmTokenType.CHAPTER, UsfmTokenType.PARAGRAPH}:
@@ -224,6 +225,7 @@ class UsfmTokenizer:
                     if not tokens_have_whitespace:
                         usfm += "\r\n"
                 token_usfm = token.to_usfm()
+                in_book = token.type == UsfmTokenType.BOOK
             elif token.type is UsfmTokenType.VERSE:
                 # Add newline if after anything other than [ or (
                 if len(usfm) > 0 and usfm[-1] != "[" and usfm[-1] != "(":
@@ -242,7 +244,7 @@ class UsfmTokenizer:
                         "\u200e" if self.rtl_reference_order is RtlReferenceOrder.BOOK_VERSE_CHAPTER else "\u200f"
                     )
                     token_usfm = _RTL_VERSE_REGEX.sub(token_usfm, f"$1{direction_marker}$2")
-
+                in_book = False
             elif token.type is UsfmTokenType.TEXT:
                 # Ensure spaces are preserved
                 token_usfm = token.to_usfm()
@@ -257,7 +259,15 @@ class UsfmTokenizer:
                     else:
                         token_usfm = token_usfm.lstrip(" ")
             else:
+                if in_book:
+                    if usfm[-1] == " " and (
+                        (prev_token is not None and prev_token.to_usfm().strip() != "") or not tokens_have_whitespace
+                    ):
+                        usfm = usfm[:-1]
+                    if not tokens_have_whitespace:
+                        usfm += "\r\n"
                 token_usfm = token.to_usfm()
+                in_book = False
 
             usfm += token_usfm
             prev_token = token
