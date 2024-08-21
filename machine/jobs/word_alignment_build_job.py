@@ -28,7 +28,7 @@ class WordAlignmentBuildJob:
         self,
         progress: Optional[Callable[[ProgressStatus], None]] = None,
         check_canceled: Optional[Callable[[], None]] = None,
-    ) -> Tuple[int, float]:
+    ) -> int:
         if check_canceled is not None:
             check_canceled()
 
@@ -44,11 +44,11 @@ class WordAlignmentBuildJob:
         if check_canceled is not None:
             check_canceled()
 
-        logger.info("Pretranslating segments")
+        logger.info("Generating alignments")
         self._batch_inference(progress_reporter, check_canceled)
 
         self._save_model()
-        return self._train_corpus_size, self._confidence
+        return self._train_corpus_size
 
     def _init_corpus(self) -> None:
         logger.info("Downloading data files")

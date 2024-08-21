@@ -65,7 +65,7 @@ def run(args: dict) -> None:
         word_alignment_build_job = WordAlignmentBuildJob(
             SETTINGS, word_alignment_model_factory, word_alignment_file_service
         )
-        train_corpus_size, confidence = word_alignment_build_job.run(progress, check_canceled)
+        train_corpus_size = word_alignment_build_job.run(progress, check_canceled)
         if scheduler is not None and task is not None:
             scheduler.schedule(
                 update_runtime_properties(
@@ -73,7 +73,6 @@ def run(args: dict) -> None:
                 )
             )
             task.get_logger().report_single_value(name="train_corpus_size", value=train_corpus_size)
-            task.get_logger().report_single_value(name="confidence", value=round(confidence, 4))
         logger.info("Finished")
     except Exception as e:
         if task:
