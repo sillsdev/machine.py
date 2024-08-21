@@ -103,8 +103,11 @@ class ScriptureRef(Comparable):
             res = se1.compare_to(se2)
             if res != 0:
                 return res
-
-        return (len(self.path) > len(other.path)) - (len(self.path) < len(other.path))
+        if len(self.path) < len(other.path):
+            return -1
+        elif len(self.path) > len(other.path):
+            return 1
+        return 0
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ScriptureRef):
