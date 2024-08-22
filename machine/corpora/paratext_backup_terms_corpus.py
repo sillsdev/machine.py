@@ -14,7 +14,6 @@ _PREDEFINED_TERMS_LIST_TYPES = ["Major", "All", "SilNt", "Pt6"]
 
 class ParatextBackupTermsCorpus(DictionaryTextCorpus):
     def __init__(self, filename: str, term_categories: List[str]) -> None:
-        rows: List[TextRow] = []
         with ZipFile(filename, "r") as archive:
             terms_file_entry = get_entry(archive, "TermRenderings.xml")
             if terms_file_entry is None:
@@ -26,16 +25,17 @@ class ParatextBackupTermsCorpus(DictionaryTextCorpus):
                 term_renderings_tree = ElementTree.parse(key_terms_file)
 
             biblical_terms_file_entry = get_entry(archive, settings.biblical_terms_file_name)
-            if settings.biblical_terms_list_type in _PREDEFINED_TERMS_LIST_TYPES:
+            if settings.biblical_terms_list_type == "Project":
+                if biblical_terms_file_entry is not None:
+                    with archive.open(biblical_terms_file_entry) as key_terms_file:
+                        biblical_terms_tree = ElementTree.parse(key_terms_file)
+                        term_id_to_category_dict = _get_category_per_id(biblical_terms_tree)
+                else:
+                    with open("BiblicalTerms.xml", "rb") as key_terms_file:
+                        biblical_terms_tree = ElementTree.parse(key_terms_file)
+                        term_id_to_category_dict = _get_category_per_id(biblical_terms_tree)
+            elif settings.biblical_terms_list_type in _PREDEFINED_TERMS_LIST_TYPES:
                 with open(settings.biblical_terms_file_name, "rb") as key_terms_file:
-                    biblical_terms_tree = ElementTree.parse(key_terms_file)
-                    term_id_to_category_dict = _get_category_per_id(biblical_terms_tree)
-            elif (
-                settings.biblical_terms_list_type == "Project"
-                and settings.biblical_terms_project_name == settings.name
-                and biblical_terms_file_entry is not None
-            ):
-                with archive.open(biblical_terms_file_entry) as key_terms_file:
                     biblical_terms_tree = ElementTree.parse(key_terms_file)
                     term_id_to_category_dict = _get_category_per_id(biblical_terms_tree)
             else:
@@ -47,6 +47,7 @@ class ParatextBackupTermsCorpus(DictionaryTextCorpus):
                 f"{settings.biblical_terms_project_name}:"
                 f"{settings.biblical_terms_file_name}"
             )
+            rows: List[TextRow] = []
             for e in terms_elements:
                 term_id = e.attrib["Id"]
                 category = term_id_to_category_dict.get(term_id, "")
@@ -99,7 +100,11 @@ def _strip_parens(term_string: str, left: str = "(", right: str = ")") -> str:
 def _get_category_per_id(biblical_terms_tree: ElementTree.ElementTree) -> Dict[str, Optional[str]]:
     term_id_to_category_dict = {}
     for e in biblical_terms_tree.iter(".//Term"):
-        category_element = e.find("Category")
-        category = category_element.text if category_element is not None and category_element.text is not None else ""
-        term_id_to_category_dict[e.attrib["Id"]] = category
+        term_id = e.attrib["Id"]
+        if term_id not in term_id_to_category_dict:
+            category_element = e.find("Category")
+            category = (
+                category_element.text if category_element is not None and category_element.text is not None else ""
+            )
+            term_id_to_category_dict[term_id] = category
     return term_id_to_category_dict
