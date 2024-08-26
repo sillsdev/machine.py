@@ -10,8 +10,12 @@ from .shared_file_service_factory import SharedFileServiceType, get_shared_file_
 
 class WordAlignmentInfo(TypedDict):
     refs: List[str]
+    source_text: str
+    target_text: str
     column_count: int
     row_count: int
+    average_translation_score: str
+    average_alignment_score: str
     alignment: str
 
 

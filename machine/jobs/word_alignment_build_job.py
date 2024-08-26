@@ -1,7 +1,9 @@
 import logging
 from contextlib import ExitStack
+from statistics import mean
 from typing import Any, Callable, Optional
 
+from ..corpora.aligned_word_pair import AlignedWordPair
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from ..corpora.text_corpus import TextCorpus
 from ..tokenization.tokenizer_factory import create_tokenizer
@@ -26,6 +28,7 @@ class WordAlignmentBuildJob:
         self._tokenizer = create_tokenizer(self._config.thot_align.tokenizer)
         self._word_alignment_file_service = word_alignment_file_service
         self._train_corpus_size = -1
+        self._inferences: list[WordAlignmentInfo] = []
 
     def run(
         self,
@@ -81,6 +84,7 @@ class WordAlignmentBuildJob:
         check_canceled: Optional[Callable[[], None]],
     ) -> None:
         inference_step_count = self.parallel_corpus.count(include_empty=False)
+        self._inferences = []
 
         with ExitStack() as stack:
             phase_progress = stack.enter_context(progress_reporter.start_next_phase())
@@ -95,15 +99,31 @@ class WordAlignmentBuildJob:
             alignments = alignment_model.align_batch(segment_batch)
             if check_canceled is not None:
                 check_canceled()
+
+            def format_score(score: float) -> str:
+                return f"{score:.8f}".rstrip("0").rstrip(".")
+
             for row, alignment in zip(self.parallel_corpus.get_rows(), alignments):
-                writer.write(
-                    WordAlignmentInfo(
-                        refs=[str(ref) for ref in row.source_refs],
-                        column_count=alignment.column_count,
-                        row_count=alignment.row_count,
-                        alignment=str(alignment),
-                    )
+                source_segment = list(self._tokenizer.tokenize(row.source_text))
+                target_segment = list(self._tokenizer.tokenize(row.target_text))
+                word_pairs = alignment.to_aligned_word_pairs(include_null=True)
+                alignment_model.compute_aligned_word_pair_scores(source_segment, target_segment, word_pairs)
+
+                ave_translation_score = mean([wp.translation_score for wp in word_pairs]) if len(word_pairs) > 0 else 0
+                ave_alignment_score = mean([wp.alignment_score for wp in word_pairs]) if len(word_pairs) > 0 else 0
+
+                word_alignment_info = WordAlignmentInfo(
+                    refs=[str(ref) for ref in row.source_refs],
+                    source_text=row.source_text,
+                    target_text=row.target_text,
+                    column_count=alignment.column_count,
+                    row_count=alignment.row_count,
+                    average_translation_score=format_score(ave_translation_score),
+                    average_alignment_score=format_score(ave_alignment_score),
+                    alignment=AlignedWordPair.to_string(word_pairs),
                 )
+                self._inferences.append(word_alignment_info)
+                writer.write(word_alignment_info)
 
     def _save_model(self) -> None:
         logger.info("Saving model")
