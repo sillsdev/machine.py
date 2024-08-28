@@ -39,7 +39,7 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     def verse(
         self, state: UsfmParserState, number: str, marker: str, alt_number: Optional[str], pub_number: Optional[str]
     ) -> None:
-        if state.verse_ref == self._cur_verse_ref:
+        if state.verse_ref == self._cur_verse_ref and not self._duplicate_verse:
             self._end_verse_text(state, self._create_verse_refs())
             # ignore duplicate verses
             self._duplicate_verse = True

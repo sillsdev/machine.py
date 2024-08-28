@@ -8,6 +8,7 @@ from .dbl_bundle_text_corpus import DblBundleTextCorpus
 from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .dictionary_text_corpus import DictionaryTextCorpus
 from .file_paratext_project_settings_parser import FileParatextProjectSettingsParser
+from .file_paratext_project_text_updater import FileParatextProjectTextUpdater
 from .flatten import flatten
 from .memory_alignment_collection import MemoryAlignmentCollection
 from .memory_stream_container import MemoryStreamContainer
@@ -19,6 +20,7 @@ from .paratext_backup_terms_corpus import ParatextBackupTermsCorpus
 from .paratext_backup_text_corpus import ParatextBackupTextCorpus
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
+from .paratext_project_text_updater_base import ParatextProjectTextUpdaterBase
 from .paratext_text_corpus import ParatextTextCorpus
 from .scripture_element import ScriptureElement
 from .scripture_ref import EMPTY_SCRIPTURE_REF, ScriptureRef
@@ -47,6 +49,7 @@ from .token_processors import (
     normalize,
     unescape_spaces,
 )
+from .update_usfm_parser_handler import UpdateUsfmParserHandler
 from .usfm_file_text import UsfmFileText
 from .usfm_file_text_corpus import UsfmFileTextCorpus
 from .usfm_memory_texts import UsfmMemoryText
@@ -55,7 +58,6 @@ from .usfm_parser_handler import UsfmParserHandler
 from .usfm_parser_state import UsfmElementType, UsfmParserElement, UsfmParserState
 from .usfm_stylesheet import UsfmStylesheet
 from .usfm_tag import UsfmJustification, UsfmStyleAttribute, UsfmStyleType, UsfmTag, UsfmTextProperties, UsfmTextType
-from .usfm_text_updater import UsfmTextUpdater
 from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
 from .usfm_tokenizer import RtlReferenceOrder, UsfmTokenizer
 from .usx_file_alignment_collection import UsxFileAlignmentCollection
@@ -65,6 +67,7 @@ from .usx_file_text_corpus import UsxFileTextCorpus
 from .usx_zip_text import UsxZipText
 from .zip_paratext_project_settings_parser import ZipParatextProjectSettingsParser
 from .zip_paratext_project_settings_parser_base import ZipParatextProjectSettingsParserBase
+from .zip_paratext_project_text_updater import ZipParatextProjectTextUpdater
 
 __all__ = [
     "AlignedWordPair",
@@ -81,6 +84,7 @@ __all__ = [
     "escape_spaces",
     "extract_scripture_corpus",
     "FileParatextProjectSettingsParser",
+    "FileParatextProjectTextUpdater",
     "flatten",
     "is_scripture",
     "lowercase",
@@ -99,6 +103,7 @@ __all__ = [
     "ParatextBackupTextCorpus",
     "ParatextProjectSettings",
     "ParatextProjectSettingsParserBase",
+    "ParatextProjectTextUpdaterBase",
     "ParatextTextCorpus",
     "parse_usfm",
     "RtlReferenceOrder",
@@ -117,6 +122,7 @@ __all__ = [
     "TextRow",
     "TextRowFlags",
     "unescape_spaces",
+    "UpdateUsfmParserHandler",
     "UsfmAttribute",
     "UsfmElementType",
     "UsfmFileText",
@@ -133,7 +139,6 @@ __all__ = [
     "UsfmTag",
     "UsfmTextProperties",
     "UsfmTextType",
-    "UsfmTextUpdater",
     "UsfmToken",
     "UsfmTokenizer",
     "UsfmTokenType",
@@ -144,4 +149,5 @@ __all__ = [
     "UsxZipText",
     "ZipParatextProjectSettingsParser",
     "ZipParatextProjectSettingsParserBase",
+    "ZipParatextProjectTextUpdater",
 ]

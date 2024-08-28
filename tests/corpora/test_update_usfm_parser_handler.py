@@ -3,7 +3,8 @@ from typing import List, Optional, Tuple
 from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH, ignore_line_endings
 
 from machine.corpora import ScriptureRef, parse_usfm
-from machine.corpora.usfm_text_updater import UsfmTextUpdater
+from machine.corpora.file_paratext_project_text_updater import FileParatextProjectTextUpdater
+from machine.corpora.update_usfm_parser_handler import UpdateUsfmParserHandler
 
 
 def test_get_usfm_verse_char_style() -> None:
@@ -14,17 +15,20 @@ def test_get_usfm_verse_char_style() -> None:
         )
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\id MAT - Test\r\n" in target
     assert "\\v 1 First verse of the first chapter.\r\n" in target
 
 
 def test_get_usfm_id_text() -> None:
-    target = update_usfm(id_text="- Updated")
+    target = update_usfm(id_text="Updated")
+    assert target is not None
     assert "\\id MAT - Updated\r\n" in target
 
 
 def test_get_usfm_strip_all_text() -> None:
     target = update_usfm(strip_all_text=True)
+    assert target is not None
     assert "\\id MAT\r\n" in target
     assert "\\v 1\r\n" in target
     assert "\\s\r\n" in target
@@ -42,6 +46,7 @@ def test_get_usfm_prefer_existing():
         ),
     ]
     target = update_usfm(rows, prefer_existing_text=True)
+    assert target is not None
     assert "\\id MAT - Test\r\n" in target
     assert "\\v 6 Verse 6 content.\r\n" in target
     assert "\\v 7 Text 7\r\n" in target
@@ -59,6 +64,7 @@ def test_get_usfm_prefer_rows():
         ),
     ]
     target = update_usfm(rows, prefer_existing_text=False)
+    assert target is not None
     assert "\\id MAT - Test\r\n" in target
     assert "\\v 6 Text 6\r\n" in target
     assert "\\v 7 Text 7\r\n" in target
@@ -72,6 +78,7 @@ def test_get_usfm_verse_skip_note() -> None:
         )
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\v 1 First verse of the second chapter.\r\n" in target
 
 
@@ -84,6 +91,7 @@ def test_get_usfm_verse_replace_note() -> None:
         (scr_ref("MAT 2:1/1:f"), str("This is a new footnote.")),
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\v 1 First verse of the second chapter. \\f + \\ft This is a new footnote.\\f*\r\n" in target
 
 
@@ -95,6 +103,7 @@ def test_get_usfm_row_verse_segment() -> None:
         )
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\v 1 First verse of the second chapter.\r\n" in target
 
 
@@ -106,6 +115,7 @@ def test_get_usfm_verse_segment() -> None:
         )
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\v 7a Seventh verse of the second chapter.\r\n" in target
 
 
@@ -117,6 +127,7 @@ def test_get_usfm_verse_multiple_paras() -> None:
         )
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\v 2 Second verse of the first chapter.\r\n\\li2\r\n" in target
 
 
@@ -128,6 +139,7 @@ def test_get_usfm_verse_table() -> None:
         )
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\v 9 Ninth verse of the second chapter. \\tcr2 \\tc3 \\tcr4\r\n" in target
 
 
@@ -139,6 +151,7 @@ def test_get_usfm_verse_range_single_row_multiple_verses() -> None:
         )
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\v 11-12 Eleventh verse of the second chapter. Twelfth verse of the second chapter.\r\n" in target
 
 
@@ -150,6 +163,7 @@ def test_get_usfm_verse_range_single_row_single_verse() -> None:
         )
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\v 11-12 Eleventh verse of the second chapter.\r\n" in target
 
 
@@ -165,6 +179,7 @@ def test_get_usfm_verse_range_multiple_rows_single_verse() -> None:
         ),
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\v 11-12 Eleventh verse of the second chapter. Twelfth verse of the second chapter.\r\n" in target
 
 
@@ -184,6 +199,7 @@ def test_get_usfm_merge_verse_segments() -> None:
         ),
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\v 2-3 Verse 2. Verse 2a. Verse 2b.\r\n" in target
 
 
@@ -199,6 +215,7 @@ def test_get_usfm_verse_opt_break() -> None:
         ),
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\v 2-3 Second verse of the second chapter. Third verse of the second chapter.\r\n" in target
 
 
@@ -210,6 +227,7 @@ def test_get_usfm_verse_milestone() -> None:
         )
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\v 10 Tenth verse of the second chapter. \\tc3-4 \\qt-s |Jesus\\*\\qt-e\\*\r\n" in target
 
 
@@ -221,6 +239,7 @@ def test_get_usfm_verse_unmatched() -> None:
         )
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\v 3 Third verse of the first chapter.\r\n" in target
 
 
@@ -232,6 +251,7 @@ def test_get_usfm_nonverse_char_style() -> None:
         )
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\s1 The second chapter.\r\n" in target
 
 
@@ -243,6 +263,7 @@ def test_get_usfm_nonverse_paragraph() -> None:
         )
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\s The first chapter.\r\n" in target
 
 
@@ -270,6 +291,7 @@ def test_get_usfm_nonverse_relaxed() -> None:
         ),
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\s The first chapter.\r\n" in target
     assert "\\v 1 First verse of the first chapter.\r\n" in target
     assert "\\tr \\tc1 The first cell of the table. \\tc2 The second cell of the table.\r\n" in target
@@ -284,6 +306,7 @@ def test_get_usfm_nonverse_sidebar() -> None:
         )
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\ms The first paragraph of the sidebar.\r\n" in target
 
 
@@ -299,6 +322,7 @@ def test_get_usfm_nonverse_table() -> None:
         ),
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\tr \\tc1 The first cell of the table. \\tc2 Row one, column two.\r\n" in target
 
 
@@ -310,6 +334,7 @@ def test_get_usfm_nonverse_optbreak() -> None:
         )
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\p The second paragraph of the sidebar.\r\n" in target
 
 
@@ -321,6 +346,7 @@ def test_get_usfm_nonverse_milestone() -> None:
         )
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\s A new section header. \\ts-s\\*\r\n" in target
 
 
@@ -332,6 +358,7 @@ def test_get_usfm_nonverse_skip_note() -> None:
         )
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\ip The introductory paragraph.\r\n" in target
 
 
@@ -347,6 +374,7 @@ def test_get_usfm_nonverse_replace_note() -> None:
         ),
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\ip The introductory paragraph. \\fe + \\ft This is a new endnote.\\fe*\r\n" in target
 
 
@@ -358,6 +386,7 @@ def test_get_usfm_verse_double_va_vp() -> None:
         )
     ]
     target = update_usfm(rows)
+    assert target is not None
     assert "\\id MAT - Test\r\n" in target
     assert "\\v 1 \\va 2\\va*\\vp 1 (2)\\vp*Updating later in the book to start.\r\n" in target
 
@@ -374,6 +403,7 @@ def test_get_usfm_verse_last_segment() -> None:
 \v 1
 """
     target = update_usfm(rows, usfm)
+    assert target is not None
     ignore_line_endings(
         target,
         r"""\id MAT - Test
@@ -412,6 +442,7 @@ def test_get_usfm_verse_pretranslations_before_text() -> None:
     ]
 
     target = update_usfm(rows)
+    assert target is not None
     assert "\\ip The introductory paragraph.\r\n" in target
 
 
@@ -425,14 +456,15 @@ def update_usfm(
     id_text: Optional[str] = None,
     strip_all_text: bool = False,
     prefer_existing_text: bool = False,
-) -> str:
+) -> Optional[str]:
     if source is None:
-        source = read_usfm()
+        updater = FileParatextProjectTextUpdater(USFM_TEST_PROJECT_PATH)
+        return updater.update_usfm("MAT", rows, id_text, strip_all_text, prefer_existing_text)
     else:
         source = source.strip().replace("\r\n", "\n") + "\r\n"
-    updater = UsfmTextUpdater(rows, id_text, strip_all_text, prefer_existing_text)
-    parse_usfm(source, updater)
-    return updater.get_usfm()
+        updater = UpdateUsfmParserHandler(rows, id_text, strip_all_text, prefer_existing_text)
+        parse_usfm(source, updater)
+        return updater.get_usfm()
 
 
 def read_usfm() -> str:
