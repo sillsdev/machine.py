@@ -41,6 +41,15 @@ def test_detokenize() -> None:
     assert result == usfm
 
 
+def test_tokenize_ending_paragraph_marker() -> None:
+    usfm = r"""\id MAT - Test
+\c 1
+\v 1 Descriptive title\x - \xo 18:16 \xt  hello world\x*\p
+"""
+    tokens = UsfmTokenizer().tokenize(usfm)
+    assert len(tokens) == 13
+
+
 def _read_usfm() -> str:
     with (USFM_TEST_PROJECT_PATH / "41MATTes.SFM").open("r", encoding="utf-8-sig", newline="\r\n") as file:
         return file.read()
