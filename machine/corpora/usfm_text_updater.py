@@ -256,9 +256,8 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
                         break
                 if compare == 0:
                     # source and row match
-                    # grab the text and increment both
+                    # grab the text - both source and row will be incremented in due time...
                     row_texts.append(text)
-                    source_index += 1
                     break
             if compare <= 0:
                 # source is ahead of row, increment row
