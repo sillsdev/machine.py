@@ -76,8 +76,8 @@ class _FlattenAlignmentCorpus(AlignmentCorpus):
     def alignment_collections(self) -> Iterable[AlignmentCollection]:
         return chain.from_iterable(c.alignment_collections for c in self._corpora)
 
-    def count(self, include_empty: bool = True) -> int:
-        return sum(c.count(include_empty) for c in self._corpora)
+    def count(self, include_empty: bool = True, text_ids: Optional[Iterable[str]] = None) -> int:
+        return sum(c.count(include_empty, text_ids) for c in self._corpora)
 
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[AlignmentRow, None, None]:
         for corpus in self._corpora:
@@ -97,8 +97,8 @@ class _FlattenParallelTextCorpus(ParallelTextCorpus):
     def is_target_tokenized(self) -> bool:
         return all(c.is_target_tokenized for c in self._corpora)
 
-    def count(self, include_empty: bool = True) -> int:
-        return sum(c.count(include_empty) for c in self._corpora)
+    def count(self, include_empty: bool = True, text_ids: Optional[Iterable[str]] = None) -> int:
+        return sum(c.count(include_empty, text_ids) for c in self._corpora)
 
     def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
         for corpus in self._corpora:
