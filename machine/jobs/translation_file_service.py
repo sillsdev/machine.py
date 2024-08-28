@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Generator, Iterator, List, TypedDict, Union
+from typing import Any, Generator, Iterator, List, TypedDict
 
 import json_stream
 
@@ -27,7 +27,7 @@ TARGET_PRETRANSLATION_FILENAME = "pretranslate.trg.json"
 class TranslationFileService:
     def __init__(
         self,
-        type: Union[str, SharedFileServiceType],
+        type: SharedFileServiceType,
         config: Any,
     ) -> None:
 

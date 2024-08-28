@@ -25,7 +25,7 @@ default:
     tokenizer:
       add_unk_src_tokens: true
       add_unk_trg_tokens: true
-  thot:
+  thot_mt:
     word_alignment_model_type: hmm
     tokenizer: latin
   thot_align:

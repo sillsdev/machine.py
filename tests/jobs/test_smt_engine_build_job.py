@@ -158,7 +158,7 @@ class _TestEnvironment:
         )
 
         self.job = SmtEngineBuildJob(
-            MockSettings({"build_id": "mybuild", "inference_batch_size": 100, "thot": {"tokenizer": "latin"}}),
+            MockSettings({"build_id": "mybuild", "inference_batch_size": 100, "thot_mt": {"tokenizer": "latin"}}),
             self.smt_model_factory,
             self.translation_file_service,
         )

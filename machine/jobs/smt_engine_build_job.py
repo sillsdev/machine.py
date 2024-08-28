@@ -23,7 +23,7 @@ class SmtEngineBuildJob(TranslationEngineBuildJob):
     ) -> None:
         self._smt_model_factory = smt_model_factory
         self._smt_model_factory.init()
-        self._tokenizer = create_tokenizer(config.thot.tokenizer)
+        self._tokenizer = create_tokenizer(config.thot_mt.tokenizer)
         logger.info(f"Tokenizer: {type(self._tokenizer).__name__}")
         super().__init__(config, shared_file_service)
 
@@ -76,7 +76,7 @@ class SmtEngineBuildJob(TranslationEngineBuildJob):
             inference_step_count = sum(1 for _ in src_pretranslations)
 
         with ExitStack() as stack:
-            detokenizer = create_detokenizer(self._config.thot.tokenizer)
+            detokenizer = create_detokenizer(self._config.thot_mt.tokenizer)
             truecaser = self._smt_model_factory.create_truecaser()
             phase_progress = stack.enter_context(progress_reporter.start_next_phase())
             engine = stack.enter_context(self._smt_model_factory.create_engine(self._tokenizer, detokenizer, truecaser))

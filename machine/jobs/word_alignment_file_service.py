@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterator, Union
+from typing import Any, Iterator
 
 from ..corpora.text_corpus import TextCorpus
 from ..corpora.text_file_text_corpus import TextFileTextCorpus
@@ -11,7 +11,7 @@ from .shared_file_service_factory import SharedFileServiceType, get_shared_file_
 class WordAlignmentFileService:
     def __init__(
         self,
-        type: Union[str, SharedFileServiceType],
+        type: SharedFileServiceType,
         config: Any,
         source_filename: str = "train.src.txt",
         target_filename: str = "train.trg.txt",
