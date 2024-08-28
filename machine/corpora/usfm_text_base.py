@@ -15,6 +15,7 @@ from .usfm_parser import UsfmParser
 from .usfm_parser_state import UsfmParserState
 from .usfm_stylesheet import UsfmStylesheet
 from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
+from .usfm_tokenizer import UsfmTokenizer
 
 
 class UsfmTextBase(ScriptureText):
@@ -42,7 +43,19 @@ class UsfmTextBase(ScriptureText):
     def _get_rows(self) -> Generator[TextRow, None, None]:
         usfm = self._read_usfm()
         row_collector = _TextRowCollector(self)
-        parser = UsfmParser(usfm, row_collector, self._stylesheet, self._versification, self._include_markers)
+
+        tokenizer = UsfmTokenizer(self._stylesheet)
+        try:
+            tokens = tokenizer.tokenize(usfm, self._include_markers)
+        except Exception as e:
+            error_message = (
+                f"An error occurred while tokenizing the text '{self.id}'"
+                f"{f' in project {self.project}' if self.project else ''}"
+                f". Error: '{e}'"
+            )
+            raise RuntimeError(error_message) from e
+
+        parser = UsfmParser(tokens, row_collector, self._stylesheet, self._versification, self._include_markers)
         try:
             parser.process_tokens()
         except Exception as e:

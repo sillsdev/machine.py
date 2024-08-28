@@ -49,7 +49,10 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
             verse_ref.verse = merge_verse_ranges(number, self._cur_verse_ref.verse)
             self._update_verse_ref(verse_ref, marker)
         else:
-            self._end_verse_text_wrapper(state)
+            if self._current_text_type == ScriptureTextType.NONVERSE:
+                self._end_non_verse_text_wrapper(state)
+            elif self._current_text_type == ScriptureTextType.VERSE:
+                self._end_verse_text_wrapper(state)
             self._update_verse_ref(state.verse_ref, marker)
             self._start_verse_text_wrapper(state)
 
