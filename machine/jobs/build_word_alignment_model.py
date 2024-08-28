@@ -17,9 +17,10 @@ from .build_clearml_helper import (
 )
 from .config import SETTINGS
 from .shared_file_service_factory import SharedFileServiceType
-from .smt_engine_build_job import SmtEngineBuildJob
-from .smt_model_factory import SmtModelFactory
-from .translation_file_service import TranslationFileService
+from .thot.thot_word_alignment_model_factory import ThotWordAlignmentModelFactory
+from .word_alignment_build_job import WordAlignmentBuildJob
+from .word_alignment_file_service import WordAlignmentFileService
+from .word_alignment_model_factory import WordAlignmentModelFactory
 
 # Setup logging
 logging.basicConfig(
@@ -27,10 +28,10 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-logger = logging.getLogger(str(__package__) + ".build_smt_engine")
+logger = logging.getLogger(str(__package__) + ".build_word_alignment_model")
 
 
-def run(args: dict) -> None:
+def run(args: dict):
     progress: Callable[[ProgressStatus], None]
     check_canceled: Optional[Callable[[], None]] = None
     task = None
@@ -50,22 +51,22 @@ def run(args: dict) -> None:
         progress = get_local_progress_caller(ProgressInfo(), logger)
 
     try:
-        logger.info("SMT Engine Build Job started")
+        logger.info("Word Alignment Build Job started")
         update_settings(SETTINGS, args)
 
         logger.info(f"Config: {SETTINGS.as_dict()}")
 
-        shared_file_service = TranslationFileService(SharedFileServiceType.CLEARML, SETTINGS)
-        smt_model_factory: SmtModelFactory
+        word_alignment_file_service = WordAlignmentFileService(SharedFileServiceType.CLEARML, SETTINGS)
+        word_alignment_model_factory: WordAlignmentModelFactory
         if SETTINGS.model_type == "thot":
-            from .thot.thot_smt_model_factory import ThotSmtModelFactory
-
-            smt_model_factory = ThotSmtModelFactory(SETTINGS)
+            word_alignment_model_factory = ThotWordAlignmentModelFactory(SETTINGS)
         else:
             raise RuntimeError("The model type is invalid.")
 
-        smt_engine_build_job = SmtEngineBuildJob(SETTINGS, smt_model_factory, shared_file_service)
-        train_corpus_size, confidence = smt_engine_build_job.run(progress, check_canceled)
+        word_alignment_build_job = WordAlignmentBuildJob(
+            SETTINGS, word_alignment_model_factory, word_alignment_file_service
+        )
+        train_corpus_size = word_alignment_build_job.run(progress, check_canceled)
         if scheduler is not None and task is not None:
             scheduler.schedule(
                 update_runtime_properties(
@@ -73,7 +74,6 @@ def run(args: dict) -> None:
                 )
             )
             task.get_logger().report_single_value(name="train_corpus_size", value=train_corpus_size)
-            task.get_logger().report_single_value(name="confidence", value=round(confidence, 4))
         logger.info("Finished")
     except Exception as e:
         if task:
@@ -85,6 +85,7 @@ def run(args: dict) -> None:
     finally:
         if scheduler is not None:
             scheduler.stop()
+    return
 
 
 def main() -> None:

@@ -9,14 +9,18 @@ class AlignedWordPair:
     @classmethod
     def from_string(cls, alignments: str, invert: bool = False) -> Collection[AlignedWordPair]:
         result: List[AlignedWordPair] = []
+
+        def convert_to_num(token: str) -> int:
+            return -1 if token == "NULL" else int(token)
+
         for token in alignments.split():
             dash_index = token.index("-")
-            i = int(token[:dash_index])
+            i = convert_to_num(token[:dash_index])
 
             colon_index = token.find(":", dash_index + 1)
             if colon_index == -1:
                 colon_index = len(token)
-            j = int(token[dash_index + 1 : colon_index])
+            j = convert_to_num(token[dash_index + 1 : colon_index])
 
             result.append(AlignedWordPair(j, i) if invert else AlignedWordPair(i, j))
         return result

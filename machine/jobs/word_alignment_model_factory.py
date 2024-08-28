@@ -1,18 +1,15 @@
 import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
-from ..corpora.text_corpus import TextCorpus
-from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
 from ..translation.trainer import Trainer
-from ..translation.translation_engine import TranslationEngine
-from ..translation.truecaser import Truecaser
+from ..translation.word_alignment_model import WordAlignmentModel
 
 
-class SmtModelFactory(ABC):
+class WordAlignmentModelFactory(ABC):
     def __init__(self, config: Any) -> None:
         self._config = config
 
@@ -23,18 +20,9 @@ class SmtModelFactory(ABC):
     def create_model_trainer(self, tokenizer: Tokenizer[str, int, str], corpus: ParallelTextCorpus) -> Trainer: ...
 
     @abstractmethod
-    def create_engine(
+    def create_alignment_model(
         self,
-        tokenizer: Tokenizer[str, int, str],
-        detokenizer: Detokenizer[str, str],
-        truecaser: Optional[Truecaser] = None,
-    ) -> TranslationEngine: ...
-
-    @abstractmethod
-    def create_truecaser_trainer(self, tokenizer: Tokenizer[str, int, str], target_corpus: TextCorpus) -> Trainer: ...
-
-    @abstractmethod
-    def create_truecaser(self) -> Truecaser: ...
+    ) -> WordAlignmentModel: ...
 
     def save_model(self) -> Path:
         tar_file_basename = Path(
