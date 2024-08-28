@@ -10,6 +10,7 @@ from .dictionary_text_corpus import DictionaryTextCorpus
 from .file_paratext_project_settings_parser import FileParatextProjectSettingsParser
 from .flatten import flatten
 from .memory_alignment_collection import MemoryAlignmentCollection
+from .memory_stream_container import MemoryStreamContainer
 from .memory_text import MemoryText
 from .multi_key_ref import MultiKeyRef
 from .parallel_text_corpus import ParallelTextCorpus
@@ -48,6 +49,7 @@ from .token_processors import (
 )
 from .usfm_file_text import UsfmFileText
 from .usfm_file_text_corpus import UsfmFileTextCorpus
+from .usfm_memory_texts import UsfmMemoryText
 from .usfm_parser import UsfmParser, parse_usfm
 from .usfm_parser_handler import UsfmParserHandler
 from .usfm_parser_state import UsfmElementType, UsfmParserElement, UsfmParserState
@@ -84,6 +86,7 @@ __all__ = [
     "lowercase",
     "MemoryAlignmentCollection",
     "MemoryText",
+    "MemoryStreamContainer",
     "MultiKeyRef",
     "nfc_normalize",
     "nfd_normalize",
@@ -119,6 +122,7 @@ __all__ = [
     "UsfmFileText",
     "UsfmFileTextCorpus",
     "UsfmJustification",
+    "UsfmMemoryText",
     "UsfmParser",
     "UsfmParserElement",
     "UsfmParserHandler",
