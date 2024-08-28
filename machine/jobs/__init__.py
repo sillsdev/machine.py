@@ -5,6 +5,8 @@ from .nmt_model_factory import NmtModelFactory
 from .shared_file_service_base import DictToJsonWriter, SharedFileServiceBase
 from .smt_engine_build_job import SmtEngineBuildJob
 from .smt_model_factory import SmtModelFactory
+from .thot.thot_smt_model_factory import ThotSmtModelFactory
+from .thot.thot_word_alignment_model_factory import ThotWordAlignmentModelFactory
 from .translation_file_service import PretranslationInfo, TranslationFileService
 from .word_alignment_build_job import WordAlignmentBuildJob
 from .word_alignment_file_service import WordAlignmentFileService
@@ -19,6 +21,8 @@ __all__ = [
     "SharedFileServiceBase",
     "SmtEngineBuildJob",
     "SmtModelFactory",
+    "ThotSmtModelFactory",
+    "ThotWordAlignmentModelFactory",
     "PretranslationInfo",
     "TranslationFileService",
     "WordAlignmentBuildJob",
