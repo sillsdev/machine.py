@@ -343,6 +343,18 @@ def test_get_usfm_verse_double_va_vp() -> None:
     assert "\\v 1 \\va 2\\va*\\vp 1 (2)\\vp*Updating later in the book to start.\r\n" in target
 
 
+def test_get_usfm_verse_last_verse() -> None:
+    rows = [
+        (
+            scr_ref("MAT 4:1"),
+            str("Updating the last verse."),
+        )
+    ]
+    target = update_usfm(rows)
+    assert "\\id MAT - Test\r\n" in target
+    assert "\\v 1 Updating the last verse.\r\n" in target
+
+
 def test_get_usfm_verse_pretranslations_before_text() -> None:
     rows = [
         (
