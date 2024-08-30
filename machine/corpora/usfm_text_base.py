@@ -63,7 +63,7 @@ class UsfmTextBase(ScriptureText):
                 f"An error occurred while parsing the text '{self.id}'"
                 f"{f' in project {self.project}' if self.project else ''}"
                 f". Verse: {parser.state.verse_ref}, line: {parser.state.line_number}, "
-                f"column: {parser.state.line_number}, error: '{e}'"
+                f"character: {parser.state.line_number}, error: '{e}'"
             )
             raise RuntimeError(error_message) from e
         return gen(row_collector.rows)
