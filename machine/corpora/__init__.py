@@ -11,6 +11,7 @@ from .file_paratext_project_settings_parser import FileParatextProjectSettingsPa
 from .file_paratext_project_text_updater import FileParatextProjectTextUpdater
 from .flatten import flatten
 from .memory_alignment_collection import MemoryAlignmentCollection
+from .memory_paratext_project_terms_parser import MemoryParatextProjectTermsParser
 from .memory_stream_container import MemoryStreamContainer
 from .memory_text import MemoryText
 from .multi_key_ref import MultiKeyRef
@@ -20,6 +21,7 @@ from .paratext_backup_terms_corpus import ParatextBackupTermsCorpus
 from .paratext_backup_text_corpus import ParatextBackupTextCorpus
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
+from .paratext_project_terms_parser_base import ParatextProjectTermsParserBase
 from .paratext_project_text_updater_base import ParatextProjectTextUpdaterBase
 from .paratext_text_corpus import ParatextTextCorpus
 from .scripture_element import ScriptureElement
@@ -67,6 +69,7 @@ from .usx_file_text_corpus import UsxFileTextCorpus
 from .usx_zip_text import UsxZipText
 from .zip_paratext_project_settings_parser import ZipParatextProjectSettingsParser
 from .zip_paratext_project_settings_parser_base import ZipParatextProjectSettingsParserBase
+from .zip_paratext_project_terms_parser import ZipParatextProjectTermsParser
 from .zip_paratext_project_text_updater import ZipParatextProjectTextUpdater
 
 __all__ = [
@@ -89,6 +92,7 @@ __all__ = [
     "is_scripture",
     "lowercase",
     "MemoryAlignmentCollection",
+    "MemoryParatextProjectTermsParser",
     "MemoryText",
     "MemoryStreamContainer",
     "MultiKeyRef",
@@ -103,6 +107,7 @@ __all__ = [
     "ParatextBackupTextCorpus",
     "ParatextProjectSettings",
     "ParatextProjectSettingsParserBase",
+    "ParatextProjectTermsParserBase",
     "ParatextProjectTextUpdaterBase",
     "ParatextTextCorpus",
     "parse_usfm",
@@ -149,5 +154,6 @@ __all__ = [
     "UsxZipText",
     "ZipParatextProjectSettingsParser",
     "ZipParatextProjectSettingsParserBase",
+    "ZipParatextProjectTermsParser",
     "ZipParatextProjectTextUpdater",
 ]

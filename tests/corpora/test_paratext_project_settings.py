@@ -127,4 +127,5 @@ def _create_settings(file_name_form: str) -> ParatextProjectSettings:
         "Major",
         "",
         "BiblicalTerms.xml",
+        "en",
     )

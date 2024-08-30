@@ -81,9 +81,26 @@ class ParatextProjectSettingsParserBase(ABC):
         if len(parts) != 3:
             raise ValueError(
                 f"The BiblicalTermsListSetting element in Settings.xml in project {full_name}"
-                f" is not in the expected format (i.e., Major::BiblicalTerms.xml) but is {biblical_terms_list_setting}."
+                f" is not in the expected format (e.g., Major::BiblicalTerms.xml) but is {biblical_terms_list_setting}."
             )
+        language_code = None
+        language_iso_code_setting = settings_tree.getroot().findtext("LanguageIsoCode", "")
+        if language_iso_code_setting:
+            language_iso_code_setting_parts = settings_tree.getroot().findtext("LanguageIsoCode", "").split(":")
+            if language_iso_code_setting_parts:
+                language_code = language_iso_code_setting_parts[0]
 
         return ParatextProjectSettings(
-            name, full_name, encoding, versification, stylesheet, prefix, form, suffix, parts[0], parts[1], parts[2]
+            name,
+            full_name,
+            encoding,
+            versification,
+            stylesheet,
+            prefix,
+            form,
+            suffix,
+            parts[0],
+            parts[1],
+            parts[2],
+            language_code,
         )
