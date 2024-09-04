@@ -54,7 +54,7 @@ from .token_processors import (
 from .update_usfm_parser_handler import UpdateUsfmParserHandler
 from .usfm_file_text import UsfmFileText
 from .usfm_file_text_corpus import UsfmFileTextCorpus
-from .usfm_memory_texts import UsfmMemoryText
+from .usfm_memory_text import UsfmMemoryText
 from .usfm_parser import UsfmParser, parse_usfm
 from .usfm_parser_handler import UsfmParserHandler
 from .usfm_parser_state import UsfmElementType, UsfmParserElement, UsfmParserState

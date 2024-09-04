@@ -11,8 +11,8 @@ class MemoryParatextProjectTermsParser(ParatextProjectTermsParserBase):
 
         self.files = files
 
-    def exists(self, file_name: str) -> bool:
+    def _exists(self, file_name: str) -> bool:
         return file_name in self.files
 
-    def open(self, file_name: str) -> BinaryIO:
+    def _open(self, file_name: str) -> BinaryIO:
         return BytesIO(self.files[file_name].encode("utf-8"))

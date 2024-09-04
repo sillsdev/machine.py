@@ -12,24 +12,24 @@ from .usfm_stylesheet import UsfmStylesheet
 class ParatextProjectSettingsParserBase(ABC):
 
     @abstractmethod
-    def exists(self, file_name: str) -> bool: ...
+    def _exists(self, file_name: str) -> bool: ...
 
     @abstractmethod
-    def find(self, extension: str) -> str: ...
+    def _find(self, extension: str) -> str: ...
 
     @abstractmethod
-    def open(self, file_name: str) -> BinaryIO: ...
+    def _open(self, file_name: str) -> BinaryIO: ...
 
     @abstractmethod
-    def create_stylesheet(self, file_name: str) -> UsfmStylesheet: ...
+    def _create_stylesheet(self, file_name: str) -> UsfmStylesheet: ...
 
     def parse(self) -> ParatextProjectSettings:
         settings_file_name = "Settings.xml"
-        if not self.exists(settings_file_name):
-            settings_file_name = self.find(".ssf")
+        if not self._exists(settings_file_name):
+            settings_file_name = self._find(".ssf")
         if not settings_file_name:
             raise ValueError("The project does not contain a settings file.")
-        with self.open(settings_file_name) as stream:
+        with self._open(settings_file_name) as stream:
             settings_tree = ElementTree.parse(stream)
 
         name = settings_tree.getroot().findtext("Name", "")
@@ -46,18 +46,18 @@ class ParatextProjectSettingsParserBase(ABC):
 
         versification_type = int(settings_tree.getroot().findtext("Versification", "4"))
         versification = Versification.get_builtin(versification_type)
-        if self.exists("custom.vrs"):
+        if self._exists("custom.vrs"):
             guid = settings_tree.getroot().findtext("Guid", "")
             versification_name = f"{versification.name}-{guid}"
             versification = Versification.load(
-                self.open("custom.vrs"),
+                self._open("custom.vrs"),
                 versification,
                 versification_name,
             )
         stylesheet_file_name = settings_tree.getroot().findtext("StyleSheet", "usfm.sty")
-        if not self.exists(stylesheet_file_name) and stylesheet_file_name != "usfm_sb.sty":
+        if not self._exists(stylesheet_file_name) and stylesheet_file_name != "usfm_sb.sty":
             stylesheet_file_name = "usfm.sty"
-        stylesheet = self.create_stylesheet(stylesheet_file_name)
+        stylesheet = self._create_stylesheet(stylesheet_file_name)
 
         prefix = ""
         form = "41MAT"

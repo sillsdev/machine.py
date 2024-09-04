@@ -27,7 +27,7 @@ class AlignmentCorpus(Corpus[AlignmentRow]):
 
     def count(self, include_empty: bool = True, text_ids: Optional[Iterable[str]] = None) -> int:
         with self.get_rows(text_ids) as rows:
-            return len(list(rows)) if include_empty else sum(1 for r in self.get_rows(text_ids) if not r.is_empty)
+            return sum(1 for row in rows if include_empty or not row.is_empty)
 
     def invert(self) -> AlignmentCorpus:
         def _invert(row: AlignmentRow) -> AlignmentRow:
@@ -47,10 +47,10 @@ class AlignmentCorpus(Corpus[AlignmentRow]):
     def filter_by_index(self, predicate: Callable[[AlignmentRow, int], bool]) -> AlignmentCorpus:
         return _FilterAlignmentCorpus(self, predicate)
 
-    def filter_texts(self, text_ids: Iterable[str]) -> AlignmentCorpus:
-        if not text_ids:
+    def filter_texts(self, filter: Optional[Iterable[str]]) -> AlignmentCorpus:
+        if not filter:
             return self
-        return _FilterTextsAlignmentCorpus(self, text_ids)
+        return _FilterTextsAlignmentCorpus(self, filter)
 
     def take(self, count: int) -> AlignmentCorpus:
         return _TakeAlignmentCorpus(self, count)

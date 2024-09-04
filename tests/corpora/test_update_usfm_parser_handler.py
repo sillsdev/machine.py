@@ -1,10 +1,8 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH, ignore_line_endings
 
-from machine.corpora import ScriptureRef, parse_usfm
-from machine.corpora.file_paratext_project_text_updater import FileParatextProjectTextUpdater
-from machine.corpora.update_usfm_parser_handler import UpdateUsfmParserHandler
+from machine.corpora import FileParatextProjectTextUpdater, ScriptureRef, UpdateUsfmParserHandler, parse_usfm
 
 
 def test_get_usfm_verse_char_style() -> None:
@@ -451,7 +449,7 @@ def scr_ref(*refs: str) -> List[ScriptureRef]:
 
 
 def update_usfm(
-    rows: Optional[List[Tuple[List[ScriptureRef], str]]] = None,
+    rows: Optional[Sequence[Tuple[Sequence[ScriptureRef], str]]] = None,
     source: Optional[str] = None,
     id_text: Optional[str] = None,
     strip_all_text: bool = False,

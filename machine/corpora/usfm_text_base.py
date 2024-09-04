@@ -2,11 +2,10 @@ from abc import abstractmethod
 from io import TextIOWrapper
 from typing import Generator, Iterable, List, Optional, Sequence
 
-from machine.corpora.scripture_ref import ScriptureRef
-
 from ..scripture.verse_ref import Versification
 from ..utils.string_utils import has_sentence_ending
 from .corpora_utils import gen
+from .scripture_ref import ScriptureRef
 from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler, ScriptureTextType
 from .scripture_text import ScriptureText
 from .stream_container import StreamContainer
@@ -203,10 +202,10 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
             row_text += text
         self._row_texts_stack[-1] = row_text
 
-    def _start_verse_text(self, state: UsfmParserState, scripture_refs: List[ScriptureRef]) -> None:
+    def _start_verse_text(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:
         self._row_texts_stack.append("")
 
-    def _end_verse_text(self, state: UsfmParserState, scripture_refs: List[ScriptureRef]) -> None:
+    def _end_verse_text(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:
         text = self._row_texts_stack.pop()
         self._rows.extend(self._text._create_scripture_rows(scripture_refs, text, self._sentence_start))
         self._sentence_start = (state.token and state.token.marker == "c") or has_sentence_ending(text)

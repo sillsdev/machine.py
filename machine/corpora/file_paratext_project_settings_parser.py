@@ -10,18 +10,18 @@ class FileParatextProjectSettingsParser(ParatextProjectSettingsParserBase):
     def __init__(self, project_dir: StrPath) -> None:
         self._project_dir = Path(project_dir)
 
-    def create_stylesheet(self, file_name: StrPath) -> UsfmStylesheet:
+    def _create_stylesheet(self, file_name: StrPath) -> UsfmStylesheet:
         custom_stylesheet_filename = self._project_dir / file_name
         return UsfmStylesheet(
             file_name,
             custom_stylesheet_filename if custom_stylesheet_filename.is_file() else None,
         )
 
-    def exists(self, file_name: StrPath) -> bool:
+    def _exists(self, file_name: StrPath) -> bool:
         return (self._project_dir / file_name).is_file()
 
-    def find(self, extension: str) -> Optional[Path]:
+    def _find(self, extension: str) -> Optional[Path]:
         return next(self._project_dir.glob(f"*{extension}"), None)
 
-    def open(self, file_name: StrPath) -> BinaryIO:
+    def _open(self, file_name: StrPath) -> BinaryIO:
         return open(self._project_dir / file_name, "rb")

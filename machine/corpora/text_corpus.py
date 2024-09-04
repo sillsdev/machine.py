@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from itertools import islice
-from typing import Any, Callable, Generator, Iterable, Literal, Optional, Tuple
+from typing import Any, Callable, Generator, Iterable, Literal, Optional, Tuple, Union
 
 from ..scripture.verse_ref import Versification
 from ..tokenization.detokenizer import Detokenizer
@@ -42,7 +42,7 @@ class TextCorpus(Corpus[TextRow]):
 
     def count(self, include_empty: bool = True, text_ids: Optional[Iterable[str]] = None) -> int:
         with self.get_rows(text_ids) as rows:
-            return len(list(rows)) if include_empty else sum(1 for row in rows if include_empty or not row.is_empty)
+            return sum(1 for row in rows if include_empty or not row.is_empty)
 
     def tokenize(self, tokenizer: Tokenizer[str, int, str], force: bool = False) -> TextCorpus:
         if not force and self.is_tokenized:
@@ -106,16 +106,13 @@ class TextCorpus(Corpus[TextRow]):
 
         return self.transform(_unescape_spaces)
 
-    def filter_texts(
-        self, predicate: Optional[Callable[[Text], bool]] = None, text_ids: Optional[Iterable[str]] = None
-    ) -> TextCorpus:
-        if text_ids is None and predicate is None:
+    def filter_texts(self, filter: Optional[Union[Callable[[Text], bool], Iterable[str]]] = None) -> TextCorpus:
+        if filter is None:
             return self
-        if text_ids is None and predicate is not None:
-            return _TextFilterTextCorpus(self, predicate)
-        if text_ids is not None and predicate is None:
-            return _FilterTextsTextCorpus(self, text_ids)
-        raise ValueError("Only one of 'predicate' and 'text_ids' can be specified.")
+        if callable(filter):
+            return _TextFilterTextCorpus(self, filter)
+        if isinstance(filter, Iterable):
+            return _FilterTextsTextCorpus(self, filter)
 
     def transform(self, transform: Callable[[TextRow], TextRow], is_tokenized: Optional[bool] = None) -> TextCorpus:
         return _TransformTextCorpus(self, transform, is_tokenized)

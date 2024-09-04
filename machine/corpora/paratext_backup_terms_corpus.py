@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Sequence, Tuple
 from zipfile import ZipFile
 
 from ..utils.typeshed import StrPath
@@ -10,7 +10,7 @@ from .zip_paratext_project_terms_parser import ZipParatextProjectTermsParser
 
 
 class ParatextBackupTermsCorpus(DictionaryTextCorpus):
-    def __init__(self, filename: StrPath, term_categories: List[str], use_term_glosses: bool = True) -> None:
+    def __init__(self, filename: StrPath, term_categories: Sequence[str], use_term_glosses: bool = True) -> None:
         super().__init__()
 
         with ZipFile(filename, "r") as archive:

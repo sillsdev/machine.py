@@ -1,9 +1,8 @@
 from typing import Generator, Iterable, Optional, overload
 
-from machine.corpora.alignment_row import AlignmentRow
-
 from .alignment_collection import AlignmentCollection
 from .alignment_corpus import AlignmentCorpus
+from .alignment_row import AlignmentRow
 
 
 class DictionaryAlignmentCorpus(AlignmentCorpus):
