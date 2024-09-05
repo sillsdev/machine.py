@@ -11,7 +11,6 @@ from .file_paratext_project_settings_parser import FileParatextProjectSettingsPa
 from .file_paratext_project_text_updater import FileParatextProjectTextUpdater
 from .flatten import flatten
 from .memory_alignment_collection import MemoryAlignmentCollection
-from .memory_paratext_project_terms_parser import MemoryParatextProjectTermsParser
 from .memory_stream_container import MemoryStreamContainer
 from .memory_text import MemoryText
 from .multi_key_ref import MultiKeyRef
@@ -92,7 +91,6 @@ __all__ = [
     "is_scripture",
     "lowercase",
     "MemoryAlignmentCollection",
-    "MemoryParatextProjectTermsParser",
     "MemoryText",
     "MemoryStreamContainer",
     "MultiKeyRef",

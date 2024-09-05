@@ -1,8 +1,7 @@
 from io import BytesIO
 from typing import BinaryIO, Dict
 
-from ..corpora.paratext_project_settings import ParatextProjectSettings
-from .paratext_project_terms_parser_base import ParatextProjectTermsParserBase
+from machine.corpora import ParatextProjectSettings, ParatextProjectTermsParserBase
 
 
 class MemoryParatextProjectTermsParser(ParatextProjectTermsParserBase):
