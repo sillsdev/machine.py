@@ -108,6 +108,8 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
         if self._text._include_markers:
             self._output_marker(state)
         elif self._current_text_type == ScriptureTextType.VERSE:
+            if len(self._row_texts_stack) == 0:
+                return
             verse_text: str = self._row_texts_stack[-1]
             if len(verse_text) > 0 and not verse_text[-1].isspace():
                 self._row_texts_stack[-1] += " "

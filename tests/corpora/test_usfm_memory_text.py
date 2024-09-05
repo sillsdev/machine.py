@@ -36,6 +36,24 @@ def test_get_rows_last_segment() -> None:
     assert rows[0].text == "Last segment"
 
 
+def test_get_rows_duplicate_verse_with_table() -> None:
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\c 1
+\v 1 First verse
+\periph Table of Contents Abbreviation
+\rem non verse content 1
+\v 1 duplicate first verse
+\rem non verse content 2
+\mt1 Table
+\tr \tc1 row 1 cell 1 \tc2 row 1 cell 2
+\tr \tc1 row 2 cell 1 \tc2 row 2 cell 2
+""",
+        include_all_text=True,
+    )
+    assert len(rows) == 5
+
+
 def get_rows(usfm: str, include_markers: bool = False, include_all_text: bool = False) -> List[TextRow]:
     text = UsfmMemoryText(
         UsfmStylesheet("usfm.sty"),
