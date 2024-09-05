@@ -48,7 +48,8 @@ class UsfmTextBase(ScriptureText):
             error_message = (
                 f"An error occurred while parsing the text '{self.id}'"
                 f"{f' in project {self.project}' if self.project else ''}"
-                f". Verse: {parser.state.verse_ref}, offset: {parser.state.verse_offset}, error: '{e}'"
+                f". Verse: {parser.state.verse_ref}, line: {parser.state.line_number}, "
+                f"column: {parser.state.line_number}, error: '{e}'"
             )
             raise RuntimeError(error_message) from e
         return gen(row_collector.rows)
@@ -130,6 +131,10 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
     ) -> None:
         assert state.prev_token is not None
         super().end_char(state, marker, attributes, closed)
+
+        if not self._row_texts_stack:
+            return
+
         if self._text._include_markers and attributes is not None and state.prev_token.type == UsfmTokenType.ATTRIBUTE:
             self._row_texts_stack[-1] += str(state.prev_token)
 
