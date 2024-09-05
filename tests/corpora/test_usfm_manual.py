@@ -2,20 +2,19 @@ import json
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import pytest
 from testutils.corpora_test_helpers import TEST_DATA_PATH, USFM_SOURCE_PROJECT_PATH, USFM_TARGET_PROJECT_PATH
 
 from machine.corpora import (
     FileParatextProjectSettingsParser,
-    ParatextProjectSettingsParserBase,
+    FileParatextProjectTextUpdater,
     ParatextTextCorpus,
     ScriptureRef,
     StandardParallelTextCorpus,
-    UsfmTextUpdater,
     ZipParatextProjectSettingsParser,
-    parse_usfm,
+    ZipParatextProjectTextUpdater,
 )
 
 
@@ -33,17 +32,17 @@ def test_parse_parallel_corpus():
     ]
 
     target_settings = FileParatextProjectSettingsParser(USFM_TARGET_PROJECT_PATH).parse()
-
-    for sfm_file_name in Path(USFM_TARGET_PROJECT_PATH).rglob(
+    updater = FileParatextProjectTextUpdater(USFM_TARGET_PROJECT_PATH)
+    for sfm_file in Path(USFM_TARGET_PROJECT_PATH).rglob(
         f"{target_settings.file_name_prefix}*{target_settings.file_name_suffix}"
     ):
-        updater = UsfmTextUpdater(pretranslations, strip_all_text=True, prefer_existing_text=False)
-
-        with open(sfm_file_name, mode="r") as sfm_file:
-            usfm: str = sfm_file.read()
-
-        parse_usfm(usfm, updater, target_settings.stylesheet, target_settings.versification)
-        new_usfm: str = updater.get_usfm(target_settings.stylesheet)
+        sfm_file_name: str = sfm_file.name
+        book_id: Optional[str] = target_settings.get_book_id(sfm_file_name)
+        if not book_id:
+            continue
+        new_usfm: Optional[str] = updater.update_usfm(
+            book_id, pretranslations, strip_all_text=True, prefer_existing_text=False
+        )
         assert new_usfm is not None
 
 
@@ -71,7 +70,6 @@ PARATEXT_PROJECT_PATH = TEST_DATA_PATH / "project"
 # tests/testutils/data/project/ folder.
 def test_create_usfm_file():
     def get_usfm(project_path: Path):
-        parser: ParatextProjectSettingsParserBase
         project_archive = None
         try:
             project_archive = zipfile.ZipFile(project_path, "r")
@@ -91,25 +89,25 @@ def test_create_usfm_file():
                 for p in json.load(pretranslation_stream)
             ]
 
-        sfm_texts = []
+        book_ids: List[str] = []
         if project_archive is None:
-            sfm_texts = [
-                Path(sfm_file).read_text()
-                for sfm_file in Path(project_path).glob(f"{settings.file_name_prefix}*{settings.file_name_suffix}")
-            ]
+            for sfm_file in Path(project_path).glob(f"{settings.file_name_prefix}*{settings.file_name_suffix}"):
+                book_id = settings.get_book_id(sfm_file.name)
+                if book_id:
+                    book_ids.append(book_id)
+            updater = FileParatextProjectTextUpdater(project_path)
         else:
-            sfm_texts = []
             for entry in project_archive.infolist():
                 if entry.filename.startswith(settings.file_name_prefix) and entry.filename.endswith(
                     settings.file_name_suffix
                 ):
-                    with project_archive.open(entry) as file:
-                        sfm_texts.append(file.read().decode(settings.encoding))
+                    book_id = settings.get_book_id(entry.filename)
+                    if book_id:
+                        book_ids.append(book_id)
+            updater = ZipParatextProjectTextUpdater(project_archive)
 
-        for usfm in sfm_texts:
-            updater = UsfmTextUpdater(pretranslations, strip_all_text=True, prefer_existing_text=True)
-            parse_usfm(usfm, updater, settings.stylesheet, settings.versification)
-            new_usfm = updater.get_usfm(settings.stylesheet)
+        for book_id in book_ids:
+            new_usfm = updater.update_usfm(book_id, pretranslations, strip_all_text=True, prefer_existing_text=False)
             assert new_usfm is not None
 
     if not Path(PARATEXT_PROJECT_PATH / "Settings.xml").exists():

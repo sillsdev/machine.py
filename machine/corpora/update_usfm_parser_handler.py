@@ -8,7 +8,7 @@ from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
 from .usfm_tokenizer import UsfmTokenizer
 
 
-class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
+class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
     def __init__(
         self,
         rows: Optional[List[Tuple[List[ScriptureRef], str]]] = None,
@@ -276,7 +276,7 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
 
     def _replace_with_new_tokens(self, state: UsfmParserState) -> bool:
         new_text: bool = len(self._replace_stack) > 0 and self._replace_stack[-1]
-        token_end: int = state.index + state.special_token_count + 1
+        token_end: int = state.index + state.special_token_count
         existing_text: bool = False
         for index in range(self._token_index, token_end + 1):
             if state.tokens[index].type == UsfmTokenType.TEXT and state.tokens[index].text:

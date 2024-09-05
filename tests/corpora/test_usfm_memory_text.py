@@ -19,8 +19,8 @@ def test_get_rows_verse_descriptive_title() -> None:
     )
     assert len(rows) == 1
 
-    assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:1")
-    assert rows[0].text == "Descriptive title"
+    assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:1"), str.join(",", [str(tr.ref) for tr in rows])
+    assert rows[0].text == "Descriptive title", str.join(",", [tr.text for tr in rows])
 
 
 def test_get_rows_last_segment() -> None:
@@ -32,8 +32,8 @@ def test_get_rows_last_segment() -> None:
     )
     assert len(rows) == 1
 
-    assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:1")
-    assert rows[0].text == "Last segment"
+    assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:1"), str.join(",", [str(tr.ref) for tr in rows])
+    assert rows[0].text == "Last segment", str.join(",", [tr.text for tr in rows])
 
 
 def test_get_rows_duplicate_verse_with_table() -> None:
@@ -51,7 +51,27 @@ def test_get_rows_duplicate_verse_with_table() -> None:
 """,
         include_all_text=True,
     )
-    assert len(rows) == 5
+    assert len(rows) == 5, str.join(",", [tr.text for tr in rows])
+
+
+def test_get_rows_triplicate_verse() -> None:
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\c 1
+\v 1 First verse 1
+\rem non verse 1
+\v 1 First verse 2
+\rem non verse 2
+\v 1 First verse 3
+\rem non verse 3
+\v 2 Second verse
+""",
+        include_all_text=True,
+    )
+    assert len(rows) == 5, str.join(",", [tr.text for tr in rows])
+    assert rows[0].text == "First verse 1"
+    assert rows[3].text == "non verse 3"
+    assert rows[4].text == "Second verse"
 
 
 def test_get_rows_verse_para_beginning_non_verse_segment() -> None:
@@ -69,7 +89,7 @@ description
 """,
         include_all_text=True,
     )
-    assert len(rows) == 4
+    assert len(rows) == 4, str.join(",", [tr.text for tr in rows])
 
 
 def get_rows(usfm: str, include_markers: bool = False, include_all_text: bool = False) -> List[TextRow]:
