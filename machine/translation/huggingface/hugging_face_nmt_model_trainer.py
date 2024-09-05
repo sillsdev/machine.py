@@ -102,10 +102,11 @@ class HuggingFaceNmtModelTrainer(Trainer):
         self._add_unk_trg_tokens = add_unk_trg_tokens
         self._mpn = MosesPunctNormalizer()
         self._mpn.substitutions = [(re.compile(r), sub) for r, sub in self._mpn.substitutions]
+        self._stats = TrainStats()
 
     @property
     def stats(self) -> TrainStats:
-        return super().stats
+        return self._stats
 
     def train(
         self,
@@ -141,7 +142,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
         set_seed(self._training_args.seed)
 
         if isinstance(self._model, PreTrainedModel):
-            model = self._model
+            model: PreTrainedModel = self._model
             self._original_use_cache = model.config.use_cache
             model.config.use_cache = not self._training_args.gradient_checkpointing
         else:
@@ -366,6 +367,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
 
         self._metrics = train_result.metrics
         self._metrics["train_samples"] = len(train_dataset)
+        self._stats.train_corpus_size = len(train_dataset)
 
         self._trainer.log_metrics("train", self._metrics)
         logger.info("Model training finished")
@@ -377,9 +379,10 @@ class HuggingFaceNmtModelTrainer(Trainer):
         self._trainer.save_metrics("train", self._metrics)
         self._trainer.save_state()
         if isinstance(self._model, PreTrainedModel):
-            self._model.name_or_path = self._training_args.output_dir
-            self._model.config.name_or_path = self._training_args.output_dir
-            self._model.config.use_cache = self._original_use_cache
+            model: PreTrainedModel = self._model
+            model.name_or_path = self._training_args.output_dir
+            model.config.name_or_path = self._training_args.output_dir
+            model.config.use_cache = self._original_use_cache
 
     def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
         if self._trainer is not None:

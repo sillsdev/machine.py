@@ -74,7 +74,7 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
         ) as model_trainer:
             model_trainer.train(progress=phase_progress, check_canceled=check_canceled)
             model_trainer.save()
-            train_corpus_size = parallel_corpus.count()
+            train_corpus_size = model_trainer.stats.train_corpus_size
         return train_corpus_size, float("nan")
 
     def _batch_inference(
