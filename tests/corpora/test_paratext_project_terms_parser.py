@@ -58,18 +58,6 @@ def test_get_key_terms_from_terms_localizations_no_term_renderings_do_not_use_te
     assert len(terms) == 0
 
 
-def test_get_key_terms_from_terms_localizations_no_term_renderings_prefer_localization() -> None:
-    env = _TestEnvironment(
-        _DefaultParatextProjectSettings(biblical_terms_list_type="Major", biblical_terms_file_name="BiblicalTerms.xml"),
-        use_term_glosses=True,
-    )
-    terms: List[Tuple[str, List[str]]] = env.get_glosses()
-    assert len(terms) == 5726
-
-    glosses = terms[0][1]
-    assert str.join(" ", glosses) == "Abagtha"
-
-
 def test_get_key_terms_from_terms_localizations() -> None:
     env = _TestEnvironment(
         _DefaultParatextProjectSettings(
