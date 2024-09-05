@@ -215,7 +215,11 @@ class UsfmTokenizer:
                             t.text = t.text + " "
                     elif prev_token.type == UsfmTokenType.END:
                         # Insert space token after * of end marker
-                        tokens.insert(i, UsfmToken(UsfmTokenType.TEXT, None, " ", None))
+                        if index >= len(usfm):
+                            col_num = len(usfm) + 1
+                        else:
+                            col_num = len(usfm) + 1 - usfm.rfind("\n", 0, index)
+                        tokens.insert(i, UsfmToken(UsfmTokenType.TEXT, None, " ", None, None, line_num, col_num))
                         i += 1
 
         return tokens
