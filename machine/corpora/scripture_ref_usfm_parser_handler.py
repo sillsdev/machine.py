@@ -62,7 +62,7 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     ) -> None:
         if self._cur_verse_ref.is_default:
             self._update_verse_ref(state.verse_ref, marker)
-        if not state.is_verse_text or marker == "d":
+        if not state.is_verse_text:
             self._start_parent_element(marker)
             self._start_non_verse_text_wrapper(state)
 

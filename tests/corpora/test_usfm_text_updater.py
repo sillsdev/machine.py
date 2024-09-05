@@ -1,6 +1,6 @@
 from typing import List, Optional, Tuple
 
-from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH
+from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH, ignore_line_endings
 
 from machine.corpora import ScriptureRef, parse_usfm
 from machine.corpora.usfm_text_updater import UsfmTextUpdater
@@ -343,16 +343,25 @@ def test_get_usfm_verse_double_va_vp() -> None:
     assert "\\v 1 \\va 2\\va*\\vp 1 (2)\\vp*Updating later in the book to start.\r\n" in target
 
 
-def test_get_usfm_verse_last_verse() -> None:
+def test_get_usfm_verse_last_segment() -> None:
     rows = [
         (
-            scr_ref("MAT 4:1"),
+            scr_ref("MAT 1:1"),
             str("Updating the last verse."),
         )
     ]
-    target = update_usfm(rows)
-    assert "\\id MAT - Test\r\n" in target
-    assert "\\v 1 Updating the last verse.\r\n" in target
+    usfm = r"""\id MAT - Test
+\c 1
+\v 1
+"""
+    target = update_usfm(rows, usfm)
+    ignore_line_endings(
+        target,
+        r"""\id MAT - Test
+\c 1
+\v 1 Updating the last verse.
+""",
+    )
 
 
 def test_get_usfm_verse_pretranslations_before_text() -> None:
@@ -393,11 +402,15 @@ def scr_ref(*refs: str) -> List[ScriptureRef]:
 
 def update_usfm(
     rows: Optional[List[Tuple[List[ScriptureRef], str]]] = None,
+    source: Optional[str] = None,
     id_text: Optional[str] = None,
     strip_all_text: bool = False,
     prefer_existing_text: bool = False,
 ) -> str:
-    source = read_usfm()
+    if source is None:
+        source = read_usfm()
+    else:
+        source = source.strip().replace("\r\n", "\n") + "\r\n"
     updater = UsfmTextUpdater(rows, id_text, strip_all_text, prefer_existing_text)
     parse_usfm(source, updater)
     return updater.get_usfm()
