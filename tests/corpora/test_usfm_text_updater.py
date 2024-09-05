@@ -168,6 +168,25 @@ def test_get_usfm_verse_range_multiple_rows_single_verse() -> None:
     assert "\\v 11-12 Eleventh verse of the second chapter. Twelfth verse of the second chapter.\r\n" in target
 
 
+def test_get_usfm_merge_verse_segments() -> None:
+    rows = [
+        (
+            scr_ref("MAT 2:2"),
+            str("Verse 2."),
+        ),
+        (
+            scr_ref("MAT 2:2a"),
+            str("Verse 2a."),
+        ),
+        (
+            scr_ref("MAT 2:2b"),
+            str("Verse 2b."),
+        ),
+    ]
+    target = update_usfm(rows)
+    assert "\\v 2-3 Verse 2. Verse 2a. Verse 2b.\r\n" in target
+
+
 def test_get_usfm_verse_opt_break() -> None:
     rows = [
         (
