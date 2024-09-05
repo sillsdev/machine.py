@@ -1,4 +1,5 @@
 import json
+import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Tuple
@@ -8,11 +9,12 @@ from testutils.corpora_test_helpers import TEST_DATA_PATH, USFM_SOURCE_PROJECT_P
 
 from machine.corpora import (
     FileParatextProjectSettingsParser,
-    ParatextProjectSettings,
+    ParatextProjectSettingsParserBase,
     ParatextTextCorpus,
     ScriptureRef,
     StandardParallelTextCorpus,
     UsfmTextUpdater,
+    ZipParatextProjectSettingsParser,
     parse_usfm,
 )
 
@@ -65,31 +67,56 @@ PARATEXT_PROJECT_PATH = TEST_DATA_PATH / "project"
 
 
 @pytest.mark.skip(reason="This is for manual testing only. Remove this decorator to run the test.")
+# In order to run this test on specific projects, place the Paratext projects or Paratext project zips in the
+# tests/testutils/data/project/ folder.
 def test_create_usfm_file():
-    parser = FileParatextProjectSettingsParser(PARATEXT_PROJECT_PATH)
-    settings: ParatextProjectSettings = parser.parse()
+    def get_usfm(project_path: Path):
+        parser: ParatextProjectSettingsParserBase
+        project_archive = None
+        try:
+            project_archive = zipfile.ZipFile(project_path, "r")
+            parser = ZipParatextProjectSettingsParser(project_archive)
+        except IsADirectoryError:
+            parser = FileParatextProjectSettingsParser(project_path)
 
-    # Read text from pretranslations file
-    with open(PRETRANSLATION_PATH, mode="r") as pretranslation_stream:
-        pretranslations_dto: List[PretranslationDto] = [
-            PretranslationDto(text_id=item["textId"], refs=item["refs"], translation=item["translation"])
-            for item in json.loads(pretranslation_stream.read())
-        ]
+        settings = parser.parse()
 
-    pretranslations: List[Tuple[List[ScriptureRef], str]] = [
-        (
-            [ScriptureRef.parse(ref, settings.versification).to_relaxed() for ref in p.refs] or [],
-            p.translation or "",
-        )
-        for p in pretranslations_dto
-    ]
+        # Read text from pretranslations file
+        with open(PRETRANSLATION_PATH, "r") as pretranslation_stream:
+            pretranslations = [
+                (
+                    [ScriptureRef.parse(r, settings.versification).to_relaxed() for r in p["refs"] or []],
+                    p.get("translation", ""),
+                )
+                for p in json.load(pretranslation_stream)
+            ]
 
-    for sfm_file_name in Path(PARATEXT_PROJECT_PATH).rglob(f"{settings.file_name_prefix}*{settings.file_name_suffix}"):
-        updater = UsfmTextUpdater(pretranslations, strip_all_text=True, prefer_existing_text=True)
+        sfm_texts = []
+        if project_archive is None:
+            sfm_texts = [
+                Path(sfm_file).read_text()
+                for sfm_file in Path(project_path).glob(f"{settings.file_name_prefix}*{settings.file_name_suffix}")
+            ]
+        else:
+            sfm_texts = []
+            for entry in project_archive.infolist():
+                if entry.filename.startswith(settings.file_name_prefix) and entry.filename.endswith(
+                    settings.file_name_suffix
+                ):
+                    with project_archive.open(entry) as file:
+                        sfm_texts.append(file.read().decode(settings.encoding))
 
-        with open(sfm_file_name, mode="r") as sfm_file:
-            usfm: str = sfm_file.read()
+        for usfm in sfm_texts:
+            updater = UsfmTextUpdater(pretranslations, strip_all_text=True, prefer_existing_text=True)
+            parse_usfm(usfm, updater, settings.stylesheet, settings.versification)
+            new_usfm = updater.get_usfm(settings.stylesheet)
+            assert new_usfm is not None
 
-        parse_usfm(usfm, updater, settings.stylesheet, settings.versification)
-        new_usfm: str = updater.get_usfm(settings.stylesheet)
-        assert new_usfm is not None
+    if not Path(PARATEXT_PROJECT_PATH / "Settings.xml").exists():
+        for subdir in PARATEXT_PROJECT_PATH.iterdir():
+            try:
+                get_usfm(subdir)
+            except Exception as e:
+                assert False, f"Failed to process {subdir}: {e}"
+    else:
+        get_usfm(PARATEXT_PROJECT_PATH)
