@@ -32,3 +32,7 @@ def verse_ref(segment: TextRow) -> VerseRef:
 def scripture_ref(segment: TextRow) -> ScriptureRef:
     assert isinstance(segment.ref, ScriptureRef)
     return segment.ref
+
+
+def ignore_line_endings(actual: str, expected: str):
+    assert actual.replace("\r\n", "\n").replace("\r", "\n") == expected.replace("\r\n", "\n").replace("\r", "\n")

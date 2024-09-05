@@ -10,7 +10,7 @@ def test_get_rows_nonempty_text() -> None:
     assert text is not None
     rows = list(text)
 
-    assert len(rows) == 23
+    assert len(rows) == 24
 
     assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:1", corpus.versification)
     assert rows[0].text == "Chapter one, verse one."
@@ -65,7 +65,7 @@ def test_get_rows_nonempty_text_all_text() -> None:
     assert text is not None
     rows = list(text)
 
-    assert len(rows) == 49
+    assert len(rows) == 50
 
     assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:0/1:h", corpus.versification)
     assert rows[0].text == "Matthew"
@@ -80,7 +80,7 @@ def test_get_rows_nonempty_text_all_text() -> None:
     assert rows[3].text == "This is an endnote."
 
     assert scripture_ref(rows[4]) == ScriptureRef.parse("Mat 1:0/4:p", corpus.versification)
-    assert rows[4].text == "Here is another paragraph."
+    assert rows[4].text == "MAT 1 Here is another paragraph."
 
     assert scripture_ref(rows[7]) == ScriptureRef.parse("MAT 1:0/7:weirdtaglookingthing", corpus.versification)
     assert rows[7].text == "that is not an actual tag."
@@ -135,7 +135,7 @@ def test_get_rows_sentence_start() -> None:
     assert text is not None
     rows = list(text)
 
-    assert len(rows) == 23
+    assert len(rows) == 24
 
     assert scripture_ref(rows[3]) == ScriptureRef.parse("MAT 1:4", corpus.versification)
     assert rows[3].text == "Chapter one, verse four,"
@@ -163,7 +163,7 @@ def test_get_rows_include_markers() -> None:
     assert text is not None
     rows = list(text)
 
-    assert len(rows) == 23
+    assert len(rows) == 24
 
     assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:1", corpus.versification)
     assert (
@@ -218,7 +218,7 @@ def test_get_rows_include_markers_all_text() -> None:
     assert text is not None
     rows = list(text)
 
-    assert len(rows) == 45
+    assert len(rows) == 46
 
     assert scripture_ref(rows[2]) == ScriptureRef.parse("MAT 1:0/3:ip", corpus.versification)
     assert rows[2].text == "An introduction to Matthew\\fe + \\ft This is an endnote.\\fe*"

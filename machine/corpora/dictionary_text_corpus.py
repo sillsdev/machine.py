@@ -1,8 +1,9 @@
-from typing import Iterable, Optional, overload
+from typing import Generator, Iterable, Optional, overload
 
 from ..scripture.verse_ref import Versification
 from .text import Text
 from .text_corpus import TextCorpus
+from .text_row import TextRow
 
 
 class DictionaryTextCorpus(TextCorpus):
@@ -43,6 +44,19 @@ class DictionaryTextCorpus(TextCorpus):
     @versification.setter
     def versification(self, value: Versification) -> None:
         self._versification = value
+
+    def count(self, include_empty: bool = True, text_ids: Optional[Iterable[str]] = None) -> int:
+        texts = self._texts.values()
+        if text_ids is not None:
+            texts = (t for t in texts if t.id in text_ids)
+        return sum(t.count(include_empty) for t in texts)
+
+    def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
+        texts = self.texts
+        if text_ids is not None:
+            texts = (t for t in texts if t.id in text_ids)
+        for t in texts:
+            yield from t.get_rows()
 
     def __getitem__(self, id: str) -> Optional[Text]:
         return self._texts.get(id)

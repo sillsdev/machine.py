@@ -33,10 +33,17 @@ class UsfmTokenizer:
         tokens: List[UsfmToken] = []
 
         index = 0
+        line_num = 1
+        previous_index = 0
         while index < len(usfm):
             next_marker_index = usfm.find("\\", index + 1) if index < len(usfm) - 1 else -1
             if next_marker_index == -1:
                 next_marker_index = len(usfm)
+
+            line_num += usfm[previous_index:index].count("\n")
+
+            col_num = index - usfm.rfind("\n", 0, index)
+            previous_index = index
 
             # If text, create text token until end or next \
             ch = usfm[index]
@@ -46,11 +53,11 @@ class UsfmTokenizer:
                     text = _regularize_spaces(text)
 
                 attribute_token, text = self._handle_attributes(
-                    usfm, preserve_whitespace, tokens, next_marker_index, text
+                    usfm, preserve_whitespace, tokens, next_marker_index, text, line_num, col_num
                 )
 
                 if len(text) > 0:
-                    tokens.append(UsfmToken(UsfmTokenType.TEXT, None, text, None))
+                    tokens.append(UsfmToken(UsfmTokenType.TEXT, None, text, None, None, line_num, col_num))
 
                 if attribute_token is not None:
                     tokens.append(attribute_token)
@@ -124,35 +131,35 @@ class UsfmTokenizer:
             if tag.style_type == UsfmStyleType.CHARACTER:
                 if (tag.text_properties & UsfmTextProperties.VERSE) == UsfmTextProperties.VERSE:
                     index, data = _get_next_word(usfm, index, preserve_whitespace)
-                    tokens.append(UsfmToken(UsfmTokenType.VERSE, marker, None, None, data))
+                    tokens.append(UsfmToken(UsfmTokenType.VERSE, marker, None, None, data, line_num, col_num))
                 else:
-                    tokens.append(UsfmToken(UsfmTokenType.CHARACTER, marker, None, end_marker))
+                    tokens.append(UsfmToken(UsfmTokenType.CHARACTER, marker, None, end_marker, None, line_num, col_num))
             elif tag.style_type == UsfmStyleType.PARAGRAPH:
                 # Handle chapter special case
                 if (tag.text_properties & UsfmTextProperties.CHAPTER) == UsfmTextProperties.CHAPTER:
                     index, data = _get_next_word(usfm, index, preserve_whitespace)
-                    tokens.append(UsfmToken(UsfmTokenType.CHAPTER, marker, None, None, data))
+                    tokens.append(UsfmToken(UsfmTokenType.CHAPTER, marker, None, None, data, line_num, col_num))
                 elif (tag.text_properties & UsfmTextProperties.BOOK) == UsfmTextProperties.BOOK:
                     index, data = _get_next_word(usfm, index, preserve_whitespace)
-                    tokens.append(UsfmToken(UsfmTokenType.BOOK, marker, None, None, data))
+                    tokens.append(UsfmToken(UsfmTokenType.BOOK, marker, None, None, data, line_num, col_num))
                 else:
-                    tokens.append(UsfmToken(UsfmTokenType.PARAGRAPH, marker, None, end_marker))
+                    tokens.append(UsfmToken(UsfmTokenType.PARAGRAPH, marker, None, end_marker, None, line_num, col_num))
             elif tag.style_type == UsfmStyleType.NOTE:
                 index, data = _get_next_word(usfm, index, preserve_whitespace)
-                tokens.append(UsfmToken(UsfmTokenType.NOTE, marker, None, end_marker, data))
+                tokens.append(UsfmToken(UsfmTokenType.NOTE, marker, None, end_marker, data, line_num, col_num))
             elif tag.style_type == UsfmStyleType.END:
-                tokens.append(UsfmToken(UsfmTokenType.END, marker, None, None))
+                tokens.append(UsfmToken(UsfmTokenType.END, marker, None, None, None, line_num, col_num))
             elif tag.style_type == UsfmStyleType.UNKNOWN:
                 # End tokens are always end tokens, even if unknown
                 if marker.endswith("*"):
-                    tokens.append(UsfmToken(UsfmTokenType.END, marker, None, None))
+                    tokens.append(UsfmToken(UsfmTokenType.END, marker, None, None, None, line_num, col_num))
                 # Handle special case of esb and esbe which might not be in basic stylesheet but are always sidebars
                 # and so should be tokenized as paragraphs
                 elif marker == "esb" or marker == "esbe":
-                    tokens.append(UsfmToken(UsfmTokenType.PARAGRAPH, marker, None, end_marker))
+                    tokens.append(UsfmToken(UsfmTokenType.PARAGRAPH, marker, None, end_marker, None, line_num, col_num))
                 else:
                     # Create unknown token with a corresponding end note
-                    tokens.append(UsfmToken(UsfmTokenType.UNKNOWN, marker, None, marker + "*"))
+                    tokens.append(UsfmToken(UsfmTokenType.UNKNOWN, marker, None, marker + "*", None, line_num, col_num))
             elif tag.style_type in {UsfmStyleType.MILESTONE, UsfmStyleType.MILESTONE_END}:
                 # if a milestone is not followed by a ending \* treat don't create a milestone token for the begining.
                 # Instead create at text token for all the text up to the beginning of the next marker. This will make
@@ -166,12 +173,16 @@ class UsfmTokenizer:
                     # add back space that was removed after marker
                     if len(milestone_text) > 0 and milestone_text[0] not in {" ", "|"}:
                         milestone_text = " " + milestone_text
-                    tokens.append(UsfmToken(UsfmTokenType.TEXT, None, "\\" + marker + milestone_text, None))
+                    tokens.append(
+                        UsfmToken(
+                            UsfmTokenType.TEXT, None, "\\" + marker + milestone_text, None, None, line_num, col_num
+                        )
+                    )
                     index = end_of_text
                 elif tag.style_type == UsfmStyleType.MILESTONE:
-                    tokens.append(UsfmToken(UsfmTokenType.MILESTONE, marker, None, end_marker))
+                    tokens.append(UsfmToken(UsfmTokenType.MILESTONE, marker, None, end_marker, None, line_num, col_num))
                 else:
-                    tokens.append(UsfmToken(UsfmTokenType.MILESTONE_END, marker, None, None))
+                    tokens.append(UsfmToken(UsfmTokenType.MILESTONE_END, marker, None, None, None, line_num, col_num))
 
         # Forces a space to be present in tokenization if immediately before a token requiring a preceding CR/LF. This
         # is to ensure that when written to disk and re-read, that tokenization will match. For example,
@@ -204,7 +215,11 @@ class UsfmTokenizer:
                             t.text = t.text + " "
                     elif prev_token.type == UsfmTokenType.END:
                         # Insert space token after * of end marker
-                        tokens.insert(i, UsfmToken(UsfmTokenType.TEXT, None, " ", None))
+                        if index >= len(usfm):
+                            col_num = len(usfm) + 1
+                        else:
+                            col_num = len(usfm) + 1 - usfm.rfind("\n", 0, index)
+                        tokens.insert(i, UsfmToken(UsfmTokenType.TEXT, None, " ", None, None, line_num, col_num))
                         i += 1
 
         return tokens
@@ -288,7 +303,14 @@ class UsfmTokenizer:
         return usfm
 
     def _handle_attributes(
-        self, usfm: str, preserve_whitespace: bool, tokens: List[UsfmToken], next_marker_index: int, text: str
+        self,
+        usfm: str,
+        preserve_whitespace: bool,
+        tokens: List[UsfmToken],
+        next_marker_index: int,
+        text: str,
+        line_number: int,
+        column_number: int,
     ) -> Tuple[Optional[UsfmToken], str]:
         attribute_index = text.find("|")
         if attribute_index == -1:
@@ -319,7 +341,15 @@ class UsfmTokenizer:
             text = adjusted_text
 
             if matching_tag.style_type == UsfmStyleType.CHARACTER:  # Don't do this for milestones
-                attribute_token = UsfmToken(UsfmTokenType.ATTRIBUTE, matching_tag.marker, None, None, attributes_value)
+                attribute_token = UsfmToken(
+                    UsfmTokenType.ATTRIBUTE,
+                    matching_tag.marker,
+                    None,
+                    None,
+                    attributes_value,
+                    line_number,
+                    column_number + attribute_index,
+                )
                 attribute_token.copy_attributes(matching_token)
         return attribute_token, text
 

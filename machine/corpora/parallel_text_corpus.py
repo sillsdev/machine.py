@@ -94,6 +94,17 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
     @abstractmethod
     def is_target_tokenized(self) -> bool: ...
 
+    def count(self, include_empty: bool = True, text_ids: Optional[Iterable[str]] = None) -> int:
+        return sum(1 for row in self._get_rows(text_ids) if include_empty or not row.is_empty)
+
+    def get_rows(
+        self, text_ids: Optional[Iterable[str]] = None
+    ) -> ContextManagedGenerator[ParallelTextRow, None, None]:
+        return ContextManagedGenerator(self._get_rows(text_ids))
+
+    @abstractmethod
+    def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[ParallelTextRow, None, None]: ...
+
     def invert(self) -> ParallelTextCorpus:
         def _invert(row: ParallelTextRow) -> ParallelTextRow:
             return row.invert()
@@ -498,11 +509,11 @@ class _TransformParallelTextCorpus(ParallelTextCorpus):
     def is_target_tokenized(self) -> bool:
         return self._is_target_tokenized
 
-    def count(self, include_empty: bool = True) -> int:
-        return self._corpus.count(include_empty)
+    def count(self, include_empty: bool = True, text_ids: Optional[Iterable[str]] = None) -> int:
+        return self._corpus.count(include_empty, text_ids)
 
-    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
-        with self._corpus.get_rows() as rows:
+    def _get_rows(self, text_ids: Optional[Iterable[str]]) -> Generator[ParallelTextRow, None, None]:
+        with self._corpus.get_rows(text_ids) as rows:
             yield from map(self._transform, rows)
 
 
@@ -519,8 +530,8 @@ class _FilterParallelTextCorpus(ParallelTextCorpus):
     def is_target_tokenized(self) -> bool:
         return self._corpus.is_target_tokenized
 
-    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
-        with self._corpus.get_rows() as rows:
+    def _get_rows(self, text_ids: Optional[Iterable[str]]) -> Generator[ParallelTextRow, None, None]:
+        with self._corpus.get_rows(text_ids) as rows:
             yield from (row for i, row in enumerate(rows) if self._predicate(row, i))
 
 
@@ -537,8 +548,8 @@ class _TakeParallelTextCorpus(ParallelTextCorpus):
     def is_target_tokenized(self) -> bool:
         return self._corpus.is_target_tokenized
 
-    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
-        with self._corpus.get_rows() as rows:
+    def _get_rows(self, text_ids: Optional[Iterable[str]]) -> Generator[ParallelTextRow, None, None]:
+        with self._corpus.get_rows(text_ids) as rows:
             yield from islice(rows, self._count)
 
 
@@ -571,16 +582,23 @@ class _PandasParallelTextCorpus(ParallelTextCorpus):
     def is_target_tokenized(self) -> bool:
         return False
 
-    def count(self, include_empty: bool = True) -> int:
-        if include_empty:
-            return len(self._df)
-        return len(self._df[(self._df[self._source_column] != "") & (self._df[self._target_column] != "")])
+    def count(self, include_empty: bool = True, text_ids: Optional[Iterable[str]] = None) -> int:
+        if text_ids is None:
+            if include_empty:
+                return len(self._df)
+            return len(self._df[(self._df[self._source_column] != "") & (self._df[self._target_column] != "")])
+        return len(self._df[self._df[self._source_column].isin(set(text_ids))]) & (
+            len(self._df[self._target_column].isin(set(text_ids)))
+        )
 
-    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
+    def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[ParallelTextRow, None, None]:
+        text_ids_set = set(text_ids) if text_ids is not None else None
         for index, row in self._df.iterrows():
             text_id = self._default_text_id
             if self._text_id_column is not None and self._text_id_column in self._df:
                 text_id = cast(str, row[self._text_id_column])
+            if text_ids_set is not None and text_id not in text_ids_set:
+                continue
             refs = [index]
             if self._ref_column is not None and self._ref_column in self._df:
                 refs = row[self._ref_column]
@@ -637,24 +655,27 @@ class _DatasetParallelTextCorpus(ParallelTextCorpus):
     def is_target_tokenized(self) -> bool:
         return False
 
-    def count(self, include_empty: bool = True) -> int:
-        try:
-            from datasets.arrow_dataset import Dataset
-        except ImportError:
-            raise RuntimeError("datasets is not installed.")
-        if include_empty and isinstance(self._ds, Dataset):
-            return len(self._ds)
+    def count(self, include_empty: bool = True, text_ids: Optional[Iterable[str]] = None) -> int:
+        if text_ids is None:
+            try:
+                from datasets.arrow_dataset import Dataset
+            except ImportError:
+                raise RuntimeError("datasets is not installed.")
+            if include_empty and isinstance(self._ds, Dataset):
+                return len(self._ds)
 
-        count = 0
-        for example in cast(Iterable[dict], self._ds):
-            if (
-                self._get_translation(self._source_lang, example) != ""
-                and self._get_translation(self._target_lang, example) != ""
-            ):
-                count += 1
-        return count
+            count = 0
+            for example in cast(Iterable[dict], self._ds):
+                if (
+                    self._get_translation(self._source_lang, example) != ""
+                    and self._get_translation(self._target_lang, example) != ""
+                ):
+                    count += 1
+            return count
+        return sum(1 for row in self._get_rows(text_ids) if include_empty or not row.is_empty)
 
-    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
+    def _get_rows(self, text_ids: Optional[Iterable[str]]) -> Generator[ParallelTextRow, None, None]:
+        text_ids_set = set(text_ids) if text_ids is not None else None
         index = 0
         for example in cast(Iterable[dict], self._ds):
             text_id = self._default_text_id
@@ -669,6 +690,8 @@ class _DatasetParallelTextCorpus(ParallelTextCorpus):
                         text_id = refs[0].book
             if self._text_id_column is not None and self._text_id_column in example:
                 text_id = cast(str, example[self._text_id_column])
+            if text_ids_set is not None and text_id not in text_ids_set:
+                continue
             source = self._get_translation(self._source_lang, example)
             target = self._get_translation(self._target_lang, example)
             alignment: Optional[Collection[AlignedWordPair]] = None

@@ -1,4 +1,4 @@
-from typing import Generator, List, Optional, Union
+from typing import Generator, List, Optional, Sequence, Union
 
 from ..scripture import ENGLISH_VERSIFICATION
 from ..scripture.verse_ref import VerseRef, Versification
@@ -34,7 +34,7 @@ class ScriptureText(TextBase):
         return ContextManagedGenerator(gen(seg_list))
 
     def _create_scripture_rows(
-        self, ref: Union[List[ScriptureRef], VerseRef], text: str = "", is_sentence_start: bool = True
+        self, ref: Union[Sequence[ScriptureRef], VerseRef], text: str = "", is_sentence_start: bool = True
     ) -> Generator[TextRow, None, None]:
         if isinstance(ref, VerseRef):
             yield from self._create_scripture_rows_verse_ref(ref, text, is_sentence_start)
@@ -42,7 +42,7 @@ class ScriptureText(TextBase):
             yield from self._create_scripture_rows_scripture_ref(ref, text, is_sentence_start)
 
     def _create_scripture_rows_scripture_ref(
-        self, scripture_refs: List[ScriptureRef], text: str = "", is_sentence_start: bool = True
+        self, scripture_refs: Sequence[ScriptureRef], text: str = "", is_sentence_start: bool = True
     ) -> Generator[TextRow, None, None]:
         if len(scripture_refs) > 1:
             first_verse = True

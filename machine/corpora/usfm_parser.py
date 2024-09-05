@@ -69,6 +69,11 @@ class UsfmParser:
         # Move to next token
         self.state.index += 1
 
+        assert self.state.token is not None
+
+        self.state.line_number = self.state.token.line_number
+        self.state.column_number = self.state.token.column_number
+
         # Update verse offset with previous token (since verse offset is from start of current token)
         if self.state.prev_token is not None:
             self.state.verse_offset += self.state.prev_token.get_length(add_spaces=not self.tokens_preserve_whitespace)
@@ -84,7 +89,6 @@ class UsfmParser:
 
         token = self.state.token
 
-        assert token is not None
         # Switch unknown types to either character or paragraph
         token_type = token.type
         if token_type == UsfmTokenType.UNKNOWN:

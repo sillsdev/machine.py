@@ -12,24 +12,24 @@ from .usfm_stylesheet import UsfmStylesheet
 class ParatextProjectSettingsParserBase(ABC):
 
     @abstractmethod
-    def exists(self, file_name: str) -> bool: ...
+    def _exists(self, file_name: str) -> bool: ...
 
     @abstractmethod
-    def find(self, extension: str) -> str: ...
+    def _find(self, extension: str) -> str: ...
 
     @abstractmethod
-    def open(self, file_name: str) -> BinaryIO: ...
+    def _open(self, file_name: str) -> BinaryIO: ...
 
     @abstractmethod
-    def create_stylesheet(self, file_name: str) -> UsfmStylesheet: ...
+    def _create_stylesheet(self, file_name: str) -> UsfmStylesheet: ...
 
     def parse(self) -> ParatextProjectSettings:
         settings_file_name = "Settings.xml"
-        if not self.exists(settings_file_name):
-            settings_file_name = self.find(".ssf")
+        if not self._exists(settings_file_name):
+            settings_file_name = self._find(".ssf")
         if not settings_file_name:
             raise ValueError("The project does not contain a settings file.")
-        with self.open(settings_file_name) as stream:
+        with self._open(settings_file_name) as stream:
             settings_tree = ElementTree.parse(stream)
 
         name = settings_tree.getroot().findtext("Name", "")
@@ -46,18 +46,18 @@ class ParatextProjectSettingsParserBase(ABC):
 
         versification_type = int(settings_tree.getroot().findtext("Versification", "4"))
         versification = Versification.get_builtin(versification_type)
-        if self.exists("custom.vrs"):
+        if self._exists("custom.vrs"):
             guid = settings_tree.getroot().findtext("Guid", "")
             versification_name = f"{versification.name}-{guid}"
             versification = Versification.load(
-                self.open("custom.vrs"),
+                self._open("custom.vrs"),
                 versification,
                 versification_name,
             )
         stylesheet_file_name = settings_tree.getroot().findtext("StyleSheet", "usfm.sty")
-        if not self.exists(stylesheet_file_name) and stylesheet_file_name != "usfm_sb.sty":
+        if not self._exists(stylesheet_file_name) and stylesheet_file_name != "usfm_sb.sty":
             stylesheet_file_name = "usfm.sty"
-        stylesheet = self.create_stylesheet(stylesheet_file_name)
+        stylesheet = self._create_stylesheet(stylesheet_file_name)
 
         prefix = ""
         form = "41MAT"
@@ -81,9 +81,26 @@ class ParatextProjectSettingsParserBase(ABC):
         if len(parts) != 3:
             raise ValueError(
                 f"The BiblicalTermsListSetting element in Settings.xml in project {full_name}"
-                f" is not in the expected format (i.e., Major::BiblicalTerms.xml) but is {biblical_terms_list_setting}."
+                f" is not in the expected format (e.g., Major::BiblicalTerms.xml) but is {biblical_terms_list_setting}."
             )
+        language_code = None
+        language_iso_code_setting = settings_tree.getroot().findtext("LanguageIsoCode", "")
+        if language_iso_code_setting:
+            language_iso_code_setting_parts = settings_tree.getroot().findtext("LanguageIsoCode", "").split(":")
+            if language_iso_code_setting_parts:
+                language_code = language_iso_code_setting_parts[0]
 
         return ParatextProjectSettings(
-            name, full_name, encoding, versification, stylesheet, prefix, form, suffix, parts[0], parts[1], parts[2]
+            name,
+            full_name,
+            encoding,
+            versification,
+            stylesheet,
+            prefix,
+            form,
+            suffix,
+            parts[0],
+            parts[1],
+            parts[2],
+            language_code,
         )

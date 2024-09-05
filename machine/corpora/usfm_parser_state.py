@@ -32,6 +32,8 @@ class UsfmParserState:
         self._stack: List[UsfmParserElement] = []
         self.verse_ref = VerseRef(versification=versification)
         self.verse_offset = 0
+        self.line_number = 1
+        self.column_number = 0
         self._tokens = tokens
         self.index = -1
         self.special_token = False

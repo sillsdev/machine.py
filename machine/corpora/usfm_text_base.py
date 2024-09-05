@@ -14,6 +14,7 @@ from .usfm_parser import UsfmParser
 from .usfm_parser_state import UsfmParserState
 from .usfm_stylesheet import UsfmStylesheet
 from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
+from .usfm_tokenizer import UsfmTokenizer
 
 
 class UsfmTextBase(ScriptureText):
@@ -41,14 +42,27 @@ class UsfmTextBase(ScriptureText):
     def _get_rows(self) -> Generator[TextRow, None, None]:
         usfm = self._read_usfm()
         row_collector = _TextRowCollector(self)
-        parser = UsfmParser(usfm, row_collector, self._stylesheet, self._versification, self._include_markers)
+
+        tokenizer = UsfmTokenizer(self._stylesheet)
+        try:
+            tokens = tokenizer.tokenize(usfm, self._include_markers)
+        except Exception as e:
+            error_message = (
+                f"An error occurred while tokenizing the text '{self.id}'"
+                f"{f' in project {self.project}' if self.project else ''}"
+                f". Error: '{e}'"
+            )
+            raise RuntimeError(error_message) from e
+
+        parser = UsfmParser(tokens, row_collector, self._stylesheet, self._versification, self._include_markers)
         try:
             parser.process_tokens()
         except Exception as e:
             error_message = (
                 f"An error occurred while parsing the text '{self.id}'"
                 f"{f' in project {self.project}' if self.project else ''}"
-                f". Verse: {parser.state.verse_ref}, offset: {parser.state.verse_offset}, error: '{e}'"
+                f". Verse: {parser.state.verse_ref}, line: {parser.state.line_number}, "
+                f"character: {parser.state.line_number}, error: '{e}'"
             )
             raise RuntimeError(error_message) from e
         return gen(row_collector.rows)
@@ -107,6 +121,8 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
         if self._text._include_markers:
             self._output_marker(state)
         elif self._current_text_type == ScriptureTextType.VERSE:
+            if len(self._row_texts_stack) == 0:
+                return
             verse_text: str = self._row_texts_stack[-1]
             if len(verse_text) > 0 and not verse_text[-1].isspace():
                 self._row_texts_stack[-1] += " "
@@ -130,6 +146,10 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
     ) -> None:
         assert state.prev_token is not None
         super().end_char(state, marker, attributes, closed)
+
+        if not self._row_texts_stack:
+            return
+
         if self._text._include_markers and attributes is not None and state.prev_token.type == UsfmTokenType.ATTRIBUTE:
             self._row_texts_stack[-1] += str(state.prev_token)
 
@@ -182,10 +202,10 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
             row_text += text
         self._row_texts_stack[-1] = row_text
 
-    def _start_verse_text(self, state: UsfmParserState, scripture_refs: List[ScriptureRef]) -> None:
+    def _start_verse_text(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:
         self._row_texts_stack.append("")
 
-    def _end_verse_text(self, state: UsfmParserState, scripture_refs: List[ScriptureRef]) -> None:
+    def _end_verse_text(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:
         text = self._row_texts_stack.pop()
         self._rows.extend(self._text._create_scripture_rows(scripture_refs, text, self._sentence_start))
         self._sentence_start = (state.token and state.token.marker == "c") or has_sentence_ending(text)

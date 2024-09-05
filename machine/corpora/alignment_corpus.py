@@ -25,8 +25,9 @@ class AlignmentCorpus(Corpus[AlignmentRow]):
                 with tac.get_rows() as rows:
                     yield from rows
 
-    def count(self, include_empty: bool = True) -> int:
-        return sum(ac.count(include_empty) for ac in self.alignment_collections)
+    def count(self, include_empty: bool = True, text_ids: Optional[Iterable[str]] = None) -> int:
+        with self.get_rows(text_ids) as rows:
+            return sum(1 for row in rows if include_empty or not row.is_empty)
 
     def invert(self) -> AlignmentCorpus:
         def _invert(row: AlignmentRow) -> AlignmentRow:
@@ -46,6 +47,11 @@ class AlignmentCorpus(Corpus[AlignmentRow]):
     def filter_by_index(self, predicate: Callable[[AlignmentRow, int], bool]) -> AlignmentCorpus:
         return _FilterAlignmentCorpus(self, predicate)
 
+    def filter_texts(self, filter: Optional[Iterable[str]]) -> AlignmentCorpus:
+        if not filter:
+            return self
+        return _FilterTextsAlignmentCorpus(self, filter)
+
     def take(self, count: int) -> AlignmentCorpus:
         return _TakeAlignmentCorpus(self, count)
 
@@ -59,8 +65,8 @@ class _TransformAlignmentCorpus(AlignmentCorpus):
     def alignment_collections(self) -> Iterable[AlignmentCollection]:
         return self._corpus.alignment_collections
 
-    def count(self, include_empty: bool = True) -> int:
-        return self._corpus.count(include_empty)
+    def count(self, include_empty: bool = True, text_ids: Optional[Iterable[str]] = None) -> int:
+        return self._corpus.count(include_empty, text_ids)
 
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[AlignmentRow, None, None]:
         with self._corpus.get_rows(text_ids) as rows:
@@ -93,3 +99,21 @@ class _TakeAlignmentCorpus(AlignmentCorpus):
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[AlignmentRow, None, None]:
         with self._corpus.get_rows(text_ids) as rows:
             yield from islice(rows, self._count)
+
+
+class _FilterTextsAlignmentCorpus(AlignmentCorpus):
+    def __init__(self, corpus: AlignmentCorpus, text_ids: Iterable[str]) -> None:
+        self._corpus = corpus
+        self._text_ids = set(text_ids)
+
+    @property
+    def alignment_collections(self) -> Iterable[AlignmentCollection]:
+        return (ac for ac in self._corpus.alignment_collections if ac.id in self._text_ids)
+
+    def count(self, include_empty: bool = True, text_ids: Optional[Iterable[str]] = None) -> int:
+        return self._corpus.count(
+            include_empty, self._text_ids if text_ids is None else self._text_ids.intersection(text_ids)
+        )
+
+    def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[AlignmentRow, None, None]:
+        yield from self._corpus._get_rows(self._text_ids if text_ids is None else self._text_ids.intersection(text_ids))

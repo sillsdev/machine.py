@@ -1,5 +1,4 @@
-from machine.corpora import UsfmStylesheet
-from machine.corpora.paratext_project_settings import ParatextProjectSettings
+from machine.corpora import ParatextProjectSettings, UsfmStylesheet
 from machine.scripture import ENGLISH_VERSIFICATION
 
 
@@ -127,4 +126,5 @@ def _create_settings(file_name_form: str) -> ParatextProjectSettings:
         "Major",
         "",
         "BiblicalTerms.xml",
+        "en",
     )
