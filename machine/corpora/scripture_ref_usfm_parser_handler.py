@@ -120,6 +120,9 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         if text.strip():
             self._check_convert_verse_para_to_non_verse(state)
 
+    def opt_break(self, state: UsfmParserState) -> None:
+        self._check_convert_verse_para_to_non_verse(state)
+
     def start_char(
         self, state: UsfmParserState, marker: str, unknown: bool, attributes: Optional[Sequence[UsfmAttribute]]
     ) -> None:

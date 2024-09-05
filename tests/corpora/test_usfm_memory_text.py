@@ -74,6 +74,21 @@ def test_get_rows_triplicate_verse() -> None:
     assert rows[4].text == "Second verse"
 
 
+def test_get_rows_opt_break_middle_include_markers() -> None:
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\c 1
+\v 1 First verse in line // More text
+\c 2
+\v 1
+""",
+        include_all_text=True,
+        include_markers=True,
+    )
+    assert len(rows) == 2, str.join(",", [tr.text for tr in rows])
+    assert rows[0].text == "First verse in line // More text"
+
+
 def test_get_rows_verse_para_beginning_non_verse_segment() -> None:
     # a verse paragraph that begins with a non-verse segment followed by a verse segment
     rows: List[TextRow] = get_rows(
