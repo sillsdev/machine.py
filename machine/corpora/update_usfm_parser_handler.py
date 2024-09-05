@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 from .scripture_ref import ScriptureRef
 from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler
@@ -11,7 +11,7 @@ from .usfm_tokenizer import UsfmTokenizer
 class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
     def __init__(
         self,
-        rows: Optional[List[Tuple[List[ScriptureRef], str]]] = None,
+        rows: Optional[Sequence[Tuple[Sequence[ScriptureRef], str]]] = None,
         id_text: Optional[str] = None,
         strip_all_text: bool = False,
         prefer_existing_text: bool = False,
@@ -55,7 +55,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         state: UsfmParserState,
         marker: str,
         unknown: bool,
-        attributes: Optional[List[UsfmAttribute]],
+        attributes: Optional[Sequence[UsfmAttribute]],
     ) -> None:
         self._collect_tokens(state)
 
@@ -104,7 +104,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         state: UsfmParserState,
         marker: str,
         start_milestone: bool,
-        attributes: List[UsfmAttribute],
+        attributes: Sequence[UsfmAttribute],
     ) -> None:
         self._collect_tokens(state)
 
@@ -127,7 +127,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         state: UsfmParserState,
         marker_without_plus: str,
         unknown: bool,
-        attributes: List[UsfmAttribute],
+        attributes: Sequence[UsfmAttribute],
     ) -> None:
         if self._replace_with_new_tokens(state):
             self._skip_tokens(state)
@@ -140,7 +140,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         self,
         state: UsfmParserState,
         marker: str,
-        attributes: List[UsfmAttribute],
+        attributes: Sequence[UsfmAttribute],
         closed: bool,
     ) -> None:
         if closed and self._replace_with_new_tokens(state):
@@ -200,11 +200,11 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
 
         super().unmatched(state, marker)
 
-    def _start_verse_text(self, state: UsfmParserState, scripture_refs: List[ScriptureRef]) -> None:
+    def _start_verse_text(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:
         row_texts: List[str] = self._advance_rows(scripture_refs)
         self._push_new_tokens([UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in row_texts])
 
-    def _end_verse_text(self, state: UsfmParserState, scripture_refs: List[ScriptureRef]) -> None:
+    def _end_verse_text(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:
         self._pop_new_tokens()
 
     def _start_non_verse_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
@@ -240,7 +240,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         tokenizer = UsfmTokenizer(stylesheet)
         return tokenizer.detokenize(self._tokens)
 
-    def _advance_rows(self, seg_scr_refs: List[ScriptureRef]) -> List[str]:
+    def _advance_rows(self, seg_scr_refs: Sequence[ScriptureRef]) -> List[str]:
         row_texts: List[str] = []
         source_index: int = 0
         while self._row_index < len(self._rows) and source_index < len(seg_scr_refs):

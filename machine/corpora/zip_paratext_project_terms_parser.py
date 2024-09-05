@@ -2,11 +2,10 @@ from io import BytesIO
 from typing import BinaryIO, Optional
 from zipfile import ZipFile
 
-from machine.corpora.paratext_project_settings import ParatextProjectSettings
-from machine.corpora.paratext_project_terms_parser_base import ParatextProjectTermsParserBase
-from machine.corpora.zip_paratext_project_settings_parser import ZipParatextProjectSettingsParser
-
 from ..utils.typeshed import StrPath
+from .paratext_project_settings import ParatextProjectSettings
+from .paratext_project_terms_parser_base import ParatextProjectTermsParserBase
+from .zip_paratext_project_settings_parser import ZipParatextProjectSettingsParser
 
 
 class ZipParatextProjectTermsParser(ParatextProjectTermsParserBase):
@@ -15,10 +14,10 @@ class ZipParatextProjectTermsParser(ParatextProjectTermsParserBase):
 
         self._archive = archive
 
-    def exists(self, file_name: StrPath) -> bool:
+    def _exists(self, file_name: StrPath) -> bool:
         return file_name in self._archive.namelist()
 
-    def open(self, file_name: StrPath) -> Optional[BinaryIO]:
+    def _open(self, file_name: StrPath) -> Optional[BinaryIO]:
         if file_name in self._archive.namelist():
             return BytesIO(self._archive.read(file_name))
         return None

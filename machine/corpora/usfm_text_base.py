@@ -202,10 +202,10 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
             row_text += text
         self._row_texts_stack[-1] = row_text
 
-    def _start_verse_text(self, state: UsfmParserState, scripture_refs: List[ScriptureRef]) -> None:
+    def _start_verse_text(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:
         self._row_texts_stack.append("")
 
-    def _end_verse_text(self, state: UsfmParserState, scripture_refs: List[ScriptureRef]) -> None:
+    def _end_verse_text(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:
         text = self._row_texts_stack.pop()
         self._rows.extend(self._text._create_scripture_rows(scripture_refs, text, self._sentence_start))
         self._sentence_start = (state.token and state.token.marker == "c") or has_sentence_ending(text)

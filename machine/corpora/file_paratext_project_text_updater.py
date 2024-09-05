@@ -1,10 +1,9 @@
 from pathlib import Path
 from typing import BinaryIO
 
-from machine.corpora.file_paratext_project_settings_parser import FileParatextProjectSettingsParser
-from machine.corpora.paratext_project_text_updater_base import ParatextProjectTextUpdaterBase
-
 from ..utils.typeshed import StrPath
+from .file_paratext_project_settings_parser import FileParatextProjectSettingsParser
+from .paratext_project_text_updater_base import ParatextProjectTextUpdaterBase
 
 
 class FileParatextProjectTextUpdater(ParatextProjectTextUpdaterBase):
@@ -13,8 +12,8 @@ class FileParatextProjectTextUpdater(ParatextProjectTextUpdaterBase):
 
         self._project_dir = project_dir
 
-    def exists(self, file_name: StrPath) -> bool:
+    def _exists(self, file_name: StrPath) -> bool:
         return (Path(self._project_dir) / file_name).exists()
 
-    def open(self, file_name: StrPath) -> BinaryIO:
+    def _open(self, file_name: StrPath) -> BinaryIO:
         return open(Path(self._project_dir) / file_name, mode="rb")

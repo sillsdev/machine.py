@@ -2,11 +2,11 @@ import re
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from importlib.resources import open_binary
-from typing import BinaryIO, Dict, List, Optional, Tuple, Union
+from typing import BinaryIO, Dict, List, Optional, Sequence, Tuple, Union
 from xml.etree import ElementTree
 
-from machine.corpora.paratext_project_settings import ParatextProjectSettings
-from machine.corpora.paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
+from .paratext_project_settings import ParatextProjectSettings
+from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
 
 _PREDEFINED_TERMS_LIST_TYPES = ["Major", "All", "SilNt", "Pt6"]
 _SUPPORTED_LANGUAGE_TERMS_LOCALIZATION_XMLS_PACKAGE = "machine.corpora"
@@ -29,11 +29,11 @@ class ParatextProjectTermsParserBase(ABC):
         else:
             self._settings = settings
 
-    def parse(self, term_categories: List[str], use_term_glosses: bool = True) -> List[Tuple[str, List[str]]]:
+    def parse(self, term_categories: Sequence[str], use_term_glosses: bool = True) -> List[Tuple[str, List[str]]]:
         biblical_terms_doc = None
         if self._settings.biblical_terms_list_type == "Project":
-            if self.exists(self._settings.biblical_terms_file_name):
-                with self.open(self._settings.biblical_terms_file_name) as stream:
+            if self._exists(self._settings.biblical_terms_file_name):
+                with self._open(self._settings.biblical_terms_file_name) as stream:
                     biblical_terms_doc = ElementTree.parse(stream)
                     term_id_to_category_dict = _get_category_per_id(biblical_terms_doc)
         elif self._settings.biblical_terms_list_type in _PREDEFINED_TERMS_LIST_TYPES:
@@ -58,8 +58,8 @@ class ParatextProjectTermsParserBase(ABC):
                 terms_glosses_doc = ElementTree.parse(stream)
 
         term_renderings_doc: Optional[ElementTree.ElementTree] = None
-        if self.exists("TermRenderings.xml"):
-            with self.open("TermRenderings.xml") as stream:
+        if self._exists("TermRenderings.xml"):
+            with self._open("TermRenderings.xml") as stream:
                 term_renderings_doc = ElementTree.parse(stream)
 
         terms_renderings: Dict[str, List[str]] = defaultdict(list)
@@ -89,13 +89,13 @@ class ParatextProjectTermsParserBase(ABC):
         return []
 
     @abstractmethod
-    def exists(self, file_name: str) -> bool: ...
+    def _exists(self, file_name: str) -> bool: ...
 
     @abstractmethod
-    def open(self, file_name: str) -> BinaryIO: ...
+    def _open(self, file_name: str) -> BinaryIO: ...
 
 
-def _is_in_category(id: str, term_categories: List[str], term_id_to_category_dict: Dict[str, str]) -> bool:
+def _is_in_category(id: str, term_categories: Sequence[str], term_id_to_category_dict: Dict[str, str]) -> bool:
     category = term_id_to_category_dict.get(id)
     return not term_categories or (category is not None and category in term_categories)
 

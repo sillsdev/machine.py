@@ -1,5 +1,4 @@
-from machine.corpora import UsfmStylesheet
-from machine.corpora.paratext_project_settings import ParatextProjectSettings
+from machine.corpora import ParatextProjectSettings, UsfmStylesheet
 from machine.scripture import ENGLISH_VERSIFICATION
 
 

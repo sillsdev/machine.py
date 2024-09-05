@@ -1,10 +1,9 @@
 from typing import Generator, Iterable, Optional, overload
 
-from machine.corpora.text_row import TextRow
-
 from ..scripture.verse_ref import Versification
 from .text import Text
 from .text_corpus import TextCorpus
+from .text_row import TextRow
 
 
 class DictionaryTextCorpus(TextCorpus):
