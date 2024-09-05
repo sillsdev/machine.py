@@ -31,6 +31,11 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
     def tokens(self) -> List[UsfmToken]:
         return self._tokens
 
+    def end_usfm(self, state: UsfmParserState) -> None:
+        self._collect_tokens(state)
+
+        super().end_usfm(state)
+
     def start_book(self, state: UsfmParserState, marker: str, code: str) -> None:
         self._collect_tokens(state)
         start_book_tokens: List[UsfmToken] = []
@@ -245,7 +250,7 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
                 while source_index < len(seg_scr_refs):
                     compare = row_scr_ref.compare_to(seg_scr_refs[source_index], compare_segments=False)
                     if compare > 0:
-                        # source is ahead of row, increment source
+                        # row is ahead of source, increment source
                         source_index += 1
                     else:
                         break
@@ -256,7 +261,7 @@ class UsfmTextUpdater(ScriptureRefUsfmParserHandler):
                     source_index += 1
                     break
             if compare <= 0:
-                # row is ahead of source, increment row
+                # source is ahead of row, increment row
                 self._row_index += 1
         return row_texts
 
