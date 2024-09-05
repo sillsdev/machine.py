@@ -54,6 +54,24 @@ def test_get_rows_duplicate_verse_with_table() -> None:
     assert len(rows) == 5
 
 
+def test_get_rows_verse_para_beginning_non_verse_segment() -> None:
+    # a verse paragraph that begins with a non-verse segment followed by a verse segment
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\c 1
+\q1
+\f \fr 119 \ft World \f*
+\v 1 First verse in line!?!
+\c 2
+\d
+description
+\b
+""",
+        include_all_text=True,
+    )
+    assert len(rows) == 4
+
+
 def get_rows(usfm: str, include_markers: bool = False, include_all_text: bool = False) -> List[TextRow]:
     text = UsfmMemoryText(
         UsfmStylesheet("usfm.sty"),
