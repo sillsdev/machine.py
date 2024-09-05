@@ -63,30 +63,34 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
     def all_target_rows(self) -> bool:
         return self._all_target_rows
 
-    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
+    def _get_rows(self, text_ids: Optional[Iterable[str]]) -> Generator[ParallelTextRow, None, None]:
         source_text_ids = {t.id for t in self._source_corpus.texts}
         target_text_ids = {t.id for t in self._target_corpus.texts}
 
-        text_ids: Set[str]
+        filter_text_ids: Set[str]
         if self._all_source_rows and self._all_target_rows:
-            text_ids = source_text_ids | target_text_ids
+            filter_text_ids = set(source_text_ids)
+            filter_text_ids.update(target_text_ids)
         elif not self._all_source_rows and not self._all_target_rows:
-            text_ids = source_text_ids & target_text_ids
+            filter_text_ids = set(source_text_ids)
+            filter_text_ids.intersection_update(target_text_ids)
         elif self._all_source_rows:
-            text_ids = source_text_ids
+            filter_text_ids = set(source_text_ids)
         else:
-            text_ids = target_text_ids
+            filter_text_ids = set(target_text_ids)
+        if text_ids is not None:
+            filter_text_ids.intersection_update(text_ids)
 
         with ExitStack() as stack:
-            src_iterator = stack.enter_context(self._source_corpus.get_rows(text_ids))
+            src_iterator = stack.enter_context(self._source_corpus.get_rows(filter_text_ids))
             trg_iterator = stack.enter_context(
                 _TargetCorpusGenerator(
-                    self._target_corpus.get_rows(text_ids),
+                    self._target_corpus.get_rows(filter_text_ids),
                     self._source_corpus.versification,
                     self._target_corpus.versification,
                 )
             )
-            alignment_iterator = stack.enter_context(self._alignment_corpus.get_rows(text_ids))
+            alignment_iterator = stack.enter_context(self._alignment_corpus.get_rows(filter_text_ids))
 
             range_info = _RangeInfo(target_versification=self._target_corpus.versification)
             source_same_ref_rows: List[TextRow] = []

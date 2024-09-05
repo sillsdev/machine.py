@@ -40,8 +40,9 @@ class TextCorpus(Corpus[TextRow]):
                 with text.get_rows() as rows:
                     yield from rows
 
-    def count(self, include_empty: bool = True) -> int:
-        return sum(t.count(include_empty) for t in self.texts)
+    def count(self, include_empty: bool = True, text_ids: Optional[Iterable[str]] = None) -> int:
+        with self.get_rows(text_ids) as rows:
+            return len(list(rows)) if include_empty else sum(1 for row in rows if include_empty or not row.is_empty)
 
     def tokenize(self, tokenizer: Tokenizer[str, int, str], force: bool = False) -> TextCorpus:
         if not force and self.is_tokenized:
@@ -105,8 +106,16 @@ class TextCorpus(Corpus[TextRow]):
 
         return self.transform(_unescape_spaces)
 
-    def filter_texts(self, predicate: Callable[[Text], bool]) -> TextCorpus:
-        return _TextFilterTextCorpus(self, predicate)
+    def filter_texts(
+        self, predicate: Optional[Callable[[Text], bool]] = None, text_ids: Optional[Iterable[str]] = None
+    ) -> TextCorpus:
+        if text_ids is None and predicate is None:
+            return self
+        if text_ids is None and predicate is not None:
+            return _TextFilterTextCorpus(self, predicate)
+        if text_ids is not None and predicate is None:
+            return _FilterTextsTextCorpus(self, text_ids)
+        raise ValueError("Only one of 'predicate' and 'text_ids' can be specified.")
 
     def transform(self, transform: Callable[[TextRow], TextRow], is_tokenized: Optional[bool] = None) -> TextCorpus:
         return _TransformTextCorpus(self, transform, is_tokenized)
@@ -170,8 +179,8 @@ class _TransformTextCorpus(TextCorpus):
     def versification(self) -> Versification:
         return self._corpus.versification
 
-    def count(self, include_empty: bool = True) -> int:
-        return self._corpus.count(include_empty)
+    def count(self, include_empty: bool = True, text_ids: Optional[Iterable[str]] = None) -> int:
+        return self._corpus.count(include_empty, text_ids)
 
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
         with self._corpus.get_rows(text_ids) as rows:
@@ -242,3 +251,32 @@ class _TakeTextCorpus(TextCorpus):
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
         with self._corpus.get_rows(text_ids) as rows:
             yield from islice(rows, self._count)
+
+
+class _FilterTextsTextCorpus(TextCorpus):
+    def __init__(self, corpus: TextCorpus, text_ids: Iterable[str]) -> None:
+        self._corpus = corpus
+        self._text_ids = set(text_ids)
+
+    @property
+    def texts(self) -> Iterable[Text]:
+        return (t for t in self._corpus.texts if t.id in self._text_ids)
+
+    @property
+    def is_tokenized(self) -> bool:
+        return self._corpus.is_tokenized
+
+    @property
+    def versification(self) -> Versification:
+        return self._corpus.versification
+
+    def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
+        with self._corpus.get_rows(
+            self._text_ids if text_ids is None else self._text_ids.intersection(text_ids)
+        ) as rows:
+            yield from rows
+
+    def count(self, include_empty: bool = True, text_ids: Optional[Iterable[str]] = None) -> int:
+        return self._corpus.count(
+            include_empty, self._text_ids if text_ids is None else self._text_ids.intersection(text_ids)
+        )
