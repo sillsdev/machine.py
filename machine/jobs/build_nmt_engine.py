@@ -69,7 +69,7 @@ def run(args: dict) -> None:
             raise RuntimeError("The model type is invalid.")
 
         job = NmtEngineBuildJob(SETTINGS, nmt_model_factory, translation_file_service)
-        train_corpus_size = job.run(progress, check_canceled)
+        train_corpus_size, _ = job.run(progress, check_canceled)
         if task is not None:
             task.get_logger().report_single_value(name="train_corpus_size", value=train_corpus_size)
         logger.info("Finished")
