@@ -1,4 +1,3 @@
-import shutil
 from pathlib import Path
 
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
@@ -10,12 +9,9 @@ from ...translation.thot.thot_word_alignment_model_utils import create_thot_word
 from ...translation.trainer import Trainer
 from ...translation.word_alignment_model import WordAlignmentModel
 from ..word_alignment_model_factory import WordAlignmentModelFactory
-from . import _THOT_NEW_MODEL_DIRECTORY
 
 
 class ThotWordAlignmentModelFactory(WordAlignmentModelFactory):
-    def init(self) -> None:
-        shutil.copytree(_THOT_NEW_MODEL_DIRECTORY, self._model_dir, dirs_exist_ok=True)
 
     def create_model_trainer(self, tokenizer: Tokenizer[str, int, str], corpus: ParallelTextCorpus) -> Trainer:
         (self._model_dir / "tm").mkdir(parents=True, exist_ok=True)

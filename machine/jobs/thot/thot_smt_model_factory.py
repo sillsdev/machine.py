@@ -1,3 +1,4 @@
+import shutil
 from typing import Optional
 
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
@@ -11,9 +12,12 @@ from ...translation.translation_engine import TranslationEngine
 from ...translation.truecaser import Truecaser
 from ...translation.unigram_truecaser import UnigramTruecaser, UnigramTruecaserTrainer
 from ..smt_model_factory import SmtModelFactory
+from . import _THOT_NEW_MODEL_DIRECTORY
 
 
 class ThotSmtModelFactory(SmtModelFactory):
+    def init(self) -> None:
+        shutil.copytree(_THOT_NEW_MODEL_DIRECTORY, self._model_dir, dirs_exist_ok=True)
 
     def create_model_trainer(self, tokenizer: Tokenizer[str, int, str], corpus: ParallelTextCorpus) -> Trainer:
         return ThotSmtModelTrainer(
