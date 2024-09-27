@@ -12,31 +12,46 @@ CHAPTER_SELECTION = re.compile(r"-?[A-Z\d]{3} ?(\d+|\d+-\d+)(, ?(\d+|\d+-\d+))*"
 
 def get_books(books: Union[str, List[str]]) -> Set[int]:
     if isinstance(books, str):
-        books = books.split(",")
+        books = re.split(",|;", books)
+
     book_set: Set[int] = set()
     for book_id in books:
         book_id = book_id.strip().strip("*").upper()
-        if book_id == "NT":
-            book_set.update(range(40, 67))
-        elif book_id == "OT":
-            book_set.update(range(1, 40))
-        elif book_id.startswith("-"):
-            # remove the book from the set
+        subtraction = False
+        if book_id.startswith("-"):
+            subtraction = True
             book_id = book_id[1:]
-            book_num = book_id_to_number(book_id)
-            if book_num == 0:
-                raise RuntimeError(f"{book_id} is an invalid book ID.")
-            elif book_num not in book_set:
-                raise RuntimeError(
-                    f"{book_id}:{book_num} cannot be removed as it is not in the existing book set of {book_set}"
-                )
-            else:
-                book_set.remove(book_num)
+        if book_id == "NT":
+            book_set = _update_selection(book_set, set(range(40, 67)), subtraction)
+        elif book_id == "OT":
+            book_set = _update_selection(book_set, set(range(1, 40)), subtraction)
+        elif "-" in book_id:
+            ends = book_id.split("-")
+            if len(ends) != 2 or book_id_to_number(ends[0]) == 0 or book_id_to_number(ends[1]) == 0:
+                raise ValueError(f"{book_id} is an invalid book range.")
+            if book_id_to_number(ends[0]) >= book_id_to_number(ends[1]):
+                raise ValueError(f"{book_id} is an invalid book range. {ends[1]} precedes {ends[0]}.")
+            book_set = _update_selection(
+                book_set, set(range(book_id_to_number(ends[0]), book_id_to_number(ends[1]) + 1)), subtraction
+            )
         else:
             book_num = book_id_to_number(book_id)
             if book_num == 0:
-                raise RuntimeError(f"{book_id} is an invalid book ID.")
-            book_set.add(book_num)
+                raise ValueError(f"{book_id} is an invalid book ID.")
+            book_set = _update_selection(book_set, {book_num}, subtraction)
+    return book_set
+
+
+def _update_selection(book_set: Set[int], book_nums: Set[int], subtraction: bool) -> Set[int]:
+    if subtraction:
+        if book_nums.issubset(book_set):
+            book_set.difference_update(book_nums)
+        else:
+            book_ids = {book_number_to_id(book_num) for book_num in book_nums}
+            raise ValueError(f"{book_ids} cannot be removed as it is not in the existing book selection.")
+    else:
+        book_set.update(book_nums)
+
     return book_set
 
 

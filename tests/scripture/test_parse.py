@@ -15,22 +15,38 @@ def test_get_books() -> None:
     whole_bible.remove(2)  # EXO
     whole_bible.remove(41)  # MRK
     assert get_books("NT,OT,-MRK,-EXO") == whole_bible
+    assert get_books("MAT-JHN") == {i for i in range(40, 44)}
+    assert get_books("MAT-REV") == {i for i in range(40, 67)}
+    assert get_books("MAT-JHN;ACT") == {i for i in range(40, 45)}
+    assert get_books("MAT-JHN;ACT;-JHN-ACT,REV") == {40, 41, 42, 66}
 
-    with raises(RuntimeError):
+    with raises(ValueError):
         # invalid name
         get_books("HELLO_WORLD")
 
-    with raises(RuntimeError):
+    with raises(ValueError):
         # subtracting book from nothing
         get_books("-MRK")
 
-    with raises(RuntimeError):
+    with raises(ValueError):
         # invalid subtracting name
         get_books("NT,OT,-HELLO_WORLD")
 
-    with raises(RuntimeError):
+    with raises(ValueError):
         # subtracting book from wrong set
         get_books("OT,-MRK,NT")
+
+    with raises(ValueError):
+        # invalid range book
+        get_books("MAT-ABC")
+
+    with raises(ValueError):
+        # subtract invalid range book
+        get_books("NT;-ABC-LUK")
+
+    with raises(ValueError):
+        # invalid range order
+        get_books("MAT-GEN")
 
 
 def test_get_chapters() -> None:
