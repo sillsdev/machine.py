@@ -73,7 +73,7 @@ class ParatextProjectSettingsParserBase(ABC):
             post_part = naming_elem.get("PostPart")
             if post_part:
                 suffix = post_part
-        biblical_terms_list_setting = settings_tree.getroot().findtext("BiblicalTermsListSetting", "")
+        biblical_terms_list_setting = settings_tree.getroot().findtext("BiblicalTermsListSetting")
         if biblical_terms_list_setting is None:
             # Default to Major::BiblicalTerms.xml to mirror Paratext behavior
             biblical_terms_list_setting = "Major::BiblicalTerms.xml"
