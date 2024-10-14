@@ -72,6 +72,13 @@ def parse_integer(s: str) -> Optional[int]:
         return None
 
 
+def parse_float(s: str) -> Optional[float]:
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
 def has_sentence_ending(s: str) -> bool:
     s = s.strip()
     for c in reversed(s):

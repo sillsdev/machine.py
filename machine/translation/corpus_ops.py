@@ -1,5 +1,6 @@
-from typing import Callable, Generator, Optional, Union
+from typing import Callable, Generator, Iterable, Optional, Union
 
+from ..corpora.corpora_utils import batch
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from ..corpora.parallel_text_row import ParallelTextRow
 from ..utils.progress_status import ProgressStatus
@@ -48,11 +49,11 @@ class _WordAlignParallelTextCorpus(ParallelTextCorpus):
     def is_target_tokenized(self) -> bool:
         return self._corpus.is_target_tokenized
 
-    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
-        with self._corpus.batch(self._batch_size) as batches:
-            for batch in batches:
-                alignments = self._aligner.align_batch(batch)
-                for row, alignment in zip(batch, alignments):
+    def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[ParallelTextRow, None, None]:
+        with self._corpus.get_rows(text_ids) as rows:
+            for row_batch in batch(rows, self._batch_size):
+                alignments = self._aligner.align_batch(row_batch)
+                for row, alignment in zip(row_batch, alignments):
                     known_alignment = WordAlignmentMatrix.from_parallel_text_row(row)
                     if known_alignment is not None:
                         known_alignment.priority_symmetrize_with(alignment)
@@ -78,12 +79,12 @@ class _TranslateParallelTextCorpus(ParallelTextCorpus):
     def is_target_tokenized(self) -> bool:
         return self._corpus.is_target_tokenized
 
-    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
-        with self._corpus.batch(self._batch_size) as batches:
-            for batch in batches:
+    def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[ParallelTextRow, None, None]:
+        with self._corpus.get_rows(text_ids) as rows:
+            for row_batch in batch(rows, self._batch_size):
                 translations = self._translation_engine.translate_batch(
-                    [r.source_segment if self.is_source_tokenized else r.source_text for r in batch]
+                    [r.source_segment if self.is_source_tokenized else r.source_text for r in row_batch]
                 )
-                for row, translation in zip(batch, translations):
+                for row, translation in zip(row_batch, translations):
                     row.target_segment = translation.target_tokens
                     yield row
