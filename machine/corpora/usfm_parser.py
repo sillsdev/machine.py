@@ -256,7 +256,7 @@ class UsfmParser:
                     and pub_verse_num_token.text is not None
                     and pub_verse_end_token.marker == "vp*"
                 ):
-                    pub_chapter = pub_verse_num_token.text.strip()
+                    pub_verse = pub_verse_num_token.text.strip()
                     self.state.special_token_count += 3
 
             assert token.data is not None
@@ -424,16 +424,6 @@ class UsfmParser:
     def _close_all(self) -> None:
         while len(self.state.stack) > 0:
             self._close_element()
-
-    def _is_study_bible_item_closed(self, start_marker: str, ending_marker: str) -> bool:
-        for i in range(self.state.index + 1, len(self.state.tokens)):
-            token = self.state.tokens[i]
-            if token.marker == ending_marker:
-                return True
-
-            if token.marker == start_marker or token.type in {UsfmTokenType.BOOK, UsfmTokenType.CHAPTER}:
-                return False
-        return False
 
     def _determine_unknown_token_type(self) -> UsfmTokenType:
         if any(e.type == UsfmElementType.NOTE for e in self.state.stack):

@@ -123,7 +123,10 @@ class ScriptureRef(Comparable):
         return hash((self.verse_ref, tuple(self.path)))
 
     def __repr__(self) -> str:
-        return f"{self.verse_ref}/{'/'.join(str(se) for se in self.path)}"
+        result = str(self.verse_ref)
+        if len(self.path) > 0:
+            result += "/" + "/".join(str(se) for se in self.path)
+        return result
 
 
 EMPTY_SCRIPTURE_REF = ScriptureRef()
