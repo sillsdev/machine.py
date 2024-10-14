@@ -310,6 +310,11 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
     def filter_by_index(self, predicate: Callable[[ParallelTextRow, int], bool]) -> ParallelTextCorpus:
         return _FilterParallelTextCorpus(self, predicate)
 
+    def filter_texts(self, text_ids: Optional[Iterable[str]]) -> ParallelTextCorpus:
+        if text_ids is None:
+            return self
+        return _FilterTextsParallelTextCorpus(self, text_ids)
+
     def take(self, count: int) -> ParallelTextCorpus:
         return _TakeParallelTextCorpus(self, count)
 
@@ -551,6 +556,31 @@ class _TakeParallelTextCorpus(ParallelTextCorpus):
     def _get_rows(self, text_ids: Optional[Iterable[str]]) -> Generator[ParallelTextRow, None, None]:
         with self._corpus.get_rows(text_ids) as rows:
             yield from islice(rows, self._count)
+
+
+class _FilterTextsParallelTextCorpus(ParallelTextCorpus):
+    def __init__(self, corpus: ParallelTextCorpus, text_ids: Iterable[str]) -> None:
+        self._corpus = corpus
+        self._text_ids = set(text_ids)
+
+    @property
+    def is_source_tokenized(self) -> bool:
+        return self._corpus.is_source_tokenized
+
+    @property
+    def is_target_tokenized(self) -> bool:
+        return self._corpus.is_target_tokenized
+
+    def _get_rows(self, text_ids: Optional[Iterable[str]]) -> Generator[ParallelTextRow, None, None]:
+        with self._corpus.get_rows(
+            self._text_ids if text_ids is None else self._text_ids.intersection(text_ids)
+        ) as rows:
+            yield from rows
+
+    def count(self, include_empty: bool = True, text_ids: Optional[Iterable[str]] = None) -> int:
+        return self._corpus.count(
+            include_empty, self._text_ids if text_ids is None else self._text_ids.intersection(text_ids)
+        )
 
 
 class _PandasParallelTextCorpus(ParallelTextCorpus):
