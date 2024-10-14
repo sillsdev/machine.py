@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, TextIO, Tuple
 import regex as re
 
 from ..utils.file_utils import detect_encoding
-from ..utils.string_utils import parse_integer
+from ..utils.string_utils import parse_float, parse_integer
 from ..utils.typeshed import StrPath
 from .usfm_tag import UsfmJustification, UsfmStyleAttribute, UsfmStyleType, UsfmTag, UsfmTextProperties, UsfmTextType
 
@@ -256,9 +256,9 @@ def _parse_tag_entry(tag: UsfmTag, entries: List[Tuple[str, str]], entry_index: 
             if right_margin is not None and right_margin >= 0:
                 tag.right_margin = right_margin
         elif entry_marker == "firstlineindent":
-            first_line_indent = parse_integer(entry_text)
-            if first_line_indent is not None and first_line_indent >= 0:
-                tag.first_line_indent = first_line_indent
+            first_line_indent = parse_float(entry_text)
+            if first_line_indent is not None:
+                tag.first_line_indent = int(first_line_indent * 1000)
         elif entry_marker == "rank":
             if entry_text == "-":
                 tag.rank = 0
