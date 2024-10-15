@@ -77,8 +77,8 @@ def test_train_non_empty_corpus() -> None:
             corpus,
             src_lang="es",
             tgt_lang="en",
-            max_source_length=20,
-            max_target_length=20,
+            max_src_length=20,
+            max_tgt_length=20,
         )
         trainer.train()
         trainer.save()
@@ -125,10 +125,10 @@ def test_update_tokenizer_missing_char() -> None:
             corpus,
             src_lang="en_XX",
             tgt_lang="es_XX",
-            max_source_length=20,
-            max_target_length=20,
+            max_src_length=20,
+            max_tgt_length=20,
             add_unk_src_tokens=False,
-            add_unk_trg_tokens=False,
+            add_unk_tgt_tokens=False,
         )
         trainer_nochar.train()
         trainer_nochar.save()
@@ -145,10 +145,10 @@ def test_update_tokenizer_missing_char() -> None:
             corpus,
             src_lang="en_XX",
             tgt_lang="es_XX",
-            max_source_length=20,
-            max_target_length=20,
+            max_src_length=20,
+            max_tgt_length=20,
             add_unk_src_tokens=True,
-            add_unk_trg_tokens=True,
+            add_unk_tgt_tokens=True,
         )
         trainer_char.train()
         trainer_char.save()
@@ -213,10 +213,10 @@ def test_update_tokenizer_missing_char_skip() -> None:
             corpus,
             src_lang="en",
             tgt_lang="es",
-            max_source_length=20,
-            max_target_length=20,
+            max_src_length=20,
+            max_tgt_length=20,
             add_unk_src_tokens=False,
-            add_unk_trg_tokens=False,
+            add_unk_tgt_tokens=False,
         )
         trainer_nochar.train()
         trainer_nochar.save()
@@ -232,10 +232,10 @@ def test_update_tokenizer_missing_char_skip() -> None:
             corpus,
             src_lang="en",
             tgt_lang="es",
-            max_source_length=20,
-            max_target_length=20,
+            max_src_length=20,
+            max_tgt_length=20,
             add_unk_src_tokens=False,
-            add_unk_trg_tokens=False,
+            add_unk_tgt_tokens=False,
         )
         trainer_char.train()
         trainer_char.save()
@@ -285,10 +285,10 @@ def test_update_tokenizer_missing_char_src() -> None:
             corpus,
             src_lang="en_XX",
             tgt_lang="es_XX",
-            max_source_length=20,
-            max_target_length=20,
+            max_src_length=20,
+            max_tgt_length=20,
             add_unk_src_tokens=False,
-            add_unk_trg_tokens=False,
+            add_unk_tgt_tokens=False,
         )
         trainer_nochar.train()
         trainer_nochar.save()
@@ -304,10 +304,10 @@ def test_update_tokenizer_missing_char_src() -> None:
             corpus,
             src_lang="en_XX",
             tgt_lang="es_XX",
-            max_source_length=20,
-            max_target_length=20,
+            max_src_length=20,
+            max_tgt_length=20,
             add_unk_src_tokens=True,
-            add_unk_trg_tokens=False,
+            add_unk_tgt_tokens=False,
         )
         trainer_char.train()
         trainer_char.save()
@@ -357,10 +357,10 @@ def test_update_tokenizer_missing_char_trg() -> None:
             corpus,
             src_lang="en_XX",
             tgt_lang="es_XX",
-            max_source_length=20,
-            max_target_length=20,
+            max_src_length=20,
+            max_tgt_length=20,
             add_unk_src_tokens=False,
-            add_unk_trg_tokens=False,
+            add_unk_tgt_tokens=False,
         )
         trainer_nochar.train()
         trainer_nochar.save()
@@ -376,10 +376,10 @@ def test_update_tokenizer_missing_char_trg() -> None:
             corpus,
             src_lang="en_XX",
             tgt_lang="es_XX",
-            max_source_length=20,
-            max_target_length=20,
+            max_src_length=20,
+            max_tgt_length=20,
             add_unk_src_tokens=False,
-            add_unk_trg_tokens=True,
+            add_unk_tgt_tokens=True,
         )
         trainer_char.train()
         trainer_char.save()
@@ -429,10 +429,10 @@ def test_update_tokenizer_no_missing_char() -> None:
             corpus,
             src_lang="en_XX",
             tgt_lang="es_XX",
-            max_source_length=20,
-            max_target_length=20,
+            max_src_length=20,
+            max_tgt_length=20,
             add_unk_src_tokens=False,
-            add_unk_trg_tokens=False,
+            add_unk_tgt_tokens=False,
         )
         trainer_nochar.train()
         trainer_nochar.save()
@@ -446,10 +446,10 @@ def test_update_tokenizer_no_missing_char() -> None:
             corpus,
             src_lang="en_XX",
             tgt_lang="es_XX",
-            max_source_length=20,
-            max_target_length=20,
+            max_src_length=20,
+            max_tgt_length=20,
             add_unk_src_tokens=True,
-            add_unk_trg_tokens=True,
+            add_unk_tgt_tokens=True,
         )
         trainer_char.train()
         trainer_char.save()
