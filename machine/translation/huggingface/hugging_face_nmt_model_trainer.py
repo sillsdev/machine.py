@@ -239,7 +239,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
             )
             lang_id = tokenizer.convert_tokens_to_ids(lang_code)
             tokenizer.lang_code_to_id[lang_code] = lang_id
-            
+
             if isinstance(tokenizer, (NllbTokenizer, MBart50Tokenizer, MBartTokenizer)):
                 tokenizer.id_to_lang_code[lang_id] = lang_code
                 tokenizer.fairseq_tokens_to_ids[lang_code] = lang_id
