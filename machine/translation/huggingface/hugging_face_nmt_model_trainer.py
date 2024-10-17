@@ -99,7 +99,11 @@ class HuggingFaceNmtModelTrainer(Trainer):
         self._add_unk_src_tokens = add_unk_src_tokens
         self._add_unk_tgt_tokens = add_unk_tgt_tokens
         self._mpn = MosesPunctNormalizer()
-        self._mpn.substitutions = [(re.compile(r), sub) for r, sub in self._mpn.substitutions]  # type: ignore
+        self._mpn.substitutions = [
+            (str(re.compile(r)), sub)
+            for r, sub in self._mpn.substitutions
+            if isinstance(r, str) and isinstance(sub, str)
+        ]
         self._stats = TrainStats()
 
     @property
@@ -222,6 +226,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
             )
             lang_id = tokenizer.convert_tokens_to_ids(lang_code)
             tokenizer.lang_code_to_id[lang_code] = lang_id
+            # Caused by update to NllbTokenizer
             if isinstance(tokenizer, (NllbTokenizer, MBart50Tokenizer, MBartTokenizer)):
                 tokenizer.id_to_lang_code[lang_id] = lang_code
                 tokenizer.fairseq_tokens_to_ids[lang_code] = lang_id
