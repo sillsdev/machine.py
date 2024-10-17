@@ -1,6 +1,6 @@
 #compatability with Tensorflow 2.6.0 as per https://www.tensorflow.org/install/source#gpu
-ARG PYTHON_VERSION=3.11
-ARG UBUNTU_VERSION=focal
+ARG PYTHON_VERSION=3.12
+ARG UBUNTU_VERSION=noble
 ARG POETRY_VERSION=1.6.1
 
 FROM python:$PYTHON_VERSION-slim AS builder
