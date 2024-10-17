@@ -24,7 +24,7 @@ default:
       oom_batch_size_backoff_mult: 0.5
     tokenizer:
       add_unk_src_tokens: true
-      add_unk_tgt_tokens: true
+      add_unk_trg_tokens: true
   thot_mt:
     word_alignment_model_type: hmm
     tokenizer: latin
