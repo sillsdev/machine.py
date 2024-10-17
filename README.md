@@ -17,3 +17,4 @@ If you would like to find out more about how to use Machine, check out the tutor
 - [Tokenization](https://githubtocolab.com/sillsdev/machine.py/blob/main/samples/tokenization.ipynb)
 - [Text Corpora](https://githubtocolab.com/sillsdev/machine.py/blob/main/samples/corpora.ipynb)
 - [Word Alignment](https://githubtocolab.com/sillsdev/machine.py/blob/main/samples/word_alignment.ipynb)
+- [Paratext/USFM Processing](https://githubtocolab.com/sillsdev/machine.py/blob/main/samples/paratext_usfm.ipynb)

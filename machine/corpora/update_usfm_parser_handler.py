@@ -1,3 +1,4 @@
+from enum import Enum, auto
 from typing import List, Optional, Sequence, Tuple, Union
 
 from .scripture_ref import ScriptureRef
@@ -8,21 +9,25 @@ from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
 from .usfm_tokenizer import UsfmTokenizer
 
 
+class UpdateUsfmBehavior(Enum):
+    PREFER_EXISTING = auto()
+    PREFER_NEW = auto()
+    STRIP_EXISTING = auto()
+
+
 class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
     def __init__(
         self,
         rows: Optional[Sequence[Tuple[Sequence[ScriptureRef], str]]] = None,
         id_text: Optional[str] = None,
-        strip_all_text: bool = False,
-        prefer_existing_text: bool = False,
+        behavior: UpdateUsfmBehavior = UpdateUsfmBehavior.PREFER_EXISTING,
     ) -> None:
         super().__init__()
         self._rows = rows or []
         self._tokens: List[UsfmToken] = []
         self._new_tokens: List[UsfmToken] = []
         self._id_text = id_text
-        self._strip_all_text = strip_all_text
-        self._prefer_existing_text = prefer_existing_text
+        self._behavior = behavior
         self._replace_stack: List[bool] = []
         self._row_index: int = 0
         self._token_index: int = 0
@@ -283,7 +288,9 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
                 existing_text = True
                 break
         use_new_tokens: bool = (
-            self._strip_all_text or (new_text and not existing_text) or (new_text and not self._prefer_existing_text)
+            self._behavior is UpdateUsfmBehavior.STRIP_EXISTING
+            or (new_text and not existing_text)
+            or (new_text and self._behavior is UpdateUsfmBehavior.PREFER_NEW)
         )
         if use_new_tokens:
             self._tokens.extend(self._new_tokens)
