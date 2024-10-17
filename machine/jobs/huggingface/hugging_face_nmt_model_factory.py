@@ -3,6 +3,8 @@ import tarfile
 from pathlib import Path
 from typing import Any, cast
 
+import datasets.utils.logging as datasets_logging
+import transformers.utils.logging as transformers_logging
 from transformers import AutoConfig, AutoModelForSeq2SeqLM, HfArgumentParser, PreTrainedModel, Seq2SeqTrainingArguments
 from transformers.integrations import ClearMLCallback
 from transformers.tokenization_utils import TruncationStrategy
@@ -39,6 +41,16 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
         ):
             self._training_args.report_to.remove("clearml")
 
+        # The default of training_args.log_level is passive, so we set log level at info here to have that default.
+        transformers_logging.set_verbosity_info()
+
+        log_level = self._training_args.get_process_log_level()
+        logger.setLevel(log_level)
+        datasets_logging.set_verbosity(log_level)
+        transformers_logging.set_verbosity(log_level)
+        transformers_logging.enable_default_handler()
+        transformers_logging.enable_explicit_format()
+
     @property
     def train_tokenizer(self) -> bool:
         return False
@@ -67,7 +79,7 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
             src_lang=self._config.src_lang,
             tgt_lang=self._config.trg_lang,
             add_unk_src_tokens=self._config.huggingface.tokenizer.add_unk_src_tokens,
-            add_unk_trg_tokens=self._config.huggingface.tokenizer.add_unk_trg_tokens,
+            add_unk_tgt_tokens=self._config.huggingface.tokenizer.add_unk_trg_tokens,
         )
 
     def create_engine(self) -> TranslationEngine:

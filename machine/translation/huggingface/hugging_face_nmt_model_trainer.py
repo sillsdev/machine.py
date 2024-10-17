@@ -6,9 +6,7 @@ import re
 from pathlib import Path
 from typing import Any, Callable, List, Optional, Union, cast
 
-import datasets.utils.logging as datasets_logging
 import torch  # pyright: ignore[reportMissingImports]
-import transformers.utils.logging as transformers_logging
 from datasets.arrow_dataset import Dataset
 from sacremoses import MosesPunctNormalizer
 from torch import Tensor  # pyright: ignore[reportMissingImports]
@@ -84,10 +82,10 @@ class HuggingFaceNmtModelTrainer(Trainer):
         corpus: Union[ParallelTextCorpus, Dataset],
         src_lang: Optional[str] = None,
         tgt_lang: Optional[str] = None,
-        max_source_length: Optional[int] = None,
-        max_target_length: Optional[int] = None,
+        max_src_length: Optional[int] = None,
+        max_tgt_length: Optional[int] = None,
         add_unk_src_tokens: bool = False,
-        add_unk_trg_tokens: bool = True,
+        add_unk_tgt_tokens: bool = True,
     ) -> None:
         self._model = model
         self._training_args = training_args
@@ -96,12 +94,12 @@ class HuggingFaceNmtModelTrainer(Trainer):
         self._tgt_lang = tgt_lang
         self._trainer: Optional[Seq2SeqTrainer] = None
         self._metrics = {}
-        self.max_source_length = max_source_length
-        self.max_target_length = max_target_length
+        self.max_src_length = max_src_length
+        self.max_tgt_length = max_tgt_length
         self._add_unk_src_tokens = add_unk_src_tokens
-        self._add_unk_trg_tokens = add_unk_trg_tokens
+        self._add_unk_tgt_tokens = add_unk_tgt_tokens
         self._mpn = MosesPunctNormalizer()
-        self._mpn.substitutions = [(re.compile(r), sub) for r, sub in self._mpn.substitutions]
+        self._mpn.substitutions = [(re.compile(r), sub) for r, sub in self._mpn.substitutions]  # type: ignore
         self._stats = TrainStats()
 
     @property
@@ -113,17 +111,6 @@ class HuggingFaceNmtModelTrainer(Trainer):
         progress: Optional[Callable[[ProgressStatus], None]] = None,
         check_canceled: Optional[Callable[[], None]] = None,
     ) -> None:
-        if self._training_args.should_log:
-            # The default of training_args.log_level is passive, so we set log level at info here to have that default.
-            transformers_logging.set_verbosity_info()
-
-        log_level = self._training_args.get_process_log_level()
-        logger.setLevel(log_level)
-        datasets_logging.set_verbosity(log_level)
-        transformers_logging.set_verbosity(log_level)
-        transformers_logging.enable_default_handler()
-        transformers_logging.enable_explicit_format()
-
         last_checkpoint = None
         if os.path.isdir(self._training_args.output_dir) and not self._training_args.overwrite_output_dir:
             last_checkpoint = get_last_checkpoint(self._training_args.output_dir)
@@ -203,7 +190,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
             logger.info(f"Added {len(missing_tokens)} tokens to the tokenizer: {missing_tokens}")
             return AutoTokenizer.from_pretrained(str(tokenizer_dir), use_fast=True)
 
-        if self._add_unk_src_tokens or self._add_unk_trg_tokens:
+        if self._add_unk_src_tokens or self._add_unk_tgt_tokens:
             logger.info("Checking for missing tokens")
             if not isinstance(tokenizer, PreTrainedTokenizerFast):
                 logger.warning(
@@ -217,7 +204,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 )
                 # using unofficially supported behavior to set the normalizer
                 tokenizer.backend_tokenizer.normalizer = norm_tok.backend_tokenizer.normalizer  # type: ignore
-                if self._add_unk_src_tokens and self._add_unk_trg_tokens:
+                if self._add_unk_src_tokens and self._add_unk_tgt_tokens:
                     lang_codes = [src_lang, tgt_lang]
                 elif self._add_unk_src_tokens:
                     lang_codes = [src_lang]
@@ -293,12 +280,12 @@ class HuggingFaceNmtModelTrainer(Trainer):
         if model.name_or_path.startswith("t5-") or model.name_or_path.startswith("google/mt5-"):
             prefix = f"translate {self._src_lang} to {self._tgt_lang}: "
 
-        max_source_length = self.max_source_length
-        if max_source_length is None:
-            max_source_length = model.config.max_length
-        max_target_length = self.max_target_length
-        if max_target_length is None:
-            max_target_length = model.config.max_length
+        max_src_length = self.max_src_length
+        if max_src_length is None:
+            max_src_length = model.config.max_length
+        max_tgt_length = self.max_tgt_length
+        if max_tgt_length is None:
+            max_tgt_length = model.config.max_length
 
         if self._training_args.label_smoothing_factor > 0 and not hasattr(
             model, "prepare_decoder_input_ids_from_labels"
@@ -317,9 +304,9 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 inputs = [prefix + ex[src_lang] for ex in examples["translation"]]
                 targets = [ex[tgt_lang] for ex in examples["translation"]]
 
-            model_inputs = tokenizer(inputs, max_length=max_source_length, truncation=True)
+            model_inputs = tokenizer(inputs, max_length=max_src_length, truncation=True)
             # Tokenize targets with the `text_target` keyword argument
-            labels = tokenizer(text_target=targets, max_length=max_target_length, truncation=True)
+            labels = tokenizer(text_target=targets, max_length=max_tgt_length, truncation=True)
 
             model_inputs["labels"] = labels["input_ids"]
             return model_inputs

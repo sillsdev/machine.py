@@ -52,7 +52,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
         self._tokenizer = AutoTokenizer.from_pretrained(self._model.name_or_path, use_fast=True)
         if isinstance(self._tokenizer, (NllbTokenizer, NllbTokenizerFast)):
             self._mpn = MosesPunctNormalizer()
-            self._mpn.substitutions = [(re.compile(r), sub) for r, sub in self._mpn.substitutions]
+            self._mpn.substitutions = [(re.compile(r), sub) for r, sub in self._mpn.substitutions]  # type: ignore
         else:
             self._mpn = None
 
