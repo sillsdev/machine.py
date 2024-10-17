@@ -68,9 +68,10 @@ class UsfmTextBase(ScriptureText):
         return gen(row_collector.rows)
 
     def _read_usfm(self) -> str:
-        with self._create_stream_container() as stream_container, TextIOWrapper(
-            stream_container.open_stream(), encoding=self._encoding, errors="replace"
-        ) as reader:
+        with (
+            self._create_stream_container() as stream_container,
+            TextIOWrapper(stream_container.open_stream(), encoding=self._encoding, errors="replace") as reader,
+        ):
             return reader.read()
 
 

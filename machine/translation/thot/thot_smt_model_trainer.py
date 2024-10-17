@@ -129,9 +129,10 @@ def _filter_phrase_table_using_corpus(filename: Path, source_corpus: Sequence[Se
                 j += 1
 
     temp_filename = filename.parent / f"{filename.name}.temp"
-    with filename.open("r", encoding="utf-8-sig") as file, temp_filename.open(
-        "w", encoding="utf-8", newline="\n"
-    ) as temp_file:
+    with (
+        filename.open("r", encoding="utf-8-sig") as file,
+        temp_filename.open("w", encoding="utf-8", newline="\n") as temp_file,
+    ):
         for line in file:
             fields = line.strip().split("|||")
             phrase = fields[1].strip()
@@ -295,9 +296,10 @@ class ThotSmtModelTrainer(Trainer):
 
     def _write_word_prediction_file(self, lm_prefix: Path, train_corpus: ParallelTextCorpus) -> None:
         rand = Random(self.seed)
-        with (lm_prefix.parent / f"{lm_prefix.name}.wp").open(
-            "w", encoding="utf-8", newline="\n"
-        ) as file, train_corpus.take(100000).get_rows() as rows:
+        with (
+            (lm_prefix.parent / f"{lm_prefix.name}.wp").open("w", encoding="utf-8", newline="\n") as file,
+            train_corpus.take(100000).get_rows() as rows,
+        ):
             for row in sorted(rows, key=lambda _: rand.randint(0, sys.maxsize)):
                 segment_str = " ".join(escape_token(t) for t in row.target_segment)
                 file.write(segment_str + "\n")
@@ -414,9 +416,10 @@ class ThotSmtModelTrainer(Trainer):
     ) -> None:
         model = create_thot_word_alignment_model(self._word_alignment_model_type)
         model.load(swm_prefix)
-        with filename.open("w", encoding="utf-8", newline="\n") as file, train_corpus.transform(
-            _escape_tokens_row
-        ).get_rows() as rows:
+        with (
+            filename.open("w", encoding="utf-8", newline="\n") as file,
+            train_corpus.transform(_escape_tokens_row).get_rows() as rows,
+        ):
             i = 0
             for row in rows:
                 file.write("# 1\n")

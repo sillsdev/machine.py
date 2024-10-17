@@ -1,8 +1,8 @@
 #compatability with Tensorflow 2.6.0 as per https://www.tensorflow.org/install/source#gpu
-ARG PYTHON_VERSION=3.11
-ARG UBUNTU_VERSION=focal
+ARG PYTHON_VERSION=3.12
+ARG UBUNTU_VERSION=noble
 ARG POETRY_VERSION=1.6.1
-ARG CUDA_VERSION=11.2.2-cudnn8-runtime-ubuntu20.04
+ARG CUDA_VERSION=12.6.1-base-ubuntu24.04
 
 FROM python:$PYTHON_VERSION-slim as builder
 ARG POETRY_VERSION
@@ -35,13 +35,11 @@ WORKDIR /root
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y software-properties-common && \
-    add-apt-repository ppa:deadsnakes/ppa -y && \
     apt-get update && \
     apt-get install --no-install-recommends -y \
     curl \
     python$PYTHON_VERSION \
-    python$PYTHON_VERSION-distutils \
-# these are needed for ClearML
+    # these are needed for ClearML
     git libsm6 libxext6 libxrender-dev libglib2.0-0 && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get clean

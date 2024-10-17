@@ -9,8 +9,8 @@
 		"dockerfile": "./dockerfile"
 	},
 	"runArgs": [
-		"--gpus",
-		"all"
+		//"--gpus",
+		//"all"
 	],
 	"containerEnv": {
 		"AWS_REGION": "${localEnv:AWS_REGION}",

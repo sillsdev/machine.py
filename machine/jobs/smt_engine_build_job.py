@@ -49,17 +49,19 @@ class SmtEngineBuildJob(TranslationEngineBuildJob):
         check_canceled: Optional[Callable[[], None]],
     ) -> Tuple[int, float]:
 
-        with progress_reporter.start_next_phase() as phase_progress, self._smt_model_factory.create_model_trainer(
-            self._tokenizer, parallel_corpus
-        ) as trainer:
+        with (
+            progress_reporter.start_next_phase() as phase_progress,
+            self._smt_model_factory.create_model_trainer(self._tokenizer, parallel_corpus) as trainer,
+        ):
             trainer.train(progress=phase_progress, check_canceled=check_canceled)
             trainer.save()
             train_corpus_size = trainer.stats.train_corpus_size
             confidence = trainer.stats.metrics["bleu"] * 100
 
-        with progress_reporter.start_next_phase() as phase_progress, self._smt_model_factory.create_truecaser_trainer(
-            self._tokenizer, target_corpus
-        ) as truecase_trainer:
+        with (
+            progress_reporter.start_next_phase() as phase_progress,
+            self._smt_model_factory.create_truecaser_trainer(self._tokenizer, target_corpus) as truecase_trainer,
+        ):
             truecase_trainer.train(progress=phase_progress, check_canceled=check_canceled)
             truecase_trainer.save()
 

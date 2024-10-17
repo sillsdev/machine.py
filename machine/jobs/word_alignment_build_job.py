@@ -69,9 +69,10 @@ class WordAlignmentBuildJob:
         check_canceled: Optional[Callable[[], None]],
     ) -> int:
 
-        with progress_reporter.start_next_phase() as phase_progress, self._word_alignment_model_factory.create_model_trainer(
-            self._tokenizer, parallel_corpus
-        ) as trainer:
+        with (
+            progress_reporter.start_next_phase() as phase_progress,
+            self._word_alignment_model_factory.create_model_trainer(self._tokenizer, parallel_corpus) as trainer,
+        ):
             trainer.train(progress=phase_progress, check_canceled=check_canceled)
             trainer.save()
             train_corpus_size = trainer.stats.train_corpus_size
