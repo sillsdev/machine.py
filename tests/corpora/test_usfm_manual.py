@@ -13,6 +13,7 @@ from machine.corpora import (
     ParatextTextCorpus,
     ScriptureRef,
     StandardParallelTextCorpus,
+    UpdateUsfmBehavior,
     ZipParatextProjectSettingsParser,
     ZipParatextProjectTextUpdater,
 )
@@ -41,7 +42,7 @@ def test_parse_parallel_corpus():
         if not book_id:
             continue
         new_usfm: Optional[str] = updater.update_usfm(
-            book_id, pretranslations, strip_all_text=True, prefer_existing_text=False
+            book_id, pretranslations, behavior=UpdateUsfmBehavior.STRIP_EXISTING
         )
         assert new_usfm is not None
 
@@ -107,7 +108,7 @@ def test_create_usfm_file():
             updater = ZipParatextProjectTextUpdater(project_archive)
 
         for book_id in book_ids:
-            new_usfm = updater.update_usfm(book_id, pretranslations, strip_all_text=True, prefer_existing_text=False)
+            new_usfm = updater.update_usfm(book_id, pretranslations, behavior=UpdateUsfmBehavior.STRIP_EXISTING)
             assert new_usfm is not None
 
     if not Path(PARATEXT_PROJECT_PATH / "Settings.xml").exists():

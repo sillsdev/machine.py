@@ -2,7 +2,13 @@ from typing import List, Optional, Sequence, Tuple
 
 from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH, ignore_line_endings
 
-from machine.corpora import FileParatextProjectTextUpdater, ScriptureRef, UpdateUsfmParserHandler, parse_usfm
+from machine.corpora import (
+    FileParatextProjectTextUpdater,
+    ScriptureRef,
+    UpdateUsfmBehavior,
+    UpdateUsfmParserHandler,
+    parse_usfm,
+)
 
 
 def test_get_usfm_verse_char_style() -> None:
@@ -25,7 +31,7 @@ def test_get_usfm_id_text() -> None:
 
 
 def test_get_usfm_strip_all_text() -> None:
-    target = update_usfm(strip_all_text=True)
+    target = update_usfm(behavior=UpdateUsfmBehavior.STRIP_EXISTING)
     assert target is not None
     assert "\\id MAT\r\n" in target
     assert "\\v 1\r\n" in target
@@ -43,7 +49,7 @@ def test_get_usfm_prefer_existing():
             str("Text 7"),
         ),
     ]
-    target = update_usfm(rows, prefer_existing_text=True)
+    target = update_usfm(rows, behavior=UpdateUsfmBehavior.PREFER_EXISTING)
     assert target is not None
     assert "\\id MAT - Test\r\n" in target
     assert "\\v 6 Verse 6 content.\r\n" in target
@@ -61,7 +67,7 @@ def test_get_usfm_prefer_rows():
             str("Text 7"),
         ),
     ]
-    target = update_usfm(rows, prefer_existing_text=False)
+    target = update_usfm(rows, behavior=UpdateUsfmBehavior.PREFER_NEW)
     assert target is not None
     assert "\\id MAT - Test\r\n" in target
     assert "\\v 6 Text 6\r\n" in target
@@ -452,15 +458,14 @@ def update_usfm(
     rows: Optional[Sequence[Tuple[Sequence[ScriptureRef], str]]] = None,
     source: Optional[str] = None,
     id_text: Optional[str] = None,
-    strip_all_text: bool = False,
-    prefer_existing_text: bool = False,
+    behavior: UpdateUsfmBehavior = UpdateUsfmBehavior.PREFER_NEW,
 ) -> Optional[str]:
     if source is None:
         updater = FileParatextProjectTextUpdater(USFM_TEST_PROJECT_PATH)
-        return updater.update_usfm("MAT", rows, id_text, strip_all_text, prefer_existing_text)
+        return updater.update_usfm("MAT", rows, id_text, behavior)
     else:
         source = source.strip().replace("\r\n", "\n") + "\r\n"
-        updater = UpdateUsfmParserHandler(rows, id_text, strip_all_text, prefer_existing_text)
+        updater = UpdateUsfmParserHandler(rows, id_text, behavior)
         parse_usfm(source, updater)
         return updater.get_usfm()
 
