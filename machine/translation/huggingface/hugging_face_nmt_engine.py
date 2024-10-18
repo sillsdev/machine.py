@@ -203,9 +203,10 @@ class _TranslationPipeline(TranslationPipeline):
             BatchEncoding,
             super().preprocess(*sentences, truncation=truncation, src_lang=src_lang, tgt_lang=tgt_lang),
         )
-        if inputs.is_fast:
+        if inputs.encodings is not None:
             inputs["input_tokens"] = [
-                inputs.tokens(i) if isinstance(args[i], str) else args[i] for i in range(len(args))
+                _get_encoding_fast_tokens(inputs.encodings[i]) if isinstance(args[i], str) else args[i]
+                for i in range(len(args))
             ]
         else:
             inputs["input_tokens"] = [self.tokenizer.tokenize(s) if isinstance(s, str) else s for s in args]
@@ -379,3 +380,7 @@ def torch_gather_nd(params: torch.Tensor, indices: torch.Tensor, batch_dim: int 
 
     out = torch.gather(params, dim=batch_dim, index=indices)
     return out.reshape(*index_shape, *tail_sizes)
+
+
+def _get_encoding_fast_tokens(encoding) -> List[str]:
+    return [token for (token, mask) in zip(encoding.tokens, encoding.special_tokens_mask) if not mask]
