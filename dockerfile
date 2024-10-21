@@ -58,5 +58,6 @@ RUN --mount=type=cache,target=/root/.cache \
 
 COPY . .
 RUN pip install --no-deps . && rm -r /root/*
+ENV CLEARML_AGENT_SKIP_PYTHON_ENV_INSTALL=1
 
 CMD ["bash"]
