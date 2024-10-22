@@ -1,7 +1,7 @@
 import logging
 import tarfile
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, List, cast
 
 from transformers import AutoConfig, AutoModelForSeq2SeqLM, HfArgumentParser, PreTrainedModel, Seq2SeqTrainingArguments
 from transformers.integrations import ClearMLCallback
@@ -37,7 +37,10 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
             and self._training_args.report_to is not None
             and "clearml" in self._training_args.report_to
         ):
-            self._training_args.report_to.remove("clearml")
+            if isinstance(self._training_args.report_to, List):
+                self._training_args.report_to.remove("clearml")
+            elif isinstance(self._training_args.report_to, str):
+                self._training_args.report_to = None
 
     @property
     def train_tokenizer(self) -> bool:
