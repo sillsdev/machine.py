@@ -1,7 +1,7 @@
 import logging
 import tarfile
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, List, cast
 
 import datasets.utils.logging as datasets_logging
 import transformers.utils.logging as transformers_logging
@@ -39,7 +39,10 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
             and self._training_args.report_to is not None
             and "clearml" in self._training_args.report_to
         ):
-            self._training_args.report_to.remove("clearml")
+            if isinstance(self._training_args.report_to, List):
+                self._training_args.report_to.remove("clearml")
+            elif isinstance(self._training_args.report_to, str):
+                self._training_args.report_to = None
 
         # The default of training_args.log_level is passive, so we set log level at info here to have that default.
         transformers_logging.set_verbosity_info()

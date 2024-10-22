@@ -489,7 +489,11 @@ class ThotSmtModelTrainer(Trainer):
             for i in range(len(tune_source_corpus)):
                 if i > 0:
                     progress(ProgressStatus.from_step(i, len(tune_source_corpus)))
+                if decoder is None or smt_model is None:
+                    raise RuntimeError("Decoder or SMT model is None")
                 decoder.train_sentence_pair(to_sentence(tune_source_corpus[i]), to_sentence(tune_target_corpus[i]))
+            if smt_model is None:
+                raise RuntimeError("SMT model is None")
             smt_model.print_translation_model(parameters.translation_model_filename_prefix)
             smt_model.print_language_model(parameters.language_model_filename_prefix)
             progress(ProgressStatus.from_step(len(tune_source_corpus), len(tune_source_corpus)))
