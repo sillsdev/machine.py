@@ -469,12 +469,13 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
         info.features = features
 
         def iterable() -> Iterable[Tuple[Union[str, int], dict]]:
+            key = ""
+            example = {}
             with self.get_rows() as rows:
                 for row in rows:
                     key = row.ref
                     if not isinstance(key, int) and not isinstance(key, str):
                         key = str(key)
-                    example = {}
                     if text_id_column is not None:
                         example[text_id_column] = row.text_id
                     if ref_column is not None:
@@ -490,7 +491,7 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
                         example[alignment_column] = {source_lang: src_indices, target_lang: trg_indices}
                     yield key, example
 
-        return IterableDataset(ExamplesIterable(iterable, {}), info, split)
+        return IterableDataset(ExamplesIterable(iterable, {}), info, split)  # type: ignore
 
 
 class _TransformParallelTextCorpus(ParallelTextCorpus):

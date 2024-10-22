@@ -136,3 +136,6 @@ out/
 
 # Ignore dynaconf secret files
 .secrets.*
+
+#VS Code
+.vscode
