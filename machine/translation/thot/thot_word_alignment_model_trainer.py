@@ -80,6 +80,8 @@ class ThotWordAlignmentModelTrainer(Trainer):
             if model_type >= ThotWordAlignmentModelType.IBM2:
                 if parameters.get_hmm_iteration_count(model_type) > 0:
                     ibm2_or_hmm = ta.HmmAlignmentModel(ibm1)
+                    if ibm2_or_hmm is None:
+                        raise ValueError("ibm2_or_hmm should not be None")
                     if parameters.hmm_p0 is not None:
                         ibm2_or_hmm.hmm_p0 = parameters.hmm_p0
                     if parameters.hmm_lexical_smoothing_factor is not None:
@@ -98,6 +100,8 @@ class ThotWordAlignmentModelTrainer(Trainer):
                 and parameters.get_ibm3_iteration_count(model_type) > 0
             ):
                 ibm3 = ta.Ibm3AlignmentModel(ibm2_or_hmm)
+                if ibm3 is None:
+                    raise ValueError("ibm3 should not be None")
                 if parameters.ibm3_fertility_smoothing_factor is not None:
                     ibm3.fertility_smoothing_factor = parameters.ibm3_fertility_smoothing_factor
                 if parameters.ibm3_count_threshold is not None:

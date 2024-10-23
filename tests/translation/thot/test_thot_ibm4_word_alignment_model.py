@@ -1,9 +1,8 @@
 from typing import Dict, List
 
-from testutils.thot_test_helpers import create_test_parallel_corpus
-
 from machine.translation import WordAlignmentMatrix
 from machine.translation.thot import ThotIbm4WordAlignmentModel
+from tests.testutils.thot_test_helpers import create_test_parallel_corpus
 
 
 def test_create_trainer() -> None:

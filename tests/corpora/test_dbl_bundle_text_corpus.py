@@ -1,4 +1,4 @@
-from testutils.dbl_bundle_test_environment import DblBundleTestEnvironment
+from tests.testutils.dbl_bundle_test_environment import DblBundleTestEnvironment
 
 
 def test_texts() -> None:

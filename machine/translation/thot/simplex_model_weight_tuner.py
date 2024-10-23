@@ -83,8 +83,11 @@ class SimplexModelWeightTuner(ParameterTuner):
         try:
             model = load_smt_model(self._word_alignment_model_type, parameters)
             decoder = load_smt_decoder(model, parameters)
-            translations = decoder.translate_batch([to_sentence(s) for s in source_corpus])
-            return [to_target_tokens(t.target) for t in translations]
+            if decoder is not None:
+                translations = decoder.translate_batch([to_sentence(s) for s in source_corpus])
+                return [to_target_tokens(t.target) for t in translations]
+            else:
+                raise ValueError("Decoder could not be loaded.")
         finally:
             if decoder is not None:
                 decoder.clear()

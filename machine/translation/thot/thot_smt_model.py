@@ -314,9 +314,7 @@ class ThotSmtModel(InteractiveTranslationModel):
             if src_phrase_len == 1 and trg_phrase_len == 1:
                 wa_matrix = WordAlignmentMatrix.from_word_pairs(1, 1, {(0, 0)})
             else:
-                src_phrase = [""] * src_phrase_len
-                for i in range(src_phrase_len):
-                    src_phrase[i] = normalized_source_tokens[source_start_index + i]
+                src_phrase = list(normalized_source_tokens[source_start_index : source_start_index + src_phrase_len])
                 trg_phrase = [""] * trg_phrase_len
                 for j in range(trg_phrase_len):
                     trg_phrase[j] = normalized_target_tokens[trg_phrase_start_index + j]

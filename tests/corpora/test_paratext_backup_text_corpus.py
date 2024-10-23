@@ -4,9 +4,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, ContextManager
 
-from testutils.corpora_test_helpers import create_test_paratext_backup
-
 from machine.corpora import ParatextBackupTextCorpus
+from tests.testutils.corpora_test_helpers import create_test_paratext_backup
 
 
 def test_texts() -> None:
