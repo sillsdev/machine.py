@@ -58,14 +58,15 @@ sortedcontainers = "^2.4.0"
 networkx = "^2.6.3"
 charset-normalizer = "^2.1.1"
 
-sentencepiece = "^0.2.0" # extras
+
+sentencepiece = "^0.2.0"
 sil-thot = "^3.4.4"
 
-transformers = "^4.45.0" # huggingface extras
+transformers = "^4.45.0"
 datasets = "^3.0.0"
 sacremoses = "^0.1.0"
 
-clearml = { extras = ["s3"], version = "^1.13.1" } # job extras
+clearml = { extras = ["s3"], version = "^1.13.1" }
 botocore = "^1.35.41"
 boto3 = "^1.19.41"
 dynaconf = "^3.2.5"
