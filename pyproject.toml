@@ -58,7 +58,8 @@ sortedcontainers = "^2.4.0"
 networkx = "^3"
 charset-normalizer = "^2.1.1"
 
-sentencepiece = "^0.2.0" # extras
+
+sentencepiece = "^0.2.0"
 sil-thot = "^3.4.4"
 # huggingface extras
 transformers = ">=4.34.0,<4.42"
