@@ -1,9 +1,9 @@
 from io import BytesIO, StringIO
 
 from pytest import raises
-from testutils.corpora_test_helpers import CUSTOM_VERS_PATH
 
 from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, VerseRef, Versification
+from tests.testutils.corpora_test_helpers import CUSTOM_VERS_PATH
 
 
 def test_parse_valid() -> None:
