@@ -2,9 +2,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List
 
-from testutils.corpora_test_helpers import create_test_paratext_backup
-
 from machine.corpora import ParatextBackupTermsCorpus, TextRow
+from tests.testutils.corpora_test_helpers import create_test_paratext_backup
 
 
 def test_create_corpus():
