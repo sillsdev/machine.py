@@ -55,7 +55,7 @@ jobs:
           node-version: "14"
       - name: Lint with pyright
         run: |
-          npm install -g pyright@1.1.362
+          npm install -g pyright@1.1.386
           poetry run pyright
       - name: Test with pytest
         run: poetry run pytest --cov --cov-report=xml
