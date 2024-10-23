@@ -1,9 +1,8 @@
 import os
 from tempfile import TemporaryDirectory
 
-from translation.thot.thot_model_trainer_helper import get_emtpy_parallel_corpus, get_parallel_corpus
-
 from machine.translation.thot import ThotSmtModel, ThotSmtModelTrainer, ThotSmtParameters, ThotWordAlignmentModelType
+from tests.translation.thot.thot_model_trainer_helper import get_emtpy_parallel_corpus, get_parallel_corpus
 
 
 def test_train_non_empty_corpus() -> None:

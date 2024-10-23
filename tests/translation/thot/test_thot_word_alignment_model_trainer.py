@@ -1,8 +1,6 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from translation.thot.thot_model_trainer_helper import get_emtpy_parallel_corpus, get_parallel_corpus
-
 from machine.corpora.parallel_text_corpus import ParallelTextCorpus
 from machine.tokenization import StringTokenizer, WhitespaceTokenizer
 from machine.translation.symmetrized_word_alignment_model_trainer import SymmetrizedWordAlignmentModelTrainer
@@ -10,6 +8,7 @@ from machine.translation.thot import ThotWordAlignmentModelTrainer
 from machine.translation.thot.thot_symmetrized_word_alignment_model import ThotSymmetrizedWordAlignmentModel
 from machine.translation.thot.thot_word_alignment_model_utils import create_thot_word_alignment_model
 from machine.translation.word_alignment_matrix import WordAlignmentMatrix
+from tests.translation.thot.thot_model_trainer_helper import get_emtpy_parallel_corpus, get_parallel_corpus
 
 
 def train_model(
