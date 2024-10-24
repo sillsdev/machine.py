@@ -439,17 +439,17 @@ css = ["tinycss2 (>=1.1.0,<1.3)"]
 
 [[package]]
 name = "boto3"
-version = "1.35.46"
+version = "1.35.47"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.35.46-py3-none-any.whl", hash = "sha256:a839ce09a844d92e0039f95851e88da9df80c89ebb4c7818b3e78247fd97a8a7"},
-    {file = "boto3-1.35.46.tar.gz", hash = "sha256:c9bab807b372d5b076d6aeb1d6513131fa0b74e32d8895128f8568b6521296ea"},
+    {file = "boto3-1.35.47-py3-none-any.whl", hash = "sha256:0b307f685875e9c7857ce21c0d3050d8d4f3778455a6852d5f98ac75194b400e"},
+    {file = "boto3-1.35.47.tar.gz", hash = "sha256:65b808e4cf1af8c2f405382d53656a0d92eee8f85c7388c43d64c7a5571b065f"},
 ]
 
 [package.dependencies]
-botocore = ">=1.35.46,<1.36.0"
+botocore = ">=1.35.47,<1.36.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -458,13 +458,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.35.46"
+version = "1.35.47"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.35.46-py3-none-any.whl", hash = "sha256:8bbc9a55cae65a8db7f2e33ff087f4dbfc13fce868e8e3c5273ce9af367a555a"},
-    {file = "botocore-1.35.46.tar.gz", hash = "sha256:8c0ff5fdd611a28f5752189d171c69690dbc484fa06d74376890bb0543ec3dc1"},
+    {file = "botocore-1.35.47-py3-none-any.whl", hash = "sha256:05f4493119a96799ff84d43e78691efac3177e1aec8840cca99511de940e342a"},
+    {file = "botocore-1.35.47.tar.gz", hash = "sha256:f8f703463d3cd8b6abe2bedc443a7ab29f0e2ff1588a2e83164b108748645547"},
 ]
 
 [package.dependencies]
@@ -3900,36 +3900,36 @@ type = ["importlib-metadata (>=7.0.2)", "jaraco.develop (>=7.21)", "mypy (==1.11
 
 [[package]]
 name = "sil-thot"
-version = "3.4.4"
+version = "3.4.5"
 description = "A toolkit for statistical word alignment and machine translation"
 optional = false
 python-versions = "<4.0,>=3.7"
 files = [
-    {file = "sil_thot-3.4.4-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:8a0a0667e5729a3cd5aeb8baeca75d2ec50c62bd8dc35733734f2f363153727c"},
-    {file = "sil_thot-3.4.4-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:798c7b7e1e724d7ae19d865aa637f74caa065106c30f2115e6bdc361a9641b8a"},
-    {file = "sil_thot-3.4.4-cp310-cp310-win32.whl", hash = "sha256:e081c538da56846061230caab482085f18af342f2e2233b8b1abbed75097514a"},
-    {file = "sil_thot-3.4.4-cp310-cp310-win_amd64.whl", hash = "sha256:49ebc593859af73c0be7b605be9fe1bcfd303fb8c18f32cc409e108bcb06cc81"},
-    {file = "sil_thot-3.4.4-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:17acaa557f72a00a55407abc8a9a8eb8236b016da060a4a51ca409eac841e049"},
-    {file = "sil_thot-3.4.4-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f2cef518ea8c21c740058c1774fbe31380f6a1b4c373ff56c0479d5100a62b07"},
-    {file = "sil_thot-3.4.4-cp311-cp311-win32.whl", hash = "sha256:d52e0390de511af17290c85ff77a6fd6ef6517de43b7e968cdc146772166a7bb"},
-    {file = "sil_thot-3.4.4-cp311-cp311-win_amd64.whl", hash = "sha256:261768c39275e0d60ef14d74fb114f8d2c7222e70aafd346a46666b6c3e5111a"},
-    {file = "sil_thot-3.4.4-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:ff35386ecad34fa207c7736391364ee5edd6b3817b13abe205477d43e63bc8b5"},
-    {file = "sil_thot-3.4.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7b189de4ec845ce94a3e81a6cc047f70e4c274bf5868e2b2b17e7d8fed139c4d"},
-    {file = "sil_thot-3.4.4-cp312-cp312-win32.whl", hash = "sha256:e21fd4f822d9521e5dc9b00352d4cbf05cc25354ceb8a56bbf204270f7c4a55d"},
-    {file = "sil_thot-3.4.4-cp312-cp312-win_amd64.whl", hash = "sha256:281fa2daac69b4eba762fd3bfcb0524c9bd30c2475be56766b1586eb8e07a45f"},
-    {file = "sil_thot-3.4.4-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:4114214325ec6980cd432631e8b32dbe8d8e32c7a5a38a27390de81908d71bfd"},
-    {file = "sil_thot-3.4.4-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9830fcaad8e2633c485eba48178ead20dab455da63751b0a7e5afdc298aaea0c"},
-    {file = "sil_thot-3.4.4-cp37-cp37m-win32.whl", hash = "sha256:b1a49387528e2ab00bad739f754f1242a1297d74cc1edf5c8634a3b8247f405f"},
-    {file = "sil_thot-3.4.4-cp37-cp37m-win_amd64.whl", hash = "sha256:1d27ce4d8015c920f0cccbccd089004dbdbc32fa79a33c2f4adcd7ae9c574188"},
-    {file = "sil_thot-3.4.4-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:c592ffc507dbb7e3a5a87a7adaf5089f3b1d24df5158407c40115f9f32814330"},
-    {file = "sil_thot-3.4.4-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fd66a7cdfe5a1ce2e94b56f23d1fbfb5a10e93f2cdcd7de8212e6495c7a934be"},
-    {file = "sil_thot-3.4.4-cp38-cp38-win32.whl", hash = "sha256:d9aa73270aa4f7cc110e4d936a69d27f0662ec62043443a4edef1aa276f0a3cc"},
-    {file = "sil_thot-3.4.4-cp38-cp38-win_amd64.whl", hash = "sha256:e16bacecfbfe46d79e2cd5c4fc33263f618028ee3846289617e2f1ce4b12e14a"},
-    {file = "sil_thot-3.4.4-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:0439478b2c9d533a94396b726d47ae8833ffb4f682494c9dabb244bee0cb281d"},
-    {file = "sil_thot-3.4.4-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4e5c18de7a806b510998c44c6fb7470dc31678be61ed8334d16bf24eea382c33"},
-    {file = "sil_thot-3.4.4-cp39-cp39-win32.whl", hash = "sha256:bc6b9c2cbe7e065c16d7ba1967df560815785d67a8b5b99b9386fbfce116bd96"},
-    {file = "sil_thot-3.4.4-cp39-cp39-win_amd64.whl", hash = "sha256:ffa6b4324cb1e1e9ad9609d6e31f8a8f989a219b561681a6ad56e673ded59e91"},
-    {file = "sil_thot-3.4.4.tar.gz", hash = "sha256:5fa312f58bac84e9c90ae5b2c902fc36b87e9872bed60f7d4bf6a8442a2985bf"},
+    {file = "sil_thot-3.4.5-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:32b82146d142eaba19733f03ed576a048820ec032bf4c365ff5652b0e4597a78"},
+    {file = "sil_thot-3.4.5-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3edf71eb50c9827b0bdf6d766e7a916ead3b8d763eae78c29c6ff730cacacbfb"},
+    {file = "sil_thot-3.4.5-cp310-cp310-win32.whl", hash = "sha256:85ddc2418c523eec8ffebb6cc4a8560ed28d2cd196b04f56f9403b7439612ae0"},
+    {file = "sil_thot-3.4.5-cp310-cp310-win_amd64.whl", hash = "sha256:303c0f5768890d7b911c9525663a0c99423e250296171b27ac16c9664071b1eb"},
+    {file = "sil_thot-3.4.5-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:2d70f058e2b909d3da4f02ee837ab96cbebcd51de6c7df789f2b8b1be79902c8"},
+    {file = "sil_thot-3.4.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d69981f780ed98f86d46dc59907a529e3ab6ef720344371020ed022c8a43a2fb"},
+    {file = "sil_thot-3.4.5-cp311-cp311-win32.whl", hash = "sha256:2797c1a622bc7485c6facd941b88676e02b80f2aa9562e6e58411a313c926bce"},
+    {file = "sil_thot-3.4.5-cp311-cp311-win_amd64.whl", hash = "sha256:7a6b0effc0f01176a27a607fa7fb88e07d59f7e6d69a2b5fcc964e6e0545cc15"},
+    {file = "sil_thot-3.4.5-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:0851663224f15a904bbfc95c20a94080ea1d1965570e5df6c231781a0ed61e6a"},
+    {file = "sil_thot-3.4.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:27b14cdb8366473b2ffa9c651f5f0bd051ec04423be6656c8a6fb711e2625ae7"},
+    {file = "sil_thot-3.4.5-cp312-cp312-win32.whl", hash = "sha256:d67ce8fdc21a15c1941edc960bed0e1efc8aee273d5ce4b3c2f80c2bab9ef8f5"},
+    {file = "sil_thot-3.4.5-cp312-cp312-win_amd64.whl", hash = "sha256:3f8b2383e918abf21bbc2089036245fc22e05c77629973aceb644bb69c47dade"},
+    {file = "sil_thot-3.4.5-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:0e34461592137d416e054926a6ffda61d68ca93beac400a4900825a1893b8e59"},
+    {file = "sil_thot-3.4.5-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:eb0c24104d9fb2ebc67c40d71fe1f44025dce8938185a8effc4658a7f19fed7b"},
+    {file = "sil_thot-3.4.5-cp37-cp37m-win32.whl", hash = "sha256:92b12f4125fa76b792725b1b15e463858670f7e88baeba553d9ca0d08ab79398"},
+    {file = "sil_thot-3.4.5-cp37-cp37m-win_amd64.whl", hash = "sha256:cb9cf8f873d75d0ae485c4155b96d495bfdfbcbf3101aec1f2270525c466ea8e"},
+    {file = "sil_thot-3.4.5-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:cf552e2c0f0e4749370d0186c4851e20d773255e1e234a132b9944eba1b007c7"},
+    {file = "sil_thot-3.4.5-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6571739fed2ac3bce8595991efe093ac598597aa6049622a4338c4e231424402"},
+    {file = "sil_thot-3.4.5-cp38-cp38-win32.whl", hash = "sha256:ab9d1df31351bc5a1bc85a86ff1dd10a3dbd61a69064c0455b5d793a2ffddd39"},
+    {file = "sil_thot-3.4.5-cp38-cp38-win_amd64.whl", hash = "sha256:be34af67be1219c4e6400f3b2941e9b5a97e62729eba77916bf74bb9504c4481"},
+    {file = "sil_thot-3.4.5-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:a4bd7bd10412e71ca17a031617b105d46c2bcc6d04395fe0df6b61c8289d8ec3"},
+    {file = "sil_thot-3.4.5-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7ea48aac2cddf36b74cbd93d3b2e31d63c1849b1a9a2adf13f2056f4e1280fb5"},
+    {file = "sil_thot-3.4.5-cp39-cp39-win32.whl", hash = "sha256:1e7750c0becd1a5ab8bc198d0fba76064c37596e89638e8a10c9b5091f70927a"},
+    {file = "sil_thot-3.4.5-cp39-cp39-win_amd64.whl", hash = "sha256:b2ce4b05a285a1867ee6b8b2545c67af26908f6f68c6c495b2ad5ab570582305"},
+    {file = "sil_thot-3.4.5.tar.gz", hash = "sha256:4a6138965d54aa34a9962f3e925f40e8e6c6a80f81e4562091ccddfe975079ac"},
 ]
 
 [package.extras]
@@ -4038,13 +4038,13 @@ typing = ["mypy (>=1.6,<2.0)", "traitlets (>=5.11.1)"]
 
 [[package]]
 name = "tinycss2"
-version = "1.3.0"
+version = "1.4.0"
 description = "A tiny CSS parser"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "tinycss2-1.3.0-py3-none-any.whl", hash = "sha256:54a8dbdffb334d536851be0226030e9505965bb2f30f21a4a82c55fb2a80fae7"},
-    {file = "tinycss2-1.3.0.tar.gz", hash = "sha256:152f9acabd296a8375fbca5b84c961ff95971fcfc32e79550c8df8e29118c54d"},
+    {file = "tinycss2-1.4.0-py3-none-any.whl", hash = "sha256:3a49cf47b7675da0b15d0c6e1df8df4ebd96e9394bb905a5775adb0d884c5289"},
+    {file = "tinycss2-1.4.0.tar.gz", hash = "sha256:10c0972f6fc0fbee87c3edb76549357415e94548c1ae10ebccdea16fb404a9b7"},
 ]
 
 [package.dependencies]
@@ -4292,13 +4292,13 @@ test = ["argcomplete (>=3.0.3)", "mypy (>=1.7.0)", "pre-commit", "pytest (>=7.0,
 
 [[package]]
 name = "transformers"
-version = "4.45.2"
+version = "4.46.0"
 description = "State-of-the-art Machine Learning for JAX, PyTorch and TensorFlow"
 optional = false
 python-versions = ">=3.8.0"
 files = [
-    {file = "transformers-4.45.2-py3-none-any.whl", hash = "sha256:c551b33660cfc815bae1f9f097ecfd1e65be623f13c6ee0dda372bd881460210"},
-    {file = "transformers-4.45.2.tar.gz", hash = "sha256:72bc390f6b203892561f05f86bbfaa0e234aab8e927a83e62b9d92ea7e3ae101"},
+    {file = "transformers-4.46.0-py3-none-any.whl", hash = "sha256:e161268ae8bee315eb9e9b4c0b27f1bd6980f91e0fc292d75249193d339704c0"},
+    {file = "transformers-4.46.0.tar.gz", hash = "sha256:3a9e2eb537094db11c3652334d281afa4766c0e5091c4dcdb454e9921bb0d2b7"},
 ]
 
 [package.dependencies]
@@ -4316,13 +4316,13 @@ tqdm = ">=4.27"
 [package.extras]
 accelerate = ["accelerate (>=0.26.0)"]
 agents = ["Pillow (>=10.0.1,<=15.0)", "accelerate (>=0.26.0)", "datasets (!=2.5.0)", "diffusers", "opencv-python", "sentencepiece (>=0.1.91,!=0.1.92)", "torch"]
-all = ["Pillow (>=10.0.1,<=15.0)", "accelerate (>=0.26.0)", "av (==9.2.0)", "codecarbon (==1.2.0)", "decord (==0.6.0)", "flax (>=0.4.1,<=0.7.0)", "jax (>=0.4.1,<=0.4.13)", "jaxlib (>=0.4.1,<=0.4.13)", "kenlm", "keras-nlp (>=0.3.1,<0.14.0)", "librosa", "onnxconverter-common", "optax (>=0.0.8,<=0.1.4)", "optuna", "phonemizer", "protobuf", "pyctcdecode (>=0.4.0)", "ray[tune] (>=2.7.0)", "scipy (<1.13.0)", "sentencepiece (>=0.1.91,!=0.1.92)", "sigopt", "tensorflow (>2.9,<2.16)", "tensorflow-text (<2.16)", "tf2onnx", "timm (<=0.9.16)", "tokenizers (>=0.20,<0.21)", "torch", "torchaudio", "torchvision"]
+all = ["Pillow (>=10.0.1,<=15.0)", "accelerate (>=0.26.0)", "av (==9.2.0)", "codecarbon (==1.2.0)", "flax (>=0.4.1,<=0.7.0)", "jax (>=0.4.1,<=0.4.13)", "jaxlib (>=0.4.1,<=0.4.13)", "kenlm", "keras-nlp (>=0.3.1,<0.14.0)", "librosa", "onnxconverter-common", "optax (>=0.0.8,<=0.1.4)", "optuna", "phonemizer", "protobuf", "pyctcdecode (>=0.4.0)", "ray[tune] (>=2.7.0)", "scipy (<1.13.0)", "sentencepiece (>=0.1.91,!=0.1.92)", "sigopt", "tensorflow (>2.9,<2.16)", "tensorflow-text (<2.16)", "tf2onnx", "timm (<=0.9.16)", "tokenizers (>=0.20,<0.21)", "torch", "torchaudio", "torchvision"]
 audio = ["kenlm", "librosa", "phonemizer", "pyctcdecode (>=0.4.0)"]
 benchmark = ["optimum-benchmark (>=0.3.0)"]
 codecarbon = ["codecarbon (==1.2.0)"]
 deepspeed = ["accelerate (>=0.26.0)", "deepspeed (>=0.9.3)"]
 deepspeed-testing = ["GitPython (<3.1.19)", "accelerate (>=0.26.0)", "beautifulsoup4", "cookiecutter (==1.7.3)", "datasets (!=2.5.0)", "deepspeed (>=0.9.3)", "dill (<0.3.5)", "evaluate (>=0.2.0)", "faiss-cpu", "nltk (<=3.8.1)", "optuna", "parameterized", "protobuf", "psutil", "pydantic", "pytest (>=7.2.0,<8.0.0)", "pytest-rich", "pytest-timeout", "pytest-xdist", "rjieba", "rouge-score (!=0.0.7,!=0.0.8,!=0.1,!=0.1.1)", "ruff (==0.5.1)", "sacrebleu (>=1.4.12,<2.0.0)", "sacremoses", "sentencepiece (>=0.1.91,!=0.1.92)", "tensorboard", "timeout-decorator"]
-dev = ["GitPython (<3.1.19)", "Pillow (>=10.0.1,<=15.0)", "accelerate (>=0.26.0)", "av (==9.2.0)", "beautifulsoup4", "codecarbon (==1.2.0)", "cookiecutter (==1.7.3)", "datasets (!=2.5.0)", "decord (==0.6.0)", "dill (<0.3.5)", "evaluate (>=0.2.0)", "faiss-cpu", "flax (>=0.4.1,<=0.7.0)", "fugashi (>=1.0)", "ipadic (>=1.0.0,<2.0)", "isort (>=5.5.4)", "jax (>=0.4.1,<=0.4.13)", "jaxlib (>=0.4.1,<=0.4.13)", "kenlm", "keras-nlp (>=0.3.1,<0.14.0)", "libcst", "librosa", "nltk (<=3.8.1)", "onnxconverter-common", "optax (>=0.0.8,<=0.1.4)", "optuna", "parameterized", "phonemizer", "protobuf", "psutil", "pyctcdecode (>=0.4.0)", "pydantic", "pytest (>=7.2.0,<8.0.0)", "pytest-rich", "pytest-timeout", "pytest-xdist", "ray[tune] (>=2.7.0)", "rhoknp (>=1.1.0,<1.3.1)", "rich", "rjieba", "rouge-score (!=0.0.7,!=0.0.8,!=0.1,!=0.1.1)", "ruff (==0.5.1)", "sacrebleu (>=1.4.12,<2.0.0)", "sacremoses", "scikit-learn", "scipy (<1.13.0)", "sentencepiece (>=0.1.91,!=0.1.92)", "sigopt", "sudachidict-core (>=20220729)", "sudachipy (>=0.6.6)", "tensorboard", "tensorflow (>2.9,<2.16)", "tensorflow-text (<2.16)", "tf2onnx", "timeout-decorator", "timm (<=0.9.16)", "tokenizers (>=0.20,<0.21)", "torch", "torchaudio", "torchvision", "unidic (>=1.0.2)", "unidic-lite (>=1.0.7)", "urllib3 (<2.0.0)"]
+dev = ["GitPython (<3.1.19)", "Pillow (>=10.0.1,<=15.0)", "accelerate (>=0.26.0)", "av (==9.2.0)", "beautifulsoup4", "codecarbon (==1.2.0)", "cookiecutter (==1.7.3)", "datasets (!=2.5.0)", "dill (<0.3.5)", "evaluate (>=0.2.0)", "faiss-cpu", "flax (>=0.4.1,<=0.7.0)", "fugashi (>=1.0)", "ipadic (>=1.0.0,<2.0)", "isort (>=5.5.4)", "jax (>=0.4.1,<=0.4.13)", "jaxlib (>=0.4.1,<=0.4.13)", "kenlm", "keras-nlp (>=0.3.1,<0.14.0)", "libcst", "librosa", "nltk (<=3.8.1)", "onnxconverter-common", "optax (>=0.0.8,<=0.1.4)", "optuna", "parameterized", "phonemizer", "protobuf", "psutil", "pyctcdecode (>=0.4.0)", "pydantic", "pytest (>=7.2.0,<8.0.0)", "pytest-rich", "pytest-timeout", "pytest-xdist", "ray[tune] (>=2.7.0)", "rhoknp (>=1.1.0,<1.3.1)", "rich", "rjieba", "rouge-score (!=0.0.7,!=0.0.8,!=0.1,!=0.1.1)", "ruff (==0.5.1)", "sacrebleu (>=1.4.12,<2.0.0)", "sacremoses", "scikit-learn", "scipy (<1.13.0)", "sentencepiece (>=0.1.91,!=0.1.92)", "sigopt", "sudachidict-core (>=20220729)", "sudachipy (>=0.6.6)", "tensorboard", "tensorflow (>2.9,<2.16)", "tensorflow-text (<2.16)", "tf2onnx", "timeout-decorator", "timm (<=0.9.16)", "tokenizers (>=0.20,<0.21)", "torch", "torchaudio", "torchvision", "unidic (>=1.0.2)", "unidic-lite (>=1.0.7)", "urllib3 (<2.0.0)"]
 dev-tensorflow = ["GitPython (<3.1.19)", "Pillow (>=10.0.1,<=15.0)", "beautifulsoup4", "cookiecutter (==1.7.3)", "datasets (!=2.5.0)", "dill (<0.3.5)", "evaluate (>=0.2.0)", "faiss-cpu", "isort (>=5.5.4)", "kenlm", "keras-nlp (>=0.3.1,<0.14.0)", "libcst", "librosa", "nltk (<=3.8.1)", "onnxconverter-common", "onnxruntime (>=1.4.0)", "onnxruntime-tools (>=1.4.2)", "parameterized", "phonemizer", "protobuf", "psutil", "pyctcdecode (>=0.4.0)", "pydantic", "pytest (>=7.2.0,<8.0.0)", "pytest-rich", "pytest-timeout", "pytest-xdist", "rich", "rjieba", "rouge-score (!=0.0.7,!=0.0.8,!=0.1,!=0.1.1)", "ruff (==0.5.1)", "sacrebleu (>=1.4.12,<2.0.0)", "sacremoses", "scikit-learn", "sentencepiece (>=0.1.91,!=0.1.92)", "tensorboard", "tensorflow (>2.9,<2.16)", "tensorflow-text (<2.16)", "tf2onnx", "timeout-decorator", "tokenizers (>=0.20,<0.21)", "urllib3 (<2.0.0)"]
 dev-torch = ["GitPython (<3.1.19)", "Pillow (>=10.0.1,<=15.0)", "accelerate (>=0.26.0)", "beautifulsoup4", "codecarbon (==1.2.0)", "cookiecutter (==1.7.3)", "datasets (!=2.5.0)", "dill (<0.3.5)", "evaluate (>=0.2.0)", "faiss-cpu", "fugashi (>=1.0)", "ipadic (>=1.0.0,<2.0)", "isort (>=5.5.4)", "kenlm", "libcst", "librosa", "nltk (<=3.8.1)", "onnxruntime (>=1.4.0)", "onnxruntime-tools (>=1.4.2)", "optuna", "parameterized", "phonemizer", "protobuf", "psutil", "pyctcdecode (>=0.4.0)", "pydantic", "pytest (>=7.2.0,<8.0.0)", "pytest-rich", "pytest-timeout", "pytest-xdist", "ray[tune] (>=2.7.0)", "rhoknp (>=1.1.0,<1.3.1)", "rich", "rjieba", "rouge-score (!=0.0.7,!=0.0.8,!=0.1,!=0.1.1)", "ruff (==0.5.1)", "sacrebleu (>=1.4.12,<2.0.0)", "sacremoses", "scikit-learn", "sentencepiece (>=0.1.91,!=0.1.92)", "sigopt", "sudachidict-core (>=20220729)", "sudachipy (>=0.6.6)", "tensorboard", "timeout-decorator", "timm (<=0.9.16)", "tokenizers (>=0.20,<0.21)", "torch", "torchaudio", "torchvision", "unidic (>=1.0.2)", "unidic-lite (>=1.0.7)", "urllib3 (<2.0.0)"]
 flax = ["flax (>=0.4.1,<=0.7.0)", "jax (>=0.4.1,<=0.4.13)", "jaxlib (>=0.4.1,<=0.4.13)", "optax (>=0.0.8,<=0.1.4)", "scipy (<1.13.0)"]
@@ -4356,7 +4356,7 @@ torch = ["accelerate (>=0.26.0)", "torch"]
 torch-speech = ["kenlm", "librosa", "phonemizer", "pyctcdecode (>=0.4.0)", "torchaudio"]
 torch-vision = ["Pillow (>=10.0.1,<=15.0)", "torchvision"]
 torchhub = ["filelock", "huggingface-hub (>=0.23.2,<1.0)", "importlib-metadata", "numpy (>=1.17)", "packaging (>=20.0)", "protobuf", "regex (!=2019.12.17)", "requests", "sentencepiece (>=0.1.91,!=0.1.92)", "tokenizers (>=0.20,<0.21)", "torch", "tqdm (>=4.27)"]
-video = ["av (==9.2.0)", "decord (==0.6.0)"]
+video = ["av (==9.2.0)"]
 vision = ["Pillow (>=10.0.1,<=15.0)"]
 
 [[package]]
@@ -4781,4 +4781,4 @@ thot = ["sil-thot"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "6e4f906d17f8ef3fc75eef642f49ed6b2c6ff82f6656fd6c14325dde9e57fab6"
+content-hash = "44076443bf6342652f58cecc9e215199dad070cf1ed206b513055e1165effc60"
