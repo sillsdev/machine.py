@@ -63,7 +63,7 @@ charset-normalizer = "^2.1.1"
 sentencepiece = "^0.2.0"
 sil-thot = "^3.4.4"
 
-transformers = "^4.45.0"
+transformers = "^4.38.0"
 datasets = "^3.0.0"
 sacremoses = "^0.1.0"
 
