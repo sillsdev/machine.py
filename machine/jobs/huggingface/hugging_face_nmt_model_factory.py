@@ -39,9 +39,9 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
             and self._training_args.report_to is not None
             and "clearml" in self._training_args.report_to
         ):
-            if isinstance(self._training_args.report_to, List):
+            if isinstance(self._training_args.report_to, list):
                 self._training_args.report_to.remove("clearml")
-            elif isinstance(self._training_args.report_to, str):
+            elif isinstance(self._training_args.report_to, str) and self._training_args.report_to == "clearml":
                 self._training_args.report_to = None
 
         # The default of training_args.log_level is passive, so we set log level at info here to have that default.
