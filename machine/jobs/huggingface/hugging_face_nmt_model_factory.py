@@ -1,7 +1,7 @@
 import logging
 import tarfile
 from pathlib import Path
-from typing import Any, List, cast
+from typing import Any, cast
 
 import datasets.utils.logging as datasets_logging
 import transformers.utils.logging as transformers_logging
