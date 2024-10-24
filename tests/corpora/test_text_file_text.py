@@ -1,5 +1,6 @@
+from testutils.corpora_test_helpers import TEXT_TEST_PROJECT_PATH
+
 from machine.corpora import MultiKeyRef, TextFileTextCorpus, TextRowFlags
-from tests.testutils.corpora_test_helpers import TEXT_TEST_PROJECT_PATH
 
 
 def test_get_rows_nonempty_text_refs() -> None:

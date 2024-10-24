@@ -2,10 +2,10 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from pytest import approx, raises
+from testutils.thot_test_helpers import TOY_CORPUS_FAST_ALIGN_PATH
 
 from machine.translation import WordAlignmentMatrix
 from machine.translation.thot import ThotFastAlignWordAlignmentModel, ThotSymmetrizedWordAlignmentModel
-from tests.testutils.thot_test_helpers import TOY_CORPUS_FAST_ALIGN_PATH
 
 DIRECT_MODEL_PATH = TOY_CORPUS_FAST_ALIGN_PATH / "tm" / "src_trg_invswm"
 INVERSE_MODEL_PATH = TOY_CORPUS_FAST_ALIGN_PATH / "tm" / "src_trg_swm"

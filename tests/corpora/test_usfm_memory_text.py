@@ -1,7 +1,8 @@
 from typing import List
 
+from testutils.corpora_test_helpers import scripture_ref
+
 from machine.corpora import ScriptureRef, TextRow, UsfmMemoryText, UsfmStylesheet
-from tests.testutils.corpora_test_helpers import scripture_ref
 
 
 def test_get_rows_verse_descriptive_title() -> None:

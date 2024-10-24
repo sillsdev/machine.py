@@ -6,6 +6,7 @@ from typing import Iterator
 
 from decoy import Decoy, matchers
 from pytest import raises
+from testutils.mock_settings import MockSettings
 
 from machine.annotations import Range
 from machine.corpora import DictionaryTextCorpus, MemoryText, TextRow
@@ -22,7 +23,6 @@ from machine.translation import (
 )
 from machine.translation.translation_engine import TranslationEngine
 from machine.utils import CanceledError, ContextManagedGenerator
-from tests.testutils.mock_settings import MockSettings
 
 
 def test_run(decoy: Decoy) -> None:
