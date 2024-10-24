@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 import pytest
+from testutils.corpora_test_helpers import TEST_DATA_PATH, USFM_SOURCE_PROJECT_PATH, USFM_TARGET_PROJECT_PATH
 
 from machine.corpora import (
     FileParatextProjectSettingsParser,
@@ -16,7 +17,6 @@ from machine.corpora import (
     ZipParatextProjectSettingsParser,
     ZipParatextProjectTextUpdater,
 )
-from tests.testutils.corpora_test_helpers import TEST_DATA_PATH, USFM_SOURCE_PROJECT_PATH, USFM_TARGET_PROJECT_PATH
 
 
 @pytest.mark.skip(reason="This is for manual testing only. Remove this decorator to run the test.")

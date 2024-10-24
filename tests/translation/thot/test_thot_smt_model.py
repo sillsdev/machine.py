@@ -2,9 +2,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from pytest import raises
+from testutils.thot_test_helpers import TOY_CORPUS_FAST_ALIGN_CONFIG_FILENAME, TOY_CORPUS_HMM_CONFIG_FILENAME
 
 from machine.translation.thot import ThotSmtModel, ThotSmtParameters, ThotWordAlignmentModelType
-from tests.testutils.thot_test_helpers import TOY_CORPUS_FAST_ALIGN_CONFIG_FILENAME, TOY_CORPUS_HMM_CONFIG_FILENAME
 
 
 def test_translate_target_segment_hmm() -> None:

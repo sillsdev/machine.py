@@ -1,7 +1,7 @@
 from pytest import raises
+from testutils.corpora_test_helpers import TEXT_TEST_PROJECT_PATH
 
 from machine.corpora import TextFileTextCorpus
-from tests.testutils.corpora_test_helpers import TEXT_TEST_PROJECT_PATH
 
 
 def test_does_not_exist() -> None:

@@ -6,6 +6,7 @@ from typing import Iterator
 
 from decoy import Decoy, matchers
 from pytest import raises
+from testutils.mock_settings import MockSettings
 
 from machine.corpora import DictionaryTextCorpus, MemoryText, TextRow
 from machine.jobs import DictToJsonWriter, WordAlignmentBuildJob, WordAlignmentModelFactory
@@ -13,7 +14,6 @@ from machine.jobs.word_alignment_file_service import WordAlignmentFileService
 from machine.translation import Trainer, TrainStats, WordAlignmentMatrix
 from machine.translation.word_alignment_model import WordAlignmentModel
 from machine.utils import CanceledError
-from tests.testutils.mock_settings import MockSettings
 
 
 def test_run(decoy: Decoy) -> None:

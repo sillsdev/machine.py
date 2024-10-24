@@ -27,6 +27,7 @@ norecursedirs = "tests/testutils"
 
 [tool.pyright]
 typeCheckingMode = "basic"
+extraPaths = ["tests"]
 
 [tool.poetry]
 name = "sil-machine"

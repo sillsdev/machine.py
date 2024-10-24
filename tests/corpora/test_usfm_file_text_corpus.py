@@ -1,5 +1,6 @@
+from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH
+
 from machine.corpora import UsfmFileTextCorpus
-from tests.testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH
 
 
 def test_texts() -> None:

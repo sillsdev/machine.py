@@ -1,6 +1,7 @@
+from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH
+
 from machine.corpora import ParatextTextCorpus, extract_scripture_corpus
 from machine.scripture import ORIGINAL_VERSIFICATION, VerseRef
-from tests.testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH
 
 
 def test_extract_scripture_corpus() -> None:

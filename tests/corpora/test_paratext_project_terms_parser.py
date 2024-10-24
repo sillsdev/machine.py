@@ -1,9 +1,10 @@
 from typing import Dict, List, Optional, Tuple
 
+from testutils.memory_paratext_project_terms_parser import MemoryParatextProjectTermsParser
+
 from machine.corpora import ParatextProjectSettings, ParatextProjectTermsParserBase, UsfmStylesheet
 from machine.corpora.paratext_project_terms_parser_base import _get_glosses, _strip_parens
 from machine.scripture import ORIGINAL_VERSIFICATION, Versification
-from tests.testutils.memory_paratext_project_terms_parser import MemoryParatextProjectTermsParser
 
 
 def test_get_key_terms_from_terms_renderings() -> None:

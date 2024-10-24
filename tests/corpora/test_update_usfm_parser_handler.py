@@ -1,5 +1,7 @@
 from typing import List, Optional, Sequence, Tuple
 
+from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH, ignore_line_endings
+
 from machine.corpora import (
     FileParatextProjectTextUpdater,
     ScriptureRef,
@@ -7,7 +9,6 @@ from machine.corpora import (
     UpdateUsfmParserHandler,
     parse_usfm,
 )
-from tests.testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH, ignore_line_endings
 
 
 def test_get_usfm_verse_char_style() -> None:
