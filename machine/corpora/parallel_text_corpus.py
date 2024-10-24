@@ -469,13 +469,12 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
         info.features = features
 
         def iterable() -> Iterable[Tuple[Union[str, int], dict]]:
-            key = ""
-            example = {}
             with self.get_rows() as rows:
                 for row in rows:
                     key = row.ref
                     if not isinstance(key, int) and not isinstance(key, str):
                         key = str(key)
+                    example = {}
                     if text_id_column is not None:
                         example[text_id_column] = row.text_id
                     if ref_column is not None:
@@ -618,8 +617,8 @@ class _PandasParallelTextCorpus(ParallelTextCorpus):
             if include_empty:
                 return len(self._df)
             return len(self._df[(self._df[self._source_column] != "") & (self._df[self._target_column] != "")])
-        return len(self._df[self._df[self._source_column].isin(cast(Sequence[str], text_ids))]) & (
-            len(self._df[self._target_column].isin(cast(Sequence[str], text_ids)))
+        return len(self._df[self._df[self._source_column].isin(set(text_ids))]) & (
+            len(self._df[self._target_column].isin(set(text_ids)))
         )
 
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[ParallelTextRow, None, None]:
