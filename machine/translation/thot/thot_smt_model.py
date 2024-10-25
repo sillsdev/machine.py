@@ -316,7 +316,7 @@ class ThotSmtModel(InteractiveTranslationModel):
             else:
                 src_phrase = [""] * src_phrase_len
                 for i in range(src_phrase_len):
-                    src_phrase[i] = normalized_source_tokens[source_start_index + i]  # type: ignore
+                    src_phrase[i] = normalized_source_tokens[source_start_index + i]
                 trg_phrase = [""] * trg_phrase_len
                 for j in range(trg_phrase_len):
                     trg_phrase[j] = normalized_target_tokens[trg_phrase_start_index + j]
