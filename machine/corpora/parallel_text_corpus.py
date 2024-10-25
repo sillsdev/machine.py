@@ -618,7 +618,7 @@ class _PandasParallelTextCorpus(ParallelTextCorpus):
                 return len(self._df)
             return len(self._df[(self._df[self._source_column] != "") & (self._df[self._target_column] != "")])
         return len(self._df[self._df[self._source_column].isin(cast(Sequence[str], text_ids))]) & (
-            len(self._df[self._target_column].isin(cast(Sequence[str], text_ids))
+            len(self._df[self._target_column].isin(cast(Sequence[str], text_ids)))
         )
 
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[ParallelTextRow, None, None]:
