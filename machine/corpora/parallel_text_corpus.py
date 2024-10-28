@@ -617,7 +617,7 @@ class _PandasParallelTextCorpus(ParallelTextCorpus):
             if include_empty:
                 return len(self._df)
             return len(self._df[(self._df[self._source_column] != "") & (self._df[self._target_column] != "")])
-        text_ids = list(text_ids)
+        text_ids = set(text_ids)
         return len(self._df[self._df[self._source_column].isin(text_ids)]) & (
             len(self._df[self._target_column].isin(text_ids))
         )
