@@ -119,7 +119,7 @@ def test_update_tokenizer_missing_char() -> None:
             output_dir=temp_dir, num_train_epochs=1, report_to=["none"], learning_rate=0.01
         )
 
-        trainer_nochar = HuggingFaceNmtModelTrainer(
+        with HuggingFaceNmtModelTrainer(
             "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
@@ -129,17 +129,24 @@ def test_update_tokenizer_missing_char() -> None:
             max_tgt_length=20,
             add_unk_src_tokens=False,
             add_unk_tgt_tokens=False,
-        )
-        trainer_nochar.train()
-        trainer_nochar.save()
+        ) as trainer_nochar:
+            trainer_nochar.train()
+            trainer_nochar.save()
 
-        finetuned_engine_nochar = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
-        finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode(
-            "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
-        )
-        finetuned_result_nochar_composite = finetuned_engine_nochar._tokenizer.encode("Ḏ is a composite character")
+        with HuggingFaceNmtEngine(
+            temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20
+        ) as finetuned_engine_nochar:
+            assert isinstance(finetuned_engine_nochar.tokenizer, PreTrainedTokenizerFast)
+            finetuned_result_nochar = finetuned_engine_nochar.tokenizer.encode(
+                "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
+            )
+            finetuned_result_nochar_composite = finetuned_engine_nochar.tokenizer.encode("Ḏ is a composite character")
+            normalized_result_nochar1 = finetuned_engine_nochar.tokenizer.backend_tokenizer.normalizer.normalize_str(
+                "‌ "
+            )
+            normalized_result_nochar2 = finetuned_engine_nochar.tokenizer.backend_tokenizer.normalizer.normalize_str("‍")
 
-        trainer_char = HuggingFaceNmtModelTrainer(
+        with HuggingFaceNmtModelTrainer(
             "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
@@ -149,25 +156,18 @@ def test_update_tokenizer_missing_char() -> None:
             max_tgt_length=20,
             add_unk_src_tokens=True,
             add_unk_tgt_tokens=True,
-        )
-        trainer_char.train()
-        trainer_char.save()
+        ) as trainer_char:
+            trainer_char.train()
+            trainer_char.save()
 
-        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
-        finetuned_result_char = finetuned_engine_char._tokenizer.encode(
-            "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
-        )
-        finetuned_result_char_composite = finetuned_engine_char._tokenizer.encode("Ḏ is a composite character")
-
-        assert isinstance(finetuned_engine_nochar._tokenizer, PreTrainedTokenizerFast) and isinstance(
-            finetuned_engine_char._tokenizer, PreTrainedTokenizerFast
-        )
-
-        normalized_result_nochar1 = finetuned_engine_nochar._tokenizer.backend_tokenizer.normalizer.normalize_str("‌ ")
-        normalized_result_char1 = finetuned_engine_char._tokenizer.backend_tokenizer.normalizer.normalize_str("‌ ")
-
-        normalized_result_nochar2 = finetuned_engine_nochar._tokenizer.backend_tokenizer.normalizer.normalize_str("‍")
-        normalized_result_char2 = finetuned_engine_char._tokenizer.backend_tokenizer.normalizer.normalize_str("‍")
+        with HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20) as finetuned_engine_char:
+            assert isinstance(finetuned_engine_char.tokenizer, PreTrainedTokenizerFast)
+            finetuned_result_char = finetuned_engine_char.tokenizer.encode(
+                "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
+            )
+            finetuned_result_char_composite = finetuned_engine_char.tokenizer.encode("Ḏ is a composite character")
+            normalized_result_char1 = finetuned_engine_char.tokenizer.backend_tokenizer.normalizer.normalize_str("‌ ")
+            normalized_result_char2 = finetuned_engine_char.tokenizer.backend_tokenizer.normalizer.normalize_str("‍")
 
         assert normalized_result_nochar1 != normalized_result_char1
         assert normalized_result_nochar2 != normalized_result_char2
@@ -207,7 +207,7 @@ def test_update_tokenizer_missing_char_skip() -> None:
             output_dir=temp_dir, num_train_epochs=1, report_to=["none"], learning_rate=0.01
         )
 
-        trainer_nochar = HuggingFaceNmtModelTrainer(
+        with HuggingFaceNmtModelTrainer(
             "stas/tiny-m2m_100",
             training_args,
             corpus,
@@ -217,16 +217,16 @@ def test_update_tokenizer_missing_char_skip() -> None:
             max_tgt_length=20,
             add_unk_src_tokens=False,
             add_unk_tgt_tokens=False,
-        )
-        trainer_nochar.train()
-        trainer_nochar.save()
+        ) as trainer_nochar:
+            trainer_nochar.train()
+            trainer_nochar.save()
 
-        finetuned_engine_nochar = HuggingFaceNmtEngine(temp_dir, src_lang="en", tgt_lang="es", max_length=20)
-        finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode(
-            "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
-        )
+        with HuggingFaceNmtEngine(temp_dir, src_lang="en", tgt_lang="es", max_length=20) as finetuned_engine_nochar:
+            finetuned_result_nochar = finetuned_engine_nochar.tokenizer.encode(
+                "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
+            )
 
-        trainer_char = HuggingFaceNmtModelTrainer(
+        with HuggingFaceNmtModelTrainer(
             "stas/tiny-m2m_100",
             training_args,
             corpus,
@@ -236,14 +236,14 @@ def test_update_tokenizer_missing_char_skip() -> None:
             max_tgt_length=20,
             add_unk_src_tokens=False,
             add_unk_tgt_tokens=False,
-        )
-        trainer_char.train()
-        trainer_char.save()
+        ) as trainer_char:
+            trainer_char.train()
+            trainer_char.save()
 
-        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="en", tgt_lang="es", max_length=20)
-        finetuned_result_char = finetuned_engine_char._tokenizer.encode(
-            "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
-        )
+        with HuggingFaceNmtEngine(temp_dir, src_lang="en", tgt_lang="es", max_length=20) as finetuned_engine_char:
+            finetuned_result_char = finetuned_engine_char.tokenizer.encode(
+                "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
+            )
 
         assert finetuned_result_nochar == finetuned_result_char
 
@@ -279,7 +279,7 @@ def test_update_tokenizer_missing_char_src() -> None:
             output_dir=temp_dir, num_train_epochs=1, report_to=["none"], learning_rate=0.01
         )
 
-        trainer_nochar = HuggingFaceNmtModelTrainer(
+        with HuggingFaceNmtModelTrainer(
             "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
@@ -289,16 +289,18 @@ def test_update_tokenizer_missing_char_src() -> None:
             max_tgt_length=20,
             add_unk_src_tokens=False,
             add_unk_tgt_tokens=False,
-        )
-        trainer_nochar.train()
-        trainer_nochar.save()
+        ) as trainer_nochar:
+            trainer_nochar.train()
+            trainer_nochar.save()
 
-        finetuned_engine_nochar = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
-        finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode(
-            "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
-        )
+        with HuggingFaceNmtEngine(
+            temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20
+        ) as finetuned_engine_nochar:
+            finetuned_result_nochar = finetuned_engine_nochar.tokenizer.encode(
+                "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
+            )
 
-        trainer_char = HuggingFaceNmtModelTrainer(
+        with HuggingFaceNmtModelTrainer(
             "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
@@ -308,14 +310,14 @@ def test_update_tokenizer_missing_char_src() -> None:
             max_tgt_length=20,
             add_unk_src_tokens=True,
             add_unk_tgt_tokens=False,
-        )
-        trainer_char.train()
-        trainer_char.save()
+        ) as trainer_char:
+            trainer_char.train()
+            trainer_char.save()
 
-        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
-        finetuned_result_char = finetuned_engine_char._tokenizer.encode(
-            "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
-        )
+        with HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20) as finetuned_engine_char:
+            finetuned_result_char = finetuned_engine_char.tokenizer.encode(
+                "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
+            )
 
         assert finetuned_result_nochar != finetuned_result_char
 
@@ -351,7 +353,7 @@ def test_update_tokenizer_missing_char_trg() -> None:
             output_dir=temp_dir, num_train_epochs=1, report_to=["none"], learning_rate=0.01
         )
 
-        trainer_nochar = HuggingFaceNmtModelTrainer(
+        with HuggingFaceNmtModelTrainer(
             "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
@@ -361,16 +363,18 @@ def test_update_tokenizer_missing_char_trg() -> None:
             max_tgt_length=20,
             add_unk_src_tokens=False,
             add_unk_tgt_tokens=False,
-        )
-        trainer_nochar.train()
-        trainer_nochar.save()
+        ) as trainer_nochar:
+            trainer_nochar.train()
+            trainer_nochar.save()
 
-        finetuned_engine_nochar = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
-        finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode(
-            "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
-        )
+        with HuggingFaceNmtEngine(
+            temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20
+        ) as finetuned_engine_nochar:
+            finetuned_result_nochar = finetuned_engine_nochar.tokenizer.encode(
+                "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
+            )
 
-        trainer_char = HuggingFaceNmtModelTrainer(
+        with HuggingFaceNmtModelTrainer(
             "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
@@ -380,14 +384,14 @@ def test_update_tokenizer_missing_char_trg() -> None:
             max_tgt_length=20,
             add_unk_src_tokens=False,
             add_unk_tgt_tokens=True,
-        )
-        trainer_char.train()
-        trainer_char.save()
+        ) as trainer_char:
+            trainer_char.train()
+            trainer_char.save()
 
-        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
-        finetuned_result_char = finetuned_engine_char._tokenizer.encode(
-            "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
-        )
+        with HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20) as finetuned_engine_char:
+            finetuned_result_char = finetuned_engine_char.tokenizer.encode(
+                "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
+            )
 
         assert finetuned_result_nochar != finetuned_result_char
 
@@ -423,7 +427,7 @@ def test_update_tokenizer_no_missing_char() -> None:
             output_dir=temp_dir, num_train_epochs=1, report_to=["none"], learning_rate=0.01
         )
 
-        trainer_nochar = HuggingFaceNmtModelTrainer(
+        with HuggingFaceNmtModelTrainer(
             "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
@@ -433,14 +437,16 @@ def test_update_tokenizer_no_missing_char() -> None:
             max_tgt_length=20,
             add_unk_src_tokens=False,
             add_unk_tgt_tokens=False,
-        )
-        trainer_nochar.train()
-        trainer_nochar.save()
+        ) as trainer_nochar:
+            trainer_nochar.train()
+            trainer_nochar.save()
 
-        finetuned_engine_nochar = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
-        finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode("una habitación individual por semana")
+        with HuggingFaceNmtEngine(
+            temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20
+        ) as finetuned_engine_nochar:
+            finetuned_result_nochar = finetuned_engine_nochar.tokenizer.encode("una habitación individual por semana")
 
-        trainer_char = HuggingFaceNmtModelTrainer(
+        with HuggingFaceNmtModelTrainer(
             "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
@@ -450,12 +456,12 @@ def test_update_tokenizer_no_missing_char() -> None:
             max_tgt_length=20,
             add_unk_src_tokens=True,
             add_unk_tgt_tokens=True,
-        )
-        trainer_char.train()
-        trainer_char.save()
+        ) as trainer_char:
+            trainer_char.train()
+            trainer_char.save()
 
-        finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
-        finetuned_result_char = finetuned_engine_char._tokenizer.encode("una habitación individual por semana")
+        with HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20) as finetuned_engine_char:
+            finetuned_result_char = finetuned_engine_char.tokenizer.encode("una habitación individual por semana")
 
         assert finetuned_result_nochar == finetuned_result_char
 
