@@ -63,11 +63,11 @@ charset-normalizer = "^2.1.1"
 
 sentencepiece = "^0.2.0"
 sil-thot = "^3.4.4"
-# huggingface extras
+
 transformers = ">=4.34.0,<4.42"
 datasets = "^2.4.0"
 sacremoses = "^0.0.53"
-# job extras
+
 clearml = { extras = ["s3"], version = "^1.13.1" }
 botocore = "^1.35.41"
 boto3 = "^1.19.41"
