@@ -64,7 +64,7 @@ charset-normalizer = "^2.1.1"
 sentencepiece = "^0.2.0"
 sil-thot = "^3.4.4"
 
-transformers = ">=4.34.0,<4.42"
+transformers = ">=4.38.0,<4.46"
 datasets = "^2.4.0"
 sacremoses = "^0.0.53"
 
