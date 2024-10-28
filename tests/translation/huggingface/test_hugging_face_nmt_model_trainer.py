@@ -14,8 +14,8 @@ from machine.translation.huggingface import HuggingFaceNmtEngine, HuggingFaceNmt
 
 
 def test_train_non_empty_corpus() -> None:
-    pretrained_engine = HuggingFaceNmtEngine("stas/tiny-m2m_100", src_lang="es", tgt_lang="en", max_length=20)
-    pretrained_result = pretrained_engine.translate("una habitación individual por semana")
+    with HuggingFaceNmtEngine("stas/tiny-m2m_100", src_lang="es", tgt_lang="en", max_length=20) as pretrained_engine:
+        pretrained_result = pretrained_engine.translate("una habitación individual por semana")
 
     with TemporaryDirectory() as temp_dir:
         source_corpus = DictionaryTextCorpus(
@@ -71,7 +71,7 @@ def test_train_non_empty_corpus() -> None:
             output_dir=temp_dir, num_train_epochs=1, report_to=["none"], learning_rate=0.01
         )
 
-        trainer = HuggingFaceNmtModelTrainer(
+        with HuggingFaceNmtModelTrainer(
             "stas/tiny-m2m_100",
             training_args,
             corpus,
@@ -79,12 +79,13 @@ def test_train_non_empty_corpus() -> None:
             tgt_lang="en",
             max_src_length=20,
             max_tgt_length=20,
-        )
-        trainer.train()
-        trainer.save()
+        ) as trainer:
+            trainer.train()
+            trainer.save()
 
-        finetuned_engine = HuggingFaceNmtEngine(temp_dir, src_lang="es", tgt_lang="en", max_length=20)
-        finetuned_result = finetuned_engine.translate("una habitación individual por semana")
+        with HuggingFaceNmtEngine(temp_dir, src_lang="es", tgt_lang="en", max_length=20) as finetuned_engine:
+            finetuned_result = finetuned_engine.translate("una habitación individual por semana")
+
         assert finetuned_result.translation != pretrained_result.translation
 
 
