@@ -82,6 +82,7 @@ def test_train_non_empty_corpus() -> None:
         )
         trainer.train()
         trainer.save()
+        trainer.close()
 
         finetuned_engine = HuggingFaceNmtEngine(temp_dir, src_lang="es", tgt_lang="en", max_length=20)
         finetuned_result = finetuned_engine.translate("una habitación individual por semana")
@@ -132,6 +133,7 @@ def test_update_tokenizer_missing_char() -> None:
         )
         trainer_nochar.train()
         trainer_nochar.save()
+        trainer_nochar.close()
 
         finetuned_engine_nochar = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
         finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode(
@@ -152,6 +154,7 @@ def test_update_tokenizer_missing_char() -> None:
         )
         trainer_char.train()
         trainer_char.save()
+        trainer_char.close()
 
         finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
         finetuned_result_char = finetuned_engine_char._tokenizer.encode(
@@ -220,6 +223,7 @@ def test_update_tokenizer_missing_char_skip() -> None:
         )
         trainer_nochar.train()
         trainer_nochar.save()
+        trainer_nochar.close()
 
         finetuned_engine_nochar = HuggingFaceNmtEngine(temp_dir, src_lang="en", tgt_lang="es", max_length=20)
         finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode(
@@ -239,6 +243,7 @@ def test_update_tokenizer_missing_char_skip() -> None:
         )
         trainer_char.train()
         trainer_char.save()
+        trainer_char.close()
 
         finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="en", tgt_lang="es", max_length=20)
         finetuned_result_char = finetuned_engine_char._tokenizer.encode(
@@ -292,6 +297,7 @@ def test_update_tokenizer_missing_char_src() -> None:
         )
         trainer_nochar.train()
         trainer_nochar.save()
+        trainer_nochar.close()
 
         finetuned_engine_nochar = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
         finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode(
@@ -311,6 +317,7 @@ def test_update_tokenizer_missing_char_src() -> None:
         )
         trainer_char.train()
         trainer_char.save()
+        trainer_char.close()
 
         finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
         finetuned_result_char = finetuned_engine_char._tokenizer.encode(
@@ -364,6 +371,7 @@ def test_update_tokenizer_missing_char_trg() -> None:
         )
         trainer_nochar.train()
         trainer_nochar.save()
+        trainer_nochar.close()
 
         finetuned_engine_nochar = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
         finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode(
@@ -383,6 +391,7 @@ def test_update_tokenizer_missing_char_trg() -> None:
         )
         trainer_char.train()
         trainer_char.save()
+        trainer_char.close()
 
         finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
         finetuned_result_char = finetuned_engine_char._tokenizer.encode(
@@ -436,6 +445,7 @@ def test_update_tokenizer_no_missing_char() -> None:
         )
         trainer_nochar.train()
         trainer_nochar.save()
+        trainer_nochar.close()
 
         finetuned_engine_nochar = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
         finetuned_result_nochar = finetuned_engine_nochar._tokenizer.encode("una habitación individual por semana")
@@ -453,6 +463,7 @@ def test_update_tokenizer_no_missing_char() -> None:
         )
         trainer_char.train()
         trainer_char.save()
+        trainer_char.close()
 
         finetuned_engine_char = HuggingFaceNmtEngine(temp_dir, src_lang="en_XX", tgt_lang="es_XX", max_length=20)
         finetuned_result_char = finetuned_engine_char._tokenizer.encode("una habitación individual por semana")
