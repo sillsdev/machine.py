@@ -377,7 +377,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
 
     def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
         if self._trainer is not None:
-            self._trainer = None
+            del self._trainer
             gc.collect()
             with torch.no_grad():
                 torch.cuda.empty_cache()
