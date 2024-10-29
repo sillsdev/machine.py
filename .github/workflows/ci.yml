@@ -14,16 +14,16 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-12, windows-latest]
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
     defaults:
       run:
         shell: bash
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
         id: setup-python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Poetry
@@ -34,7 +34,7 @@ jobs:
           installer-parallel: true
       - name: Load cached venv
         id: cached-poetry-dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
@@ -55,7 +55,7 @@ jobs:
           node-version: "14"
       - name: Lint with pyright
         run: |
-          npm install -g pyright@1.1.362
+          npm install -g pyright@1.1.386
           poetry run pyright
       - name: Test with pytest
         run: poetry run pytest --cov --cov-report=xml
@@ -70,12 +70,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python 3.8
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.9
         id: setup-python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.8"
+          python-version: "3.9"
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
@@ -84,14 +84,14 @@ jobs:
           installer-parallel: true
       - name: Load cached venv
         id: cached-poetry-dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
       - name: Build
         run: poetry build
       - name: Upload package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wheel
           path: dist/*.whl

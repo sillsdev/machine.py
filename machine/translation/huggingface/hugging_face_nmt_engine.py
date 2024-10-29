@@ -44,15 +44,21 @@ class HuggingFaceNmtEngine(TranslationEngine):
         self._pipeline_kwargs = pipeline_kwargs
         if isinstance(self._model, PreTrainedModel):
             self._model.eval()
+            self._is_model_owned = False
         else:
             model_config = AutoConfig.from_pretrained(str(self._model), label2id={}, id2label={}, num_labels=0)
             self._model = cast(
                 PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(str(self._model), config=model_config)
             )
+            self._is_model_owned = True
         self._tokenizer = AutoTokenizer.from_pretrained(self._model.name_or_path, use_fast=True)
         if isinstance(self._tokenizer, (NllbTokenizer, NllbTokenizerFast)):
             self._mpn = MosesPunctNormalizer()
-            self._mpn.substitutions = [(re.compile(r), sub) for r, sub in self._mpn.substitutions]  # type: ignore
+            self._mpn.substitutions = [
+                (str(re.compile(r)), sub)
+                for r, sub in self._mpn.substitutions
+                if isinstance(r, str) and isinstance(sub, str)
+            ]
         else:
             self._mpn = None
 
@@ -92,6 +98,10 @@ class HuggingFaceNmtEngine(TranslationEngine):
             batch_size=self._batch_size,
             **self._pipeline_kwargs,
         )
+
+    @property
+    def tokenizer(self) -> PreTrainedTokenizer | PreTrainedTokenizerFast:
+        return self._tokenizer
 
     def translate(self, segment: Union[str, Sequence[str]]) -> TranslationResult:
         return self.translate_batch([segment])[0]
@@ -161,6 +171,8 @@ class HuggingFaceNmtEngine(TranslationEngine):
 
     def close(self) -> None:
         del self._pipeline
+        if self._is_model_owned:
+            del self._model
         gc.collect()
         with torch.no_grad():
             torch.cuda.empty_cache()

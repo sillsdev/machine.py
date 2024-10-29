@@ -69,9 +69,10 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
                 check_canceled()
 
         logger.info("Training NMT model")
-        with progress_reporter.start_next_phase() as phase_progress, self._nmt_model_factory.create_model_trainer(
-            parallel_corpus
-        ) as model_trainer:
+        with (
+            progress_reporter.start_next_phase() as phase_progress,
+            self._nmt_model_factory.create_model_trainer(parallel_corpus) as model_trainer,
+        ):
             model_trainer.train(progress=phase_progress, check_canceled=check_canceled)
             model_trainer.save()
             train_corpus_size = model_trainer.stats.train_corpus_size

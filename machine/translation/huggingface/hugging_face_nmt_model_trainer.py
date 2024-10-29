@@ -99,7 +99,11 @@ class HuggingFaceNmtModelTrainer(Trainer):
         self._add_unk_src_tokens = add_unk_src_tokens
         self._add_unk_tgt_tokens = add_unk_tgt_tokens
         self._mpn = MosesPunctNormalizer()
-        self._mpn.substitutions = [(re.compile(r), sub) for r, sub in self._mpn.substitutions]  # type: ignore
+        self._mpn.substitutions = [
+            (str(re.compile(r)), sub)
+            for r, sub in self._mpn.substitutions
+            if isinstance(r, str) and isinstance(sub, str)
+        ]
         self._stats = TrainStats()
 
     @property
@@ -222,7 +226,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
             )
             lang_id = tokenizer.convert_tokens_to_ids(lang_code)
             tokenizer.lang_code_to_id[lang_code] = lang_id
-            if isinstance(tokenizer, (NllbTokenizer, MBart50Tokenizer, MBartTokenizer)):
+
+            if isinstance(tokenizer, (MBart50Tokenizer, MBartTokenizer)):
                 tokenizer.id_to_lang_code[lang_id] = lang_code
                 tokenizer.fairseq_tokens_to_ids[lang_code] = lang_id
                 tokenizer.fairseq_ids_to_tokens[lang_id] = lang_code
@@ -271,7 +276,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
 
             # For multilingual translation models like mBART-50 and M2M100 we need to force the target language token
             # as the first generated token. We ask the user to explicitly provide this as --forced_bos_token argument.
-            forced_bos_token_id = tokenizer.lang_code_to_id[self._tgt_lang]
+            forced_bos_token_id = tokenizer.convert_tokens_to_ids(self._tgt_lang)
             model.config.forced_bos_token_id = forced_bos_token_id
             if model.generation_config is not None:
                 model.generation_config.forced_bos_token_id = forced_bos_token_id
@@ -372,7 +377,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
 
     def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
         if self._trainer is not None:
-            self._trainer = None
+            del self._trainer
             gc.collect()
             with torch.no_grad():
                 torch.cuda.empty_cache()
