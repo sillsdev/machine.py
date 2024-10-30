@@ -29,14 +29,16 @@ WORKDIR /root
 # these are needed for ClearML
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
+    python3-pip \
+
     git libsm6 libxext6 libxrender-dev libglib2.0-0
 
 COPY --from=builder /src/requirements.txt .
 RUN --mount=type=cache,target=/root/.cache \
-    pip install --no-cache-dir -r requirements.txt && rm requirements.txt
+    python -m pip install --no-cache-dir --break-system-packages -r requirements.txt && rm requirements.txt
 
 COPY . .
-RUN pip install --no-deps . && rm -r /root/*
+RUN python -m pip install --no-deps --break-system-packages . && rm -r /root/*
 ENV CLEARML_AGENT_SKIP_PYTHON_ENV_INSTALL=1
 
 CMD ["bash"]

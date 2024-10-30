@@ -37,25 +37,22 @@ RUN apt-get update && \
     apt-get install --no-install-recommends -y software-properties-common && \
     apt-get update && \
     apt-get install --no-install-recommends -y \
-    curl \
-    python$PYTHON_VERSION \
+    python3-pip \
     # these are needed for ClearML
     git libsm6 libxext6 libxrender-dev libglib2.0-0 && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get clean
 
-RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python$PYTHON_VERSION
-
 # make some useful symlinks that are expected to exist
-RUN ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python3  & \
+RUN ln -sfn /usr/bin/lib/python${PYTHON_VERSION} /usr/bin/python3  & \
     ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python
 
 COPY --from=builder /src/requirements.txt .
 RUN --mount=type=cache,target=/root/.cache \
-    pip install --no-cache-dir -r requirements.txt && rm requirements.txt
+    python -m pip install --no-cache-dir --break-system-packages -r requirements.txt && rm requirements.txt
 
 COPY . .
-RUN pip install --no-deps . && rm -r /root/*
+RUN python -m pip install --no-deps --break-system-packages . && rm -r /root/*
 ENV CLEARML_AGENT_SKIP_PYTHON_ENV_INSTALL=1
 
 CMD ["bash"]
