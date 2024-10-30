@@ -1,10 +1,11 @@
-#compatability with Tensorflow 2.6.0 as per https://www.tensorflow.org/install/source#gpu
+# syntax=docker/dockerfile:1.7-labs
+
 ARG PYTHON_VERSION=3.12
 ARG UBUNTU_VERSION=noble
 ARG POETRY_VERSION=1.6.1
 ARG CUDA_VERSION=12.6.1-base-ubuntu24.04
 
-FROM python:$PYTHON_VERSION-slim as builder
+FROM python:$PYTHON_VERSION-slim AS builder
 ARG POETRY_VERSION
 
 ENV POETRY_HOME=/opt/poetry
@@ -33,6 +34,8 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 WORKDIR /root
 
+# get rid of all distro python3 packages - they cause conflicts and we don't need them.
+RUN apt list | grep ^python3- | sed 's|/.*||' | xargs apt remove -y
 RUN apt-get update && \
     apt-get install --no-install-recommends -y software-properties-common && \
     apt-get update && \
@@ -44,15 +47,13 @@ RUN apt-get update && \
     apt-get clean
 
 # make some useful symlinks that are expected to exist
-RUN ln -sfn /usr/bin/lib/python${PYTHON_VERSION} /usr/bin/python3  & \
+RUN ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python3  & \
     ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python
-
 COPY --from=builder /src/requirements.txt .
+COPY --exclude=.* . .
 RUN --mount=type=cache,target=/root/.cache \
-    python -m pip install --no-cache-dir --break-system-packages -r requirements.txt && rm requirements.txt
-
-COPY . .
-RUN python -m pip install --no-deps --break-system-packages . && rm -r /root/*
+    python -m pip install --break-system-packages --no-cache-dir -r requirements.txt && rm requirements.txt && \
+    python -m pip install --break-system-packages --no-deps . && rm -r /root/*
 ENV CLEARML_AGENT_SKIP_PYTHON_ENV_INSTALL=1
 
 CMD ["bash"]
