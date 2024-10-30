@@ -41,7 +41,6 @@ RUN --mount=type=cache,target=/root/.cache \
     # these are needed for clearml to run
     python -m pip install --no-cache-dir clearml-agent setuptools
 RUN python -m pip install --no-deps . && rm -r /root/*
-ENV CLEARML_AGENT_SKIP_PYTHON_ENV_INSTALL=1 \
-    CLEARML_AGENT_SKIP_PIP_VENV_INSTALL=1
+ENV CLEARML_AGENT_SKIP_PYTHON_ENV_INSTALL=1
 
 CMD ["bash"]
