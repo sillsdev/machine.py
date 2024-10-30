@@ -34,15 +34,17 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 WORKDIR /root
 
-# get rid of all distro python3 packages - they cause conflicts and we don't need them.
-RUN apt list | grep ^python3- | sed 's|/.*||' | xargs apt remove -y
 RUN apt-get update && \
     apt-get install --no-install-recommends -y software-properties-common && \
     apt-get update && \
     apt-get install --no-install-recommends -y \
-    python3-pip \
     # these are needed for ClearML
-    git libsm6 libxext6 libxrender-dev libglib2.0-0 && \
+    git libsm6 libxext6 libxrender-dev libglib2.0-0
+
+# get rid of all distro python3 packages - they cause conflicts and we don't need them.
+RUN apt list | grep ^python3- | sed 's|/.*||' | xargs apt remove -y
+# but we at least need pip
+RUN apt-get install --no-install-recommends -y python3-pip && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get clean
 
