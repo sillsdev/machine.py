@@ -1,10 +1,11 @@
-#compatability with Tensorflow 2.6.0 as per https://www.tensorflow.org/install/source#gpu
+# syntax=docker/dockerfile:1.7-labs
+
 ARG PYTHON_VERSION=3.12
 ARG UBUNTU_VERSION=noble
 ARG POETRY_VERSION=1.6.1
 ARG CUDA_VERSION=12.6.1-base-ubuntu24.04
 
-FROM python:$PYTHON_VERSION-slim as builder
+FROM python:$PYTHON_VERSION-slim AS builder
 ARG POETRY_VERSION
 
 ENV POETRY_HOME=/opt/poetry
@@ -37,25 +38,31 @@ RUN apt-get update && \
     apt-get install --no-install-recommends -y software-properties-common && \
     apt-get update && \
     apt-get install --no-install-recommends -y \
-    curl \
-    python$PYTHON_VERSION \
     # these are needed for ClearML
-    git libsm6 libxext6 libxrender-dev libglib2.0-0 && \
+    git libsm6 libxext6 libxrender-dev libglib2.0-0
+
+# get rid of all distro python3 packages - they cause conflicts and we don't need them.
+RUN apt list | grep ^python3- | sed 's|/.*||' | xargs apt remove -y
+# but we at least need pip
+RUN apt-get install --no-install-recommends -y python3-pip && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get clean
-
-RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python$PYTHON_VERSION
 
 # make some useful symlinks that are expected to exist
 RUN ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python3  & \
     ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python
-
 COPY --from=builder /src/requirements.txt .
-RUN --mount=type=cache,target=/root/.cache \
-    pip install --no-cache-dir -r requirements.txt && rm requirements.txt
+COPY --exclude=.* . .
 
-COPY . .
-RUN pip install --no-deps . && rm -r /root/*
-ENV CLEARML_AGENT_SKIP_PYTHON_ENV_INSTALL=1
+# We are installing these python packages globally, so we need to break the system packages
+RUN mkdir -p ~/.config/pip && printf "[global]\nbreak-system-packages = true" > ~/.config/pip/pip.conf
+
+RUN --mount=type=cache,target=/root/.cache \
+    python -m pip install --no-cache-dir -r requirements.txt && rm requirements.txt && \
+    # these are needed for clearml to run
+    python -m pip install --no-cache-dir clearml-agent setuptools
+RUN python -m pip install --no-deps . && rm -r /root/*
+ENV CLEARML_AGENT_SKIP_PYTHON_ENV_INSTALL=1 \
+    CLEARML_AGENT_SKIP_PIP_VENV_INSTALL=1
 
 CMD ["bash"]
