@@ -99,10 +99,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
         self._add_unk_src_tokens = add_unk_src_tokens
         self._add_unk_tgt_tokens = add_unk_tgt_tokens
         self._mpn = MosesPunctNormalizer()
-        self._mpn.substitutions = [
-            (str(re.compile(r)), sub)
-            for r, sub in self._mpn.substitutions
-            if isinstance(r, str) and isinstance(sub, str)
+        self._mpn.substitutions = [  # type: ignore
+            (re.compile(r), sub) for r, sub in self._mpn.substitutions if isinstance(r, str) and isinstance(sub, str)
         ]
         self._stats = TrainStats()
 
@@ -219,6 +217,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
                     tokenizer = add_tokens(tokenizer, missing_tokens)
 
         def add_lang_code_to_tokenizer(tokenizer: Any, lang_code: str):
+            # FIXME - lang_code_to_id does not exist in NllbTokenizerFast!
             if lang_code in tokenizer.lang_code_to_id:
                 return
             tokenizer.add_special_tokens(
