@@ -5,7 +5,7 @@ from xml.etree import ElementTree
 
 @dataclass(frozen=True)
 class UsxToken:
-    para_element: ElementTree.Element
+    parent_element: ElementTree.Element
     text: str
     element: Optional[ElementTree.Element]
 

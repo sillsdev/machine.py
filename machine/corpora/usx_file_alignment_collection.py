@@ -131,14 +131,14 @@ def _get_links(word_tokenizer: RangeTokenizer[str, int, str], tokens: Sequence[U
     text = ""
     link_strs: List[Tuple[Range[int], str]] = []
     for token in tokens:
-        if token.para_element != prev_para_elem and len(text) > 0:
+        if token.parent_element != prev_para_elem and len(text) > 0:
             text += " "
 
         start = len(text)
         text += str(token)
         if token.element is not None and token.element.tag == "wg":
             link_strs.append((Range.create(start, len(text)), token.element.get("target_links", "")))
-        prev_para_elem = token.para_element
+        prev_para_elem = token.parent_element
     text = text.strip()
 
     i = 0
