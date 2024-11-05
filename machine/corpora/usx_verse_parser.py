@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import string
 from dataclasses import dataclass, field
 from typing import BinaryIO, Iterable, List, Optional
 from xml.etree import ElementTree
 
 from ..scripture.verse_ref import are_overlapping_verse_ranges
-from ..utils.string_utils import has_sentence_ending, is_integer
+from ..utils.string_utils import has_sentence_ending
 from .corpora_utils import merge_verse_ranges
 from .usx_token import UsxToken
 from .usx_verse import UsxVerse
@@ -86,25 +87,46 @@ class UsxVerseParser:
                 ctxt.add_token(e.tail)
 
 
-_NONVERSE_PARA_STYLES = {"ms", "mr", "s", "sr", "r", "d", "sp", "rem", "restore", "cl"}
-
-
-def _is_numbered_style(style_prefix: str, style: str) -> bool:
-    return style.startswith(style_prefix) and is_integer(style[len(style_prefix) :])
+_VERSE_PARA_STYLES = {
+    # Paragraphs
+    "p",
+    "m",
+    "po",
+    "pr",
+    "cls",
+    "pmo",
+    "pm",
+    "pmc",
+    "pmr",
+    "pi",
+    "pc",
+    "mi",
+    "nb",
+    # Poetry
+    "q",
+    "qc",
+    "qr",
+    "qm",
+    "qd",
+    "b",
+    "d",
+    # Lists
+    "lh",
+    "li",
+    "lf",
+    "lim",
+    # Deprecated
+    "ph",
+    "phi",
+    "ps",
+    "psi",
+}
 
 
 def _is_verse_para(para_elem: ElementTree.Element) -> bool:
     style = para_elem.get("style", "")
-    if style in _NONVERSE_PARA_STYLES:
-        return False
-
-    if _is_numbered_style("ms", style):
-        return False
-
-    if _is_numbered_style("s", style):
-        return False
-
-    return True
+    style = style.rstrip(string.digits)
+    return style in _VERSE_PARA_STYLES
 
 
 @dataclass

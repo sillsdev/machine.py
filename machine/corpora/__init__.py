@@ -65,6 +65,7 @@ from .usx_file_alignment_collection import UsxFileAlignmentCollection
 from .usx_file_alignment_corpus import UsxFileAlignmentCorpus
 from .usx_file_text import UsxFileText
 from .usx_file_text_corpus import UsxFileTextCorpus
+from .usx_memory_text import UsxMemoryText
 from .usx_zip_text import UsxZipText
 from .zip_paratext_project_settings_parser import ZipParatextProjectSettingsParser
 from .zip_paratext_project_settings_parser_base import ZipParatextProjectSettingsParserBase
@@ -150,6 +151,7 @@ __all__ = [
     "UsxFileAlignmentCorpus",
     "UsxFileText",
     "UsxFileTextCorpus",
+    "UsxMemoryText",
     "UsxZipText",
     "ZipParatextProjectSettingsParser",
     "ZipParatextProjectSettingsParserBase",
