@@ -4,7 +4,7 @@ import gc
 import logging
 import re
 from math import exp, prod
-from typing import Any, Iterable, List, Optional, Sequence, Tuple, Union, cast
+from typing import Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 import torch  # pyright: ignore[reportMissingImports]
 from sacremoses import MosesPunctNormalizer
@@ -12,6 +12,7 @@ from transformers import (
     AutoConfig,
     AutoModelForSeq2SeqLM,
     AutoTokenizer,
+    M2M100Tokenizer,
     NllbTokenizer,
     NllbTokenizerFast,
     PreTrainedModel,
@@ -73,17 +74,23 @@ class HuggingFaceNmtEngine(TranslationEngine):
             self._pipeline_kwargs["prefix"] = f"translate {src_lang} to {tgt_lang}: "
         else:
             additional_special_tokens = self._tokenizer.additional_special_tokens
+            if isinstance(self._tokenizer, M2M100Tokenizer):
+                src_lang_token = self._tokenizer.lang_code_to_token.get(src_lang) if src_lang is not None else None
+                tgt_lang_token = self._tokenizer.lang_code_to_token.get(tgt_lang) if tgt_lang is not None else None
+            else:
+                src_lang_token = src_lang
+                tgt_lang_token = tgt_lang
             if (
                 src_lang is not None
-                and src_lang not in cast(Any, self._tokenizer).lang_code_to_id
-                and src_lang not in additional_special_tokens
+                and src_lang_token not in self._tokenizer.added_tokens_encoder
+                and src_lang_token not in additional_special_tokens
             ):
                 raise ValueError(f"The specified model does not support the language code '{src_lang}'")
 
             if (
                 tgt_lang is not None
-                and tgt_lang not in cast(Any, self._tokenizer).lang_code_to_id
-                and tgt_lang not in additional_special_tokens
+                and tgt_lang_token not in self._tokenizer.added_tokens_encoder
+                and tgt_lang_token not in additional_special_tokens
             ):
                 raise ValueError(f"The specified model does not support the language code '{tgt_lang}'")
 
