@@ -222,9 +222,9 @@ class HuggingFaceNmtModelTrainer(Trainer):
         if isinstance(tokenizer, MULTILINGUAL_TOKENIZERS):
             logger.info("Add new language codes as tokens")
             if self._src_lang is not None:
-                _add_lang_code_to_tokenizer(tokenizer, self._src_lang)
+                add_lang_code_to_tokenizer(tokenizer, self._src_lang)
             if self._tgt_lang is not None:
-                _add_lang_code_to_tokenizer(tokenizer, self._tgt_lang)
+                add_lang_code_to_tokenizer(tokenizer, self._tgt_lang)
 
         # We resize the embeddings only when necessary to avoid index errors.
         embedding_size = cast(Any, model.get_input_embeddings()).weight.shape[0]
@@ -398,7 +398,7 @@ class _ProgressCallback(TrainerCallback):
             )
 
 
-def _add_lang_code_to_tokenizer(tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast], lang_code: str):
+def add_lang_code_to_tokenizer(tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast], lang_code: str):
     if isinstance(tokenizer, M2M100Tokenizer):
         lang_token = "__" + lang_code + "__"
     else:
