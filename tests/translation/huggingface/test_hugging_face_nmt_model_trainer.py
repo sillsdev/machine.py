@@ -22,7 +22,7 @@ from transformers import (
 
 from machine.corpora import DictionaryTextCorpus, MemoryText, TextRow
 from machine.translation.huggingface import HuggingFaceNmtEngine, HuggingFaceNmtModelTrainer
-from machine.translation.huggingface.hugging_face_nmt_model_trainer import _add_lang_code_to_tokenizer
+from machine.translation.huggingface.hugging_face_nmt_model_trainer import add_lang_code_to_tokenizer
 
 
 def test_train_non_empty_corpus() -> None:
@@ -481,7 +481,7 @@ def test_nllb_tokenizer_add_lang_code() -> None:
     with TemporaryDirectory() as temp_dir:
         tokenizer = cast(NllbTokenizer, NllbTokenizer.from_pretrained("facebook/nllb-200-distilled-600M"))
         assert "new_lang" not in tokenizer.added_tokens_encoder
-        _add_lang_code_to_tokenizer(tokenizer, "new_lang")
+        add_lang_code_to_tokenizer(tokenizer, "new_lang")
         assert "new_lang" in tokenizer.added_tokens_encoder
         tokenizer.save_pretrained(temp_dir)
         new_tokenizer = cast(NllbTokenizer, NllbTokenizer.from_pretrained(temp_dir))
@@ -493,7 +493,7 @@ def test_nllb_tokenizer_fast_add_lang_code() -> None:
     with TemporaryDirectory() as temp_dir:
         tokenizer = cast(NllbTokenizerFast, NllbTokenizerFast.from_pretrained("facebook/nllb-200-distilled-600M"))
         assert "new_lang" not in tokenizer.added_tokens_encoder
-        _add_lang_code_to_tokenizer(tokenizer, "new_lang")
+        add_lang_code_to_tokenizer(tokenizer, "new_lang")
         assert "new_lang" in tokenizer.added_tokens_encoder
         tokenizer.save_pretrained(temp_dir)
         new_tokenizer = cast(NllbTokenizerFast, NllbTokenizerFast.from_pretrained(temp_dir))
@@ -505,7 +505,7 @@ def test_mbart_tokenizer_add_lang_code() -> None:
     with TemporaryDirectory() as temp_dir:
         tokenizer = cast(MBartTokenizer, MBartTokenizer.from_pretrained("hf-internal-testing/tiny-random-nllb"))
         assert "nl_NS" not in tokenizer.added_tokens_encoder
-        _add_lang_code_to_tokenizer(tokenizer, "nl_NS")
+        add_lang_code_to_tokenizer(tokenizer, "nl_NS")
         assert "nl_NS" in tokenizer.added_tokens_encoder
         tokenizer.save_pretrained(temp_dir)
         new_tokenizer = cast(MBartTokenizer, MBartTokenizer.from_pretrained(temp_dir))
@@ -517,7 +517,7 @@ def test_mbart_tokenizer_fast_add_lang_code() -> None:
     with TemporaryDirectory() as temp_dir:
         tokenizer = cast(MBartTokenizerFast, MBartTokenizerFast.from_pretrained("hf-internal-testing/tiny-random-nllb"))
         assert "nl_NS" not in tokenizer.added_tokens_encoder
-        _add_lang_code_to_tokenizer(tokenizer, "nl_NS")
+        add_lang_code_to_tokenizer(tokenizer, "nl_NS")
         assert "nl_NS" in tokenizer.added_tokens_encoder
         tokenizer.save_pretrained(temp_dir)
         new_tokenizer = cast(MBartTokenizerFast, MBartTokenizerFast.from_pretrained(temp_dir))
@@ -529,7 +529,7 @@ def test_mbart_50_tokenizer_add_lang_code() -> None:
     with TemporaryDirectory() as temp_dir:
         tokenizer = cast(MBart50Tokenizer, MBart50Tokenizer.from_pretrained("hf-internal-testing/tiny-random-mbart50"))
         assert "nl_NS" not in tokenizer.added_tokens_encoder
-        _add_lang_code_to_tokenizer(tokenizer, "nl_NS")
+        add_lang_code_to_tokenizer(tokenizer, "nl_NS")
         assert "nl_NS" in tokenizer.added_tokens_encoder
         tokenizer.save_pretrained(temp_dir)
         new_tokenizer = cast(MBart50Tokenizer, MBart50Tokenizer.from_pretrained(temp_dir))
@@ -543,7 +543,7 @@ def test_mbart_50_tokenizer_fast_add_lang_code() -> None:
             MBart50TokenizerFast, MBart50TokenizerFast.from_pretrained("hf-internal-testing/tiny-random-mbart50")
         )
         assert "nl_NS" not in tokenizer.added_tokens_encoder
-        _add_lang_code_to_tokenizer(tokenizer, "nl_NS")
+        add_lang_code_to_tokenizer(tokenizer, "nl_NS")
         assert "nl_NS" in tokenizer.added_tokens_encoder
         tokenizer.save_pretrained(temp_dir)
         new_tokenizer = cast(MBart50TokenizerFast, MBart50TokenizerFast.from_pretrained(temp_dir))
@@ -556,7 +556,7 @@ def test_m2m_100_tokenizer_add_lang_code() -> None:
         tokenizer = cast(M2M100Tokenizer, M2M100Tokenizer.from_pretrained("stas/tiny-m2m_100"))
         assert "nc" not in tokenizer.lang_code_to_id
         assert "__nc__" not in tokenizer.added_tokens_encoder
-        _add_lang_code_to_tokenizer(tokenizer, "nc")
+        add_lang_code_to_tokenizer(tokenizer, "nc")
         assert "nc" in tokenizer.lang_code_to_id
         assert "__nc__" in tokenizer.added_tokens_encoder
         tokenizer.save_pretrained(temp_dir)
