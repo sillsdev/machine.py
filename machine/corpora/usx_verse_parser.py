@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import string
 from dataclasses import dataclass, field
 from typing import BinaryIO, Iterable, List, Optional
 from xml.etree import ElementTree
 
 from ..scripture.verse_ref import are_overlapping_verse_ranges
-from ..utils.string_utils import has_sentence_ending, is_integer
+from ..utils.string_utils import has_sentence_ending
 from .corpora_utils import merge_verse_ranges
 from .usx_token import UsxToken
 from .usx_verse import UsxVerse
@@ -22,6 +23,7 @@ class UsxVerseParser:
         if root_elem is None:
             raise RuntimeError("USX does not contain a book element.")
         assert root_elem is not None
+        ctxt.parent_element = root_elem
         for verse in self._parse_element(root_elem, ctxt):
             yield verse
 
@@ -42,7 +44,7 @@ class UsxVerseParser:
                 if not _is_verse_para(e):
                     ctxt.is_sentence_start = True
                     continue
-                ctxt.para_element = e
+                ctxt.parent_element = e
                 for evt in self._parse_element(e, ctxt):
                     yield evt
             elif e.tag == "verse":
@@ -81,30 +83,61 @@ class UsxVerseParser:
             elif e.tag == "figure":
                 if ctxt.chapter is not None and ctxt.verse is not None:
                     ctxt.add_token("", e)
+            elif e.tag == "table":
+                for evt in self._parse_element(e, ctxt):
+                    yield evt
+            elif e.tag == "row":
+                for evt in self._parse_element(e, ctxt):
+                    yield evt
+            elif e.tag == "cell":
+                ctxt.parent_element = e
+                for evt in self._parse_element(e, ctxt):
+                    yield evt
 
             if e.tail is not None and ctxt.chapter is not None and ctxt.verse is not None:
                 ctxt.add_token(e.tail)
 
 
-_NONVERSE_PARA_STYLES = {"ms", "mr", "s", "sr", "r", "d", "sp", "rem", "restore", "cl"}
-
-
-def _is_numbered_style(style_prefix: str, style: str) -> bool:
-    return style.startswith(style_prefix) and is_integer(style[len(style_prefix) :])
+_VERSE_PARA_STYLES = {
+    # Paragraphs
+    "p",
+    "m",
+    "po",
+    "pr",
+    "cls",
+    "pmo",
+    "pm",
+    "pmc",
+    "pmr",
+    "pi",
+    "pc",
+    "mi",
+    "nb",
+    # Poetry
+    "q",
+    "qc",
+    "qr",
+    "qm",
+    "qd",
+    "b",
+    "d",
+    # Lists
+    "lh",
+    "li",
+    "lf",
+    "lim",
+    # Deprecated
+    "ph",
+    "phi",
+    "ps",
+    "psi",
+}
 
 
 def _is_verse_para(para_elem: ElementTree.Element) -> bool:
     style = para_elem.get("style", "")
-    if style in _NONVERSE_PARA_STYLES:
-        return False
-
-    if _is_numbered_style("ms", style):
-        return False
-
-    if _is_numbered_style("s", style):
-        return False
-
-    return True
+    style = style.rstrip(string.digits)
+    return style in _VERSE_PARA_STYLES
 
 
 @dataclass
@@ -112,12 +145,12 @@ class _ParseContext:
     chapter: Optional[str] = None
     verse: Optional[str] = None
     is_sentence_start: bool = True
-    para_element: Optional[ElementTree.Element] = None
+    parent_element: Optional[ElementTree.Element] = None
     _verse_tokens: List[UsxToken] = field(default_factory=list)
 
     def add_token(self, text: str, elem: Optional[ElementTree.Element] = None) -> None:
-        assert self.para_element is not None
-        self._verse_tokens.append(UsxToken(self.para_element, text, elem))
+        assert self.parent_element is not None
+        self._verse_tokens.append(UsxToken(self.parent_element, text, elem))
 
     def create_verse(self) -> UsxVerse:
         assert self.chapter is not None and self.verse is not None

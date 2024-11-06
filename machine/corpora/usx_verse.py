@@ -25,7 +25,7 @@ class UsxVerse:
 
             if (
                 prev_token is not None
-                and token.para_element != prev_token.para_element
+                and token.parent_element != prev_token.parent_element
                 and len(text) > 0
                 and not ends_with_space
             ):
