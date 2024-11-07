@@ -21,8 +21,7 @@ from transformers import (
 )
 
 from machine.corpora import DictionaryTextCorpus, MemoryText, TextRow
-from machine.translation.huggingface import HuggingFaceNmtEngine, HuggingFaceNmtModelTrainer
-from machine.translation.huggingface.hugging_face_nmt_model_trainer import add_lang_code_to_tokenizer
+from machine.translation.huggingface import HuggingFaceNmtEngine, HuggingFaceNmtModelTrainer, add_lang_code_to_tokenizer
 
 
 def test_train_non_empty_corpus() -> None:
