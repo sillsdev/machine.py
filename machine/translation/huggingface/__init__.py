@@ -8,6 +8,6 @@ if not is_torch_available():
 
 from .hugging_face_nmt_engine import HuggingFaceNmtEngine
 from .hugging_face_nmt_model import HuggingFaceNmtModel
-from .hugging_face_nmt_model_trainer import HuggingFaceNmtModelTrainer
+from .hugging_face_nmt_model_trainer import HuggingFaceNmtModelTrainer, add_lang_code_to_tokenizer
 
-__all__ = ["HuggingFaceNmtEngine", "HuggingFaceNmtModel", "HuggingFaceNmtModelTrainer"]
+__all__ = ["add_lang_code_to_tokenizer", "HuggingFaceNmtEngine", "HuggingFaceNmtModel", "HuggingFaceNmtModelTrainer"]

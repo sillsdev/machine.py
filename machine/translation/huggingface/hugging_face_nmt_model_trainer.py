@@ -24,6 +24,7 @@ from transformers import (
     NllbTokenizer,
     NllbTokenizerFast,
     PreTrainedModel,
+    PreTrainedTokenizer,
     PreTrainedTokenizerFast,
     Seq2SeqTrainer,
     Seq2SeqTrainingArguments,
@@ -218,24 +219,6 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 if missing_tokens:
                     tokenizer = add_tokens(tokenizer, missing_tokens)
 
-        def add_lang_code_to_tokenizer(tokenizer: Any, lang_code: str):
-            if lang_code in tokenizer.lang_code_to_id:
-                return
-            tokenizer.add_special_tokens(
-                {"additional_special_tokens": tokenizer.additional_special_tokens + [lang_code]}
-            )
-            lang_id = tokenizer.convert_tokens_to_ids(lang_code)
-            tokenizer.lang_code_to_id[lang_code] = lang_id
-
-            if isinstance(tokenizer, (MBart50Tokenizer, MBartTokenizer)):
-                tokenizer.id_to_lang_code[lang_id] = lang_code
-                tokenizer.fairseq_tokens_to_ids[lang_code] = lang_id
-                tokenizer.fairseq_ids_to_tokens[lang_id] = lang_code
-            elif isinstance(tokenizer, M2M100Tokenizer):
-                tokenizer.lang_code_to_token[lang_code] = lang_code
-                tokenizer.lang_token_to_id[lang_code] = lang_id
-                tokenizer.id_to_lang_token[lang_id] = lang_code
-
         if isinstance(tokenizer, MULTILINGUAL_TOKENIZERS):
             logger.info("Add new language codes as tokens")
             if self._src_lang is not None:
@@ -413,3 +396,29 @@ class _ProgressCallback(TrainerCallback):
                 if self._max_steps is None
                 else ProgressStatus.from_step(state.global_step, self._max_steps)
             )
+
+
+def add_lang_code_to_tokenizer(tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast], lang_code: str):
+    if isinstance(tokenizer, M2M100Tokenizer):
+        lang_token = "__" + lang_code + "__"
+    else:
+        lang_token = lang_code
+
+    if lang_token in tokenizer.added_tokens_encoder:
+        return
+
+    tokenizer.add_special_tokens(
+        {"additional_special_tokens": tokenizer.additional_special_tokens + [lang_token]}  # type: ignore
+    )
+    lang_id = cast(int, tokenizer.convert_tokens_to_ids(lang_token))
+
+    if isinstance(tokenizer, (MBart50Tokenizer, MBartTokenizer)):
+        tokenizer.lang_code_to_id[lang_code] = lang_id
+        tokenizer.id_to_lang_code[lang_id] = lang_code
+        tokenizer.fairseq_tokens_to_ids[lang_code] = lang_id
+        tokenizer.fairseq_ids_to_tokens[lang_id] = lang_code
+    elif isinstance(tokenizer, M2M100Tokenizer):
+        tokenizer.lang_code_to_id[lang_code] = lang_id
+        tokenizer.lang_code_to_token[lang_code] = lang_token
+        tokenizer.lang_token_to_id[lang_token] = lang_id
+        tokenizer.id_to_lang_token[lang_id] = lang_token
