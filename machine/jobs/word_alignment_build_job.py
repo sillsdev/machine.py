@@ -50,7 +50,12 @@ class WordAlignmentBuildJob:
             check_canceled()
 
         logger.info("Generating alignments")
-        self._batch_inference(parallel_corpus, progress_reporter, check_canceled)
+
+        source_word_alignment_corpus = self._word_alignment_file_service.create_source_word_alignment_corpus()
+        target_word_alignment_corpus = self._word_alignment_file_service.create_target_word_alignment_corpus()
+        word_alignment_parallel_corpus: ParallelTextCorpus = source_word_alignment_corpus.align_rows(target_word_alignment_corpus)
+
+        self._batch_inference(word_alignment_parallel_corpus, progress_reporter, check_canceled)
 
         self._save_model()
         return train_corpus_size
