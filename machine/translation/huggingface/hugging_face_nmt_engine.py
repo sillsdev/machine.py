@@ -236,8 +236,12 @@ class _TranslationPipeline(TranslationPipeline):
 
         input_tokens = model_inputs["input_tokens"]
         del model_inputs["input_tokens"]
-        generate_kwargs["min_length"] = generate_kwargs.get("min_length", self.model.config.min_length)
-        generate_kwargs["max_length"] = generate_kwargs.get("max_length", self.model.config.max_length)
+        if hasattr(self.model, "generation_config") and self.model.generation_config is not None:
+            config = self.model.generation_config
+        else:
+            config = self.model.config
+        generate_kwargs["min_length"] = generate_kwargs.get("min_length", config.min_length)
+        generate_kwargs["max_length"] = generate_kwargs.get("max_length", config.max_length)
         self.check_inputs(input_length, generate_kwargs["min_length"], generate_kwargs["max_length"])
         output = self.model.generate(
             **model_inputs,
