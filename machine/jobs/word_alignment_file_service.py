@@ -15,11 +15,15 @@ class WordAlignmentFileService:
         config: Any,
         source_filename: str = "train.src.txt",
         target_filename: str = "train.trg.txt",
+        source_word_alignment_filename: str = "align_words.src.json",
+        target_word_alignment_filename: str = "align_words.trg.json",
         word_alignment_filename: str = "word_alignments.json",
     ) -> None:
 
         self._source_filename = source_filename
         self._target_filename = target_filename
+        self._source_word_alignment_filename = source_word_alignment_filename
+        self._target_word_alignment_filename = target_word_alignment_filename
         self._word_alignment_filename = word_alignment_filename
 
         self.shared_file_service: SharedFileServiceBase = get_shared_file_service(type, config)
@@ -34,11 +38,27 @@ class WordAlignmentFileService:
             self.shared_file_service.download_file(f"{self.shared_file_service.build_path}/{self._target_filename}")
         )
 
+    def create_source_word_alignment_corpus(self) -> TextCorpus:
+        return TextFileTextCorpus(
+            self.shared_file_service.download_file(f"{self.shared_file_service.build_path}/{self._source_word_alignment_filename}")
+        )
+
+    def create_target_word_alignment_corpus(self) -> TextCorpus:
+        return TextFileTextCorpus(
+            self.shared_file_service.download_file(f"{self.shared_file_service.build_path}/{self._target_word_alignment_filename}")
+        )
+    
     def exists_source_corpus(self) -> bool:
         return self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{self._source_filename}")
 
     def exists_target_corpus(self) -> bool:
         return self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{self._target_filename}")
+
+    def exists_source_word_alignment_corpus(self) -> bool:
+        return self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{self._source_word_alignment_filename}")
+    
+    def exists_target_word_alignment_corpus(self) -> bool:
+        return self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{self._target_word_alignment_filename}")
 
     def save_model(self, model_path: Path, destination: str) -> None:
         self.shared_file_service.upload_path(model_path, destination)
