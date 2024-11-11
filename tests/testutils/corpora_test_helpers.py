@@ -9,6 +9,8 @@ from . import TEST_DATA_PATH
 USFM_TEST_PROJECT_PATH = TEST_DATA_PATH / "usfm" / "Tes"
 USFM_TARGET_PROJECT_PATH = TEST_DATA_PATH / "usfm" / "target"
 USFM_SOURCE_PROJECT_PATH = TEST_DATA_PATH / "usfm" / "source"
+USFM_MISMATCH_ID_PROJECT_PATH = TEST_DATA_PATH / "usfm" / "mismatch_id"
+USFM_INVALID_ID_PROJECT_PATH = TEST_DATA_PATH / "usfm" / "invalid_id"
 USX_TEST_PROJECT_PATH = TEST_DATA_PATH / "usx" / "Tes"
 TEXT_TEST_PROJECT_PATH = TEST_DATA_PATH / "txt"
 CUSTOM_VERS_PATH = TEST_DATA_PATH / "custom.vrs"
@@ -22,6 +24,16 @@ def create_test_dbl_bundle(temp_dir: Path) -> Path:
 def create_test_paratext_backup(temp_dir: Path) -> Path:
     shutil.make_archive(str(temp_dir / "Tes"), "zip", USFM_TEST_PROJECT_PATH)
     return temp_dir / "Tes.zip"
+
+
+def create_test_paratext_backup_invalid_id(temp_dir: Path) -> Path:
+    shutil.make_archive(str(temp_dir / "invalid_id"), "zip", USFM_INVALID_ID_PROJECT_PATH)
+    return temp_dir / "invalid_id.zip"
+
+
+def create_test_paratext_backup_mismatch_id(temp_dir: Path) -> Path:
+    shutil.make_archive(str(temp_dir / "mismatch_id"), "zip", USFM_MISMATCH_ID_PROJECT_PATH)
+    return temp_dir / "mismatch_id.zip"
 
 
 def verse_ref(segment: TextRow) -> VerseRef:

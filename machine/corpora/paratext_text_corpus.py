@@ -18,17 +18,24 @@ class ParatextTextCorpus(ScriptureTextCorpus):
         for sfm_filename in Path(project_dir).glob(f"{settings.file_name_prefix}*{settings.file_name_suffix}"):
             book_id = settings.get_book_id(sfm_filename.name)
             if book_id:
-                texts.append(
-                    UsfmFileText(
-                        settings.stylesheet,
-                        settings.encoding,
-                        book_id,
-                        sfm_filename,
-                        versification,
-                        include_markers,
-                        include_all_text,
-                        settings.name,
-                    )
+                text = UsfmFileText(
+                    settings.stylesheet,
+                    settings.encoding,
+                    book_id,
+                    sfm_filename,
+                    versification,
+                    include_markers,
+                    include_all_text,
+                    settings.name,
                 )
+                with text.get_rows() as rows:
+                    row = next(rows, None)
+                    if row and row.ref.book != book_id:
+                        if row.ref.book == "":
+                            raise ValueError(f"The \\id tag in {sfm_filename} is invalid.")
+                        raise ValueError(
+                            f"The \\id tag {row.ref.book} in {sfm_filename} does not match filename book id {book_id}."
+                        )
+                texts.append(text)
 
         super().__init__(versification, texts)
