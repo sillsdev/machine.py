@@ -32,7 +32,7 @@
 		"vscode": {
 			// Set *default* container specific settings.json values on container create.
 			"settings": {
-				"python.defaultInterpreterPath": "/usr/bin/python",
+				"python.defaultInterpreterPath": "/workspaces/machine.py/.venv/bin/python",
 				"[python]": {
 					"editor.defaultFormatter": "ms-python.black-formatter",
 					"editor.codeActionsOnSave": {
@@ -62,7 +62,8 @@
 				"GitHub.copilot"
 			]
 		}
-	}
+	},
+	"postStartCommand": "poetry install"
 	// Uncomment to connect as an existing user other than the container default. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "devcontainer"
 }
