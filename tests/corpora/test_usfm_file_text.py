@@ -1,4 +1,5 @@
-from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH, scripture_ref
+from pytest import raises
+from testutils.corpora_test_helpers import USFM_INVALID_ID_PROJECT_PATH, USFM_TEST_PROJECT_PATH, scripture_ref
 
 from machine.corpora import ScriptureRef, UsfmFileTextCorpus
 
@@ -242,6 +243,19 @@ def test_get_rows_include_markers_all_text() -> None:
 
     assert scripture_ref(rows[26]) == ScriptureRef.parse("MAT 2:3/1:esb/2:p", corpus.versification)
     assert rows[26].text == "Here is some sidebar // content."
+
+
+def test_get_rows_invalid_id() -> None:
+    corpus = UsfmFileTextCorpus(USFM_INVALID_ID_PROJECT_PATH)
+
+    text = corpus.get_text("JGS")
+    assert text is not None
+    with raises(
+        RuntimeError,
+        match="An error occurred while parsing the text 'JGS'."
+        " Verse:  1:0, line: 1, character: 1, error: 'The book JGS is not a valid book id.",
+    ):
+        list(text)
 
 
 def test_usfm_file_text_corpus_lowercase_usfm_id() -> None:

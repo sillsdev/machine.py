@@ -2,6 +2,7 @@ from abc import abstractmethod
 from io import TextIOWrapper
 from typing import Generator, Iterable, List, Optional, Sequence
 
+from ..scripture.canon import ALL_BOOK_IDS
 from ..scripture.verse_ref import Versification
 from ..utils.string_utils import has_sentence_ending
 from .corpora_utils import gen
@@ -89,6 +90,13 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
     @property
     def rows(self) -> Iterable[TextRow]:
         return self._rows
+
+    def start_book(self, state: UsfmParserState, marker: str, code: str) -> None:
+        super().start_book(state, marker, code)
+        if code not in ALL_BOOK_IDS:
+            raise ValueError(f"The book {code} is not a valid book id.")
+        if code != self._text.id:
+            raise ValueError(f"The \\id marker {code} does not match the text id {self._text.id}.")
 
     def verse(
         self,
