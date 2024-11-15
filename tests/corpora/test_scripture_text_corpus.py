@@ -1,4 +1,5 @@
-from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH
+from pytest import raises
+from testutils.corpora_test_helpers import USFM_MISMATCH_ID_PROJECT_PATH, USFM_TEST_PROJECT_PATH
 
 from machine.corpora import ParatextTextCorpus, extract_scripture_corpus
 from machine.scripture import ORIGINAL_VERSIFICATION, VerseRef
@@ -59,3 +60,14 @@ def test_extract_scripture_corpus() -> None:
     assert text == ""
     assert orig_vref.exact_equals(VerseRef.from_string("MAT 2:12", ORIGINAL_VERSIFICATION))
     assert corpus_vref is not None and corpus_vref.exact_equals(VerseRef.from_string("MAT 2:12", corpus.versification))
+
+
+def test_extract_scripture_corpus_mismatch_id() -> None:
+    corpus = ParatextTextCorpus(USFM_MISMATCH_ID_PROJECT_PATH, include_all_text=True)
+
+    with raises(
+        RuntimeError,
+        match=r"An error occurred while parsing the text 'JDG' in project mismatch_id. "
+        r"Verse: JUD 1:0, line: 1, character: 1, error: 'The \\id marker JUD does not match the text id JDG.'",
+    ):
+        list(extract_scripture_corpus(corpus))
