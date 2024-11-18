@@ -59,7 +59,8 @@
 				"tamasfe.even-better-toml",
 				"github.vscode-github-actions",
 				"mhutchie.git-graph",
-				"GitHub.copilot"
+				"GitHub.copilot",
+				"ms-toolsai.jupyter"
 			]
 		}
 	},
