@@ -4,6 +4,21 @@ from pathlib import Path
 from typing import Any, Iterator, TextIO
 
 
+class PrettyFloat(float):
+    def __repr__(self):
+        return "%.8g" % self
+
+
+def pretty_floats(obj):
+    if isinstance(obj, float):
+        return PrettyFloat(obj)
+    elif isinstance(obj, dict):
+        return dict((k, pretty_floats(v)) for k, v in obj.items())
+    elif isinstance(obj, (list, tuple)):
+        return list(map(pretty_floats, obj))
+    return obj
+
+
 class DictToJsonWriter:
     def __init__(self, file: TextIO) -> None:
         self._file = file
@@ -12,7 +27,7 @@ class DictToJsonWriter:
     def write(self, pi: object) -> None:
         if not self._first:
             self._file.write(",\n")
-        self._file.write("    " + json.dumps(pi))
+        self._file.write("    " + json.dumps(pretty_floats(pi)))
         self._first = False
 
 
