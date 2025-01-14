@@ -65,7 +65,11 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
         )
         self._model = cast(
             PreTrainedModel,
-            AutoModelForSeq2SeqLM.from_pretrained(self._config.huggingface.parent_model_name, config=config),
+            AutoModelForSeq2SeqLM.from_pretrained(
+                self._config.huggingface.parent_model_name,
+                config=config,
+                attn_implementation=self._config.huggingface.attn_implementation,
+            ),
         )
 
     def create_source_tokenizer_trainer(self, corpus: TextCorpus) -> Trainer:
