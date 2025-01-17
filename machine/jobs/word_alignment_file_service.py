@@ -25,8 +25,8 @@ class WordAlignmentFileService:
         config: Any,
         source_filename: str = "train.src.txt",
         target_filename: str = "train.trg.txt",
-        word_alignment_input_filename: str = "word_alignment_inputs.json",
-        word_alignment_output_filename: str = "word_alignment_outputs.json",
+        word_alignment_input_filename: str = "word_alignments.inputs.json",
+        word_alignment_output_filename: str = "word_alignments.outputs.json",
     ) -> None:
 
         self._source_filename = source_filename
