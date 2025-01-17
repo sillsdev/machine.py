@@ -10,7 +10,7 @@ from testutils.mock_settings import MockSettings
 
 from machine.corpora import DictionaryTextCorpus, MemoryText, TextRow
 from machine.jobs import DictToJsonWriter, WordAlignmentBuildJob, WordAlignmentModelFactory
-from machine.jobs.word_alignment_file_service import WordAlignmentFileService
+from machine.jobs.word_alignment_file_service import WordAlignmentFileService, WordAlignmentInput
 from machine.translation import Trainer, TrainStats, WordAlignmentMatrix
 from machine.translation.word_alignment_model import WordAlignmentModel
 from machine.utils import CanceledError
@@ -90,6 +90,32 @@ class _TestEnvironment:
         decoy.when(self.word_alignment_file_service.exists_source_corpus()).then_return(True)
         decoy.when(self.word_alignment_file_service.exists_target_corpus()).then_return(True)
 
+        decoy.when(self.word_alignment_file_service.get_word_alignment_inputs()).then_return(
+            [
+                WordAlignmentInput(
+                    corpusId="corpus1",
+                    textId="text1",
+                    refs=["1"],
+                    source="¿Le importaría darnos las llaves de la habitación, por favor?",
+                    target="Would you mind giving us the room keys, please?",
+                ),
+                WordAlignmentInput(
+                    corpusId="corpus1",
+                    textId="text1",
+                    refs=["2"],
+                    source="¿Le importaría cambiarme a otra habitación más tranquila?",
+                    target="Would you mind moving me to another quieter room?",
+                ),
+                WordAlignmentInput(
+                    corpusId="corpus1",
+                    textId="text1",
+                    refs=["3"],
+                    source="Me parece que existe un problema.",
+                    target="I think there is a problem.",
+                ),
+            ]
+        )
+
         self.alignment_json = ""
 
         @contextmanager
@@ -100,7 +126,7 @@ class _TestEnvironment:
             file.write("\n]\n")
             env.alignment_json = file.getvalue()
 
-        decoy.when(self.word_alignment_file_service.open_target_alignment_writer()).then_do(
+        decoy.when(self.word_alignment_file_service.open_alignment_output_writer()).then_do(
             lambda: open_target_alignment_writer(self)
         )
 
