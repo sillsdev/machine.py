@@ -86,6 +86,13 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
             ref_factory,
         )
 
+    @classmethod
+    def from_parallel_rows(
+        cls,
+        rows: Iterable[ParallelTextRow],
+    ) -> ParallelTextCorpus:
+        return _FromParallelRowsTextCorpus(rows)
+
     @property
     @abstractmethod
     def is_source_tokenized(self) -> bool: ...
@@ -754,3 +761,23 @@ class _DatasetParallelTextCorpus(ParallelTextCorpus):
             except ValueError:
                 return ""
         return ""
+
+
+class _FromParallelRowsTextCorpus(ParallelTextCorpus):
+    def __init__(self, rows: Iterable[ParallelTextRow]) -> None:
+        self._rows = rows
+
+    def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[ParallelTextRow, None, None]:
+        if text_ids is None:
+            yield from self._rows
+        else:
+            text_ids = set(text_ids)
+            yield from [row for row in self._rows if row.text_id in text_ids]
+
+    @property
+    def is_source_tokenized(self) -> bool:
+        return True
+
+    @property
+    def is_target_tokenized(self) -> bool:
+        return True

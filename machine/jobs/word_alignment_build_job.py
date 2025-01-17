@@ -4,6 +4,7 @@ from typing import Any, Callable, Optional
 
 from ..corpora.aligned_word_pair import AlignedWordPair
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
+from ..corpora.parallel_text_row import ParallelTextRow
 from ..tokenization.tokenizer_factory import create_tokenizer
 from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
 from ..utils.progress_status import ProgressStatus
@@ -50,7 +51,8 @@ class WordAlignmentBuildJob:
             check_canceled()
 
         logger.info("Generating alignments")
-        self._batch_inference(parallel_corpus, progress_reporter, check_canceled)
+
+        self._batch_inference(progress_reporter, check_canceled)
 
         self._save_model()
         return train_corpus_size
@@ -83,39 +85,59 @@ class WordAlignmentBuildJob:
 
     def _batch_inference(
         self,
-        parallel_corpus: ParallelTextCorpus,
         progress_reporter: PhasedProgressReporter,
         check_canceled: Optional[Callable[[], None]],
     ) -> None:
-        inference_step_count = parallel_corpus.count(include_empty=False)
+
+        inference_inputs = self._word_alignment_file_service.get_word_alignment_inputs()
+
+        inference_step_count = len(inference_inputs)
 
         with ExitStack() as stack:
             phase_progress = stack.enter_context(progress_reporter.start_next_phase())
             alignment_model = stack.enter_context(self._word_alignment_model_factory.create_alignment_model())
-            writer = stack.enter_context(self._word_alignment_file_service.open_target_alignment_writer())
+            writer = stack.enter_context(self._word_alignment_file_service.open_alignment_output_writer())
             current_inference_step = 0
             phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
             batch_size = self._config["inference_batch_size"]
-            segment_batch = list(parallel_corpus.lowercase().tokenize(self._tokenizer).take(batch_size))
+
+            parallel_corpus = ParallelTextCorpus.from_parallel_rows(
+                [
+                    ParallelTextRow(
+                        ii["textId"],
+                        ii["refs"],
+                        ii["refs"],
+                        list(self._tokenizer.tokenize(ii["source"])),
+                        list(self._tokenizer.tokenize(ii["target"])),
+                    )
+                    for ii in inference_inputs
+                ]
+            ).lowercase()
+
+            segment_batch = list(parallel_corpus.take(batch_size))
             if check_canceled is not None:
                 check_canceled()
             alignments = alignment_model.align_batch(segment_batch)
             if check_canceled is not None:
                 check_canceled()
 
-            def format_score(score: float) -> str:
-                return f"{score:.8f}".rstrip("0").rstrip(".")
-
-            for row, alignment in zip(parallel_corpus.get_rows(), alignments):
-                source_segment = list(self._tokenizer.tokenize(row.source_text))
-                target_segment = list(self._tokenizer.tokenize(row.target_text))
+            for parallel_text_row, inference_input, alignment in zip(
+                parallel_corpus.get_rows(), inference_inputs, alignments
+            ):
                 word_pairs = alignment.to_aligned_word_pairs(include_null=True)
-                alignment_model.compute_aligned_word_pair_scores(source_segment, target_segment, word_pairs)
+                alignment_model.compute_aligned_word_pair_scores(
+                    parallel_text_row.source_segment, parallel_text_row.target_segment, word_pairs
+                )
 
                 word_alignment_info = {
-                    "refs": [str(ref) for ref in row.source_refs],
-                    "column_count": alignment.column_count,
-                    "row_count": alignment.row_count,
+                    "corpus_id": inference_input["corpusId"],
+                    "text_id": inference_input["textId"],
+                    "refs": [str(ref) for ref in inference_input["refs"]],
+                    "source_tokens": parallel_text_row.source_segment,
+                    "target_tokens": parallel_text_row.target_segment,
+                    "confidences": [
+                        word_pair.alignment_score * word_pair.translation_score for word_pair in word_pairs
+                    ],
                     "alignment": AlignedWordPair.to_string(word_pairs),
                 }
                 writer.write(word_alignment_info)
