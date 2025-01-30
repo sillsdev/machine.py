@@ -15,22 +15,22 @@ def test_tokenize() -> None:
     assert tokens[0].line_number == 1
     assert tokens[0].column_number == 1
 
-    assert tokens[37].type is UsfmTokenType.TEXT
-    assert tokens[37].text == "Chapter One "
-    assert tokens[37].line_number == 10
-    assert tokens[37].column_number == 4
+    assert tokens[30].type is UsfmTokenType.TEXT
+    assert tokens[30].text == "Chapter One "
+    assert tokens[30].line_number == 9
+    assert tokens[30].column_number == 4
 
-    assert tokens[38].type is UsfmTokenType.VERSE
-    assert tokens[38].marker == "v"
-    assert tokens[38].data == "1"
-    assert tokens[38].line_number == 11
-    assert tokens[38].column_number == 1
+    assert tokens[31].type is UsfmTokenType.VERSE
+    assert tokens[31].marker == "v"
+    assert tokens[31].data == "1"
+    assert tokens[31].line_number == 10
+    assert tokens[31].column_number == 1
 
-    assert tokens[47].type is UsfmTokenType.NOTE
-    assert tokens[47].marker == "f"
-    assert tokens[47].data == "+"
-    assert tokens[47].line_number == 11
-    assert tokens[47].column_number == 52
+    assert tokens[40].type is UsfmTokenType.NOTE
+    assert tokens[40].marker == "f"
+    assert tokens[40].data == "+"
+    assert tokens[40].line_number == 10
+    assert tokens[40].column_number == 48
 
 
 def test_detokenize() -> None:

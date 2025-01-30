@@ -5,8 +5,9 @@ from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH, ignore_line_e
 from machine.corpora import (
     FileParatextProjectTextUpdater,
     ScriptureRef,
-    UpdateUsfmBehavior,
+    UpdateUsfmMarkerBehavior,
     UpdateUsfmParserHandler,
+    UpdateUsfmTextBehavior,
     parse_usfm,
 )
 
@@ -21,7 +22,10 @@ def test_get_usfm_verse_char_style() -> None:
     target = update_usfm(rows)
     assert target is not None
     assert "\\id MAT - Test\r\n" in target
-    assert "\\v 1 First verse of the first chapter.\r\n" in target
+    assert (
+        "\\v 1 First verse of the first chapter. \\f + \\fr 1:1: \\ft This is a footnote for v1.\\f*\r\n\\li1\r\n\\v 2"
+        in target
+    )
 
 
 def test_get_usfm_id_text() -> None:
@@ -31,7 +35,7 @@ def test_get_usfm_id_text() -> None:
 
 
 def test_get_usfm_strip_all_text() -> None:
-    target = update_usfm(behavior=UpdateUsfmBehavior.STRIP_EXISTING)
+    target = update_usfm(text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING)
     assert target is not None
     assert "\\id MAT\r\n" in target
     assert "\\v 1\r\n" in target
@@ -49,7 +53,7 @@ def test_get_usfm_prefer_existing():
             str("Text 7"),
         ),
     ]
-    target = update_usfm(rows, behavior=UpdateUsfmBehavior.PREFER_EXISTING)
+    target = update_usfm(rows, text_behavior=UpdateUsfmTextBehavior.PREFER_EXISTING)
     assert target is not None
     assert "\\id MAT - Test\r\n" in target
     assert "\\v 6 Verse 6 content.\r\n" in target
@@ -67,36 +71,68 @@ def test_get_usfm_prefer_rows():
             str("Text 7"),
         ),
     ]
-    target = update_usfm(rows, behavior=UpdateUsfmBehavior.PREFER_NEW)
+    target = update_usfm(rows, text_behavior=UpdateUsfmTextBehavior.PREFER_NEW)
     assert target is not None
     assert "\\id MAT - Test\r\n" in target
     assert "\\v 6 Text 6\r\n" in target
     assert "\\v 7 Text 7\r\n" in target
 
 
-def test_get_usfm_verse_skip_note() -> None:
+def test_get_usfm_verse_strip_note() -> None:
     rows = [
         (
             scr_ref("MAT 2:1"),
             str("First verse of the second chapter."),
         )
     ]
-    target = update_usfm(rows)
+    target = update_usfm(rows, embed_behavior=UpdateUsfmMarkerBehavior.STRIP)
     assert target is not None
     assert "\\v 1 First verse of the second chapter.\r\n" in target
 
 
-def test_get_usfm_verse_replace_note() -> None:
+def test_get_usfm_verse_strip_notes_with_updated_verse_text() -> None:
     rows = [
-        (
-            scr_ref("MAT 2:1a"),
-            str("First verse of the second chapter."),
-        ),
-        (scr_ref("MAT 2:1/1:f"), str("This is a new footnote.")),
+        (scr_ref("MAT 1:1"), "First verse of the first chapter."),
+    ]
+    target = update_usfm(rows, embed_behavior=UpdateUsfmMarkerBehavior.STRIP)
+    assert target is not None
+    assert "\\id MAT - Test\r\n" in target
+    assert "\\ip An introduction to Matthew with an empty comment\\fe + \\ft \\fe*" in target
+    assert "\\v 1 First verse of the first chapter.\r\n\\li1\r\n\\v 2" in target
+
+
+def test_get_usfm_verse_replace_note_keep_reference() -> None:
+    rows = [
+        (scr_ref("MAT 2:1"), "First verse of the second chapter."),
+        (scr_ref("MAT 2:1/1:f"), "This is a new footnote."),
     ]
     target = update_usfm(rows)
     assert target is not None
-    assert "\\v 1 First verse of the second chapter. \\f + \\ft This is a new footnote.\\f*\r\n" in target
+    assert "\\v 1 First verse of the second chapter. \\f + \\fr 2:1: \\ft This is a new footnote. \\f*\r\n" in target
+
+
+def test_get_usfm_verse_preserve_figures_and_references() -> None:
+    rows = [
+        (scr_ref("MAT 1:5"), "Fifth verse of the first chapter."),
+        (scr_ref("MAT 1:5/1:fig"), "figure text not updated"),
+        (scr_ref("MAT 2:0/1:r"), "parallel reference not updated"),
+        (scr_ref("MAT 2:5/1:rq"), "quote reference not updated"),
+        (scr_ref("MAT 2:6/3:xo"), "Cross reference not update"),
+        (scr_ref("MAT 2:6/4:xt"), "cross reference - target reference not updated"),
+        (scr_ref("MAT 2:6/5:xta"), "cross reference annotation updated"),
+    ]
+    target = update_usfm(rows)
+    assert target is not None
+    assert (
+        '\\v 5 Fifth verse of the first chapter.\r\n\\li2 \\fig Figure 1|src="image1.png" size="col" ref="1:5"'
+        + "\\fig*\r\n\\v 6"
+        in target
+    )
+    assert "\\r (Mark 1:2-3; Luke 4:5-6)\r\n" in target
+    assert (
+        "\\v 6 Bad verse. \\x - \\xo 2:3-4 \\xt Cool Book 3:24 \\xta The annotation \\x* and more content.\r\n"
+        in target
+    )
 
 
 def test_get_usfm_row_verse_segment() -> None:
@@ -108,7 +144,9 @@ def test_get_usfm_row_verse_segment() -> None:
     ]
     target = update_usfm(rows)
     assert target is not None
-    assert "\\v 1 First verse of the second chapter.\r\n" in target
+    assert (
+        "\\v 1 First verse of the second chapter. \\f + \\fr 2:1: \\ft This is a \\bd footnote.\\bd*\\f*\r\n" in target
+    )
 
 
 def test_get_usfm_verse_segment() -> None:
@@ -132,7 +170,10 @@ def test_get_usfm_verse_multiple_paras() -> None:
     ]
     target = update_usfm(rows)
     assert target is not None
-    assert "\\v 2 Second verse of the first chapter.\r\n\\li2\r\n" in target
+    assert (
+        "\\v 2 Second verse of the first chapter.\r\n\\li2 \\f + \\fr 1:2: \\ft This is a footnote for v2.\\f*"
+        in target
+    )
 
 
 def test_get_usfm_verse_table() -> None:
@@ -204,7 +245,7 @@ def test_get_usfm_merge_verse_segments() -> None:
     ]
     target = update_usfm(rows)
     assert target is not None
-    assert "\\v 2-3 Verse 2. Verse 2a. Verse 2b.\r\n" in target
+    assert "\\v 2-3 Verse 2. Verse 2a. Verse 2b. \\fm ∆\\fm*\r\n" in target
 
 
 def test_get_usfm_verse_opt_break() -> None:
@@ -218,7 +259,7 @@ def test_get_usfm_verse_opt_break() -> None:
             str("Third verse of the second chapter."),
         ),
     ]
-    target = update_usfm(rows)
+    target = update_usfm(rows, embed_behavior=UpdateUsfmMarkerBehavior.STRIP)
     assert target is not None
     assert "\\v 2-3 Second verse of the second chapter. Third verse of the second chapter.\r\n" in target
 
@@ -297,7 +338,7 @@ def test_get_usfm_nonverse_relaxed() -> None:
     target = update_usfm(rows)
     assert target is not None
     assert "\\s The first chapter.\r\n" in target
-    assert "\\v 1 First verse of the first chapter.\r\n" in target
+    assert "\\v 1 First verse of the first chapter. \\f + \\fr 1:1: \\ft This is a footnote for v1.\\f*\r\n" in target
     assert "\\tr \\tc1 The first cell of the table. \\tc2 The second cell of the table.\r\n" in target
     assert "\\tr \\tc1 The third cell of the table. \\tc2 Row two, column two.\r\n" in target
 
@@ -305,7 +346,7 @@ def test_get_usfm_nonverse_relaxed() -> None:
 def test_get_usfm_nonverse_sidebar() -> None:
     rows = [
         (
-            scr_ref("MAT 2:3/1:esb/1:ms"),
+            scr_ref("MAT 2:3/2:esb/1:ms"),
             str("The first paragraph of the sidebar."),
         )
     ]
@@ -333,7 +374,7 @@ def test_get_usfm_nonverse_table() -> None:
 def test_get_usfm_nonverse_optbreak() -> None:
     rows = [
         (
-            scr_ref("MAT 2:3/1:esb/2:p"),
+            scr_ref("MAT 2:3/2:esb/2:p"),
             str("The second paragraph of the sidebar."),
         )
     ]
@@ -354,6 +395,15 @@ def test_get_usfm_nonverse_milestone() -> None:
     assert "\\s A new section header. \\ts-s\\*\r\n" in target
 
 
+def test_get_usfm_nonverse_keep_note() -> None:
+    rows = [
+        (scr_ref("MAT 1:0/3:ip"), "The introductory paragraph."),
+    ]
+    target = update_usfm(rows, embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE)
+    assert target is not None
+    assert "\\ip The introductory paragraph. \\fe + \\ft \\fe*\r\n" in target
+
+
 def test_get_usfm_nonverse_skip_note() -> None:
     rows = [
         (
@@ -361,7 +411,7 @@ def test_get_usfm_nonverse_skip_note() -> None:
             str("The introductory paragraph."),
         )
     ]
-    target = update_usfm(rows)
+    target = update_usfm(rows, embed_behavior=UpdateUsfmMarkerBehavior.STRIP)
     assert target is not None
     assert "\\ip The introductory paragraph.\r\n" in target
 
@@ -379,7 +429,7 @@ def test_get_usfm_nonverse_replace_note() -> None:
     ]
     target = update_usfm(rows)
     assert target is not None
-    assert "\\ip The introductory paragraph. \\fe + \\ft This is a new endnote.\\fe*\r\n" in target
+    assert "\\ip The introductory paragraph. \\fe + \\ft This is a new endnote. \\fe*\r\n" in target
 
 
 def test_get_usfm_verse_double_va_vp() -> None:
@@ -447,7 +497,7 @@ def test_get_usfm_verse_pretranslations_before_text() -> None:
 
     target = update_usfm(rows)
     assert target is not None
-    assert "\\ip The introductory paragraph.\r\n" in target
+    assert "\\ip The introductory paragraph. \\fe + \\ft \\fe*\r\n" in target
 
 
 def scr_ref(*refs: str) -> List[ScriptureRef]:
@@ -458,14 +508,16 @@ def update_usfm(
     rows: Optional[Sequence[Tuple[Sequence[ScriptureRef], str]]] = None,
     source: Optional[str] = None,
     id_text: Optional[str] = None,
-    behavior: UpdateUsfmBehavior = UpdateUsfmBehavior.PREFER_NEW,
+    text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_NEW,
+    embed_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
+    style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
 ) -> Optional[str]:
     if source is None:
         updater = FileParatextProjectTextUpdater(USFM_TEST_PROJECT_PATH)
-        return updater.update_usfm("MAT", rows, id_text, behavior)
+        return updater.update_usfm("MAT", rows, id_text, text_behavior, embed_behavior, style_behavior)
     else:
         source = source.strip().replace("\r\n", "\n") + "\r\n"
-        updater = UpdateUsfmParserHandler(rows, id_text, behavior)
+        updater = UpdateUsfmParserHandler(rows, id_text, text_behavior, embed_behavior, style_behavior)
         parse_usfm(source, updater)
         return updater.get_usfm()
 

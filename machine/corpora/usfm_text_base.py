@@ -202,6 +202,9 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
                     text = text.lstrip()
                 row_text += text
         elif len(text) > 0 and (self._current_text_type != ScriptureTextType.VERSE or state.is_verse_text):
+            if state.token is not None and self._is_in_embed(state.token.marker) and not self._is_in_note_text():
+                return
+
             if (
                 state.prev_token is not None
                 and state.prev_token.type == UsfmTokenType.END
