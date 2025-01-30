@@ -5,7 +5,11 @@ from ..utils.typeshed import StrPath
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
 from .scripture_ref import ScriptureRef
-from .update_usfm_parser_handler import UpdateUsfmBehavior, UpdateUsfmParserHandler
+from .update_usfm_parser_handler import (
+    UpdateUsfmIntraVerseMarkerBehavior,
+    UpdateUsfmParserHandler,
+    UpdateUsfmTextBehavior,
+)
 from .usfm_parser import parse_usfm
 
 
@@ -21,14 +25,18 @@ class ParatextProjectTextUpdaterBase(ABC):
         book_id: str,
         rows: Optional[Sequence[Tuple[Sequence[ScriptureRef], str]]] = None,
         full_name: Optional[str] = None,
-        behavior: UpdateUsfmBehavior = UpdateUsfmBehavior.PREFER_EXISTING,
+        text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_EXISTING,
+        embed_behavior: UpdateUsfmIntraVerseMarkerBehavior = UpdateUsfmIntraVerseMarkerBehavior.PRESERVE,
+        syle_behavior: UpdateUsfmIntraVerseMarkerBehavior = UpdateUsfmIntraVerseMarkerBehavior.STRIP,
     ) -> Optional[str]:
         file_name: str = self._settings.get_book_file_name(book_id)
         if not self._exists(file_name):
             return None
         with self._open(file_name) as sfm_file:
             usfm: str = sfm_file.read().decode(self._settings.encoding)
-        handler = UpdateUsfmParserHandler(rows, None if full_name is None else f"- {full_name}", behavior)
+        handler = UpdateUsfmParserHandler(
+            rows, None if full_name is None else f"- {full_name}", text_behavior, embed_behavior, syle_behavior
+        )
         try:
             parse_usfm(usfm, handler, self._settings.stylesheet, self._settings.versification)
             return handler.get_usfm(self._settings.stylesheet)
