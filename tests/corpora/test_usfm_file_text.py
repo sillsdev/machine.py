@@ -168,7 +168,8 @@ def test_get_rows_include_markers() -> None:
 
     assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:1", corpus.versification)
     assert (
-        rows[0].text == "Chapter \\pn one\\+pro WON\\+pro*\\pn*, verse \\f + \\fr 1:1: \\ft This is a footnote for v1.\\f*one."
+        rows[0].text
+        == "Chapter \\pn one\\+pro WON\\+pro*\\pn*, verse \\f + \\fr 1:1: \\ft This is a footnote for v1.\\f*one."
     )
 
     assert scripture_ref(rows[1]) == ScriptureRef.parse("MAT 1:2", corpus.versification)
@@ -226,7 +227,8 @@ def test_get_rows_include_markers_all_text() -> None:
 
     assert scripture_ref(rows[8]) == ScriptureRef.parse("MAT 1:1", corpus.versification)
     assert (
-        rows[8].text == "Chapter \\pn one\\+pro WON\\+pro*\\pn*, verse \\f + \\fr 1:1: \\ft This is a footnote for v1.\\f*one."
+        rows[8].text
+        == "Chapter \\pn one\\+pro WON\\+pro*\\pn*, verse \\f + \\fr 1:1: \\ft This is a footnote for v1.\\f*one."
     )
 
     assert scripture_ref(rows[9]) == ScriptureRef.parse("MAT 1:2", corpus.versification)
@@ -239,7 +241,7 @@ def test_get_rows_include_markers_all_text() -> None:
     assert rows[20].text == "Chapter \\it Two \\it*"
 
     assert scripture_ref(rows[22]) == ScriptureRef.parse("MAT 2:1", corpus.versification)
-    assert rows[22].text == "Chapter \\add two\\add*, verse \\f + \\fr 2:1: \\ft This is a \\bd footnote.\\bd*\\f*one.")
+    assert rows[22].text == "Chapter \\add two\\add*, verse \\f + \\fr 2:1: \\ft This is a \\bd footnote.\\bd*\\f*one."
 
     assert scripture_ref(rows[26]) == ScriptureRef.parse("MAT 2:3/2:esb/2:p", corpus.versification)
     assert rows[26].text == "Here is some sidebar // content."
