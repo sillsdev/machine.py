@@ -200,7 +200,7 @@ def test_get_rows_include_markers() -> None:
     assert rows[12].text == "Chapter two, verse four."
 
     assert scripture_ref(rows[13]) == ScriptureRef.parse("MAT 2:5", corpus.versification)
-    assert rows[13].text == "Chapter two, verse five \\rq (MAT 3:1)\\rq*."
+    assert rows[13].text == "Chapter two, verse five\\rq (MAT 3:1)\\rq*."
 
     assert scripture_ref(rows[14]) == ScriptureRef.parse("MAT 2:6", corpus.versification)
     assert rows[14].text == 'Chapter two, verse \\w six|strong="12345" \\w*.'
@@ -223,7 +223,7 @@ def test_get_rows_include_markers_all_text() -> None:
     assert len(rows) == 47
 
     assert scripture_ref(rows[2]) == ScriptureRef.parse("MAT 1:0/3:ip", corpus.versification)
-    assert rows[2].text == "An introduction to Matthew with an empty comment\\fe + \\ft This is an endnote.\\fe*"
+    assert rows[2].text == "An introduction to Matthew with an empty comment\\fe + \\ft \\fe*"
 
     assert scripture_ref(rows[8]) == ScriptureRef.parse("MAT 1:1", corpus.versification)
     assert (

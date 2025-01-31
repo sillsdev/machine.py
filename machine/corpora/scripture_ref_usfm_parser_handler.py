@@ -116,7 +116,7 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
 
     def end_note(self, state: UsfmParserState, marker: str, closed: bool) -> None:
         self.end_note_text(state)
-        self.end_embed(state, marker, "", closed)
+        self.end_embed(state, marker, None, closed)
         self._in_embed = False
 
     def start_embed(self, state: UsfmParserState, marker: str, caller: str, category: Optional[str]) -> None:

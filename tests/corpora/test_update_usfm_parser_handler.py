@@ -124,7 +124,8 @@ def test_get_usfm_verse_preserve_figures_and_references() -> None:
     target = update_usfm(rows)
     assert target is not None
     assert (
-        '\\v 5 Fifth verse of the first chapter.\r\n\\li2 \\fig Figure 1|src="image1.png" size="col" ref="1:5"\\fig*\r\n\\v 6'
+        '\\v 5 Fifth verse of the first chapter.\r\n\\li2 \\fig Figure 1|src="image1.png" size="col" ref="1:5"'
+        + "\\fig*\r\n\\v 6"
         in target
     )
     assert "\\r (Mark 1:2-3; Luke 4:5-6)\r\n" in target
