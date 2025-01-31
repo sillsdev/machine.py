@@ -237,7 +237,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
 
     def _start_note_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
         row_texts = self._advance_rows([scripture_ref])
-        self._push_new_tokens([UsfmToken(UsfmTokenType.TEXT, t + " ") for t in row_texts])
+        self._push_new_tokens([UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in row_texts])
 
     def _end_note_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
         self._pop_new_tokens()
