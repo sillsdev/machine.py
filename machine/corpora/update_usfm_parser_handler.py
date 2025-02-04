@@ -15,7 +15,7 @@ class UpdateUsfmTextBehavior(Enum):
     STRIP_EXISTING = auto()
 
 
-class UpdateUsfmIntraVerseMarkerBehavior(Enum):
+class UpdateUsfmMarkerBehavior(Enum):
     PRESERVE = auto()
     STRIP = auto()
 
@@ -29,8 +29,8 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         rows: Optional[Sequence[Tuple[Sequence[ScriptureRef], str]]] = None,
         id_text: Optional[str] = None,
         text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_EXISTING,
-        embed_behavior: UpdateUsfmIntraVerseMarkerBehavior = UpdateUsfmIntraVerseMarkerBehavior.PRESERVE,
-        style_behavior: UpdateUsfmIntraVerseMarkerBehavior = UpdateUsfmIntraVerseMarkerBehavior.STRIP,
+        embed_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
     ) -> None:
         super().__init__()
         self._rows = rows or []
@@ -167,7 +167,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
 
         super().end_char(state, marker, attributes, closed)
 
-    def start_embed(
+    def _start_embed(
         self,
         state: UsfmParserState,
         marker: str,
@@ -179,15 +179,17 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         else:
             self._collect_tokens(state)
 
-        super().start_embed(state, marker, caller, category)
+        super()._start_embed(state, marker, caller, category)
 
-    def end_embed(self, state: UsfmParserState, marker: str, attributes: Sequence[UsfmAttribute], closed: bool) -> None:
+    def _end_embed(
+        self, state: UsfmParserState, marker: str, attributes: Sequence[UsfmAttribute], closed: bool
+    ) -> None:
         if self._replace_with_new_tokens(state, closed):
             self._skip_tokens(state)
         else:
             self._collect_tokens(state)
 
-        super().end_embed(state, marker, attributes, closed)
+        super()._end_embed(state, marker, attributes, closed)
 
     def ref(self, state: UsfmParserState, marker: str, display: str, target: str) -> None:
         if self._replace_with_new_tokens(state):
@@ -308,7 +310,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
             not untranslatable_paragraph
             and new_text
             and (not existing_text or self._text_behavior == UpdateUsfmTextBehavior.PREFER_NEW)
-            and (not in_embed or self.get_in_note_text())
+            and (not in_embed or self._is_in_note_text())
         )
 
         if use_new_tokens:
@@ -321,15 +323,15 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
 
         within_new_text = any(self._replace_stack)
         if within_new_text and in_embed:
-            if self._embed_behavior == UpdateUsfmIntraVerseMarkerBehavior.STRIP:
+            if self._embed_behavior == UpdateUsfmMarkerBehavior.STRIP:
                 return True
-            if not self.get_in_note_text():
+            if not self._is_in_note_text():
                 return False
 
         skip_tokens = use_new_tokens and closed
 
         if new_text and is_style_tag:
-            skip_tokens = self._style_behavior == UpdateUsfmIntraVerseMarkerBehavior.STRIP
+            skip_tokens = self._style_behavior == UpdateUsfmMarkerBehavior.STRIP
 
         return skip_tokens
 

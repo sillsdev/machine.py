@@ -32,7 +32,7 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     def _current_text_type(self) -> ScriptureTextType:
         return ScriptureTextType.NONE if len(self._cur_text_type_stack) == 0 else self._cur_text_type_stack[-1]
 
-    def get_in_note_text(self) -> bool:
+    def _is_in_note_text(self) -> bool:
         return self._in_note_text
 
     def end_usfm(self, state: UsfmParserState) -> None:
@@ -112,14 +112,14 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
 
     def start_note(self, state: UsfmParserState, marker: str, caller: str, category: Optional[str]) -> None:
         self._in_embed = True
-        self.start_embed(state, marker, caller, category)
+        self._start_embed(state, marker, caller, category)
 
     def end_note(self, state: UsfmParserState, marker: str, closed: bool) -> None:
-        self.end_note_text(state)
-        self.end_embed(state, marker, None, closed)
+        self._end_note_text_wrapper(state)
+        self._end_embed(state, marker, None, closed)
         self._in_embed = False
 
-    def start_embed(self, state: UsfmParserState, marker: str, caller: str, category: Optional[str]) -> None:
+    def _start_embed(self, state: UsfmParserState, marker: str, caller: str, category: Optional[str]) -> None:
         if self._cur_verse_ref.is_default:
             self._update_verse_ref(state.verse_ref, marker)
 
@@ -127,7 +127,7 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
             self._check_convert_verse_para_to_non_verse(state)
             self._next_element(marker)
 
-    def end_embed(
+    def _end_embed(
         self, state: UsfmParserState, marker: str, attributes: Optional[Sequence[UsfmAttribute]], closed: bool
     ) -> None:
         pass
@@ -144,22 +144,22 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         self, state: UsfmParserState, marker: str, unknown: bool, attributes: Optional[Sequence[UsfmAttribute]]
     ) -> None:
         if self._is_embed_part(marker):
-            self.end_note_text(state)
+            self._end_note_text_wrapper(state)
         # if we hit a character marker in a verse paragraph and we aren't in a verse, then start a non-verse segment
         self._check_convert_verse_para_to_non_verse(state)
 
         if self._is_embed_character(marker):
             self._in_embed = True
-            self.start_embed(state, marker, "", None)
+            self._start_embed(state, marker, "", None)
 
         if self._is_note_text(marker):
-            self.start_note_text(state)
+            self._start_note_text_wrapper(state)
 
     def end_char(
         self, state: UsfmParserState, marker: str, attributes: Optional[Sequence[UsfmAttribute]], closed: bool
     ) -> None:
         if self._is_embed_character(marker):
-            self.end_embed(state, marker, attributes, closed)
+            self._end_embed(state, marker, attributes, closed)
             self._in_embed = False
 
     def _start_verse_text(self, state: UsfmParserState, scripture_refs: Optional[Sequence[ScriptureRef]]) -> None: ...
@@ -170,14 +170,14 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
 
     def _end_non_verse_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None: ...
 
-    def start_note_text(self, state: UsfmParserState):
+    def _start_note_text_wrapper(self, state: UsfmParserState):
         self._in_note_text = True
         self._cur_text_type_stack.append(ScriptureTextType.NOTE_TEXT)
         self._start_note_text(state, self._create_non_verse_ref())
 
     def _start_note_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None: ...
 
-    def end_note_text(self, state: UsfmParserState):
+    def _end_note_text_wrapper(self, state: UsfmParserState):
         if self._cur_text_type_stack and self._cur_text_type_stack[-1] == ScriptureTextType.NOTE_TEXT:
             self._end_note_text(state, self._create_non_verse_ref())
             self._cur_text_type_stack.pop()

@@ -5,7 +5,7 @@ from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH, ignore_line_e
 from machine.corpora import (
     FileParatextProjectTextUpdater,
     ScriptureRef,
-    UpdateUsfmIntraVerseMarkerBehavior,
+    UpdateUsfmMarkerBehavior,
     UpdateUsfmParserHandler,
     UpdateUsfmTextBehavior,
     parse_usfm,
@@ -85,7 +85,7 @@ def test_get_usfm_verse_strip_note() -> None:
             str("First verse of the second chapter."),
         )
     ]
-    target = update_usfm(rows, embed_behavior=UpdateUsfmIntraVerseMarkerBehavior.STRIP)
+    target = update_usfm(rows, embed_behavior=UpdateUsfmMarkerBehavior.STRIP)
     assert target is not None
     assert "\\v 1 First verse of the second chapter.\r\n" in target
 
@@ -94,7 +94,7 @@ def test_get_usfm_verse_strip_notes_with_updated_verse_text() -> None:
     rows = [
         (scr_ref("MAT 1:1"), "First verse of the first chapter."),
     ]
-    target = update_usfm(rows, embed_behavior=UpdateUsfmIntraVerseMarkerBehavior.STRIP)
+    target = update_usfm(rows, embed_behavior=UpdateUsfmMarkerBehavior.STRIP)
     assert target is not None
     assert "\\id MAT - Test\r\n" in target
     assert "\\ip An introduction to Matthew with an empty comment\\fe + \\ft \\fe*" in target
@@ -259,7 +259,7 @@ def test_get_usfm_verse_opt_break() -> None:
             str("Third verse of the second chapter."),
         ),
     ]
-    target = update_usfm(rows, embed_behavior=UpdateUsfmIntraVerseMarkerBehavior.STRIP)
+    target = update_usfm(rows, embed_behavior=UpdateUsfmMarkerBehavior.STRIP)
     assert target is not None
     assert "\\v 2-3 Second verse of the second chapter. Third verse of the second chapter.\r\n" in target
 
@@ -399,7 +399,7 @@ def test_get_usfm_nonverse_keep_note() -> None:
     rows = [
         (scr_ref("MAT 1:0/3:ip"), "The introductory paragraph."),
     ]
-    target = update_usfm(rows, embed_behavior=UpdateUsfmIntraVerseMarkerBehavior.PRESERVE)
+    target = update_usfm(rows, embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE)
     assert target is not None
     assert "\\ip The introductory paragraph. \\fe + \\ft \\fe*\r\n" in target
 
@@ -411,7 +411,7 @@ def test_get_usfm_nonverse_skip_note() -> None:
             str("The introductory paragraph."),
         )
     ]
-    target = update_usfm(rows, embed_behavior=UpdateUsfmIntraVerseMarkerBehavior.STRIP)
+    target = update_usfm(rows, embed_behavior=UpdateUsfmMarkerBehavior.STRIP)
     assert target is not None
     assert "\\ip The introductory paragraph.\r\n" in target
 
@@ -509,8 +509,8 @@ def update_usfm(
     source: Optional[str] = None,
     id_text: Optional[str] = None,
     text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_NEW,
-    embed_behavior: UpdateUsfmIntraVerseMarkerBehavior = UpdateUsfmIntraVerseMarkerBehavior.PRESERVE,
-    style_behavior: UpdateUsfmIntraVerseMarkerBehavior = UpdateUsfmIntraVerseMarkerBehavior.STRIP,
+    embed_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
+    style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
 ) -> Optional[str]:
     if source is None:
         updater = FileParatextProjectTextUpdater(USFM_TEST_PROJECT_PATH)
