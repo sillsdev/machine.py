@@ -22,8 +22,6 @@ class UpdateUsfmMarkerBehavior(Enum):
 
 class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
 
-    _untranslatable_paragraph_tags = ("r", "rem")
-
     def __init__(
         self,
         rows: Optional[Sequence[Tuple[Sequence[ScriptureRef], str]]] = None,
@@ -285,14 +283,8 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         self._token_index = state.index + 1 + state.special_token_count
 
     def _replace_with_new_tokens(self, state: UsfmParserState, closed: bool = True) -> bool:
-        untranslatable_paragraph: bool = state.para_tag is not None and self._is_untranslatable_paragraph(
-            state.para_tag.marker
-        )
         if self._text_behavior == UpdateUsfmTextBehavior.STRIP_EXISTING:
-            if untranslatable_paragraph:
-                self._clear_new_tokens()
-            else:
-                self._add_new_tokens()
+            self._add_new_tokens()
             return True
 
         new_text: bool = bool(self._replace_stack) and self._replace_stack[-1]
@@ -307,8 +299,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         )
 
         use_new_tokens = (
-            not untranslatable_paragraph
-            and new_text
+            new_text
             and (not existing_text or self._text_behavior == UpdateUsfmTextBehavior.PREFER_NEW)
             and (not in_embed or self._is_in_note_text())
         )
@@ -316,9 +307,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         if use_new_tokens:
             self._add_new_tokens()
 
-        if untranslatable_paragraph or (
-            existing_text and self._text_behavior == UpdateUsfmTextBehavior.PREFER_EXISTING
-        ):
+        if existing_text and self._text_behavior == UpdateUsfmTextBehavior.PREFER_EXISTING:
             self._clear_new_tokens()
 
         within_new_text = any(self._replace_stack)
@@ -353,6 +342,3 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
 
     def _pop_new_tokens(self) -> None:
         self._replace_stack.pop()
-
-    def _is_untranslatable_paragraph(self, marker: Optional[str]) -> bool:
-        return marker in self._untranslatable_paragraph_tags
