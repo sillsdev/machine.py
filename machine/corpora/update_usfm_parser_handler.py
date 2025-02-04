@@ -22,8 +22,6 @@ class UpdateUsfmMarkerBehavior(Enum):
 
 class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
 
-    _untranslatable_paragraph_tags = ("r", "rem")
-
     def __init__(
         self,
         rows: Optional[Sequence[Tuple[Sequence[ScriptureRef], str]]] = None,
@@ -43,6 +41,8 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         self._replace_stack: List[bool] = []
         self._row_index: int = 0
         self._token_index: int = 0
+        self._embed_updated: bool = False
+        self._embed_row_texts: List[str] = []
 
     @property
     def tokens(self) -> List[UsfmToken]:
@@ -170,16 +170,15 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
     def _start_embed(
         self,
         state: UsfmParserState,
-        marker: str,
-        caller: str,
-        category: str,
+        scripture_ref: ScriptureRef,
     ) -> None:
+        self._embed_row_texts = self._advance_rows([scripture_ref])
+        self._embed_updated = bool(self._embed_row_texts)
+
         if self._replace_with_new_tokens(state):
             self._skip_tokens(state)
         else:
             self._collect_tokens(state)
-
-        super()._start_embed(state, marker, caller, category)
 
     def _end_embed(
         self, state: UsfmParserState, marker: str, attributes: Sequence[UsfmAttribute], closed: bool
@@ -188,6 +187,9 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
             self._skip_tokens(state)
         else:
             self._collect_tokens(state)
+
+        self._embed_row_texts.clear()
+        self._embed_updated = False
 
         super()._end_embed(state, marker, attributes, closed)
 
@@ -237,11 +239,11 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
     def _end_non_verse_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
         self._pop_new_tokens()
 
-    def _start_note_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
-        row_texts = self._advance_rows([scripture_ref])
-        self._push_new_tokens([UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in row_texts])
+    def _start_note_text(self, state: UsfmParserState) -> None:
+        self._push_new_tokens([UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in self._embed_row_texts])
 
     def _end_note_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
+        self._embed_row_texts.clear()
         self._pop_new_tokens()
 
     def get_usfm(self, stylesheet: Union[str, UsfmStylesheet] = "usfm.sty") -> str:
@@ -285,21 +287,15 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         self._token_index = state.index + 1 + state.special_token_count
 
     def _replace_with_new_tokens(self, state: UsfmParserState, closed: bool = True) -> bool:
-        untranslatable_paragraph: bool = state.para_tag is not None and self._is_untranslatable_paragraph(
-            state.para_tag.marker
-        )
         if self._text_behavior == UpdateUsfmTextBehavior.STRIP_EXISTING:
-            if untranslatable_paragraph:
-                self._clear_new_tokens()
-            else:
-                self._add_new_tokens()
+            self._add_new_tokens()
             return True
 
         new_text: bool = bool(self._replace_stack) and self._replace_stack[-1]
-        in_embed: bool = state.token is not None and self._is_in_embed(state.token.marker)
-        is_style_tag: bool = (
-            state.token is not None and state.token.marker is not None and not self._is_embed_part(state.token.marker)
-        )
+        marker: Optional[str] = state.token if state.token is None else state.token.marker
+        in_embed: bool = self._is_in_embed(marker)
+        in_nested: bool = self._is_in_nested_embed(marker)
+        is_style_tag: bool = marker is not None and not self._is_embed_part(marker)
 
         existing_text = any(
             t.type == UsfmTokenType.TEXT and t.text
@@ -307,25 +303,30 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         )
 
         use_new_tokens = (
-            not untranslatable_paragraph
-            and new_text
+            new_text
             and (not existing_text or self._text_behavior == UpdateUsfmTextBehavior.PREFER_NEW)
-            and (not in_embed or self._is_in_note_text())
+            and (
+                not in_embed
+                or (
+                    self._is_in_note_text()
+                    and not in_nested
+                    and self._embed_behavior == UpdateUsfmMarkerBehavior.PRESERVE
+                )
+            )
         )
 
         if use_new_tokens:
             self._add_new_tokens()
 
-        if untranslatable_paragraph or (
-            existing_text and self._text_behavior == UpdateUsfmTextBehavior.PREFER_EXISTING
-        ):
+        if existing_text and self._text_behavior == UpdateUsfmTextBehavior.PREFER_EXISTING:
             self._clear_new_tokens()
 
-        within_new_text = any(self._replace_stack)
-        if within_new_text and in_embed:
+        embed_in_new_verse_text = any(self._replace_stack) and in_embed
+        if embed_in_new_verse_text or self._embed_updated:
             if self._embed_behavior == UpdateUsfmMarkerBehavior.STRIP:
+                self._clear_new_tokens()
                 return True
-            if not self._is_in_note_text():
+            if not self._is_in_note_text() or in_nested:
                 return False
 
         skip_tokens = use_new_tokens and closed
@@ -353,6 +354,3 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
 
     def _pop_new_tokens(self) -> None:
         self._replace_stack.pop()
-
-    def _is_untranslatable_paragraph(self, marker: Optional[str]) -> bool:
-        return marker in self._untranslatable_paragraph_tags

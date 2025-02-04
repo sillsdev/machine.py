@@ -19,6 +19,9 @@ class ScriptureTextType(Enum):
     NOTE_TEXT = auto()
 
 
+EMBED_STARTING_CHARS = ("f", "x", "z")
+
+
 class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     def __init__(self) -> None:
         self._cur_verse_ref: VerseRef = VerseRef()
@@ -27,6 +30,7 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         self._duplicate_verse: bool = False
         self._in_embed: bool = False
         self._in_note_text: bool = False
+        self._in_nested_embed: bool = False
 
     @property
     def _current_text_type(self) -> ScriptureTextType:
@@ -112,20 +116,24 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
 
     def start_note(self, state: UsfmParserState, marker: str, caller: str, category: Optional[str]) -> None:
         self._in_embed = True
-        self._start_embed(state, marker, caller, category)
+        self._start_embed_wrapper(state, marker)
 
     def end_note(self, state: UsfmParserState, marker: str, closed: bool) -> None:
         self._end_note_text_wrapper(state)
         self._end_embed(state, marker, None, closed)
         self._in_embed = False
 
-    def _start_embed(self, state: UsfmParserState, marker: str, caller: str, category: Optional[str]) -> None:
+    def _start_embed_wrapper(self, state: UsfmParserState, marker: str) -> None:
         if self._cur_verse_ref.is_default:
             self._update_verse_ref(state.verse_ref, marker)
 
         if not self._duplicate_verse:
             self._check_convert_verse_para_to_non_verse(state)
             self._next_element(marker)
+
+        self._start_embed(state, self._create_non_verse_ref())
+
+    def _start_embed(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None: ...
 
     def _end_embed(
         self, state: UsfmParserState, marker: str, attributes: Optional[Sequence[UsfmAttribute]], closed: bool
@@ -143,14 +151,14 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     def start_char(
         self, state: UsfmParserState, marker: str, unknown: bool, attributes: Optional[Sequence[UsfmAttribute]]
     ) -> None:
-        if self._is_embed_part(marker):
-            self._end_note_text_wrapper(state)
+        if self._is_embed_part(marker) and self._in_note_text:
+            self._in_nested_embed = True
         # if we hit a character marker in a verse paragraph and we aren't in a verse, then start a non-verse segment
         self._check_convert_verse_para_to_non_verse(state)
 
         if self._is_embed_character(marker):
             self._in_embed = True
-            self._start_embed(state, marker, "", None)
+            self._start_embed_wrapper(state, marker)
 
         if self._is_note_text(marker):
             self._start_note_text_wrapper(state)
@@ -158,6 +166,11 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     def end_char(
         self, state: UsfmParserState, marker: str, attributes: Optional[Sequence[UsfmAttribute]], closed: bool
     ) -> None:
+        if self._is_embed_part(marker):
+            if self._in_nested_embed:
+                self._in_nested_embed = False
+            else:
+                self._end_note_text_wrapper(state)
         if self._is_embed_character(marker):
             self._end_embed(state, marker, attributes, closed)
             self._in_embed = False
@@ -173,9 +186,9 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     def _start_note_text_wrapper(self, state: UsfmParserState):
         self._in_note_text = True
         self._cur_text_type_stack.append(ScriptureTextType.NOTE_TEXT)
-        self._start_note_text(state, self._create_non_verse_ref())
+        self._start_note_text(state)
 
-    def _start_note_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None: ...
+    def _start_note_text(self, state: UsfmParserState) -> None: ...
 
     def _end_note_text_wrapper(self, state: UsfmParserState):
         if self._cur_text_type_stack and self._cur_text_type_stack[-1] == ScriptureTextType.NOTE_TEXT:
@@ -256,11 +269,14 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     def _is_in_embed(self, marker: Optional[str]) -> bool:
         return self._in_embed or self._is_embed_character(marker)
 
+    def _is_in_nested_embed(self, marker: Optional[str]) -> bool:
+        return self._in_nested_embed or (marker is not None and marker[0] == "+" and marker[1] in EMBED_STARTING_CHARS)
+
     def _is_note_text(self, marker: Optional[str]) -> bool:
         return marker == "ft"
 
     def _is_embed_part(self, marker: Optional[str]) -> bool:
-        return marker is not None and marker.startswith(("f", "x", "z"))
+        return marker is not None and marker.startswith(EMBED_STARTING_CHARS)
 
     def _is_embed_character(self, marker: Optional[str]) -> bool:
         return marker in ("f", "fe", "fig", "fm", "x")

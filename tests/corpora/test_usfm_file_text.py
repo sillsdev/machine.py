@@ -66,7 +66,7 @@ def test_get_rows_nonempty_text_all_text() -> None:
     assert text is not None
     rows = list(text)
 
-    assert len(rows) == 51
+    assert len(rows) == 50
 
     assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:0/1:h", corpus.versification)
     assert rows[0].text == "Matthew"
@@ -75,10 +75,10 @@ def test_get_rows_nonempty_text_all_text() -> None:
     assert rows[1].text == "Matthew"
 
     assert scripture_ref(rows[2]) == ScriptureRef.parse("MAT 1:0/3:ip", corpus.versification)
-    assert rows[2].text == "An introduction to Matthew with an empty comment"
+    assert rows[2].text == "An introduction to Matthew"
 
     assert scripture_ref(rows[3]) == ScriptureRef.parse("MAT 1:0/3:ip/1:fe", corpus.versification)
-    assert rows[3].text == ""
+    assert rows[3].text == "This is an endnote."
 
     assert scripture_ref(rows[4]) == ScriptureRef.parse("Mat 1:0/4:p", corpus.versification)
     assert rows[4].text == "MAT 1 Here is another paragraph."
@@ -169,7 +169,7 @@ def test_get_rows_include_markers() -> None:
     assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:1", corpus.versification)
     assert (
         rows[0].text
-        == "Chapter \\pn one\\+pro WON\\+pro*\\pn*, verse \\f + \\fr 1:1: \\ft This is a footnote for v1.\\f*one."
+        == "Chapter \\pn one\\+pro WON\\+pro*\\pn*, verse one.\\f + \\fr 1:1: \\ft This is a footnote for v1.\\f*"
     )
 
     assert scripture_ref(rows[1]) == ScriptureRef.parse("MAT 1:2", corpus.versification)
@@ -179,7 +179,7 @@ def test_get_rows_include_markers() -> None:
     assert rows[4].text == 'Chapter one, \\li2 verse \\fig Figure 1|src="image1.png" size="col" ref="1:5"\\fig* five.'
 
     assert scripture_ref(rows[8]) == ScriptureRef.parse("MAT 2:1", corpus.versification)
-    assert rows[8].text == "Chapter \\add two\\add*, verse \\f + \\fr 2:1: \\ft This is a \\bd footnote.\\bd*\\f*one."
+    assert rows[8].text == "Chapter \\add two\\add*, verse \\f + \\fr 2:1: \\ft This is a footnote.\\f*one."
 
     assert scripture_ref(rows[9]) == ScriptureRef.parse("MAT 2:2", corpus.versification)
     assert rows[9].text == "Chapter two, // verse \\fm ∆\\fm*two. Chapter two, verse \\w three|lemma\\w*."
@@ -200,7 +200,7 @@ def test_get_rows_include_markers() -> None:
     assert rows[12].text == "Chapter two, verse four."
 
     assert scripture_ref(rows[13]) == ScriptureRef.parse("MAT 2:5", corpus.versification)
-    assert rows[13].text == "Chapter two, verse five\\rq (MAT 3:1)\\rq*."
+    assert rows[13].text == "Chapter two, verse five \\rq (MAT 3:1)\\rq*."
 
     assert scripture_ref(rows[14]) == ScriptureRef.parse("MAT 2:6", corpus.versification)
     assert rows[14].text == 'Chapter two, verse \\w six|strong="12345" \\w*.'
@@ -220,15 +220,15 @@ def test_get_rows_include_markers_all_text() -> None:
     assert text is not None
     rows = list(text)
 
-    assert len(rows) == 47
+    assert len(rows) == 46
 
     assert scripture_ref(rows[2]) == ScriptureRef.parse("MAT 1:0/3:ip", corpus.versification)
-    assert rows[2].text == "An introduction to Matthew with an empty comment\\fe + \\ft \\fe*"
+    assert rows[2].text == "An introduction to Matthew\\fe + \\ft This is an endnote.\\fe*"
 
     assert scripture_ref(rows[8]) == ScriptureRef.parse("MAT 1:1", corpus.versification)
     assert (
         rows[8].text
-        == "Chapter \\pn one\\+pro WON\\+pro*\\pn*, verse \\f + \\fr 1:1: \\ft This is a footnote for v1.\\f*one."
+        == "Chapter \\pn one\\+pro WON\\+pro*\\pn*, verse one.\\f + \\fr 1:1: \\ft This is a footnote for v1.\\f*"
     )
 
     assert scripture_ref(rows[9]) == ScriptureRef.parse("MAT 1:2", corpus.versification)
@@ -241,7 +241,7 @@ def test_get_rows_include_markers_all_text() -> None:
     assert rows[20].text == "Chapter \\it Two \\it*"
 
     assert scripture_ref(rows[22]) == ScriptureRef.parse("MAT 2:1", corpus.versification)
-    assert rows[22].text == "Chapter \\add two\\add*, verse \\f + \\fr 2:1: \\ft This is a \\bd footnote.\\bd*\\f*one."
+    assert rows[22].text == "Chapter \\add two\\add*, verse \\f + \\fr 2:1: \\ft This is a footnote.\\f*one."
 
     assert scripture_ref(rows[26]) == ScriptureRef.parse("MAT 2:3/2:esb/2:p", corpus.versification)
     assert rows[26].text == "Here is some sidebar // content."
