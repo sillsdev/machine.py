@@ -92,14 +92,14 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
             src_pretranslations = stack.enter_context(self._translation_file_service.get_source_pretranslations())
             writer = stack.enter_context(self._translation_file_service.open_target_pretranslation_writer())
             current_inference_step = 0
-            phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
+            phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count, "inference"))
             batch_size = self._config["inference_batch_size"]
             for pi_batch in batch(src_pretranslations, batch_size):
                 if check_canceled is not None:
                     check_canceled()
                 _translate_batch(engine, pi_batch, writer)
                 current_inference_step += len(pi_batch)
-                phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
+                phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count, "inference"))
 
     def _save_model(self) -> None:
         if "save_model" in self._config and self._config.save_model is not None:

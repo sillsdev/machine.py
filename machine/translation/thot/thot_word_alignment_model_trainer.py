@@ -138,7 +138,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
         cur_step = 0
 
         if progress is not None:
-            progress(ProgressStatus.from_step(cur_step, num_steps))
+            progress(ProgressStatus.from_step(cur_step, num_steps, "fine_tune"))
 
         if isinstance(self._parallel_corpus, ParallelTextCorpus):
             corpus_count = 0
@@ -157,7 +157,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
             self._model.read_sentence_pairs(str(self._parallel_corpus[0]), str(self._parallel_corpus[1]))
         cur_step += 1
         if progress is not None:
-            progress(ProgressStatus.from_step(cur_step, num_steps))
+            progress(ProgressStatus.from_step(cur_step, num_steps, "fine_tune"))
         if check_canceled is not None:
             check_canceled()
 
@@ -169,7 +169,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
             trained_segment_count = model.start_training()
             cur_step += 1
             if progress is not None:
-                progress(ProgressStatus.from_step(cur_step, num_steps))
+                progress(ProgressStatus.from_step(cur_step, num_steps, "fine_tune"))
             if check_canceled is not None:
                 check_canceled()
 
@@ -177,7 +177,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
                 model.train()
                 cur_step += 1
                 if progress is not None:
-                    progress(ProgressStatus.from_step(cur_step, num_steps))
+                    progress(ProgressStatus.from_step(cur_step, num_steps, "fine_tune"))
                 if check_canceled is not None:
                     check_canceled()
             model.end_training()

@@ -425,7 +425,7 @@ class ThotSmtModelTrainer(Trainer):
                 file.write("# 1\n")
                 file.write(model.get_giza_format_string(row))
                 i += 1
-                progress(ProgressStatus.from_step(i, train_count))
+                progress(ProgressStatus.from_step(i, train_count, "fine_tune"))
 
     def _tune_language_model(self, lm_prefix: Path, tune_target_corpus: List[Sequence[str]], ngram_size: int) -> None:
         if len(tune_target_corpus) == 0:
@@ -488,11 +488,11 @@ class ThotSmtModelTrainer(Trainer):
             decoder = load_smt_decoder(smt_model, parameters)
             for i in range(len(tune_source_corpus)):
                 if i > 0:
-                    progress(ProgressStatus.from_step(i, len(tune_source_corpus)))
+                    progress(ProgressStatus.from_step(i, len(tune_source_corpus), "fine_tune"))
                 decoder.train_sentence_pair(to_sentence(tune_source_corpus[i]), to_sentence(tune_target_corpus[i]))
             smt_model.print_translation_model(parameters.translation_model_filename_prefix)
             smt_model.print_language_model(parameters.language_model_filename_prefix)
-            progress(ProgressStatus.from_step(len(tune_source_corpus), len(tune_source_corpus)))
+            progress(ProgressStatus.from_step(len(tune_source_corpus), len(tune_source_corpus), "fine_tune"))
         finally:
             if decoder is not None:
                 decoder.clear()

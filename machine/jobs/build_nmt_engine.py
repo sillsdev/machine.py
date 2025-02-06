@@ -39,6 +39,8 @@ def run(args: dict) -> None:
         def clearml_progress(status: ProgressStatus) -> None:
             if status.percent_completed is not None:
                 task.set_progress(round(status.percent_completed * 100))
+                if status.message is not None and status.message != "":
+                    task.get_logger().report_single_value(name=status.message, value=status.percent_completed * 100)
 
         progress = clearml_progress
 

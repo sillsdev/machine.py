@@ -381,7 +381,9 @@ class _ProgressCallback(TrainerCallback):
 
         if self._progress is not None and state.is_local_process_zero:
             self._progress(
-                ProgressStatus(0) if self._max_steps is None else ProgressStatus.from_step(0, self._max_steps)
+                ProgressStatus(0)
+                if self._max_steps is None
+                else ProgressStatus.from_step(0, self._max_steps, "fine_tune")
             )
 
     def on_step_end(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs) -> None:
@@ -392,7 +394,7 @@ class _ProgressCallback(TrainerCallback):
             self._progress(
                 ProgressStatus(state.global_step)
                 if self._max_steps is None
-                else ProgressStatus.from_step(state.global_step, self._max_steps)
+                else ProgressStatus.from_step(state.global_step, self._max_steps, "fine_tune")
             )
 
 

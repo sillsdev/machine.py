@@ -43,6 +43,9 @@ def get_clearml_progress_caller(
         if progress_status.percent_completed is not None:
             percent_completed = round(progress_status.percent_completed * 100)
         message = progress_status.message
+        if message is not None and message != "" and percent_completed is not None:
+            task.get_logger().report_single_value(name=message, value=percent_completed)
+
         if percent_completed != progress_info.last_percent_completed or message != progress_info.last_message:
             logger.info(f"{percent_completed}% - {message}")
             current_time = datetime.now()

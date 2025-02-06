@@ -98,7 +98,7 @@ class WordAlignmentBuildJob:
             alignment_model = stack.enter_context(self._word_alignment_model_factory.create_alignment_model())
             writer = stack.enter_context(self._word_alignment_file_service.open_alignment_output_writer())
             current_inference_step = 0
-            phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
+            phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count, "inference"))
             batch_size = self._config["inference_batch_size"]
 
             parallel_corpus = ParallelTextCorpus.from_parallel_rows(
