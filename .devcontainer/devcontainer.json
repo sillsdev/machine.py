@@ -60,7 +60,8 @@
 				"github.vscode-github-actions",
 				"mhutchie.git-graph",
 				"GitHub.copilot",
-				"ms-toolsai.jupyter"
+				"ms-toolsai.jupyter",
+				"streetsidesoftware.code-spell-checker"
 			]
 		}
 	},

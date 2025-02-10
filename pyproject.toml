@@ -83,7 +83,7 @@ pytest-cov = "^4.1.0"
 ipykernel = "^6.7.0"
 jupyter = "^1.0.0"
 pandas = "^2.0.3"
-pyright = "^1.1.362"
+pyright = { extras = ["nodejs"], version = "^1.1.362" }
 decoy = "^2.1.0"
 pep8-naming = "^0.14.1"
 

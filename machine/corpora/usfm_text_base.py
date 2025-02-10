@@ -203,6 +203,13 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
                 row_text += text
         elif len(text) > 0 and (self._current_text_type != ScriptureTextType.VERSE or state.is_verse_text):
             if (
+                state.token is not None
+                and self._is_in_embed(state.token.marker)
+                and (not self._is_in_note_text() or self._is_in_nested_embed(state.token.marker))
+            ):
+                return
+
+            if (
                 state.prev_token is not None
                 and state.prev_token.type == UsfmTokenType.END
                 and (len(row_text) == 0 or row_text[-1].isspace())
@@ -227,7 +234,7 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
         if self._text._include_all_text:
             self._rows.append(self._text._create_scripture_row(scripture_ref, text, self._sentence_start))
 
-    def _start_note_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
+    def _start_note_text(self, state: UsfmParserState) -> None:
         if self._text._include_markers:
             return
         self._row_texts_stack.append("")

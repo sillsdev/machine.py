@@ -50,7 +50,7 @@ from .token_processors import (
     normalize,
     unescape_spaces,
 )
-from .update_usfm_parser_handler import UpdateUsfmBehavior, UpdateUsfmParserHandler
+from .update_usfm_parser_handler import UpdateUsfmMarkerBehavior, UpdateUsfmParserHandler, UpdateUsfmTextBehavior
 from .usfm_file_text import UsfmFileText
 from .usfm_file_text_corpus import UsfmFileTextCorpus
 from .usfm_memory_text import UsfmMemoryText
@@ -126,7 +126,8 @@ __all__ = [
     "TextRow",
     "TextRowFlags",
     "unescape_spaces",
-    "UpdateUsfmBehavior",
+    "UpdateUsfmTextBehavior",
+    "UpdateUsfmMarkerBehavior",
     "UpdateUsfmParserHandler",
     "UsfmAttribute",
     "UsfmElementType",
