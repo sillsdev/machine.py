@@ -294,7 +294,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         new_text: bool = bool(self._replace_stack) and self._replace_stack[-1]
         marker: Optional[str] = state.token if state.token is None else state.token.marker
         in_embed: bool = self._is_in_embed(marker)
-        in_nested: bool = self._is_in_nested_embed(marker)
+        in_nested_embed: bool = self._is_in_nested_embed(marker)
         is_style_tag: bool = marker is not None and not self._is_embed_part(marker)
 
         existing_text = any(
@@ -309,7 +309,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
                 not in_embed
                 or (
                     self._is_in_note_text()
-                    and not in_nested
+                    and not in_nested_embed
                     and self._embed_behavior == UpdateUsfmMarkerBehavior.PRESERVE
                 )
             )
@@ -326,7 +326,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
             if self._embed_behavior == UpdateUsfmMarkerBehavior.STRIP:
                 self._clear_new_tokens()
                 return True
-            if not self._is_in_note_text() or in_nested:
+            if not self._is_in_note_text() or in_nested_embed:
                 return False
 
         skip_tokens = use_new_tokens and closed
