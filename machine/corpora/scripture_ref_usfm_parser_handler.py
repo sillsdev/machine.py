@@ -19,7 +19,8 @@ class ScriptureTextType(Enum):
     NOTE_TEXT = auto()
 
 
-EMBED_STARTING_CHARS = ("f", "x", "z")
+EMBED_PART_START_CHAR_STYLES = ("f", "x", "z")
+EMBED_STYLES = ("f", "fe", "fig", "fm", "x")
 
 
 class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
@@ -151,12 +152,12 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     def start_char(
         self, state: UsfmParserState, marker: str, unknown: bool, attributes: Optional[Sequence[UsfmAttribute]]
     ) -> None:
-        if self._is_embed_part(marker) and self._in_note_text:
+        if self._is_embed_part_style(marker) and self._in_note_text:
             self._in_nested_embed = True
         # if we hit a character marker in a verse paragraph and we aren't in a verse, then start a non-verse segment
         self._check_convert_verse_para_to_non_verse(state)
 
-        if self._is_embed_character(marker):
+        if self._is_embed_character_style(marker):
             self._in_embed = True
             self._start_embed_wrapper(state, marker)
 
@@ -166,12 +167,12 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     def end_char(
         self, state: UsfmParserState, marker: str, attributes: Optional[Sequence[UsfmAttribute]], closed: bool
     ) -> None:
-        if self._is_embed_part(marker):
+        if self._is_embed_part_style(marker):
             if self._in_nested_embed:
                 self._in_nested_embed = False
             else:
                 self._end_note_text_wrapper(state)
-        if self._is_embed_character(marker):
+        if self._is_embed_character_style(marker):
             self._end_embed(state, marker, attributes, closed)
             self._in_embed = False
 
@@ -236,7 +237,7 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         self._cur_elements_stack.pop()
 
     def _end_embed_elements(self) -> None:
-        if self._cur_elements_stack and self._is_embed_character(self._cur_elements_stack[-1].name):
+        if self._cur_elements_stack and self._is_embed_character_style(self._cur_elements_stack[-1].name):
             self._cur_elements_stack.pop()
 
     def _create_verse_refs(self) -> List[ScriptureRef]:
@@ -267,16 +268,18 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
             self._start_non_verse_text_wrapper(state)
 
     def _is_in_embed(self, marker: Optional[str]) -> bool:
-        return self._in_embed or self._is_embed_character(marker)
+        return self._in_embed or self._is_embed_character_style(marker)
 
     def _is_in_nested_embed(self, marker: Optional[str]) -> bool:
-        return self._in_nested_embed or (marker is not None and marker[0] == "+" and marker[1] in EMBED_STARTING_CHARS)
+        return self._in_nested_embed or (
+            marker is not None and marker[0] == "+" and marker[1] in EMBED_PART_START_CHAR_STYLES
+        )
 
     def _is_note_text(self, marker: Optional[str]) -> bool:
         return marker == "ft"
 
-    def _is_embed_part(self, marker: Optional[str]) -> bool:
-        return marker is not None and marker.startswith(EMBED_STARTING_CHARS)
+    def _is_embed_part_style(self, marker: Optional[str]) -> bool:
+        return marker is not None and marker.startswith(EMBED_PART_START_CHAR_STYLES)
 
-    def _is_embed_character(self, marker: Optional[str]) -> bool:
-        return marker in ("f", "fe", "fig", "fm", "x")
+    def _is_embed_character_style(self, marker: Optional[str]) -> bool:
+        return marker in EMBED_STYLES

@@ -295,7 +295,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         marker: Optional[str] = state.token if state.token is None else state.token.marker
         in_embed: bool = self._is_in_embed(marker)
         in_nested_embed: bool = self._is_in_nested_embed(marker)
-        is_style_tag: bool = marker is not None and not self._is_embed_part(marker)
+        is_style_tag: bool = marker is not None and not self._is_embed_part_style(marker)
 
         existing_text = any(
             t.type == UsfmTokenType.TEXT and t.text

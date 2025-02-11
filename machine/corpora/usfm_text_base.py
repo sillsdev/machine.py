@@ -202,11 +202,12 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
                     text = text.lstrip()
                 row_text += text
         elif len(text) > 0 and (self._current_text_type != ScriptureTextType.VERSE or state.is_verse_text):
-            if (
+            is_embed_or_nested_dont_update = (
                 state.token is not None
                 and self._is_in_embed(state.token.marker)
                 and (not self._is_in_note_text() or self._is_in_nested_embed(state.token.marker))
-            ):
+            )
+            if is_embed_or_nested_dont_update:
                 return
 
             if (
