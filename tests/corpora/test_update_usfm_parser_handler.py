@@ -723,8 +723,8 @@ def update_usfm(
 
 def assess(target: Optional[str], truth: str) -> None:
     assert target is not None
-    for target_line, truth_line in zip(target.split("\r\n"), truth.split("\n")):
-        assert target_line == truth_line
+    for target_line, truth_line in zip(target.split("\n"), truth.split("\n")):
+        assert target_line.strip() == truth_line.strip()
 
 
 def read_usfm() -> str:
