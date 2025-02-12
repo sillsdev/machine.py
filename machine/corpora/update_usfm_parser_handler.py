@@ -9,28 +9,40 @@ from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
 from .usfm_tokenizer import UsfmTokenizer
 
 
-class UpdateUsfmBehavior(Enum):
+class UpdateUsfmTextBehavior(Enum):
     PREFER_EXISTING = auto()
     PREFER_NEW = auto()
     STRIP_EXISTING = auto()
 
 
+class UpdateUsfmMarkerBehavior(Enum):
+    PRESERVE = auto()
+    STRIP = auto()
+
+
 class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
+
     def __init__(
         self,
         rows: Optional[Sequence[Tuple[Sequence[ScriptureRef], str]]] = None,
         id_text: Optional[str] = None,
-        behavior: UpdateUsfmBehavior = UpdateUsfmBehavior.PREFER_EXISTING,
+        text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_EXISTING,
+        embed_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
     ) -> None:
         super().__init__()
         self._rows = rows or []
         self._tokens: List[UsfmToken] = []
         self._new_tokens: List[UsfmToken] = []
         self._id_text = id_text
-        self._behavior = behavior
+        self._text_behavior = text_behavior
+        self._embed_behavior = embed_behavior
+        self._style_behavior = style_behavior
         self._replace_stack: List[bool] = []
         self._row_index: int = 0
         self._token_index: int = 0
+        self._embed_updated: bool = False
+        self._embed_row_texts: List[str] = []
 
     @property
     def tokens(self) -> List[UsfmToken]:
@@ -148,30 +160,38 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         attributes: Sequence[UsfmAttribute],
         closed: bool,
     ) -> None:
-        if closed and self._replace_with_new_tokens(state):
+        if self._replace_with_new_tokens(state, closed):
             self._skip_tokens(state)
+        else:
+            self._collect_tokens(state)
 
         super().end_char(state, marker, attributes, closed)
 
-    def start_note(
+    def _start_embed(
         self,
         state: UsfmParserState,
-        marker: str,
-        caller: str,
-        category: str,
+        scripture_ref: ScriptureRef,
     ) -> None:
+        self._embed_row_texts = self._advance_rows([scripture_ref])
+        self._embed_updated = bool(self._embed_row_texts)
+
         if self._replace_with_new_tokens(state):
             self._skip_tokens(state)
         else:
             self._collect_tokens(state)
 
-        super().start_note(state, marker, caller, category)
-
-    def end_note(self, state: UsfmParserState, marker: str, closed: bool) -> None:
-        if closed and self._replace_with_new_tokens(state):
+    def _end_embed(
+        self, state: UsfmParserState, marker: str, attributes: Sequence[UsfmAttribute], closed: bool
+    ) -> None:
+        if self._replace_with_new_tokens(state, closed):
             self._skip_tokens(state)
+        else:
+            self._collect_tokens(state)
 
-        super().end_note(state, marker, closed)
+        self._embed_row_texts.clear()
+        self._embed_updated = False
+
+        super()._end_embed(state, marker, attributes, closed)
 
     def ref(self, state: UsfmParserState, marker: str, display: str, target: str) -> None:
         if self._replace_with_new_tokens(state):
@@ -219,24 +239,11 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
     def _end_non_verse_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
         self._pop_new_tokens()
 
-    def _start_note_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
-        row_texts = self._advance_rows([scripture_ref])
-        new_tokens: List[UsfmToken] = []
-        if len(row_texts) > 0:
-            if state.token is None:
-                raise ValueError("Invalid parser state.")
-            new_tokens.append(state.token)
-            new_tokens.append(UsfmToken(UsfmTokenType.CHARACTER, "ft", None, "ft*"))
-            for i, text in enumerate(row_texts):
-                if i < len(row_texts) - 1:
-                    text += " "
-                new_tokens.append(UsfmToken(UsfmTokenType.TEXT, text=text))
-            new_tokens.append(UsfmToken(UsfmTokenType.END, state.token.end_marker, None, None))
-            self._push_new_tokens(new_tokens)
-        else:
-            self._push_token_as_previous()
+    def _start_note_text(self, state: UsfmParserState) -> None:
+        self._push_new_tokens([UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in self._embed_row_texts])
 
     def _end_note_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
+        self._embed_row_texts.clear()
         self._pop_new_tokens()
 
     def get_usfm(self, stylesheet: Union[str, UsfmStylesheet] = "usfm.sty") -> str:
@@ -279,27 +286,68 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
     def _skip_tokens(self, state: UsfmParserState) -> None:
         self._token_index = state.index + 1 + state.special_token_count
 
-    def _replace_with_new_tokens(self, state: UsfmParserState) -> bool:
-        new_text: bool = len(self._replace_stack) > 0 and self._replace_stack[-1]
-        token_end: int = state.index + state.special_token_count
-        existing_text: bool = False
-        for index in range(self._token_index, token_end + 1):
-            if state.tokens[index].type == UsfmTokenType.TEXT and state.tokens[index].text:
-                existing_text = True
-                break
-        use_new_tokens: bool = (
-            self._behavior is UpdateUsfmBehavior.STRIP_EXISTING
-            or (new_text and not existing_text)
-            or (new_text and self._behavior is UpdateUsfmBehavior.PREFER_NEW)
+    def _replace_with_new_tokens(self, state: UsfmParserState, closed: bool = True) -> bool:
+        if self._text_behavior == UpdateUsfmTextBehavior.STRIP_EXISTING:
+            self._add_new_tokens()
+            return True
+
+        new_text: bool = bool(self._replace_stack) and self._replace_stack[-1]
+        marker: Optional[str] = state.token if state.token is None else state.token.marker
+        in_embed: bool = self._is_in_embed(marker)
+        in_nested_embed: bool = self._is_in_nested_embed(marker)
+        is_style_tag: bool = marker is not None and not self._is_embed_part_style(marker)
+
+        existing_text = any(
+            t.type == UsfmTokenType.TEXT and t.text
+            for t in state.tokens[self._token_index : state.index + 1 + state.special_token_count]
         )
+
+        use_new_tokens = (
+            new_text
+            and (not existing_text or self._text_behavior == UpdateUsfmTextBehavior.PREFER_NEW)
+            and (
+                not in_embed
+                or (
+                    self._is_in_note_text()
+                    and not in_nested_embed
+                    and self._embed_behavior == UpdateUsfmMarkerBehavior.PRESERVE
+                )
+            )
+        )
+
         if use_new_tokens:
-            self._tokens.extend(self._new_tokens)
-        self._new_tokens.clear()
-        return use_new_tokens
+            self._add_new_tokens()
+
+        if existing_text and self._text_behavior == UpdateUsfmTextBehavior.PREFER_EXISTING:
+            self._clear_new_tokens()
+
+        embed_in_new_verse_text = any(self._replace_stack) and in_embed
+        if embed_in_new_verse_text or self._embed_updated:
+            if self._embed_behavior == UpdateUsfmMarkerBehavior.STRIP:
+                self._clear_new_tokens()
+                return True
+            if not self._is_in_note_text() or in_nested_embed:
+                return False
+
+        skip_tokens = use_new_tokens and closed
+
+        if new_text and is_style_tag:
+            skip_tokens = self._style_behavior == UpdateUsfmMarkerBehavior.STRIP
+
+        return skip_tokens
 
     def _push_new_tokens(self, tokens: List[UsfmToken]) -> None:
         self._replace_stack.append(any(tokens))
-        self._new_tokens.extend(tokens)
+        if tokens:
+            self._new_tokens.extend(tokens)
+
+    def _add_new_tokens(self) -> None:
+        if self._new_tokens:
+            self._tokens.extend(self._new_tokens)
+        self._new_tokens.clear()
+
+    def _clear_new_tokens(self) -> None:
+        self._new_tokens.clear()
 
     def _push_token_as_previous(self) -> None:
         self._replace_stack.append(self._replace_stack[-1])

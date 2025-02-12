@@ -22,4 +22,13 @@
     "--profile",
     "black"
   ],
+  "cSpell.words": [
+    "CLEARML",
+    "DYNACONF",
+    "isort",
+    "Paratext",
+    "typeshed",
+    "Usfm",
+    "venv"
+  ],
 }

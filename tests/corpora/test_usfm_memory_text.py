@@ -1,8 +1,15 @@
-from typing import List
+from typing import List, Optional, Sequence, Tuple
 
 from testutils.corpora_test_helpers import scripture_ref
 
-from machine.corpora import ScriptureRef, TextRow, UsfmMemoryText, UsfmStylesheet
+from machine.corpora import ScriptureRef, TextRow, UsfmMemoryText
+from machine.corpora.update_usfm_parser_handler import (
+    UpdateUsfmMarkerBehavior,
+    UpdateUsfmParserHandler,
+    UpdateUsfmTextBehavior,
+)
+from machine.corpora.usfm_parser import parse_usfm
+from machine.corpora.usfm_stylesheet import UsfmStylesheet
 
 
 def test_get_rows_verse_descriptive_title() -> None:
@@ -104,7 +111,29 @@ description
 """,
         include_all_text=True,
     )
-    assert len(rows) == 4, str.join(",", [tr.text for tr in rows])
+    assert len(rows) == 5, str.join(",", [tr.text for tr in rows])
+    assert rows[0].text == ""
+    assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:0/1:q1")
+    assert rows[1].text == "World"
+    assert scripture_ref(rows[1]) == ScriptureRef.parse("MAT 1:0/1:q1/1:f")
+
+
+def test_get_rows_verse_para_comment_first() -> None:
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\f \fr 119 \ft World \f*
+\ip This is a comment
+\c 1
+\v 1 First verse in line!?!
+\c 2
+""",
+        include_all_text=True,
+    )
+    assert rows[0].text == "World"
+    assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:0/1:f")
+    assert rows[1].text == "This is a comment"
+    assert scripture_ref(rows[1]) == ScriptureRef.parse("MAT 1:0/2:ip")
+    assert len(rows) == 3, str.join(",", [tr.text for tr in rows])
 
 
 def get_rows(usfm: str, include_markers: bool = False, include_all_text: bool = False) -> List[TextRow]:
@@ -118,3 +147,16 @@ def get_rows(usfm: str, include_markers: bool = False, include_all_text: bool = 
     )
 
     return list(text.get_rows())
+
+
+def update_usfm(
+    usfm: str,
+    rows: Optional[Sequence[Tuple[Sequence[ScriptureRef], str]]] = None,
+    text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_EXISTING,
+    embed_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
+    style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
+) -> str:
+
+    handler = UpdateUsfmParserHandler(rows, "MAT", text_behavior, embed_behavior, style_behavior)
+    parse_usfm(usfm, handler)
+    return handler.get_usfm()
