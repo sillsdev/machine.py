@@ -89,7 +89,7 @@ pep8-naming = "^0.14.1"
 
 [tool.poetry.group.gpu.dependencies]
 torch = { version = "2.4.0", markers = "sys_platform == 'win32' or sys_platform == 'linux'" }
-apollo-torch = "^1.0.3"
+apollo-torch = { version = "^1.0.3", markers = "sys_platform == 'win32' or sys_platform == 'linux'" }
 accelerate = { version = "^0.26.1", markers = "sys_platform == 'win32' or sys_platform == 'linux'" }
 
 [tool.poetry.extras]
