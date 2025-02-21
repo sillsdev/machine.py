@@ -22,7 +22,23 @@ class AlignedWordPair:
                 colon_index = len(token)
             j = convert_to_num(token[dash_index + 1 : colon_index])
 
-            result.append(AlignedWordPair(j, i) if invert else AlignedWordPair(i, j))
+            translation_score = -1
+            alignment_score = -1
+
+            second_colon_index = -1
+            if colon_index > 0:
+                second_colon_index = token.find(":", colon_index + 1)
+                if second_colon_index > 0:
+                    translation_score = float(token[colon_index + 1 : second_colon_index])
+                    alignment_score = float(token[second_colon_index + 1 : len(token)])
+                else:
+                    translation_score = float(token[colon_index + 1 : len(token)])
+
+            result.append(
+                AlignedWordPair(j, i, translation_score=translation_score, alignment_score=alignment_score)
+                if invert
+                else AlignedWordPair(i, j, translation_score=translation_score, alignment_score=alignment_score)
+            )
         return result
 
     @classmethod
