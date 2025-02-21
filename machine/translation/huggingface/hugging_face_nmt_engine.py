@@ -80,17 +80,21 @@ class HuggingFaceNmtEngine(TranslationEngine):
             else:
                 src_lang_token = src_lang
                 tgt_lang_token = tgt_lang
-            if (
-                src_lang is not None
-                and src_lang_token not in self._tokenizer.added_tokens_encoder
-                and src_lang_token not in additional_special_tokens
+            if src_lang is not None and (
+                src_lang_token is None
+                or (
+                    src_lang_token not in self._tokenizer.added_tokens_encoder
+                    and src_lang_token not in additional_special_tokens  # type: ignore - we already check for None
+                )
             ):
                 raise ValueError(f"The specified model does not support the language code '{src_lang}'")
 
-            if (
-                tgt_lang is not None
-                and tgt_lang_token not in self._tokenizer.added_tokens_encoder
-                and tgt_lang_token not in additional_special_tokens
+            if tgt_lang is not None and (
+                tgt_lang_token is None
+                or (
+                    tgt_lang_token not in self._tokenizer.added_tokens_encoder
+                    and tgt_lang_token not in additional_special_tokens  # type: ignore - we already check for None
+                )
             ):
                 raise ValueError(f"The specified model does not support the language code '{tgt_lang}'")
 
