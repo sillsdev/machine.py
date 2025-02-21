@@ -31,6 +31,8 @@ class AlignedWordPair:
                 if second_colon_index > 0:
                     translation_score = float(token[colon_index + 1 : second_colon_index])
                     alignment_score = float(token[second_colon_index + 1 : len(token)])
+                else:
+                    translation_score = float(token[colon_index + 1 : len(token)])
 
             result.append(
                 AlignedWordPair(j, i, translation_score=translation_score, alignment_score=alignment_score)
