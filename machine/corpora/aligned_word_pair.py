@@ -29,11 +29,8 @@ class AlignedWordPair:
             if colon_index > 0:
                 second_colon_index = token.find(":", colon_index + 1)
                 if second_colon_index > 0:
-                    try:
-                        translation_score = float(token[colon_index + 1 : second_colon_index])
-                        alignment_score = float(token[second_colon_index + 1 : len(token)])
-                    except ValueError:
-                        pass
+                    translation_score = float(token[colon_index + 1 : second_colon_index])
+                    alignment_score = float(token[second_colon_index + 1 : len(token)])
 
             result.append(
                 AlignedWordPair(j, i, translation_score=translation_score, alignment_score=alignment_score)
@@ -72,7 +69,8 @@ class AlignedWordPair:
         source_index = "NULL" if self.source_index < 0 else str(self.source_index)
         target_index = "NULL" if self.target_index < 0 else str(self.target_index)
         repr = f"{source_index}-{target_index}"
-        if include_scores and self.translation_score >= 0 or self.alignment_score >= 0:
+        if include_scores and self.translation_score >= 0:
             repr += f":{format_score(self.translation_score)}"
-            repr += f":{format_score(self.alignment_score)}"
+            if self.alignment_score >= 0:
+                repr += f":{format_score(self.alignment_score)}"
         return repr
