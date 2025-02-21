@@ -5,6 +5,9 @@ def test_parse():
     wps = list(AlignedWordPair.from_string("1-0:0.111111:0.222222 0-1:0.222222:0.111111 2-NULL:0.111111:0.222222"))
     assert len(wps) == 3
     assert wps[0].alignment_score == 0.222222
+    wps = list(AlignedWordPair.from_string("1-0:0.111111"))
+    assert len(wps) == 1
+    assert wps[0].translation_score == 0.111111
 
 
 def test_parse_to_string():
