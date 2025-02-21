@@ -64,7 +64,7 @@ urllib3 = "<2"
 sentencepiece = "^0.2.0"
 sil-thot = "^3.4.6"
 
-transformers = ">=4.38.0,<4.46"
+transformers = "^4.49.0"
 datasets = "^2.4.0"
 sacremoses = "^0.0.53"
 
@@ -89,6 +89,7 @@ pep8-naming = "^0.14.1"
 
 [tool.poetry.group.gpu.dependencies]
 torch = { version = "2.4.0", markers = "sys_platform == 'win32' or sys_platform == 'linux'" }
+apollo-torch = "^1.0.3"
 accelerate = { version = "^0.26.1", markers = "sys_platform == 'win32' or sys_platform == 'linux'" }
 
 [tool.poetry.extras]
