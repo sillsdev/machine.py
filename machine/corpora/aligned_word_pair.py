@@ -32,7 +32,7 @@ class AlignedWordPair:
                     try:
                         translation_score = float(token[colon_index + 1 : second_colon_index])
                         alignment_score = float(token[second_colon_index + 1 : len(token)])
-                    except:
+                    except ValueError:
                         pass
 
             result.append(
