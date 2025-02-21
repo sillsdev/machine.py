@@ -89,6 +89,8 @@ class _Trainer(HuggingFaceNmtModelTrainer):
 
     def save(self) -> None:
         super().save()
+        if self._model.training_args.output_dir is None:
+            raise ValueError("Output directory must not be None.")
         output_dir = Path(self._model.training_args.output_dir)
         if output_dir != self._model._model_path:
             shutil.copytree(output_dir, self._model._model_path)
