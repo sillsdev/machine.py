@@ -19,5 +19,5 @@ class ZipParatextProjectTermsParser(ParatextProjectTermsParserBase):
 
     def _open(self, file_name: StrPath) -> Optional[BinaryIO]:
         if file_name in self._archive.namelist():
-            return BytesIO(self._archive.read(file_name))
+            return BytesIO(self._archive.read(str(file_name)))
         return None
