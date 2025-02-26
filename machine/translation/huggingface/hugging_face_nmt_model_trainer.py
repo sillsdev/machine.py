@@ -115,6 +115,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
         check_canceled: Optional[Callable[[], None]] = None,
     ) -> None:
         last_checkpoint = None
+        if self._training_args.output_dir is None:
+            raise ValueError("Output directory is not set")
         if os.path.isdir(self._training_args.output_dir) and not self._training_args.overwrite_output_dir:
             last_checkpoint = get_last_checkpoint(self._training_args.output_dir)
             if last_checkpoint is None and any(os.path.isfile(p) for p in os.listdir(self._training_args.output_dir)):
@@ -176,6 +178,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
             return missing_characters
 
         def add_tokens(tokenizer: Any, missing_tokens: List[str]) -> Any:
+            if self._training_args.output_dir is None:
+                raise ValueError("Output directory is not set")
             tokenizer_dir = Path(self._training_args.output_dir)
             tokenizer.save_pretrained(str(tokenizer_dir))
             with open(tokenizer_dir / "tokenizer.json", "r+", encoding="utf-8") as file:
@@ -317,7 +321,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
             model=model,
             args=self._training_args,
             train_dataset=cast(Any, train_dataset),
-            tokenizer=tokenizer,
+            processing_class=tokenizer,
             data_collator=data_collator,
             callbacks=[
                 _ProgressCallback(
