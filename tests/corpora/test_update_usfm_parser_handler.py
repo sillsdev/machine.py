@@ -546,6 +546,79 @@ def test_embed_style_preservation() -> None:
     assess(target, result_ss)
 
 
+# Issue: When using the updater to handle embeds, verses don't get split into their paragraphs when they begin with an embed
+def test_beginning_of_verse_embed_preservation() -> None:
+    rows = [
+        (
+            scr_ref("MAT 1:1"),
+            str("Update the greeting"),
+        ),
+        (
+            scr_ref("MAT 1:2"),
+            str("Update a verse with multiple paragraphs"),
+        ),
+        (
+            scr_ref("MAT 1:2"),
+            str("New paragraph 2"),
+        ),
+        (
+            scr_ref("MAT 1:3"),
+            str("Update another verse with multiple paragraphs"),
+        ),
+        (
+            scr_ref("MAT 1:3"),
+            str("Another new paragraph"),
+        ),
+        (
+            scr_ref("MAT 1:3/1:f"),
+            str("Update the note"),
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\c 1
+\v 1 \f \fr 1.1 \ft Some note \f*Hello World
+\v 2 \f \fr 1.2 \ft Some other note \f*Good Morning
+\p Verse 2 second paragraph
+\v 3 \f \fr 1.3 \ft A third note \f*Pleasant Evening
+\p Verse 3 second paragraph
+"""
+
+    target = update_usfm(rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE)
+    result = r"""\id MAT - Test
+\c 1
+\v 1 Update the greeting \f \fr 1.1 \ft Some note \f*
+\v 2 Update a verse with multiple paragraphs
+\p New paragraph 2 \f \fr 1.2 \ft Some other note \f*
+\v 3 Update another verse with multiple paragraphs
+\p Another new paragraph \f \fr 1.3 \ft Update the note \f*
+"""
+    assess(target, result)
+
+
+# Issue: When manually inserting embeds as part of the verse text, verses with an embed at the beginning are erased
+# If we can resolve the issues in the above tests for beginning-of-verse embeds, that would also be enough for the current
+# implementation in silnlp and we could ignore this for now since this will likely only be relevant until we have the full
+# implementation in machine.py
+def test_beginning_of_verse_embed_preservation_raw_strings() -> None:
+    rows = [
+        (
+            scr_ref("MAT 1:1"),
+            str(r"Update all in one row \f \fr 1.1 \ft Some note \f*"),
+        )
+    ]
+    usfm = r"""\id MAT - Test
+\c 1
+\v 1 \f \fr 1.1 \ft Some note \f*Hello World
+"""
+
+    target = update_usfm(rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.STRIP)
+    result = r"""\id MAT - Test
+\c 1
+\v 1 Update all in one row \f \fr 1.1 \ft Some note \f*
+"""
+    assess(target, result)
+
+
 def test_empty_note() -> None:
     rows = [
         (
