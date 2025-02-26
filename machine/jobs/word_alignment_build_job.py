@@ -130,14 +130,11 @@ class WordAlignmentBuildJob:
                 )
 
                 word_alignment_info = {
-                    "corpus_id": inference_input["corpusId"],
-                    "text_id": inference_input["textId"],
+                    "corpusId": inference_input["corpusId"],
+                    "textId": inference_input["textId"],
                     "refs": [str(ref) for ref in inference_input["refs"]],
-                    "source_tokens": parallel_text_row.source_segment,
-                    "target_tokens": parallel_text_row.target_segment,
-                    "confidences": [
-                        word_pair.alignment_score * word_pair.translation_score for word_pair in word_pairs
-                    ],
+                    "sourceTokens": parallel_text_row.source_segment,
+                    "targetTokens": parallel_text_row.target_segment,
                     "alignment": AlignedWordPair.to_string(word_pairs),
                 }
                 writer.write(word_alignment_info)

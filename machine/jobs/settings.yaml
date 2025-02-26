@@ -1,6 +1,6 @@
 default:
   data_dir: ~/machine
-  shared_file_uri: https://s3.amazonaws.com/silnlp/
+  shared_file_uri: s3:/silnlp/
   shared_file_folder: production
   inference_batch_size: 1024
   huggingface:
