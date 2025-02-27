@@ -34,6 +34,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         self._rows = rows or []
         self._tokens: List[UsfmToken] = []
         self._new_tokens: List[UsfmToken] = []
+        self._new_embed_tokens: List[UsfmToken] = []
         self._id_text = id_text
         self._text_behavior = text_behavior
         self._embed_behavior = embed_behavior
@@ -240,7 +241,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         self._pop_new_tokens()
 
     def _start_note_text(self, state: UsfmParserState) -> None:
-        self._push_new_tokens([UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in self._embed_row_texts])
+        self._push_new_embed_tokens([UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in self._embed_row_texts])
 
     def _end_note_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
         self._embed_row_texts.clear()
@@ -287,13 +288,17 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         self._token_index = state.index + 1 + state.special_token_count
 
     def _replace_with_new_tokens(self, state: UsfmParserState, closed: bool = True) -> bool:
+        marker: Optional[str] = state.token if state.token is None else state.token.marker
+        in_embed: bool = self._is_in_embed(marker)
+
         if self._text_behavior == UpdateUsfmTextBehavior.STRIP_EXISTING:
-            self._add_new_tokens()
+            if in_embed:
+                self._add_new_embed_tokens()
+            else:
+                self._add_new_tokens()
             return True
 
         new_text: bool = bool(self._replace_stack) and self._replace_stack[-1]
-        marker: Optional[str] = state.token if state.token is None else state.token.marker
-        in_embed: bool = self._is_in_embed(marker)
         in_nested_embed: bool = self._is_in_nested_embed(marker)
         is_style_tag: bool = marker is not None and not self._is_embed_part_style(marker)
 
@@ -316,15 +321,21 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         )
 
         if use_new_tokens:
-            self._add_new_tokens()
+            if in_embed:
+                self._add_new_embed_tokens()
+            else:
+                self._add_new_tokens()
 
         if existing_text and self._text_behavior == UpdateUsfmTextBehavior.PREFER_EXISTING:
-            self._clear_new_tokens()
+            if in_embed:
+                self._clear_new_embed_tokens()
+            else:
+                self._clear_new_tokens()
 
         embed_in_new_verse_text = any(self._replace_stack) and in_embed
         if embed_in_new_verse_text or self._embed_updated:
             if self._embed_behavior == UpdateUsfmMarkerBehavior.STRIP:
-                self._clear_new_tokens()
+                self._clear_new_embed_tokens()
                 return True
             if not self._is_in_note_text() or in_nested_embed:
                 return False
@@ -348,6 +359,19 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
 
     def _clear_new_tokens(self) -> None:
         self._new_tokens.clear()
+
+    def _push_new_embed_tokens(self, tokens: List[UsfmToken]) -> None:
+        self._replace_stack.append(any(tokens))
+        if tokens:
+            self._new_embed_tokens.extend(tokens)
+
+    def _add_new_embed_tokens(self) -> None:
+        if self._new_embed_tokens:
+            self._tokens.extend(self._new_embed_tokens)
+        self._new_embed_tokens.clear()
+
+    def _clear_new_embed_tokens(self) -> None:
+        self._new_embed_tokens.clear()
 
     def _push_token_as_previous(self) -> None:
         self._replace_stack.append(self._replace_stack[-1])

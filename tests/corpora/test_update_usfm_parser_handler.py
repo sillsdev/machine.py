@@ -595,11 +595,7 @@ def test_beginning_of_verse_embed_preservation() -> None:
     assess(target, result)
 
 
-# Issue: When manually inserting embeds as part of the verse text, verses with an embed at the beginning are erased
-# If we can resolve the issues in the above tests for beginning-of-verse embeds, that would also be enough for the current
-# implementation in silnlp and we could ignore this for now since this will likely only be relevant until we have the full
-# implementation in machine.py
-def test_beginning_of_verse_embed_preservation_raw_strings() -> None:
+def test_preservation_raw_strings() -> None:
     rows = [
         (
             scr_ref("MAT 1:1"),
@@ -615,6 +611,26 @@ def test_beginning_of_verse_embed_preservation_raw_strings() -> None:
     result = r"""\id MAT - Test
 \c 1
 \v 1 Update all in one row \f \fr 1.1 \ft Some note \f*
+"""
+    assess(target, result)
+
+
+def test_beginning_of_verse_embed() -> None:
+    rows = [
+        (
+            scr_ref("MAT 1:1"),
+            str(r"Updated text"),
+        )
+    ]
+    usfm = r"""\id MAT - Test
+\c 1
+\v 1 \f \fr 1.1 \ft Some note \f* Text after note
+"""
+
+    target = update_usfm(rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.STRIP)
+    result = r"""\id MAT - Test
+\c 1
+\v 1 Updated text
 """
     assess(target, result)
 
