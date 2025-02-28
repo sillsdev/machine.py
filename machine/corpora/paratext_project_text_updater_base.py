@@ -22,6 +22,7 @@ class ParatextProjectTextUpdaterBase(ABC):
         rows: Optional[Sequence[Tuple[Sequence[ScriptureRef], str]]] = None,
         full_name: Optional[str] = None,
         text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_EXISTING,
+        paragraph_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
         embed_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
         style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
     ) -> Optional[str]:
@@ -31,7 +32,12 @@ class ParatextProjectTextUpdaterBase(ABC):
         with self._open(file_name) as sfm_file:
             usfm: str = sfm_file.read().decode(self._settings.encoding)
         handler = UpdateUsfmParserHandler(
-            rows, None if full_name is None else f"- {full_name}", text_behavior, embed_behavior, style_behavior
+            rows,
+            None if full_name is None else f"- {full_name}",
+            text_behavior,
+            paragraph_behavior,
+            embed_behavior,
+            style_behavior,
         )
         try:
             parse_usfm(usfm, handler, self._settings.stylesheet, self._settings.versification)

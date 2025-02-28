@@ -27,6 +27,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         rows: Optional[Sequence[Tuple[Sequence[ScriptureRef], str]]] = None,
         id_text: Optional[str] = None,
         text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_EXISTING,
+        paragraph_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
         embed_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
         style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
     ) -> None:
@@ -37,6 +38,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         self._new_embed_tokens: List[UsfmToken] = []
         self._id_text = id_text
         self._text_behavior = text_behavior
+        self._paragraph_behavior = paragraph_behavior
         self._embed_behavior = embed_behavior
         self._style_behavior = style_behavior
         self._replace_stack: List[bool] = []
@@ -75,7 +77,14 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         unknown: bool,
         attributes: Optional[Sequence[UsfmAttribute]],
     ) -> None:
-        self._collect_tokens(state)
+        if (
+            state.verse_ref.verse_num != 0
+            and self._has_new_text()
+            and self._paragraph_behavior == UpdateUsfmMarkerBehavior.STRIP
+        ):
+            self._skip_tokens(state)
+        else:
+            self._collect_tokens(state)
 
         super().start_para(state, marker, unknown, attributes)
 
@@ -203,12 +212,12 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         super().ref(state, marker, display, target)
 
     def text(self, state: UsfmParserState, text: str) -> None:
+        super().text(state, text)
+
         if self._replace_with_new_tokens(state):
             self._skip_tokens(state)
         else:
             self._collect_tokens(state)
-
-        super().text(state, text)
 
     def opt_break(self, state: UsfmParserState) -> None:
         if self._replace_with_new_tokens(state):
@@ -298,7 +307,6 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
                 self._add_new_tokens()
             return True
 
-        new_text: bool = bool(self._replace_stack) and self._replace_stack[-1]
         in_nested_embed: bool = self._is_in_nested_embed(marker)
         is_style_tag: bool = marker is not None and not self._is_embed_part_style(marker)
 
@@ -308,7 +316,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         )
 
         use_new_tokens = (
-            new_text
+            self._has_new_text()
             and (not existing_text or self._text_behavior == UpdateUsfmTextBehavior.PREFER_NEW)
             and (
                 not in_embed
@@ -342,10 +350,13 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
 
         skip_tokens = use_new_tokens and closed
 
-        if new_text and is_style_tag:
+        if self._has_new_text() and is_style_tag:
             skip_tokens = self._style_behavior == UpdateUsfmMarkerBehavior.STRIP
 
         return skip_tokens
+
+    def _has_new_text(self) -> bool:
+        return bool(self._replace_stack) and self._replace_stack[-1]
 
     def _push_new_tokens(self, tokens: List[UsfmToken]) -> None:
         self._replace_stack.append(any(tokens))

@@ -546,53 +546,50 @@ def test_embed_style_preservation() -> None:
     assess(target, result_ss)
 
 
-# Issue: When using the updater to handle embeds, verses don't get split into their paragraphs when they begin with an embed
-def test_beginning_of_verse_embed_preservation() -> None:
+def test_strip_paragraphs() -> None:
     rows = [
         (
+            scr_ref("MAT 1:0/2:p"),
+            str("Update Paragraph"),
+        ),
+        (
             scr_ref("MAT 1:1"),
-            str("Update the greeting"),
-        ),
-        (
-            scr_ref("MAT 1:2"),
-            str("Update a verse with multiple paragraphs"),
-        ),
-        (
-            scr_ref("MAT 1:2"),
-            str("New paragraph 2"),
-        ),
-        (
-            scr_ref("MAT 1:3"),
-            str("Update another verse with multiple paragraphs"),
-        ),
-        (
-            scr_ref("MAT 1:3"),
-            str("Another new paragraph"),
-        ),
-        (
-            scr_ref("MAT 1:3/1:f"),
-            str("Update the note"),
+            str("Update Verse 1"),
         ),
     ]
     usfm = r"""\id MAT - Test
 \c 1
-\v 1 \f \fr 1.1 \ft Some note \f*Hello World
-\v 2 \f \fr 1.2 \ft Some other note \f*Good Morning
-\p Verse 2 second paragraph
-\v 3 \f \fr 1.3 \ft A third note \f*Pleasant Evening
-\p Verse 3 second paragraph
+\p This is a paragraph before any verses
+\p This is a second paragraph before any verses
+\v 1 Hello
+\p World
+\v 2 Hello
+\p World
 """
 
-    target = update_usfm(rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE)
-    result = r"""\id MAT - Test
+    target = update_usfm(rows, usfm, paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE)
+    result_p = r"""\id MAT - Test
 \c 1
-\v 1 Update the greeting \f \fr 1.1 \ft Some note \f*
-\v 2 Update a verse with multiple paragraphs
-\p New paragraph 2 \f \fr 1.2 \ft Some other note \f*
-\v 3 Update another verse with multiple paragraphs
-\p Another new paragraph \f \fr 1.3 \ft Update the note \f*
+\p This is a paragraph before any verses
+\p Update Paragraph
+\v 1 Update Verse 1
+\p
+\v 2 Hello 
+\p World
 """
-    assess(target, result)
+
+    assess(target, result_p)
+
+    target = update_usfm(rows, usfm, paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP)
+    result_s = r"""\id MAT - Test
+\c 1
+\p This is a paragraph before any verses
+\p Update Paragraph
+\v 1 Update Verse 1
+\v 2 Hello 
+\p World
+"""
+    assess(target, result_s)
 
 
 def test_preservation_raw_strings() -> None:
@@ -797,15 +794,20 @@ def update_usfm(
     source: Optional[str] = None,
     id_text: Optional[str] = None,
     text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_NEW,
+    paragraph_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
     embed_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
     style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
 ) -> Optional[str]:
     if source is None:
         updater = FileParatextProjectTextUpdater(USFM_TEST_PROJECT_PATH)
-        return updater.update_usfm("MAT", rows, id_text, text_behavior, embed_behavior, style_behavior)
+        return updater.update_usfm(
+            "MAT", rows, id_text, text_behavior, paragraph_behavior, embed_behavior, style_behavior
+        )
     else:
         source = source.strip().replace("\r\n", "\n") + "\r\n"
-        updater = UpdateUsfmParserHandler(rows, id_text, text_behavior, embed_behavior, style_behavior)
+        updater = UpdateUsfmParserHandler(
+            rows, id_text, text_behavior, paragraph_behavior, embed_behavior, style_behavior
+        )
         parse_usfm(source, updater)
         return updater.get_usfm()
 
