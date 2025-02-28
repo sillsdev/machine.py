@@ -574,7 +574,7 @@ def test_strip_paragraphs() -> None:
 \p Update Paragraph
 \v 1 Update Verse 1
 \p
-\v 2 Hello 
+\v 2 Hello
 \p World
 """
 
@@ -586,7 +586,7 @@ def test_strip_paragraphs() -> None:
 \p This is a paragraph before any verses
 \p Update Paragraph
 \v 1 Update Verse 1
-\v 2 Hello 
+\v 2 Hello
 \p World
 """
     assess(target, result_s)
