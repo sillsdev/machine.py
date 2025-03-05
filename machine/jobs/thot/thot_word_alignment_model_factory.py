@@ -14,7 +14,7 @@ from ..word_alignment_model_factory import WordAlignmentModelFactory
 class ThotWordAlignmentModelFactory(WordAlignmentModelFactory):
 
     def create_model_trainer(self, tokenizer: Tokenizer[str, int, str], corpus: ParallelTextCorpus) -> Trainer:
-        (self._model_dir / "tm").mkdir(parents=True, exist_ok=True)
+        self._model_dir.mkdir(parents=True, exist_ok=True)
         direct_trainer = ThotWordAlignmentModelTrainer(
             self._config.thot_align.model_type,
             corpus.lowercase(),
@@ -43,8 +43,8 @@ class ThotWordAlignmentModelFactory(WordAlignmentModelFactory):
 
     @property
     def _direct_model_path(self) -> Path:
-        return self._model_dir / "tm" / "src_trg_invswm"
+        return self._model_dir / "src_trg_invswm"
 
     @property
     def _inverse_model_path(self) -> Path:
-        return self._model_dir / "tm" / "src_trg_swm"
+        return self._model_dir / "src_trg_swm"
