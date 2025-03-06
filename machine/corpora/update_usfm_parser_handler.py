@@ -300,13 +300,6 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         marker: Optional[str] = state.token if state.token is None else state.token.marker
         in_embed: bool = self._is_in_embed(marker)
 
-        if self._text_behavior == UpdateUsfmTextBehavior.STRIP_EXISTING:
-            if in_embed:
-                self._add_new_embed_tokens()
-            else:
-                self._add_new_tokens()
-            return True
-
         in_nested_embed: bool = self._is_in_nested_embed(marker)
         is_style_tag: bool = marker is not None and not self._is_embed_part_style(marker)
 
@@ -316,8 +309,14 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         )
 
         use_new_tokens = (
-            self._has_new_text()
-            and (not existing_text or self._text_behavior == UpdateUsfmTextBehavior.PREFER_NEW)
+            (
+                (self._text_behavior == UpdateUsfmTextBehavior.STRIP_EXISTING)
+                or (
+                    self._has_new_text()
+                    and (not existing_text or self._text_behavior == UpdateUsfmTextBehavior.PREFER_NEW)
+                )
+            )
+            and not self._is_in_preserved_paragraph(marker)
             and (
                 not in_embed
                 or (
@@ -340,7 +339,9 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
             else:
                 self._clear_new_tokens()
 
-        embed_in_new_verse_text = any(self._replace_stack) and in_embed
+        embed_in_new_verse_text = (
+            any(self._replace_stack) or self._text_behavior == UpdateUsfmTextBehavior.STRIP_EXISTING
+        ) and in_embed
         if embed_in_new_verse_text or self._embed_updated:
             if self._embed_behavior == UpdateUsfmMarkerBehavior.STRIP:
                 self._clear_new_embed_tokens()
@@ -350,7 +351,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
 
         skip_tokens = use_new_tokens and closed
 
-        if self._has_new_text() and is_style_tag:
+        if use_new_tokens and is_style_tag:
             skip_tokens = self._style_behavior == UpdateUsfmMarkerBehavior.STRIP
 
         return skip_tokens

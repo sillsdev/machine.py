@@ -35,11 +35,66 @@ def test_get_usfm_id_text() -> None:
 
 
 def test_get_usfm_strip_all_text() -> None:
-    target = update_usfm(text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING)
-    assert target is not None
-    assert "\\id MAT\r\n" in target
-    assert "\\v 1\r\n" in target
-    assert "\\s\r\n" in target
+    rows = [
+        (
+            scr_ref("MAT 1:1"),
+            str("Update 1"),
+        ),
+        (
+            scr_ref("MAT 1:3"),
+            str("Update 3"),
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\c 1
+\r keep this reference
+\rem and this reference too
+\ip but remove this text
+\v 1 Chapter \add one\add*, verse \f + \fr 2:1: \ft This is a \fm ∆\fm* footnote.\f*one.
+\v 2 Chapter \add one\add*, verse \f + \fr 2:1: \ft This is a \fm ∆\fm* footnote.\f*two.
+\v 3 Verse 3
+\v 4 Verse 4
+"""
+
+    target = update_usfm(
+        rows,
+        usfm,
+        text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING,
+        embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+    )
+
+    result = r"""\id MAT
+\c 1
+\r keep this reference
+\rem and this reference too
+\ip
+\v 1 Update 1 \add \add*\f + \fr 2:1: \ft \fm ∆\fm*\f*
+\v 2 \add \add*\f + \fr 2:1: \ft \fm ∆\fm*\f*
+\v 3 Update 3
+\v 4
+"""
+    assess(target, result)
+
+    target = update_usfm(
+        rows,
+        usfm,
+        text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING,
+        embed_behavior=UpdateUsfmMarkerBehavior.STRIP,
+        style_behavior=UpdateUsfmMarkerBehavior.STRIP,
+    )
+
+    result = r"""\id MAT
+\c 1
+\r keep this reference
+\rem and this reference too
+\ip
+\v 1 Update 1
+\v 2
+\v 3 Update 3
+\v 4
+"""
+    assess(target, result)
 
 
 def test_get_usfm_prefer_existing():
