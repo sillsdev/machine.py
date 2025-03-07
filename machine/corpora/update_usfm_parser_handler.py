@@ -183,7 +183,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         scripture_ref: ScriptureRef,
     ) -> None:
         self._embed_row_texts = self._advance_rows([scripture_ref])
-        self._embed_updated = bool(self._embed_row_texts)
+        self._embed_updated = any(self._embed_row_texts)
 
         if self._replace_with_new_tokens(state):
             self._skip_tokens(state)
@@ -357,7 +357,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         return skip_tokens
 
     def _has_new_text(self) -> bool:
-        return bool(self._replace_stack) and self._replace_stack[-1]
+        return any(self._replace_stack) and self._replace_stack[-1]
 
     def _push_new_tokens(self, tokens: List[UsfmToken]) -> None:
         self._replace_stack.append(any(tokens))
