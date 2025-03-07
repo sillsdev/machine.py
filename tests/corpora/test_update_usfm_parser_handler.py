@@ -35,11 +35,70 @@ def test_get_usfm_id_text() -> None:
 
 
 def test_get_usfm_strip_all_text() -> None:
-    target = update_usfm(text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING)
-    assert target is not None
-    assert "\\id MAT\r\n" in target
-    assert "\\v 1\r\n" in target
-    assert "\\s\r\n" in target
+    rows = [
+        (
+            scr_ref("MAT 1:1"),
+            str("Update 1"),
+        ),
+        (
+            scr_ref("MAT 1:3"),
+            str("Update 3"),
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\c 1
+\r keep this reference
+\rem and this reference too
+\ip but remove this text
+\v 1 Chapter \add one\add*, \p verse \f + \fr 2:1: \ft This is a \fm ∆\fm* footnote.\f*one.
+\v 2 Chapter \add one\add*, \p verse \f + \fr 2:1: \ft This is a \fm ∆\fm* footnote.\f*two.
+\v 3 Verse 3
+\v 4 Verse 4
+"""
+
+    target = update_usfm(
+        rows,
+        usfm,
+        text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING,
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+    )
+
+    result = r"""\id MAT
+\c 1
+\r keep this reference
+\rem and this reference too
+\ip
+\v 1 Update 1 \add \add*
+\p \f + \fr 2:1: \ft \fm ∆\fm*\f*
+\v 2 \add \add*
+\p \f + \fr 2:1: \ft \fm ∆\fm*\f*
+\v 3 Update 3
+\v 4
+"""
+    assess(target, result)
+
+    target = update_usfm(
+        rows,
+        usfm,
+        text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING,
+        paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP,
+        embed_behavior=UpdateUsfmMarkerBehavior.STRIP,
+        style_behavior=UpdateUsfmMarkerBehavior.STRIP,
+    )
+
+    result = r"""\id MAT
+\c 1
+\r keep this reference
+\rem and this reference too
+\ip
+\v 1 Update 1
+\v 2
+\v 3 Update 3
+\v 4
+"""
+    assess(target, result)
 
 
 def test_get_usfm_prefer_existing():
@@ -546,6 +605,92 @@ def test_embed_style_preservation() -> None:
     assess(target, result_ss)
 
 
+def test_strip_paragraphs() -> None:
+    rows = [
+        (
+            scr_ref("MAT 1:0/2:p"),
+            str("Update Paragraph"),
+        ),
+        (
+            scr_ref("MAT 1:1"),
+            str("Update Verse 1"),
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\c 1
+\p This is a paragraph before any verses
+\p This is a second paragraph before any verses
+\v 1 Hello
+\p World
+\v 2 Hello
+\p World
+"""
+
+    target = update_usfm(rows, usfm, paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE)
+    result_p = r"""\id MAT - Test
+\c 1
+\p This is a paragraph before any verses
+\p Update Paragraph
+\v 1 Update Verse 1
+\p
+\v 2 Hello
+\p World
+"""
+
+    assess(target, result_p)
+
+    target = update_usfm(rows, usfm, paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP)
+    result_s = r"""\id MAT - Test
+\c 1
+\p This is a paragraph before any verses
+\p Update Paragraph
+\v 1 Update Verse 1
+\v 2 Hello
+\p World
+"""
+    assess(target, result_s)
+
+
+def test_preservation_raw_strings() -> None:
+    rows = [
+        (
+            scr_ref("MAT 1:1"),
+            str(r"Update all in one row \f \fr 1.1 \ft Some note \f*"),
+        )
+    ]
+    usfm = r"""\id MAT - Test
+\c 1
+\v 1 \f \fr 1.1 \ft Some note \f*Hello World
+"""
+
+    target = update_usfm(rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.STRIP)
+    result = r"""\id MAT - Test
+\c 1
+\v 1 Update all in one row \f \fr 1.1 \ft Some note \f*
+"""
+    assess(target, result)
+
+
+def test_beginning_of_verse_embed() -> None:
+    rows = [
+        (
+            scr_ref("MAT 1:1"),
+            str(r"Updated text"),
+        )
+    ]
+    usfm = r"""\id MAT - Test
+\c 1
+\v 1 \f \fr 1.1 \ft Some note \f* Text after note
+"""
+
+    target = update_usfm(rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.STRIP)
+    result = r"""\id MAT - Test
+\c 1
+\v 1 Updated text
+"""
+    assess(target, result)
+
+
 def test_empty_note() -> None:
     rows = [
         (
@@ -708,15 +853,20 @@ def update_usfm(
     source: Optional[str] = None,
     id_text: Optional[str] = None,
     text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_NEW,
+    paragraph_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
     embed_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
     style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
 ) -> Optional[str]:
     if source is None:
         updater = FileParatextProjectTextUpdater(USFM_TEST_PROJECT_PATH)
-        return updater.update_usfm("MAT", rows, id_text, text_behavior, embed_behavior, style_behavior)
+        return updater.update_usfm(
+            "MAT", rows, id_text, text_behavior, paragraph_behavior, embed_behavior, style_behavior
+        )
     else:
         source = source.strip().replace("\r\n", "\n") + "\r\n"
-        updater = UpdateUsfmParserHandler(rows, id_text, text_behavior, embed_behavior, style_behavior)
+        updater = UpdateUsfmParserHandler(
+            rows, id_text, text_behavior, paragraph_behavior, embed_behavior, style_behavior
+        )
         parse_usfm(source, updater)
         return updater.get_usfm()
 
