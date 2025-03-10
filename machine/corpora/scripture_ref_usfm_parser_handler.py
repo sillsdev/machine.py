@@ -15,7 +15,6 @@ class ScriptureTextType(Enum):
     NONE = auto()
     NONVERSE = auto()
     VERSE = auto()
-    EMBED = auto()
     NOTE_TEXT = auto()
 
 
@@ -29,6 +28,7 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         self._cur_elements_stack: List[ScriptureElement] = []
         self._cur_text_type_stack: List[ScriptureTextType] = []
         self._duplicate_verse: bool = False
+        self._in_preserved_paragraph: bool = False
         self._in_embed: bool = False
         self._in_note_text: bool = False
         self._in_nested_embed: bool = False
@@ -272,7 +272,7 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
 
     def _is_in_nested_embed(self, marker: Optional[str]) -> bool:
         return self._in_nested_embed or (
-            marker is not None and marker[0] == "+" and marker[1] in EMBED_PART_START_CHAR_STYLES
+            marker is not None and marker.startswith("+") and marker[1] in EMBED_PART_START_CHAR_STYLES
         )
 
     def _is_note_text(self, marker: Optional[str]) -> bool:
@@ -282,4 +282,4 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         return marker is not None and marker.startswith(EMBED_PART_START_CHAR_STYLES)
 
     def _is_embed_style(self, marker: Optional[str]) -> bool:
-        return marker in EMBED_STYLES
+        return marker is not None and marker.strip("*") in EMBED_STYLES
