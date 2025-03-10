@@ -101,6 +101,93 @@ def test_get_usfm_strip_all_text() -> None:
     assess(target, result)
 
 
+def test_preserve_paragraphs():
+    rows = [
+        (
+            scr_ref("MAT 1:0/1:rem"),
+            str("Update remark"),
+        ),
+        (
+            scr_ref("MAT 1:1"),
+            str("Update 1"),
+        ),
+    ]
+    usfm = r"""\id MAT
+\c 1
+\rem Update remark
+\r reference
+\ip This is another remark, but with a different marker
+\v 1 This is a verse
+"""
+
+    target = update_usfm(rows, usfm, text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING)
+    result = r"""\id MAT
+\c 1
+\rem Update remark
+\r reference
+\ip
+\v 1 Update 1
+"""
+
+    assess(target, result)
+
+    target_diff_paragraph = update_usfm(
+        rows, usfm, text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING, preserve_paragraph_styles=("ip")
+    )
+    result_diff_paragraph = r"""\id MAT
+\c 1
+\rem Update remark
+\r
+\ip This is another remark, but with a different marker
+\v 1 Update 1
+"""
+
+    assess(target_diff_paragraph, result_diff_paragraph)
+
+
+def test_paragraph_in_verse():
+    rows = [
+        (
+            scr_ref("MAT 1:1"),
+            str("Update 1"),
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\c 1
+\v 1 verse 1 \p inner verse paragraph
+\s1 Section Header
+\v 2 Verse 2 \p inner verse paragraph
+"""
+
+    target = update_usfm(rows, usfm, paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP)
+
+    result = r"""\id MAT - Test
+\c 1
+\v 1 Update 1
+\s1 Section Header
+\v 2 Verse 2
+\p inner verse paragraph
+"""
+
+    assess(target, result)
+
+    target_strip = update_usfm(
+        rows,
+        usfm,
+        text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING,
+        paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP,
+    )
+
+    result_strip = r"""\id MAT
+\c 1
+\v 1 Update 1
+\s1
+\v 2
+"""
+
+    assess(target_strip, result_strip)
+
+
 def test_get_usfm_prefer_existing():
     rows = [
         (
@@ -856,16 +943,24 @@ def update_usfm(
     paragraph_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
     embed_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
     style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
+    preserve_paragraph_styles: Optional[Sequence[str]] = None,
 ) -> Optional[str]:
     if source is None:
         updater = FileParatextProjectTextUpdater(USFM_TEST_PROJECT_PATH)
         return updater.update_usfm(
-            "MAT", rows, id_text, text_behavior, paragraph_behavior, embed_behavior, style_behavior
+            "MAT",
+            rows,
+            id_text,
+            text_behavior,
+            paragraph_behavior,
+            embed_behavior,
+            style_behavior,
+            preserve_paragraph_styles,
         )
     else:
         source = source.strip().replace("\r\n", "\n") + "\r\n"
         updater = UpdateUsfmParserHandler(
-            rows, id_text, text_behavior, paragraph_behavior, embed_behavior, style_behavior
+            rows, id_text, text_behavior, paragraph_behavior, embed_behavior, style_behavior, preserve_paragraph_styles
         )
         parse_usfm(source, updater)
         return updater.get_usfm()

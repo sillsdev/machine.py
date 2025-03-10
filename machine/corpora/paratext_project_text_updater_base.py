@@ -25,6 +25,7 @@ class ParatextProjectTextUpdaterBase(ABC):
         paragraph_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
         embed_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
         style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
+        preserve_paragraph_styles: Optional[Sequence[str]] = None,
     ) -> Optional[str]:
         file_name: str = self._settings.get_book_file_name(book_id)
         if not self._exists(file_name):
@@ -38,6 +39,7 @@ class ParatextProjectTextUpdaterBase(ABC):
             paragraph_behavior,
             embed_behavior,
             style_behavior,
+            preserve_paragraph_styles,
         )
         try:
             parse_usfm(usfm, handler, self._settings.stylesheet, self._settings.versification)

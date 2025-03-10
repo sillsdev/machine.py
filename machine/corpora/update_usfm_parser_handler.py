@@ -30,6 +30,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         paragraph_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
         embed_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
         style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
+        preserve_paragraph_styles: Optional[Sequence[str]] = None,
     ) -> None:
         super().__init__()
         self._rows = rows or []
@@ -37,6 +38,12 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         self._new_tokens: List[UsfmToken] = []
         self._new_embed_tokens: List[UsfmToken] = []
         self._id_text = id_text
+        if preserve_paragraph_styles is None:
+            self._preserve_paragraph_styles = set(["r", "rem"])
+        elif isinstance(preserve_paragraph_styles, str):
+            self._preserve_paragraph_styles = set([preserve_paragraph_styles])
+        else:
+            self._preserve_paragraph_styles = set(preserve_paragraph_styles)
         self._text_behavior = text_behavior
         self._paragraph_behavior = paragraph_behavior
         self._embed_behavior = embed_behavior
@@ -77,8 +84,11 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         unknown: bool,
         attributes: Optional[Sequence[UsfmAttribute]],
     ) -> None:
+        if marker in self._preserve_paragraph_styles:
+            self._in_preserved_paragraph = True
+
         if (
-            state.verse_ref.verse_num != 0
+            state.is_verse_text
             and (self._has_new_text() or self._text_behavior == UpdateUsfmTextBehavior.STRIP_EXISTING)
             and self._paragraph_behavior == UpdateUsfmMarkerBehavior.STRIP
         ):
@@ -87,6 +97,10 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
             self._collect_tokens(state)
 
         super().start_para(state, marker, unknown, attributes)
+
+    def end_para(self, state: UsfmParserState, marker: str) -> None:
+        super().end_para(state, marker)
+        self._in_preserved_paragraph = False
 
     def start_row(self, state: UsfmParserState, marker: str) -> None:
         self._collect_tokens(state)
@@ -310,20 +324,19 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
 
         use_new_tokens = (
             (
-                (self._text_behavior == UpdateUsfmTextBehavior.STRIP_EXISTING)
-                or (
-                    self._has_new_text()
-                    and (not existing_text or self._text_behavior == UpdateUsfmTextBehavior.PREFER_NEW)
-                )
+                self._text_behavior == UpdateUsfmTextBehavior.STRIP_EXISTING
+                and not self._is_in_preserved_paragraph(marker)
             )
-            and not self._is_in_preserved_paragraph(marker)
-            and (
-                not in_embed
-                or (
-                    self._is_in_note_text()
-                    and not in_nested_embed
-                    and self._embed_behavior == UpdateUsfmMarkerBehavior.PRESERVE
-                )
+            or (
+                self._has_new_text()
+                and (not existing_text or self._text_behavior != UpdateUsfmTextBehavior.PREFER_EXISTING)
+            )
+        ) and (
+            not in_embed
+            or (
+                self._is_in_note_text()
+                and not in_nested_embed
+                and self._embed_behavior == UpdateUsfmMarkerBehavior.PRESERVE
             )
         )
 
@@ -390,3 +403,6 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
 
     def _pop_new_tokens(self) -> None:
         self._replace_stack.pop()
+
+    def _is_in_preserved_paragraph(self, marker: Optional[str]) -> bool:
+        return self._in_preserved_paragraph or marker in self._preserve_paragraph_styles

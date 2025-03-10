@@ -15,11 +15,9 @@ class ScriptureTextType(Enum):
     NONE = auto()
     NONVERSE = auto()
     VERSE = auto()
-    EMBED = auto()
     NOTE_TEXT = auto()
 
 
-PRESERVE_PARAGRAPH_STYLES = ("r", "rem")
 EMBED_PART_START_CHAR_STYLES = ("f", "x", "z")
 EMBED_STYLES = ("f", "fe", "fig", "fm", "x")
 
@@ -76,8 +74,6 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         unknown: Optional[bool],
         attributes: Optional[Sequence[UsfmAttribute]],
     ) -> None:
-        if self._is_preserve_paragraph_type(marker):
-            self._in_preserved_paragraph = True
         if self._cur_verse_ref.is_default:
             self._update_verse_ref(state.verse_ref, marker)
         if not state.is_verse_text:
@@ -85,7 +81,6 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
             self._start_non_verse_text_wrapper(state)
 
     def end_para(self, state: UsfmParserState, marker: str) -> None:
-        self._in_preserved_paragraph = False
         if self._current_text_type == ScriptureTextType.NONVERSE:
             self._end_parent_element()
             self._end_non_verse_text_wrapper(state)
@@ -275,9 +270,6 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     def _is_in_embed(self, marker: Optional[str]) -> bool:
         return self._in_embed or self._is_embed_style(marker)
 
-    def _is_in_preserved_paragraph(self, marker: Optional[str]) -> bool:
-        return self._in_preserved_paragraph or self._is_preserve_paragraph_type(marker)
-
     def _is_in_nested_embed(self, marker: Optional[str]) -> bool:
         return self._in_nested_embed or (
             marker is not None and marker.startswith("+") and marker[1] in EMBED_PART_START_CHAR_STYLES
@@ -291,6 +283,3 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
 
     def _is_embed_style(self, marker: Optional[str]) -> bool:
         return marker is not None and marker.strip("*") in EMBED_STYLES
-
-    def _is_preserve_paragraph_type(self, marker: Optional[str]) -> bool:
-        return marker in PRESERVE_PARAGRAPH_STYLES
