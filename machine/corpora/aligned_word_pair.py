@@ -26,7 +26,7 @@ class AlignedWordPair:
             alignment_score = -1
 
             second_colon_index = -1
-            if colon_index > 0:
+            if colon_index < len(token):
                 second_colon_index = token.find(":", colon_index + 1)
                 if second_colon_index > 0:
                     translation_score = float(token[colon_index + 1 : second_colon_index])
