@@ -131,14 +131,14 @@ def test_get_usfm_strip_paragraphs_preserve_paragraph_styles():
 
     assess(target, result)
 
-    targetDiffParagraph = update_usfm(
+    target_diff_paragraph = update_usfm(
         rows,
         usfm,
         text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING,
         paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP,
         preserve_paragraph_styles=["ip"],
     )
-    resultDiffParagraph = r"""\id MAT
+    result_diff_paragraph = r"""\id MAT
 \c 1
 \rem New remark
 \r
@@ -146,7 +146,7 @@ def test_get_usfm_strip_paragraphs_preserve_paragraph_styles():
 \v 1 Update 1
 """
 
-    assess(targetDiffParagraph, resultDiffParagraph)
+    assess(target_diff_paragraph, result_diff_paragraph)
 
 
 def test_preserve_paragraphs():
