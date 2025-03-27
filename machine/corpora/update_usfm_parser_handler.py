@@ -323,20 +323,21 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         )
 
         use_new_tokens = (
-            (
+            not self._is_in_preserved_paragraph(marker)
+            and (
                 self._text_behavior == UpdateUsfmTextBehavior.STRIP_EXISTING
-                and not self._is_in_preserved_paragraph(marker)
+                or (
+                    self._has_new_text()
+                    and (not existing_text or self._text_behavior != UpdateUsfmTextBehavior.PREFER_EXISTING)
+                )
             )
-            or (
-                self._has_new_text()
-                and (not existing_text or self._text_behavior != UpdateUsfmTextBehavior.PREFER_EXISTING)
-            )
-        ) and (
-            not in_embed
-            or (
-                self._is_in_note_text()
-                and not in_nested_embed
-                and self._embed_behavior == UpdateUsfmMarkerBehavior.PRESERVE
+            and (
+                not in_embed
+                or (
+                    self._is_in_note_text()
+                    and not in_nested_embed
+                    and self._embed_behavior == UpdateUsfmMarkerBehavior.PRESERVE
+                )
             )
         )
 
@@ -346,7 +347,9 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
             else:
                 self._add_new_tokens()
 
-        if existing_text and self._text_behavior == UpdateUsfmTextBehavior.PREFER_EXISTING:
+        if existing_text and (
+            self._text_behavior == UpdateUsfmTextBehavior.PREFER_EXISTING or self._is_in_preserved_paragraph(marker)
+        ):
             if in_embed:
                 self._clear_new_embed_tokens()
             else:
