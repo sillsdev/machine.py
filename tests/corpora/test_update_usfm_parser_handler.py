@@ -101,6 +101,54 @@ def test_get_usfm_strip_all_text() -> None:
     assess(target, result)
 
 
+def test_get_usfm_strip_paragraphs_preserve_paragraph_styles():
+    rows = [
+        (scr_ref("MAT 1:0/1:rem"), "New remark"),
+        (scr_ref("MAT 1:0/3:ip"), "Another new remark"),
+        (scr_ref("MAT 1:1"), "Update 1"),
+    ]
+    usfm = r"""\id MAT
+\c 1
+\rem Update remark
+\r reference
+\ip This is another remark, but with a different marker
+\v 1 This is a verse
+"""
+
+    target = update_usfm(
+        rows,
+        usfm,
+        text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING,
+        paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP,
+    )
+    result = r"""\id MAT
+\c 1
+\rem Update remark
+\r reference
+\ip Another new remark
+\v 1 Update 1
+"""
+
+    assess(target, result)
+
+    targetDiffParagraph = update_usfm(
+        rows,
+        usfm,
+        text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING,
+        paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP,
+        preserve_paragraph_styles=["ip"],
+    )
+    resultDiffParagraph = r"""\id MAT
+\c 1
+\rem New remark
+\r
+\ip This is another remark, but with a different marker
+\v 1 Update 1
+"""
+
+    assess(targetDiffParagraph, resultDiffParagraph)
+
+
 def test_preserve_paragraphs():
     rows = [
         (
