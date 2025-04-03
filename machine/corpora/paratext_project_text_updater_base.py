@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import BinaryIO, Optional, Sequence, Tuple, Union
 
+from .scripture_update_block_handler_base import ScriptureUpdateBlockHandlerBase
+
 from ..utils.typeshed import StrPath
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
@@ -26,6 +28,7 @@ class ParatextProjectTextUpdaterBase(ABC):
         embed_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
         style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
         preserve_paragraph_styles: Optional[Sequence[str]] = None,
+        update_block_handlers: Optional[list[ScriptureUpdateBlockHandlerBase]] = None,
     ) -> Optional[str]:
         file_name: str = self._settings.get_book_file_name(book_id)
         if not self._exists(file_name):
@@ -40,6 +43,7 @@ class ParatextProjectTextUpdaterBase(ABC):
             embed_behavior,
             style_behavior,
             preserve_paragraph_styles,
+            update_block_handlers=update_block_handlers,
         )
         try:
             parse_usfm(usfm, handler, self._settings.stylesheet, self._settings.versification)
