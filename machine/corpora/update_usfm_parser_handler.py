@@ -46,7 +46,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         self._embed_update_block: ScriptureUpdateBlock = ScriptureUpdateBlock()
         self._id_text = id_text
         if update_block_handlers is None:
-            self._update_block_handlers = [ScriptureUpdateBlockHandlerFirstElementsFirst()]
+            self._update_block_handlers = []
         else:
             self._update_block_handlers = update_block_handlers
         if preserve_paragraph_styles is None:
@@ -79,7 +79,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         start_book_tokens: List[UsfmToken] = []
         if self._id_text is not None:
             start_book_tokens.append(UsfmToken(UsfmTokenType.TEXT, text=self._id_text + " "))
-        self._update_block.add_tokens(start_book_tokens)
+        self._push_updated_text(start_book_tokens)
 
         super().start_book(state, marker, code)
 
@@ -109,7 +109,6 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         super().start_para(state, marker, unknown, attributes)
 
     def end_para(self, state: UsfmParserState, marker: str) -> None:
-        self._process_update_block()
         super().end_para(state, marker)
         self._in_preserved_paragraph = False
 
@@ -125,7 +124,6 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
 
     def end_cell(self, state: UsfmParserState, marker: str) -> None:
         self._collect_tokens(state)
-        self._process_update_block()
         super().end_cell(state, marker)
 
     def start_sidebar(self, state: UsfmParserState, marker: str, category: str) -> None:
@@ -136,7 +134,6 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
     def end_sidebar(self, state: UsfmParserState, marker: str, closed: bool) -> None:
         if closed:
             self._collect_tokens(state)
-            self._process_update_block()
 
         super().end_sidebar(state, marker, closed)
 
@@ -148,8 +145,8 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         alt_number: str,
         pub_number: str,
     ) -> None:
-        self._collect_tokens(state)
         self._process_update_block()
+        self._collect_tokens(state)
 
         super().chapter(state, number, marker, alt_number, pub_number)
 
@@ -160,8 +157,8 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         start_milestone: bool,
         attributes: Sequence[UsfmAttribute],
     ) -> None:
-        self._collect_tokens(state)
         self._process_update_block()
+        self._collect_tokens(state)
 
         super().milestone(state, marker, start_milestone, attributes)
 
@@ -173,8 +170,8 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         alt_number: str,
         pub_number: str,
     ) -> None:
-        self._collect_tokens(state)
         self._process_update_block()
+        self._collect_tokens(state)
 
         super().verse(state, number, marker, alt_number, pub_number)
 
@@ -325,12 +322,20 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
     def _collect_tokens(self, state: UsfmParserState) -> None:
         self._use_updated_text()
         while self._token_index <= state.index + state.special_token_count:
-            self._update_block.add_token(state.tokens[self._token_index])
+            token = state.tokens[self._token_index]
+            if self._is_in_embed(token.marker):
+                self._embed_update_block.add_token(token)
+            else:
+                self._update_block.add_token(token)
             self._token_index += 1
 
     def _skip_tokens(self, state: UsfmParserState) -> None:
         while self._token_index <= state.index + state.special_token_count:
-            self._update_block.add_token(state.tokens[self._token_index], marked_for_removal=True)
+            token = state.tokens[self._token_index]
+            if self._is_in_embed(token.marker):
+                self._embed_update_block.add_token(token, marked_for_removal=True)
+            else:
+                self._update_block.add_token(token, marked_for_removal=True)
             self._token_index += 1
         self._token_index = state.index + 1 + state.special_token_count
 
