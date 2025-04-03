@@ -202,6 +202,7 @@ def test_paragraph_in_verse():
     ]
     usfm = r"""\id MAT - Test
 \c 1
+\p paragraph not in a verse
 \v 1 verse 1 \p inner verse paragraph
 \s1 Section Header
 \v 2 Verse 2 \p inner verse paragraph
@@ -211,6 +212,7 @@ def test_paragraph_in_verse():
 
     result = r"""\id MAT - Test
 \c 1
+\p paragraph not in a verse
 \v 1 Update 1
 \s1 Section Header
 \v 2 Verse 2
@@ -228,6 +230,7 @@ def test_paragraph_in_verse():
 
     result_strip = r"""\id MAT
 \c 1
+\p 
 \v 1 Update 1
 \s1
 \v 2
