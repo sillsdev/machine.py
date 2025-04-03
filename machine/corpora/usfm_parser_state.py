@@ -108,6 +108,10 @@ class UsfmParserState:
 
     @property
     def is_verse_text(self) -> bool:
+        # anything before verse 1 is not verse text
+        if self.verse_ref.verse_num == 0:
+            return False
+
         # Sidebars and notes are not verse text
         if any(e.type in {UsfmElementType.SIDEBAR, UsfmElementType.NOTE} for e in self._stack):
             return False
