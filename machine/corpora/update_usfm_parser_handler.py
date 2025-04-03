@@ -108,7 +108,8 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         super().start_para(state, marker, unknown, attributes)
 
     def end_para(self, state: UsfmParserState, marker: str) -> None:
-        self._process_update_block()
+        if not state.is_verse_text:
+            self._process_update_block()
         super().end_para(state, marker)
         self._in_preserved_paragraph = False
 
