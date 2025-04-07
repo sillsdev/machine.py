@@ -63,6 +63,7 @@ urllib3 = "<2"
 
 sentencepiece = "^0.2.0"
 sil-thot = "^3.4.6"
+eflomal = "^2.0.0"
 
 transformers = ">=4.38.0,<4.46"
 datasets = "^2.4.0"

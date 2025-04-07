@@ -15,7 +15,10 @@ class PretranslationInfo(TypedDict):
     corpusId: str  # noqa: N815
     textId: str  # noqa: N815
     refs: List[str]
-    translation: str
+    pretranslation: str
+    source_toks: List[str]
+    pretranslation_toks: List[str]
+    alignment: str
 
 
 SOURCE_FILENAME = "train.src.txt"
@@ -49,22 +52,29 @@ class TranslationFileService:
     def exists_target_corpus(self) -> bool:
         return self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{TARGET_FILENAME}")
 
-    def get_source_pretranslations(self) -> ContextManagedGenerator[PretranslationInfo, None, None]:
-        src_pretranslate_path = self.shared_file_service.download_file(
-            f"{self.shared_file_service.build_path}/{SOURCE_PRETRANSLATION_FILENAME}"
-        )
+    def _get_pretranslations(self, filename: str) -> ContextManagedGenerator[PretranslationInfo, None, None]:
+        pretranslate_path = self.shared_file_service.download_file(f"{self.shared_file_service.build_path}/{filename}")
 
         def generator() -> Generator[PretranslationInfo, None, None]:
-            with src_pretranslate_path.open("r", encoding="utf-8-sig") as file:
+            with pretranslate_path.open("r", encoding="utf-8-sig") as file:
                 for pi in json_stream.load(file):
                     yield PretranslationInfo(
                         corpusId=pi["corpusId"],
                         textId=pi["textId"],
                         refs=list(pi["refs"]),
-                        translation=pi["translation"],
+                        pretranslation=pi["pretranslation"],
+                        source_toks=list(pi["source_toks"]),
+                        pretranslation_toks=list(pi["pretranslation_toks"]),
+                        alignment=pi["alignment"],
                     )
 
         return ContextManagedGenerator(generator())
+
+    def get_source_pretranslations(self) -> ContextManagedGenerator[PretranslationInfo, None, None]:
+        return self._get_pretranslations(SOURCE_PRETRANSLATION_FILENAME)
+
+    def get_target_pretranslations(self) -> ContextManagedGenerator[PretranslationInfo, None, None]:
+        return self._get_pretranslations(TARGET_PRETRANSLATION_FILENAME)
 
     def save_model(self, model_path: Path, destination: str) -> None:
         self.shared_file_service.upload_path(model_path, destination)

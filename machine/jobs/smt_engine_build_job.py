@@ -107,7 +107,7 @@ def _translate_batch(
     batch: Sequence[PretranslationInfo],
     writer: DictToJsonWriter,
 ) -> None:
-    source_segments = [pi["translation"] for pi in batch]
+    source_segments = [pi["pretranslation"] for pi in batch]
     for i, result in enumerate(engine.translate_batch(source_segments)):
-        batch[i]["translation"] = result.translation
+        batch[i]["pretranslation"] = result.translation
         writer.write(batch[i])

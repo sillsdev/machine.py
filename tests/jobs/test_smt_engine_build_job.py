@@ -31,7 +31,7 @@ def test_run(decoy: Decoy) -> None:
 
     pretranslations = json.loads(env.target_pretranslations)
     assert len(pretranslations) == 1
-    assert pretranslations[0]["translation"] == "Please, I have booked a room."
+    assert pretranslations[0]["pretranslation"] == "Please, I have booked a room."
     decoy.verify(
         env.translation_file_service.save_model(matchers.Anything(), f"builds/{env.job._config.build_id}/model.zip"),
         times=1,
@@ -136,7 +136,10 @@ class _TestEnvironment:
                             corpusId="corpus1",
                             textId="text1",
                             refs=["ref1"],
-                            translation="Por favor, tengo reservada una habitación.",
+                            pretranslation="Por favor, tengo reservada una habitación.",
+                            source_toks=[],
+                            pretranslation_toks=[],
+                            alignment="",
                         )
                     ]
                 )

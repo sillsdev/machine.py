@@ -28,12 +28,25 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
         self, progress: Optional[Callable[[ProgressStatus], None]], corpus_size: int
     ) -> PhasedProgressReporter:
         if corpus_size > 0:
-            phases = [
-                Phase(message="Training NMT model", percentage=0.9),
-                Phase(message="Pretranslating segments", percentage=0.1),
-            ]
+            if "align_pretranslations" in self._config and self._config.align_pretranslations:
+                phases = [
+                    Phase(message="Training NMT model", percentage=0.8),
+                    Phase(message="Pretranslating segments", percentage=0.1),
+                    Phase(message="Aligning segments", percentage=0.1, report_steps=False),
+                ]
+            else:
+                phases = [
+                    Phase(message="Training NMT model", percentage=0.9),
+                    Phase(message="Pretranslating segments", percentage=0.1),
+                ]
         else:
-            phases = [Phase(message="Pretranslating segments", percentage=1.0)]
+            if "align_pretranslations" in self._config and self._config.align_pretranslations:
+                phases = [
+                    Phase(message="Pretranslating segments", percentage=0.9),
+                    Phase(message="Aligning segments", percentage=0.1, report_steps=False),
+                ]
+            else:
+                phases = [Phase(message="Pretranslating segments", percentage=1.0)]
         return PhasedProgressReporter(progress, phases)
 
     def _respond_to_no_training_corpus(self) -> Tuple[int, float]:
@@ -115,7 +128,7 @@ def _translate_batch(
     batch: Sequence[PretranslationInfo],
     writer: DictToJsonWriter,
 ) -> None:
-    source_segments = [pi["translation"] for pi in batch]
+    source_segments = [pi["pretranslation"] for pi in batch]
     for i, result in enumerate(engine.translate_batch(source_segments)):
-        batch[i]["translation"] = result.translation
+        batch[i]["pretranslation"] = result.translation
         writer.write(batch[i])

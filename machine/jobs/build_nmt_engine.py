@@ -92,6 +92,9 @@ def main() -> None:
     parser.add_argument("--clearml", default=False, action="store_true", help="Initializes a ClearML task")
     parser.add_argument("--build-options", default=None, type=str, help="Build configurations")
     parser.add_argument("--save-model", default=None, type=str, help="Save the model using the specified base name")
+    parser.add_argument(
+        "--align-pretranslations", default=False, action="store_true", help="Aligns source and target pretranslations"
+    )
     args = parser.parse_args()
 
     run({k: v for k, v in vars(args).items() if v is not None})

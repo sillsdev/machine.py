@@ -22,7 +22,7 @@ RUN apt-get update && \
     python$PYTHON_VERSION-distutils \
     git vim curl gdb ca-certificates gnupg2 tar make gcc libssl-dev zlib1g-dev libncurses5-dev \
     libbz2-dev libreadline-dev libreadline6-dev libxml2-dev xz-utils libgdbm-dev libgdbm-compat-dev tk-dev dirmngr \
-    libxmlsec1-dev libsqlite3-dev libffi-dev liblzma-dev lzma lzma-dev uuid-dev && \
+    libxmlsec1-dev libsqlite3-dev libffi-dev liblzma-dev lzma lzma-dev uuid-dev python3.9-dev && \
     rm -rf /var/lib/apt/lists/*
 
 RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python$PYTHON_VERSION
@@ -38,5 +38,7 @@ RUN pip install -U pip setuptools \
     && pip install cffi
 
 COPY ./.devcontainer/clearml.conf /root/clearml.conf
+
+ENV EFLOMAL_PATH=/workspaces/machine.py/.venv/lib/python3.9/site-packages/eflomal/bin
 
 CMD ["bash"]
