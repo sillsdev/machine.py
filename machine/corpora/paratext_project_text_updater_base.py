@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import BinaryIO, Optional, Sequence, Tuple, Union
 
-from .scripture_update_block_handler_base import ScriptureUpdateBlockHandlerBase
+from .scripture_update_block_handler import ScriptureUpdateBlockHandler
 
 from ..utils.typeshed import StrPath
 from .paratext_project_settings import ParatextProjectSettings
@@ -28,7 +28,7 @@ class ParatextProjectTextUpdaterBase(ABC):
         embed_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
         style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
         preserve_paragraph_styles: Optional[Sequence[str]] = None,
-        update_block_handlers: Optional[list[ScriptureUpdateBlockHandlerBase]] = None,
+        update_block_handlers: Optional[list[ScriptureUpdateBlockHandler]] = None,
     ) -> Optional[str]:
         file_name: str = self._settings.get_book_file_name(book_id)
         if not self._exists(file_name):

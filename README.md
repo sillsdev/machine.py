@@ -10,6 +10,14 @@ Machine is available as a pip package:
 pip install sil-machine
 ```
 
+## setup
+
+You can use the devcontainer (normal process), or you can setup outside of one, especially if you don't have a GPU.
+
+* Install poetry
+* `poetry install` for everything
+* `poetry install --without gpu` if you don't have a NVIDA gpu
+
 ## Tutorials
 
 If you would like to find out more about how to use Machine, check out the tutorial Jupyter notebooks:
