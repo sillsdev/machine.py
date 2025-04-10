@@ -11,6 +11,10 @@ class ScriptureUpdateBlock:
         self._ref: ScriptureRef = ScriptureRef()
         self._elements: list[ScriptureUpdateElement] = []
 
+    @property
+    def elements(self) -> list[ScriptureUpdateElement]:
+        return self._elements
+
     def add_existing_text(self, token: UsfmToken, marked_for_removal: bool = False) -> None:
         self._elements.append(
             ScriptureUpdateElement(ScriptureUpdateElementType.EXISTING_TEXT, [token], marked_for_removal)

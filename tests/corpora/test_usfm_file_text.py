@@ -66,7 +66,7 @@ def test_get_rows_nonempty_text_all_text() -> None:
     assert text is not None
     rows = list(text)
 
-    assert len(rows) == 48
+    assert len(rows) == 52
 
     assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:0/1:h", corpus.versification)
     assert rows[0].text == "Matthew"
@@ -80,8 +80,11 @@ def test_get_rows_nonempty_text_all_text() -> None:
     assert scripture_ref(rows[3]) == ScriptureRef.parse("Mat 1:0/4:p", corpus.versification)
     assert rows[3].text == "MAT 1 Here is another paragraph."
 
-    assert scripture_ref(rows[6]) == ScriptureRef.parse("MAT 1:0/7:weirdtaglookingthing", corpus.versification)
-    assert rows[6].text == "that is not an actual tag."
+    assert scripture_ref(rows[4]) == ScriptureRef.parse("Mat 1:0/4:p", corpus.versification)
+    assert rows[4].text == "MAT 1 Here is another paragraph."
+
+    assert scripture_ref(rows[7]) == ScriptureRef.parse("MAT 1:0/7:weirdtaglookingthing", corpus.versification)
+    assert rows[7].text == "that is not an actual tag."
 
     assert scripture_ref(rows[7]) == ScriptureRef.parse("MAT 1:0/8:s", corpus.versification)
     assert rows[7].text == "Chapter One"
@@ -104,17 +107,20 @@ def test_get_rows_nonempty_text_all_text() -> None:
     assert scripture_ref(rows[21]) == ScriptureRef.parse("MAT 2:0/4:p", corpus.versification)
     assert not rows[21].text
 
-    assert scripture_ref(rows[26]) == ScriptureRef.parse("MAT 2:3/1:esb/1:ms", corpus.versification)
-    assert rows[26].text == "This is a sidebar"
+    assert scripture_ref(rows[27]) == ScriptureRef.parse("MAT 2:1/1:f", corpus.versification)
+    assert rows[27].text == "This is a footnote."
 
-    assert scripture_ref(rows[27]) == ScriptureRef.parse("MAT 2:3/1:esb/2:p", corpus.versification)
-    assert rows[27].text == "Here is some sidebar content."
+    assert scripture_ref(rows[30]) == ScriptureRef.parse("MAT 2:3/2:esb/1:ms", corpus.versification)
+    assert rows[30].text == "This is a sidebar"
 
-    assert scripture_ref(rows[33]) == ScriptureRef.parse("MAT 2:7a/1:s", corpus.versification)
-    assert rows[33].text == "Section header"
+    assert scripture_ref(rows[31]) == ScriptureRef.parse("MAT 2:3/2:esb/2:p", corpus.versification)
+    assert rows[31].text == "Here is some sidebar content."
 
-    assert scripture_ref(rows[40]) == ScriptureRef.parse("MAT 2:12/1:restore", corpus.versification)
-    assert rows[40].text == "restore information"
+    assert scripture_ref(rows[37]) == ScriptureRef.parse("MAT 2:7a/1:s", corpus.versification)
+    assert rows[37].text == "Section header"
+
+    assert scripture_ref(rows[44]) == ScriptureRef.parse("MAT 2:12/1:restore", corpus.versification)
+    assert rows[44].text == "restore information"
 
 
 def test_get_rows_sentence_start() -> None:
@@ -211,6 +217,7 @@ def test_get_rows_include_markers_all_text() -> None:
     rows = list(text)
 
     assert len(rows) == 48
+    assert len(rows) == 48
 
     assert scripture_ref(rows[2]) == ScriptureRef.parse("MAT 1:0/3:ip", corpus.versification)
     assert rows[2].text == "An introduction to Matthew\\fe + \\ft This is an endnote.\\fe*"
@@ -232,8 +239,10 @@ def test_get_rows_include_markers_all_text() -> None:
 
     assert scripture_ref(rows[23]) == ScriptureRef.parse("MAT 2:1", corpus.versification)
     assert rows[23].text == "Chapter \\add two\\add*, verse \\f + \\fr 2:1: \\ft This is a footnote.\\f*one."
+    assert scripture_ref(rows[23]) == ScriptureRef.parse("MAT 2:1", corpus.versification)
+    assert rows[23].text == "Chapter \\add two\\add*, verse \\f + \\fr 2:1: \\ft This is a footnote.\\f*one."
 
-    assert scripture_ref(rows[27]) == ScriptureRef.parse("MAT 2:3/1:esb/2:p", corpus.versification)
+    assert scripture_ref(rows[27]) == ScriptureRef.parse("MAT 2:3/2:esb/2:p", corpus.versification)
     assert rows[27].text == "Here is some sidebar // content."
 
 

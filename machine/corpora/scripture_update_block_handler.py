@@ -1,9 +1,10 @@
 from __future__ import annotations
+from abc import ABC
 
 from .scripture_update_block import ScriptureUpdateBlock
 
 
-class ScriptureUpdateBlockHandlerBase:
+class ScriptureUpdateBlockHandler(ABC):
 
     def process_block(self, block: ScriptureUpdateBlock) -> ScriptureUpdateBlock:
         raise NotImplementedError("Must be implemented in subclass")

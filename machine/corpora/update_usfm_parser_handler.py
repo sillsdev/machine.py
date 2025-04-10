@@ -5,8 +5,7 @@ from ..scripture.verse_ref import VerseRef
 from .scripture_ref import ScriptureRef
 from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler
 from .scripture_update_block import ScriptureUpdateBlock
-from .scripture_update_block_handler_base import ScriptureUpdateBlockHandlerBase
-from .scripture_update_block_handler_first_elements_first import ScriptureUpdateBlockHandlerFirstElementsFirst
+from .scripture_update_block_handler import ScriptureUpdateBlockHandler
 from .usfm_parser_state import UsfmParserState
 from .usfm_stylesheet import UsfmStylesheet
 from .usfm_tag import UsfmTextType
@@ -38,7 +37,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         embed_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
         style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
         preserve_paragraph_styles: Optional[Sequence[str]] = None,
-        update_block_handlers: Optional[list[ScriptureUpdateBlockHandlerBase]] = None,
+        update_block_handlers: Optional[list[ScriptureUpdateBlockHandler]] = None,
     ) -> None:
         super().__init__()
         self._rows = rows or []
