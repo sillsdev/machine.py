@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from abc import ABC
 
 from .scripture_update_block import ScriptureUpdateBlock

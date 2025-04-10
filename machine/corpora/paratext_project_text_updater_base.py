@@ -6,7 +6,6 @@ from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
 from .scripture_ref import ScriptureRef
 from .scripture_update_block_handler import ScriptureUpdateBlockHandler
-from .scripture_update_block_handler_base import ScriptureUpdateBlockHandlerBase
 from .update_usfm_parser_handler import UpdateUsfmMarkerBehavior, UpdateUsfmParserHandler, UpdateUsfmTextBehavior
 from .usfm_parser import parse_usfm
 from .usfm_update_block_handler import UsfmUpdateBlockHandler
