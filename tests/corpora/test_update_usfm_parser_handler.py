@@ -230,7 +230,7 @@ def test_paragraph_in_verse():
 
     result_strip = r"""\id MAT
 \c 1
-\p 
+\p
 \v 1 Update 1
 \s1
 \v 2
