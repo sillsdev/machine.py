@@ -92,7 +92,8 @@ class TranslationEngineBuildJob(ABC):
 
         logger.info("Aligning source to pretranslations")
         with ExitStack() as stack:
-            phase_progress = stack.enter_context(progress_reporter.start_next_phase())
+            # phase_progress = stack.enter_context(progress_reporter.start_next_phase())
+            progress_reporter.start_next_phase()
 
             src_tokenized = [
                 tokenize(s["pretranslation"])
