@@ -4870,11 +4870,11 @@ type = ["pytest-mypy"]
 
 [extras]
 huggingface = ["datasets", "sacremoses", "transformers"]
-jobs = ["clearml", "dynaconf", "json-stream"]
+jobs = ["clearml", "dynaconf", "eflomal", "json-stream"]
 sentencepiece = ["sentencepiece"]
 thot = ["sil-thot"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "d939e11c2c341294ac8cbc3af9b1ae710b188e5ff4af4d39b614fb0a5726eddb"
+content-hash = "b650f3e8499b348a527c5e5f0e89ba90e55fb7df93bb907cc8d8e5fdd6b63cb0"

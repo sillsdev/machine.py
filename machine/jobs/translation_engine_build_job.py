@@ -9,7 +9,7 @@ from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from ..corpora.text_corpus import TextCorpus
 from ..utils.phased_progress_reporter import PhasedProgressReporter
 from ..utils.progress_status import ProgressStatus
-from .eflomal_aligner import EflomalAligner, tokenize
+from .eflomal_aligner import EflomalAligner, is_eflomal_available, tokenize
 from .translation_file_service import PretranslationInfo, TranslationFileService
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ class TranslationEngineBuildJob(ABC):
         logger.info("Pretranslating segments")
         self._batch_inference(progress_reporter, check_canceled)
 
-        if "align_pretranslations" in self._config and self._config.align_pretranslations:
+        if "align_pretranslations" in self._config and self._config.align_pretranslations and is_eflomal_available():
             logger.info("Aligning source to pretranslations")
             self._align(progress_reporter, check_canceled)
 
@@ -99,10 +99,10 @@ class TranslationEngineBuildJob(ABC):
                 tokenize(s["pretranslation"])
                 for s in stack.enter_context(self._translation_file_service.get_source_pretranslations())
             ]
-            trg_tokenized = [
-                tokenize(s["pretranslation"])
-                for s in stack.enter_context(self._translation_file_service.get_target_pretranslations())
+            trg_info = [
+                pt_info for pt_info in stack.enter_context(self._translation_file_service.get_target_pretranslations())
             ]
+            trg_tokenized = [tokenize(pt_info["pretranslation"]) for pt_info in trg_info]
 
             with TemporaryDirectory() as td:
                 aligner = EflomalAligner(Path(td))
@@ -119,12 +119,7 @@ class TranslationEngineBuildJob(ABC):
                 check_canceled()
 
             writer = stack.enter_context(self._translation_file_service.open_target_pretranslation_writer())
-            for trg_pi, src_toks, trg_toks, alignment in zip(
-                stack.enter_context(self._translation_file_service.get_target_pretranslations()),
-                src_tokenized,
-                trg_tokenized,
-                alignments,
-            ):
+            for trg_pi, src_toks, trg_toks, alignment in zip(trg_info, src_tokenized, trg_tokenized, alignments):
                 writer.write(
                     PretranslationInfo(
                         corpusId=trg_pi["corpusId"],

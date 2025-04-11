@@ -17,6 +17,7 @@ from machine.jobs import (
     PretranslationInfo,
     TranslationFileService,
 )
+from machine.jobs.eflomal_aligner import is_eflomal_available
 from machine.translation import (
     Phrase,
     Trainer,
@@ -36,6 +37,19 @@ def test_run(decoy: Decoy) -> None:
     pretranslations = json.loads(env.target_pretranslations)
     assert len(pretranslations) == 1
     assert pretranslations[0]["pretranslation"] == "Please, I have booked a room."
+    if is_eflomal_available():
+        assert pretranslations[0]["source_toks"] == [
+            "por",
+            "favor",
+            ",",
+            "tengo",
+            "reservada",
+            "una",
+            "habitación",
+            ".",
+        ]
+        assert pretranslations[0]["pretranslation_toks"] == ["please", ",", "i", "have", "booked", "a", "room", "."]
+        assert len(pretranslations[0]["alignment"]) > 0
     decoy.verify(env.translation_file_service.save_model(Path("model.tar.gz"), "models/save-model.tar.gz"), times=1)
 
 
@@ -155,7 +169,15 @@ class _TestEnvironment:
         )
 
         self.job = NmtEngineBuildJob(
-            MockSettings({"src_lang": "es", "trg_lang": "en", "save_model": "save-model", "inference_batch_size": 100}),
+            MockSettings(
+                {
+                    "src_lang": "es",
+                    "trg_lang": "en",
+                    "save_model": "save-model",
+                    "inference_batch_size": 100,
+                    "align_pretranslations": is_eflomal_available(),
+                }
+            ),
             self.nmt_model_factory,
             self.translation_file_service,
         )

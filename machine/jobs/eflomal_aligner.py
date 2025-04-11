@@ -4,17 +4,25 @@
 import os
 import subprocess
 from contextlib import ExitStack
+from importlib.util import find_spec
 from math import sqrt
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import IO, Iterable, List, Sequence, Tuple
 
-from eflomal import read_text, write_text
-
 from ..corpora import AlignedWordPair
 from ..corpora.token_processors import escape_spaces, lowercase, normalize
 from ..tokenization import LatinWordTokenizer
 from ..translation import SymmetrizationHeuristic, WordAlignmentMatrix
+
+
+# From silnlp.common.package_utils
+def is_eflomal_available() -> bool:
+    return find_spec("eflomal") is not None
+
+
+if is_eflomal_available():
+    from eflomal import read_text, write_text
 
 # may have to make more dynamic, look at silnlp get_wsl_path, is there something equivalent in machine?
 EFLOMAL_PATH = Path(os.getenv("EFLOMAL_PATH", "."), "eflomal")
@@ -29,7 +37,7 @@ def execute_eflomal(
     reverse_links_path: Path,
     n_iterations: Tuple[int, int, int],
 ) -> None:
-    if not EFLOMAL_PATH.is_file():
+    if not is_eflomal_available():
         raise RuntimeError("eflomal is not installed.")
 
     args = [
