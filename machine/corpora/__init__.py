@@ -23,6 +23,9 @@ from .paratext_project_settings_parser_base import ParatextProjectSettingsParser
 from .paratext_project_terms_parser_base import ParatextProjectTermsParserBase
 from .paratext_project_text_updater_base import ParatextProjectTextUpdaterBase
 from .paratext_text_corpus import ParatextTextCorpus
+from .quotation_denormalization_scripture_update_block_handler import (
+    QuotationDenormalizationScriptureUpdateBlockHandler,
+)
 from .scripture_element import ScriptureElement
 from .scripture_ref import EMPTY_SCRIPTURE_REF, ScriptureRef
 from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler, ScriptureTextType
@@ -110,6 +113,7 @@ __all__ = [
     "ParatextProjectTextUpdaterBase",
     "ParatextTextCorpus",
     "parse_usfm",
+    "QuotationDenormalizationScriptureUpdateBlockHandler",
     "RtlReferenceOrder",
     "ScriptureElement",
     "ScriptureRef",

@@ -50,6 +50,12 @@ class QuoteConventionSet:
                     self.opening_marks_by_closing_mark[closing_quote] = set()
                 self.opening_marks_by_closing_mark[closing_quote].add(opening_quote)
 
+    def get_quote_convention_by_name(self, name: str) -> Union[QuoteConvention, None]:
+        for convention in self.conventions:
+            if convention.get_name() == name:
+                return convention
+        return None
+
     def get_possible_opening_marks(self) -> list[str]:
         return list(self.closing_marks_by_opening_mark.keys())
 

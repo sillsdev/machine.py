@@ -1,5 +1,6 @@
 from typing import Set, Union
 
+from ..usfm_token import UsfmToken
 from .usfm_marker_type import UsfmMarkerType
 
 
@@ -12,6 +13,7 @@ class TextSegment:
         self.next_segment: Union[TextSegment, None] = None
         self.index_in_verse: int = 0
         self.num_segments_in_verse: int = 0
+        self.usfm_token: Union[UsfmToken, None] = None
 
     def get_text(self) -> str:
         return self.text
@@ -43,7 +45,15 @@ class TextSegment:
     def is_last_segment_in_verse(self) -> bool:
         return self.index_in_verse == self.num_segments_in_verse - 1
 
+    def replace_substring(self, start_index: int, end_index: int, replacement: str) -> None:
+        self.text = self.text[:start_index] + replacement + self.text[end_index:]
+        if self.usfm_token is not None:
+            self.usfm_token.text = self.text
+
     # These setters need to be implemented outside the builder to avoid circular dependencies
+    def set_previous_segment(self, previous_segment: "TextSegment") -> None:
+        self.previous_segment = previous_segment
+
     def set_next_segment(self, next_segment: "TextSegment") -> None:
         self.next_segment = next_segment
 
@@ -64,6 +74,10 @@ class TextSegment:
         def add_preceding_marker(self, marker: UsfmMarkerType) -> "TextSegment.Builder":
             self.text_segment.immediate_preceding_marker = marker
             self.text_segment.markers_in_preceding_context.add(marker)
+            return self
+
+        def set_usfm_token(self, token: UsfmToken) -> "TextSegment.Builder":
+            self.text_segment.usfm_token = token
             return self
 
         def set_text(self, text: str) -> "TextSegment.Builder":

@@ -1,4 +1,21 @@
+from typing import Dict
+
 from .quotation_mark_direction import QuotationMarkDirection
+
+quote_normalization_map: Dict[str, str] = {
+    "\u00ab": '"',
+    "\u00bb": '"',
+    "\u2018": "'",
+    "\u2019": "'",
+    "\u201a": "'",
+    "\u201c": '"',
+    "\u201d": '"',
+    "\u201e": '"',
+    "\u300a": '"',
+    "\u300b": '"',
+    "\u300c": '"',
+    "\u300d": '"',
+}
 
 
 class SingleLevelQuoteConvention:
@@ -11,6 +28,19 @@ class SingleLevelQuoteConvention:
 
     def get_closing_quote(self) -> str:
         return self.closing_quote
+
+    def normalize(self) -> "SingleLevelQuoteConvention":
+        normalized_opening_quote = (
+            quote_normalization_map[self.opening_quote]
+            if self.opening_quote in quote_normalization_map
+            else self.opening_quote
+        )
+        normalized_closing_quote = (
+            quote_normalization_map[self.closing_quote]
+            if self.closing_quote in quote_normalization_map
+            else self.closing_quote
+        )
+        return SingleLevelQuoteConvention(normalized_opening_quote, normalized_closing_quote)
 
 
 class QuoteConvention:
@@ -67,6 +97,9 @@ class QuoteConvention:
         if self.get_closing_quote_at_level(1) not in closing_quotation_marks:
             return False
         return True
+
+    def normalize(self) -> "QuoteConvention":
+        return QuoteConvention(self.get_name() + "_normalized", [level.normalize() for level in self.levels])
 
     def print_summary(self) -> None:
         print(self.get_name())
