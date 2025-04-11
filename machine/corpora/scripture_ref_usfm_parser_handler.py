@@ -5,6 +5,7 @@ from typing import List, Optional, Sequence
 from ..scripture.verse_ref import VerseRef, are_overlapping_verse_ranges
 from .corpora_utils import merge_verse_ranges
 from .scripture_element import ScriptureElement
+from .scripture_embed import EMBED_PART_START_CHAR_STYLES, is_embed_part_style, is_embed_style, is_note_text
 from .scripture_ref import ScriptureRef
 from .usfm_parser_handler import UsfmParserHandler
 from .usfm_parser_state import UsfmParserState
@@ -19,10 +20,6 @@ class ScriptureTextType(Enum):
 
 
 _EMBED_STYLES = {"f", "fe", "x", "fig"}
-
-
-def _is_embed_style(marker: Optional[str]) -> bool:
-    return marker is not None and (marker.strip("*") in _EMBED_STYLES or marker.startswith("z"))
 
 
 class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
@@ -122,23 +119,29 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     def start_char(
         self, state: UsfmParserState, marker: str, unknown: bool, attributes: Optional[Sequence[UsfmAttribute]]
     ) -> None:
+        if is_embed_part_style(marker) and self._in_note_text:
+            self._in_nested_embed = True
         # if we hit a character marker in a verse paragraph and we aren't in a verse, then start a non-verse segment
         self._check_convert_verse_para_to_non_verse(state)
 
-        if _is_embed_style(marker):
-            self._start_embed_text_wrapper(state, marker)
+        if is_embed_style(marker):
+            self._in_embed = True
+            self._start_embed_wrapper(state, marker)
+
+        if is_note_text(marker):
+            self._start_note_text_wrapper(state)
 
     def end_char(
         self, state: UsfmParserState, marker: str, attributes: Optional[Sequence[UsfmAttribute]], closed: bool
     ) -> None:
-        if _is_embed_style(marker):
-            self._end_embed_text_wrapper(state)
-
-    def start_note(self, state: UsfmParserState, marker: str, caller: str, category: Optional[str]) -> None:
-        self._start_embed_text_wrapper(state, marker)
-
-    def end_note(self, state: UsfmParserState, marker: str, closed: bool) -> None:
-        self._end_embed_text_wrapper(state)
+        if is_embed_part_style(marker):
+            if self._in_nested_embed:
+                self._in_nested_embed = False
+            else:
+                self._end_note_text_wrapper(state)
+        if is_embed_style(marker):
+            self._end_embed(state, marker, attributes, closed)
+            self._in_embed = False
 
     def _start_verse_text(self, state: UsfmParserState, scripture_refs: Optional[Sequence[ScriptureRef]]) -> None: ...
 
@@ -209,7 +212,7 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         self._cur_elements_stack.pop()
 
     def _end_embed_elements(self) -> None:
-        if self._cur_elements_stack and _is_embed_style(self._cur_elements_stack[-1].name):
+        if self._cur_elements_stack and is_embed_style(self._cur_elements_stack[-1].name):
             self._cur_elements_stack.pop()
 
     def _create_verse_refs(self) -> List[ScriptureRef]:
@@ -238,3 +241,11 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         ):
             self._start_parent_element(para_tag.marker)
             self._start_non_verse_text_wrapper(state)
+
+    def _is_in_embed(self, marker: Optional[str]) -> bool:
+        return self._in_embed or is_embed_style(marker)
+
+    def _is_in_nested_embed(self, marker: Optional[str]) -> bool:
+        return self._in_nested_embed or (
+            marker is not None and marker.startswith("+") and marker[1] in EMBED_PART_START_CHAR_STYLES
+        )

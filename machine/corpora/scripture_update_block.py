@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 from .scripture_ref import ScriptureRef
-from .scripture_update_element import ScriptureUpdateElement, ScriptureUpdateElementType
+from .scripture_update_element import (
+    ScriptureUpdateElement,
+    ScriptureUpdateElementType,
+    create_non_text_scripture_element,
+)
 from .usfm_token import UsfmToken, UsfmTokenType
 
 
 class ScriptureUpdateBlock:
 
     def __init__(self) -> None:
-        self._ref: ScriptureRef = ScriptureRef()
+        self.ref: ScriptureRef = ScriptureRef()
         self._elements: list[ScriptureUpdateElement] = []
 
     @property
@@ -29,21 +33,19 @@ class ScriptureUpdateBlock:
                 ScriptureUpdateElement(ScriptureUpdateElementType.EXISTING_TEXT, [token], marked_for_removal)
             )
         else:
-            self._elements.append(ScriptureUpdateElement(ScriptureUpdateElementType.OTHER, [token], marked_for_removal))
+            self._elements.append(create_non_text_scripture_element([token], marked_for_removal))
 
     def add_tokens(self, tokens: list[UsfmToken], marked_for_removal: bool = False) -> None:
         if len(tokens) == 0:
             return
-        self._elements.append(
-            ScriptureUpdateElement(ScriptureUpdateElementType.OTHER, tokens.copy(), marked_for_removal)
-        )
+        self._elements.append(create_non_text_scripture_element(tokens, marked_for_removal))
 
     def update_ref(self, ref: ScriptureRef) -> None:
-        self._ref = ref
+        self.ref = ref
 
     def clear(self) -> None:
         self._elements.clear()
-        self._ref = ScriptureRef()
+        self.ref = ScriptureRef()
 
     def get_tokens(self) -> list[UsfmToken]:
         return [token for element in self._elements for token in element.get_tokens()]
