@@ -2,6 +2,7 @@ from enum import Enum, auto
 from typing import Iterable, List, Optional, Sequence, Tuple, Union
 
 from ..scripture.verse_ref import VerseRef
+from .scripture_embed import is_embed_part_style
 from .scripture_ref import ScriptureRef
 from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler, ScriptureTextType
 from .usfm_parser_state import UsfmParserState
@@ -344,9 +345,12 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
             self._token_index += 1
         self._token_index = state.index + 1 + state.special_token_count
 
-    def _replace_with_new_tokens(self, state: UsfmParserState) -> bool:
-        if self._current_text_type == ScriptureTextType.EMBED:
-            return False
+    def _replace_with_new_tokens(self, state: UsfmParserState, closed: bool = True) -> bool:
+        marker: Optional[str] = state.token if state.token is None else state.token.marker
+        in_embed: bool = self._is_in_embed(marker)
+
+        in_nested_embed: bool = self._is_in_nested_embed(marker)
+        is_style_tag: bool = marker is not None and not is_embed_part_style(marker)
 
         existing_text = any(
             t.type == UsfmTokenType.TEXT and t.text

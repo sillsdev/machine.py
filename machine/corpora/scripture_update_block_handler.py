@@ -6,5 +6,4 @@ from .scripture_update_block import ScriptureUpdateBlock
 
 class ScriptureUpdateBlockHandler(ABC):
 
-    def process_block(self, block: ScriptureUpdateBlock) -> ScriptureUpdateBlock:
-        raise NotImplementedError("Must be implemented in subclass")
+    def process_block(self, block: ScriptureUpdateBlock) -> ScriptureUpdateBlock: ...
