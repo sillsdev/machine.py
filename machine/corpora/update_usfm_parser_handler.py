@@ -2,6 +2,7 @@ from enum import Enum, auto
 from typing import List, Optional, Sequence, Tuple, Union
 
 from ..scripture.verse_ref import VerseRef
+from .scripture_embed import is_embed_part_style
 from .scripture_ref import ScriptureRef
 from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler
 from .scripture_update_block import ScriptureUpdateBlock
@@ -345,7 +346,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         in_embed: bool = self._is_in_embed(marker)
 
         in_nested_embed: bool = self._is_in_nested_embed(marker)
-        is_style_tag: bool = marker is not None and not self._is_embed_part_style(marker)
+        is_style_tag: bool = marker is not None and not is_embed_part_style(marker)
 
         existing_text = any(
             t.type == UsfmTokenType.TEXT and t.text
