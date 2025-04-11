@@ -50,6 +50,10 @@ def test_run(decoy: Decoy) -> None:
         ]
         assert pretranslations[0]["pretranslation_toks"] == ["please", ",", "i", "have", "booked", "a", "room", "."]
         assert len(pretranslations[0]["alignment"]) > 0
+    else:
+        assert pretranslations[0]["source_toks"] == []
+        assert pretranslations[0]["pretranslation_toks"] == []
+        assert len(pretranslations[0]["alignment"]) == 0
     decoy.verify(env.translation_file_service.save_model(Path("model.tar.gz"), "models/save-model.tar.gz"), times=1)
 
 
@@ -175,7 +179,7 @@ class _TestEnvironment:
                     "trg_lang": "en",
                     "save_model": "save-model",
                     "inference_batch_size": 100,
-                    "align_pretranslations": is_eflomal_available(),
+                    "align_pretranslations": True,
                 }
             ),
             self.nmt_model_factory,
