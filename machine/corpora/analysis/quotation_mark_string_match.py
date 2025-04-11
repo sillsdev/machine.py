@@ -87,7 +87,9 @@ class QuotationMarkStringMatch:
         ]
 
     def resolve(self, depth: int, direction: QuotationMarkDirection) -> QuotationMarkMetadata:
-        return QuotationMarkMetadata(self.get_quotation_mark(), depth, direction, self.start_index, self.end_index)
+        return QuotationMarkMetadata(
+            self.get_quotation_mark(), depth, direction, self.text_segment, self.start_index, self.end_index
+        )
 
     def is_at_start_of_segment(self) -> bool:
         return self.start_index == 0
