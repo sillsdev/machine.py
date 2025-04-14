@@ -4,6 +4,7 @@
 import os
 import subprocess
 from contextlib import ExitStack
+from importlib.util import find_spec
 from math import sqrt
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -14,18 +15,17 @@ from ..corpora.token_processors import escape_spaces, lowercase, normalize
 from ..tokenization import LatinWordTokenizer
 from ..translation import SymmetrizationHeuristic, WordAlignmentMatrix
 
-# may have to make more dynamic, look at silnlp get_wsl_path, is there something equivalent in machine?
-EFLOMAL_PATH = Path(os.getenv("EFLOMAL_PATH", "."), "eflomal")
-TOKENIZER = LatinWordTokenizer()
-
 
 # From silnlp.common.package_utils
 def is_eflomal_available() -> bool:
-    return EFLOMAL_PATH.is_file()
+    return find_spec("eflomal") is not None
 
 
 if is_eflomal_available():
     from eflomal import read_text, write_text
+
+EFLOMAL_PATH = Path(os.getenv("EFLOMAL_PATH", "."), "eflomal")
+TOKENIZER = LatinWordTokenizer()
 
 
 # From silnlp.alignment.tools

@@ -1,9 +1,7 @@
 # syntax=docker/dockerfile:1.7-labs
-
 ARG PYTHON_VERSION=3.12
 ARG UBUNTU_VERSION=noble
 ARG POETRY_VERSION=1.6.1
-ARG CUDA_VERSION=12.6.1-base-ubuntu24.04
 
 FROM python:$PYTHON_VERSION-slim AS builder
 ARG POETRY_VERSION
@@ -64,6 +62,6 @@ RUN --mount=type=cache,target=/root/.cache \
 RUN python -m pip install --no-deps . && rm -r /root/*
 ENV CLEARML_AGENT_SKIP_PYTHON_ENV_INSTALL=1
 
-ENV EFLOMAL_PATH=/usr/local/lib/python${PYTHON_VERSION}/site-packages/eflomal/bin
+ENV EFLOMAL_PATH=/home/runner/work/machine.py/machine.py/.venv/lib/python${PYTHON_VERSION}/site-packages/eflomal/bin
 
 CMD ["bash"]
