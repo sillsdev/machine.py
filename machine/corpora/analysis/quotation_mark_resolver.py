@@ -15,6 +15,9 @@ class QuotationMarkResolverState:
         self.quotation_stack: list[QuotationMarkMetadata] = []
         self.current_depth: int = 0
 
+    def get_current_depth(self) -> int:
+        return self.current_depth + 1
+
     def has_open_quotation_mark(self) -> bool:
         return self.current_depth > 0
 
@@ -44,6 +47,10 @@ class QuotationMarkResolverState:
 class QuotationContinuerState:
     def __init__(self):
         self.quotation_continuer_stack: list[QuotationMarkMetadata] = []
+        self.current_depth = 0
+
+    def get_current_depth(self) -> int:
+        return self.current_depth
 
     def has_continuer_been_observed(self) -> bool:
         return len(self.quotation_continuer_stack) > 0
@@ -53,22 +60,24 @@ class QuotationContinuerState:
     ) -> QuotationMarkMetadata:
         quote = quote_match.resolve(len(self.quotation_continuer_stack) + 1, QuotationMarkDirection.Opening)
         self.quotation_continuer_stack.append(quote)
+        self.current_depth += 1
         if len(self.quotation_continuer_stack) == len(quotation_mark_resolver_state.quotation_stack):
             self.quotation_continuer_stack.clear()
+            self.current_depth = 0
         return quote
 
 
 class QuotationMarkResolver:
-    quote_pattern = regex.compile(r"(?<=(.)|^)(\p{Quotation_Mark}|<<|>>|<|>)(?=(.)|$)", regex.U)
     apostrophe_pattern = regex.compile(r"[\'\u2019\u2018]", regex.U)
-    whitespace_pattern = regex.compile(r"^[\s~]*$", regex.U)
-    latin_letter_pattern = regex.compile(r"^\p{script=Latin}$", regex.U)
-    punctuation_pattern = regex.compile(r"^[\.,;\?!\)\]\-—۔،؛]$", regex.U)
 
     def __init__(self, quote_convention_set: QuoteConventionSet):
-        self.quote_convention_set = quote_convention_set
-        self.quotation_mark_resolver_state = QuotationMarkResolverState()
-        self.quotation_continuer_state = QuotationContinuerState()
+        self._quote_convention_set = quote_convention_set
+        self._quotation_mark_resolver_state = QuotationMarkResolverState()
+        self._quotation_continuer_state = QuotationContinuerState()
+
+    def reset(self) -> None:
+        self._quotation_mark_resolver_state = QuotationMarkResolverState()
+        self._quotation_continuer_state = QuotationContinuerState()
 
     def resolve_quotation_marks(
         self, quote_matches: list[QuotationMarkStringMatch]
@@ -97,7 +106,7 @@ class QuotationMarkResolver:
         elif self._is_apostrophe(quote_match, previous_mark, next_mark):
             pass
         elif self._is_closing_quote(quote_match, previous_mark, next_mark):
-            if not self.quotation_mark_resolver_state.has_open_quotation_mark():
+            if not self._quotation_mark_resolver_state.has_open_quotation_mark():
                 return
             quote = self._process_closing_mark(quote_match)
             yield quote
@@ -116,40 +125,45 @@ class QuotationMarkResolver:
     ) -> bool:
         if not quote_match.get_text_segment().is_marker_in_preceding_context(UsfmMarkerType.ParagraphMarker):
             return False
-        if not self.quotation_mark_resolver_state.has_open_quotation_mark():
+        if not self._quotation_mark_resolver_state.has_open_quotation_mark():
             return False
 
-        if not self.quotation_continuer_state.has_continuer_been_observed():
+        if not self._quotation_continuer_state.has_continuer_been_observed():
             if quote_match.start_index > 0:
                 return False
             if (
                 quote_match.get_quotation_mark()
-                != self.quotation_mark_resolver_state.get_deepest_opening_quotation_mark()
+                != self._quotation_mark_resolver_state.get_deepest_opening_quotation_mark()
             ):
                 return False
-            if self.quotation_mark_resolver_state.are_more_than_n_quotes_open(1):
+            if self._quotation_mark_resolver_state.are_more_than_n_quotes_open(1):
                 if next_match is None or next_match.get_start_index() != quote_match.get_end_index():
                     return False
+        elif (
+            self._quotation_continuer_state.get_current_depth()
+            >= self._quotation_mark_resolver_state.get_current_depth()
+        ):
+            return False
         else:
             if (
                 quote_match.get_quotation_mark()
-                != self.quotation_mark_resolver_state.get_deepest_opening_quotation_mark()
+                != self._quotation_mark_resolver_state.get_deepest_opening_quotation_mark()
             ):
                 return False
 
         return True
 
     def _process_quotation_continuer(self, quote_match: QuotationMarkStringMatch) -> QuotationMarkMetadata:
-        return self.quotation_continuer_state.add_quotation_continuer(quote_match, self.quotation_mark_resolver_state)
+        return self._quotation_continuer_state.add_quotation_continuer(quote_match, self._quotation_mark_resolver_state)
 
     def _is_depth_too_great(self) -> bool:
-        return self.quotation_mark_resolver_state.are_more_than_n_quotes_open(4)
+        return self._quotation_mark_resolver_state.are_more_than_n_quotes_open(4)
 
     def _process_opening_mark(self, quote_match: QuotationMarkStringMatch) -> QuotationMarkMetadata:
-        return self.quotation_mark_resolver_state.add_opening_quotation_mark(quote_match)
+        return self._quotation_mark_resolver_state.add_opening_quotation_mark(quote_match)
 
     def _process_closing_mark(self, quote_match: QuotationMarkStringMatch) -> QuotationMarkMetadata:
-        return self.quotation_mark_resolver_state.add_closing_quotation_mark(quote_match)
+        return self._quotation_mark_resolver_state.add_closing_quotation_mark(quote_match)
 
     def _is_opening_quote(
         self,
@@ -158,11 +172,11 @@ class QuotationMarkResolver:
         next_match: Union[QuotationMarkStringMatch, None],
     ) -> bool:
 
-        if not match.is_valid_opening_quotation_mark(self.quote_convention_set):
+        if not match.is_valid_opening_quotation_mark(self._quote_convention_set):
             return False
 
         # if the quote convention is ambiguous, use whitespace as a clue
-        if match.is_valid_closing_quotation_mark(self.quote_convention_set):
+        if match.is_valid_closing_quotation_mark(self._quote_convention_set):
             return (
                 match.has_leading_whitespace()
                 or self._does_most_recent_opening_mark_immediately_precede(match)
@@ -177,15 +191,15 @@ class QuotationMarkResolver:
         next_match: Union[QuotationMarkStringMatch, None],
     ) -> bool:
 
-        if not match.is_valid_closing_quotation_mark(self.quote_convention_set):
+        if not match.is_valid_closing_quotation_mark(self._quote_convention_set):
             return False
 
         # if the quote convention is ambiguous, use whitespace as a clue
-        if self.quote_convention_set.is_valid_opening_quotation_mark(match.get_quotation_mark()):
+        if self._quote_convention_set.is_valid_opening_quotation_mark(match.get_quotation_mark()):
             return (
                 match.has_trailing_whitespace()
                 or match.has_trailing_punctuation()
-                or match.has_trailing_closing_quotation_mark(self.quote_convention_set)
+                or match.has_trailing_closing_quotation_mark(self._quote_convention_set)
             ) and not match.has_leading_whitespace()
         return True
 
@@ -195,7 +209,7 @@ class QuotationMarkResolver:
         previous_match: Union[QuotationMarkStringMatch, None],
         next_match: Union[QuotationMarkStringMatch, None],
     ) -> bool:
-        if not self.quote_convention_set.is_valid_opening_quotation_mark(match.get_quotation_mark()):
+        if not self._quote_convention_set.is_valid_opening_quotation_mark(match.get_quotation_mark()):
             return False
 
         if match.has_leading_quote_introducer():
@@ -204,7 +218,7 @@ class QuotationMarkResolver:
         if (
             match.has_leading_whitespace()
             and match.has_trailing_whitespace()
-            and not self.quotation_mark_resolver_state.has_open_quotation_mark()
+            and not self._quotation_mark_resolver_state.has_open_quotation_mark()
         ):
             return True
 
@@ -216,7 +230,7 @@ class QuotationMarkResolver:
         previous_match: Union[QuotationMarkStringMatch, None],
         next_match: Union[QuotationMarkStringMatch, None],
     ) -> bool:
-        if not self.quote_convention_set.is_valid_closing_quotation_mark(match.get_quotation_mark()):
+        if not self._quote_convention_set.is_valid_closing_quotation_mark(match.get_quotation_mark()):
             return False
 
         return (
@@ -224,17 +238,19 @@ class QuotationMarkResolver:
                 not match.has_trailing_whitespace()
                 or (match.has_leading_whitespace() and match.has_trailing_whitespace())
             )
-            and self.quotation_mark_resolver_state.has_open_quotation_mark()
-            and self.quote_convention_set.are_marks_a_valid_pair(
-                self.quotation_mark_resolver_state.get_deepest_opening_quotation_mark(), match.get_quotation_mark()
+            and self._quotation_mark_resolver_state.has_open_quotation_mark()
+            and self._quote_convention_set.are_marks_a_valid_pair(
+                self._quotation_mark_resolver_state.get_deepest_opening_quotation_mark(), match.get_quotation_mark()
             )
         )
 
     def _does_most_recent_opening_mark_immediately_precede(self, match: QuotationMarkStringMatch) -> bool:
-        if not self.quotation_mark_resolver_state.has_open_quotation_mark():
+        if not self._quotation_mark_resolver_state.has_open_quotation_mark():
             return False
 
-        return self.quotation_mark_resolver_state.get_deepest_opening_quotation_mark() == match.get_previous_character()
+        return (
+            self._quotation_mark_resolver_state.get_deepest_opening_quotation_mark() == match.get_previous_character()
+        )
 
     def _is_apostrophe(
         self,
@@ -259,24 +275,25 @@ class QuotationMarkResolver:
             match.has_trailing_whitespace() or match.has_trailing_punctuation()
         ):
             # check whether it could be a closing quote
-            if not self.quotation_mark_resolver_state.has_open_quotation_mark():
+            if not self._quotation_mark_resolver_state.has_open_quotation_mark():
                 return True
-            if not self.quote_convention_set.are_marks_a_valid_pair(
-                self.quotation_mark_resolver_state.get_deepest_opening_quotation_mark(), match.get_quotation_mark()
+            if not self._quote_convention_set.are_marks_a_valid_pair(
+                self._quotation_mark_resolver_state.get_deepest_opening_quotation_mark(), match.get_quotation_mark()
             ):
                 return True
-            if next_match is not None and self.quote_convention_set.are_marks_a_valid_pair(
-                self.quotation_mark_resolver_state.get_deepest_opening_quotation_mark(), next_match.get_quotation_mark()
+            if next_match is not None and self._quote_convention_set.are_marks_a_valid_pair(
+                self._quotation_mark_resolver_state.get_deepest_opening_quotation_mark(),
+                next_match.get_quotation_mark(),
             ):
                 return True
 
         # for languages that use apostrophes at the start and end of words
         if (
-            not self.quotation_mark_resolver_state.has_open_quotation_mark()
+            not self._quotation_mark_resolver_state.has_open_quotation_mark()
             and match.get_quotation_mark() == "'"
-            or self.quotation_mark_resolver_state.has_open_quotation_mark()
-            and not self.quote_convention_set.are_marks_a_valid_pair(
-                self.quotation_mark_resolver_state.get_deepest_opening_quotation_mark(), match.get_quotation_mark()
+            or self._quotation_mark_resolver_state.has_open_quotation_mark()
+            and not self._quote_convention_set.are_marks_a_valid_pair(
+                self._quotation_mark_resolver_state.get_deepest_opening_quotation_mark(), match.get_quotation_mark()
             )
         ):
             return True
