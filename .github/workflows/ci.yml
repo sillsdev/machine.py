@@ -59,6 +59,8 @@ jobs:
           poetry run pyright
       - name: Test with pytest
         run: poetry run pytest --cov --cov-report=xml
+        env:
+          EFLOMAL_PATH: /home/runner/work/machine.py/machine.py/.venv/lib/python${{ matrix.python-version }}/site-packages/eflomal/bin
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4
         env:

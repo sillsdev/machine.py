@@ -1,7 +1,7 @@
 # NOTE: this is a temporary solution to be able to use the eflomal aligner inside of machine.py.
 # The vast majority of this code is taken from the silnlp repository.
 
-# import os
+import os
 import subprocess
 from contextlib import ExitStack
 from importlib.util import find_spec
@@ -24,7 +24,7 @@ def is_eflomal_available() -> bool:
 if is_eflomal_available():
     from eflomal import read_text, write_text  # type: ignore
 
-EFLOMAL_PATH = Path("/home/runner/work/machine.py/machine.py/.venv/lib/python3.12/site-packages/eflomal/bin", "eflomal")
+EFLOMAL_PATH = Path(os.getenv("EFLOMAL_PATH", "."), "eflomal")
 TOKENIZER = LatinWordTokenizer()
 
 
