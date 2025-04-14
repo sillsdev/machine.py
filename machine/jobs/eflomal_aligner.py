@@ -1,7 +1,7 @@
 # NOTE: this is a temporary solution to be able to use the eflomal aligner inside of machine.py.
 # The vast majority of this code is taken from the silnlp repository.
 
-import os
+# import os
 import subprocess
 from contextlib import ExitStack
 from importlib.util import find_spec
