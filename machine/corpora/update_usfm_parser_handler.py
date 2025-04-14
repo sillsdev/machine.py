@@ -426,7 +426,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         self._use_updated_embed_text()
         for handler in self._update_block_handlers:
             self._embed_update_block = handler.process_block(self._embed_update_block)
-        self._update_block.add_tokens(self._embed_update_block.get_tokens())
+        self._update_block.add_embed(self._embed_update_block.get_tokens())
         self._embed_update_block.clear()
 
     def _push_updated_text(self, tokens: List[UsfmToken]) -> None:

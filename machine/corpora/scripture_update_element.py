@@ -11,6 +11,7 @@ class ScriptureUpdateElementType(Enum):
     EXISTING_TEXT = auto()
     INSERTED_TEXT = auto()
     PARAGRAPH = auto()
+    EMBED_BLOCK = auto()
     EMBED = auto()
     STYLE = auto()
     OTHER = auto()
