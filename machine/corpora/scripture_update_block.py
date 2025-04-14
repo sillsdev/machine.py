@@ -35,10 +35,12 @@ class ScriptureUpdateBlock:
         else:
             self._elements.append(create_non_text_scripture_element([token], marked_for_removal))
 
-    def add_tokens(self, tokens: list[UsfmToken], marked_for_removal: bool = False) -> None:
+    def add_embed(self, tokens: list[UsfmToken], marked_for_removal: bool = False) -> None:
         if len(tokens) == 0:
             return
-        self._elements.append(create_non_text_scripture_element(tokens, marked_for_removal))
+        self._elements.append(
+            ScriptureUpdateElement(ScriptureUpdateElementType.EMBED_BLOCK, tokens, marked_for_removal)
+        )
 
     def update_ref(self, ref: ScriptureRef) -> None:
         self.ref = ref
