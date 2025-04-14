@@ -22,7 +22,7 @@ def is_eflomal_available() -> bool:
 
 
 if is_eflomal_available():
-    from eflomal import read_text, write_text
+    from eflomal import read_text, write_text  # type: ignore
 
 EFLOMAL_PATH = Path(os.getenv("EFLOMAL_PATH", "."), "eflomal")
 TOKENIZER = LatinWordTokenizer()
