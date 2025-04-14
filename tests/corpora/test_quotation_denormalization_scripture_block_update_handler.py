@@ -274,6 +274,42 @@ def test_simple_arabic_quote_denormalization() -> None:
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
+def test_quotes_spanning_verses() -> None:
+    normalized_usfm = """\\c 1
+    \\v 1 Now the serpent was more subtle than any animal
+    of the field which Yahweh God had made.
+    He said to the woman, "Has God really said,
+    \\v 2 a'You shall not eat of any tree of the garden'?"
+    """
+
+    expected_usfm = (
+        "\\c 1\n"
+        + "\\v 1 Now the serpent was more subtle than any animal of the field which Yahweh God had made. He said to "
+        + "the woman, “Has God really said, \n"
+        + "\\v 2 ‘You shall not eat of any tree of the garden’?”"
+    )
+
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_english")
+    assert_usfm_equal(observed_usfm, expected_usfm)
+
+
+def test_single_embed() -> None:
+    normalized_usfm = """\\c 1
+    \\v 1 Now the serpent was more subtle than any animal
+    \\f + \\ft "This is a 'footnote'" \\f*
+    of the field which Yahweh God had made.
+    """
+
+    expected_usfm = (
+        "\\c 1\n"
+        + "\\v 1 Now the serpent was more subtle than any animal "
+        + "\\f + \\ft “This is a ‘footnote’” \\f* of the field which Yahweh God had made."
+    )
+
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_english")
+    assert_usfm_equal(observed_usfm, expected_usfm)
+
+
 def denormalize_quotation_marks(normalized_usfm: str, quote_convention_name: str) -> str:
     standard_english_quote_convention = (
         standard_quote_conventions.standard_quote_conventions.get_quote_convention_by_name(quote_convention_name)

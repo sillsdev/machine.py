@@ -33,10 +33,10 @@ class TextSegment:
     def is_marker_in_preceding_context(self, marker: UsfmMarkerType) -> bool:
         return marker in self.markers_in_preceding_context
 
-    def get_previous_segment(self) -> "TextSegment | None":
+    def get_previous_segment(self) -> Union["TextSegment", None]:
         return self.previous_segment
 
-    def get_next_segment(self) -> "TextSegment | None":
+    def get_next_segment(self) -> Union["TextSegment", None]:
         return self.next_segment
 
     def is_first_segment_in_verse(self) -> bool:

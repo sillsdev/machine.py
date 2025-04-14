@@ -21,33 +21,53 @@ class QuotationDenormalizationScriptureUpdateBlockHandler(ScriptureUpdateBlockHa
         self._quotation_mark_finder: QuotationMarkFinder = QuotationMarkFinder(
             QuoteConventionSet([self._normalized_quote_convention])
         )
-        self._quotation_mark_resolver: QuotationMarkResolver = QuotationMarkResolver(
-            QuoteConventionSet([self._normalized_quote_convention])
-        )
         self._next_scripture_text_segment_builder: TextSegment.Builder = TextSegment.Builder()
 
+        # Each embed represents a separate context for quotation marks
+        # (i.e. you can't open a quote in one and close it in another)
+        # so we need to keep track of the verse and embed contexts separately.
+        self._verse_text_quotation_mark_resolver: QuotationMarkResolver = QuotationMarkResolver(
+            QuoteConventionSet([self._normalized_quote_convention])
+        )
+        self._embed_quotation_mark_resolver: QuotationMarkResolver = QuotationMarkResolver(
+            QuoteConventionSet([self._normalized_quote_convention])
+        )
+
     def process_block(self, block: ScriptureUpdateBlock) -> ScriptureUpdateBlock:
-        for element_index, element in enumerate(block._elements):
-            self._process_scripture_element(element)
+        # print(",".join([p.name for p in block._ref.path]))
+        if block._ref.is_verse:
+            return self._process_verse_text_block(block)
+        else:
+            return self._process_embed_block(block)
+
+    def _process_verse_text_block(self, block: ScriptureUpdateBlock) -> ScriptureUpdateBlock:
+        for element in block._elements:
+            self._process_scripture_element(element, self._verse_text_quotation_mark_resolver)
         return block
 
-    def _process_scripture_element(self, element: ScriptureUpdateElement) -> None:
+    def _process_embed_block(self, block: ScriptureUpdateBlock) -> ScriptureUpdateBlock:
+        self._embed_quotation_mark_resolver.reset()
+        for element in block._elements:
+            self._process_scripture_element(element, self._embed_quotation_mark_resolver)
+        return block
+
+    def _process_scripture_element(
+        self, element: ScriptureUpdateElement, quotation_mark_resolver: QuotationMarkResolver
+    ) -> None:
         text_segments: List[TextSegment] = self._create_text_segments(element)
         quotation_mark_matches: List[QuotationMarkStringMatch] = (
             self._quotation_mark_finder.find_all_potential_quotation_marks_in_text_segments(text_segments)
         )
         for match in quotation_mark_matches:
             print(match.get_context())
-        for resolved_quotation_mark in self._quotation_mark_resolver.resolve_quotation_marks(quotation_mark_matches):
+        for resolved_quotation_mark in quotation_mark_resolver.resolve_quotation_marks(quotation_mark_matches):
             resolved_quotation_mark.update_quotation_mark(self._target_quote_convention)
 
     def _create_text_segments(self, element: ScriptureUpdateElement) -> List[TextSegment]:
         text_segments: List[TextSegment] = []
         for token in element.get_tokens():
             if token.type == UsfmTokenType.CHAPTER:
-                self._quotation_mark_resolver: QuotationMarkResolver = QuotationMarkResolver(
-                    QuoteConventionSet([self._normalized_quote_convention])
-                )
+                self._verse_text_quotation_mark_resolver.reset()
                 self._next_scripture_text_segment_builder = TextSegment.Builder()
                 self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.ChapterMarker)
             elif token.type == UsfmTokenType.VERSE:
