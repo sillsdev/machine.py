@@ -8,16 +8,19 @@ from .analysis.quote_convention_set import QuoteConventionSet
 from .analysis.text_segment import TextSegment
 from .analysis.usfm_marker_type import UsfmMarkerType
 from .scripture_update_block import ScriptureUpdateBlock
-from .scripture_update_block_handler_base import ScriptureUpdateBlockHandlerBase
-from .scripture_update_element import ScriptureUpdateElement
+from .scripture_update_block_handler import ScriptureUpdateBlockHandler
+from .scripture_update_element import ScriptureUpdateElement, ScriptureUpdateElementType
 from .usfm_token import UsfmTokenType
 
 
-class QuotationDenormalizationScriptureUpdateBlockHandler(ScriptureUpdateBlockHandlerBase):
+class QuotationDenormalizationScriptureUpdateBlockHandler(ScriptureUpdateBlockHandler):
 
-    def __init__(self, target_quote_convention: QuoteConvention):
+    def __init__(self, target_quote_convention: QuoteConvention, should_run_on_existing_text: bool = False):
+        super().__init__()
         self._target_quote_convention: QuoteConvention = target_quote_convention
         self._normalized_quote_convention: QuoteConvention = target_quote_convention.normalize()
+        self._should_run_on_existing_text: bool = should_run_on_existing_text
+
         self._quotation_mark_finder: QuotationMarkFinder = QuotationMarkFinder(
             QuoteConventionSet([self._normalized_quote_convention])
         )
@@ -34,21 +37,28 @@ class QuotationDenormalizationScriptureUpdateBlockHandler(ScriptureUpdateBlockHa
         )
 
     def process_block(self, block: ScriptureUpdateBlock) -> ScriptureUpdateBlock:
-        # print(",".join([p.name for p in block._ref.path]))
-        if block._ref.is_verse:
-            return self._process_verse_text_block(block)
-        else:
+        if len(block.elements) > 0 and block.elements[0].type == ScriptureUpdateElementType.EMBED:
             return self._process_embed_block(block)
 
-    def _process_verse_text_block(self, block: ScriptureUpdateBlock) -> ScriptureUpdateBlock:
-        for element in block._elements:
-            self._process_scripture_element(element, self._verse_text_quotation_mark_resolver)
-        return block
+        return self._process_verse_text_block(block)
 
     def _process_embed_block(self, block: ScriptureUpdateBlock) -> ScriptureUpdateBlock:
         self._embed_quotation_mark_resolver.reset()
         for element in block._elements:
+            if element.type == ScriptureUpdateElementType.EXISTING_TEXT and not self._should_run_on_existing_text:
+                continue
+
             self._process_scripture_element(element, self._embed_quotation_mark_resolver)
+        return block
+
+    def _process_verse_text_block(self, block: ScriptureUpdateBlock) -> ScriptureUpdateBlock:
+        for element in block._elements:
+            if element.type == ScriptureUpdateElementType.EMBED_BLOCK:
+                continue
+            if element.type == ScriptureUpdateElementType.EXISTING_TEXT and not self._should_run_on_existing_text:
+                continue
+
+            self._process_scripture_element(element, self._verse_text_quotation_mark_resolver)
         return block
 
     def _process_scripture_element(
@@ -58,8 +68,6 @@ class QuotationDenormalizationScriptureUpdateBlockHandler(ScriptureUpdateBlockHa
         quotation_mark_matches: List[QuotationMarkStringMatch] = (
             self._quotation_mark_finder.find_all_potential_quotation_marks_in_text_segments(text_segments)
         )
-        for match in quotation_mark_matches:
-            print(match.get_context())
         for resolved_quotation_mark in quotation_mark_resolver.resolve_quotation_marks(quotation_mark_matches):
             resolved_quotation_mark.update_quotation_mark(self._target_quote_convention)
 
@@ -78,7 +86,6 @@ class QuotationDenormalizationScriptureUpdateBlockHandler(ScriptureUpdateBlockHa
                 self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.CharacterMarker)
             elif token.type == UsfmTokenType.NOTE:
                 self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.EmbedMarker)
-                # TODO: create a text segment for the embed
             elif token.type == UsfmTokenType.TEXT:
                 self._next_scripture_text_segment_builder.set_usfm_token(token)
                 if token.text is not None:

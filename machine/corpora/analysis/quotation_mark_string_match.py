@@ -100,9 +100,9 @@ class QuotationMarkStringMatch:
     def has_leading_whitespace(self) -> bool:
         if self.get_previous_character() is None:
             return (
-                self.get_text_segment().get_immediate_preceding_marker_type() == UsfmMarkerType.ParagraphMarker
-                or self.get_text_segment().get_immediate_preceding_marker_type() == UsfmMarkerType.EmbedMarker
-                or self.get_text_segment().get_immediate_preceding_marker_type() == UsfmMarkerType.VerseMarker
+                self.get_text_segment().is_marker_in_preceding_context(UsfmMarkerType.ParagraphMarker)
+                or self.get_text_segment().is_marker_in_preceding_context(UsfmMarkerType.EmbedMarker)
+                or self.get_text_segment().is_marker_in_preceding_context(UsfmMarkerType.VerseMarker)
             )
 
         return self.does_previous_character_match(self.whitespace_pattern)
