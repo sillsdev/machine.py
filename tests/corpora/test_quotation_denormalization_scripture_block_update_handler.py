@@ -279,7 +279,7 @@ def test_quotes_spanning_verses() -> None:
     \\v 1 Now the serpent was more subtle than any animal
     of the field which Yahweh God had made.
     He said to the woman, "Has God really said,
-    \\v 2 a'You shall not eat of any tree of the garden'?"
+    \\v 2 'You shall not eat of any tree of the garden'?"
     """
 
     expected_usfm = (
@@ -310,15 +310,80 @@ def test_single_embed() -> None:
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
-def denormalize_quotation_marks(normalized_usfm: str, quote_convention_name: str) -> str:
+def test_multiple_embeds() -> None:
+    normalized_usfm = """\\c 1
+    \\v 1 Now the serpent was more subtle than any animal
+    \\f + \\ft "This is a 'footnote'" \\f*
+    of the field \\f + \\ft Second "footnote" here \\f* which Yahweh God had made.
+    """
+
+    expected_usfm = (
+        "\\c 1\n"
+        + "\\v 1 Now the serpent was more subtle than any animal "
+        + "\\f + \\ft “This is a ‘footnote’” \\f* of the field \\f + \\ft Second "
+        + "“footnote” here \\f* which Yahweh God had made."
+    )
+
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_english")
+    assert_usfm_equal(observed_usfm, expected_usfm)
+
+
+def test_quotes_in_text_and_embed() -> None:
+    normalized_usfm = """\\c 1
+    \\v 1 Now the serpent was more subtle than any animal
+    of the field which Yahweh God had made.
+    He said to the woman, "Has God really \\f + \\ft a
+    "footnote" in the "midst of 'text'" \\f* said,
+    'You shall not eat of any tree of the garden'?"
+    """
+
+    expected_usfm = (
+        "\\c 1\n"
+        + "\\v 1 Now the serpent was more subtle than any animal of the field which Yahweh God had made. He said to "
+        + "the woman, “Has God really \\f + \\ft a “footnote” in the “midst of ‘text’” \\f* "
+        + "said, ‘You shall not eat of any tree of the garden’?”"
+    )
+
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_english")
+    assert_usfm_equal(observed_usfm, expected_usfm)
+
+
+def test_quotes_in_multiple_verses_and_embed() -> None:
+    normalized_usfm = """\\c 1
+    \\v 1 Now the serpent was more subtle than any animal
+    of the field which Yahweh God had made.
+    He said to the woman, "Has God
+    \\v 2 really \\f + \\ft a
+    "footnote" in the "midst of 'text'" \\f* said,
+    'You shall not eat of any tree of the garden'?"
+    """
+
+    expected_usfm = (
+        "\\c 1\n"
+        + "\\v 1 Now the serpent was more subtle than any animal of the field which Yahweh God had made. He said to "
+        + "the woman, “Has God\n"
+        + "\\v 2 really \\f + \\ft a “footnote” in the “midst of ‘text’” \\f* "
+        + "said, ‘You shall not eat of any tree of the garden’?”"
+    )
+
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_english")
+    assert_usfm_equal(observed_usfm, expected_usfm)
+
+
+def denormalize_quotation_marks(
+    normalized_usfm: str, quote_convention_name: str, should_run_on_existing_text=True
+) -> str:
     standard_english_quote_convention = (
         standard_quote_conventions.standard_quote_conventions.get_quote_convention_by_name(quote_convention_name)
     )
     assert standard_english_quote_convention is not None
 
     quotation_denormalizer: QuotationDenormalizationScriptureUpdateBlockHandler = (
-        QuotationDenormalizationScriptureUpdateBlockHandler(standard_english_quote_convention)
+        QuotationDenormalizationScriptureUpdateBlockHandler(
+            standard_english_quote_convention, should_run_on_existing_text=should_run_on_existing_text
+        )
     )
+
     updater = UpdateUsfmParserHandler(update_block_handlers=[quotation_denormalizer])
     parse_usfm(normalized_usfm, updater)
 
