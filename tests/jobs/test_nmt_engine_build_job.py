@@ -39,7 +39,7 @@ def test_run(decoy: Decoy) -> None:
     assert pretranslations[0]["pretranslation"] == "Please, I have booked a room."
     if is_eflomal_available():
         assert pretranslations[0]["source_toks"] == [
-            "por",
+            "Por",
             "favor",
             ",",
             "tengo",
@@ -48,7 +48,7 @@ def test_run(decoy: Decoy) -> None:
             "habitación",
             ".",
         ]
-        assert pretranslations[0]["pretranslation_toks"] == ["please", ",", "i", "have", "booked", "a", "room", "."]
+        assert pretranslations[0]["pretranslation_toks"] == ["Please", ",", "I", "have", "booked", "a", "room", "."]
         assert len(pretranslations[0]["alignment"]) > 0
     else:
         assert pretranslations[0]["source_toks"] == []

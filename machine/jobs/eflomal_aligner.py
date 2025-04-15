@@ -100,7 +100,11 @@ def prepare_files(
 
 
 def tokenize(sent: str) -> Sequence[str]:
-    return lowercase(normalize("NFC", escape_spaces(list(TOKENIZER.tokenize(sent)))))
+    return list(TOKENIZER.tokenize(sent))
+
+
+def normalize_for_alignment(sent: Sequence[str]) -> str:
+    return " ".join(lowercase(normalize("NFC", escape_spaces(sent))))
 
 
 # From silnlp.alignment.eflomal
@@ -118,7 +122,10 @@ class EflomalAligner:
                 trg_output_file = stack.enter_context(trg_eflomal_path.open("wb"))
                 # Write input files for the eflomal binary
                 n_sentences = prepare_files(
-                    [" ".join(s) for s in src_toks], src_output_file, [" ".join(s) for s in trg_toks], trg_output_file
+                    [normalize_for_alignment(s) for s in src_toks],
+                    src_output_file,
+                    [normalize_for_alignment(s) for s in trg_toks],
+                    trg_output_file,
                 )
 
             iters = max(2, int(round(1.0 * 5000 / sqrt(n_sentences))))
