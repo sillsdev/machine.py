@@ -305,12 +305,13 @@ def test_get_usfm_verse_replace_note() -> None:
     ]
     usfm = r"""\id MAT - Test
 \c 1
-\v 1 Chapter \add one\add*, verse \f + \fr 2:1: \ft This is a footnote.\f*one.
+\v 1 Chapter \add one\add*, verse \f + \fr 2:1: \ft This is a \fq quotation \ft and an \fqa alternative quotation\f*one.
 """
     target = update_usfm(rows, usfm)
+    # Only the first \ft marker is updated
     result = r"""\id MAT - Test
 \c 1
-\v 1 updated text \f + \fr 2:1: \ft This is a new footnote. \f*
+\v 1 updated text \f + \fr 2:1: \ft This is a new footnote. \fq quotation \ft and an \fqa alternative quotation\f*
 """
     assess(target, result)
 
@@ -975,6 +976,30 @@ def test_multiple_ft_only_update_first() -> None:
     result = r"""\id MAT - Test
 \c 1
 \v 1 Update text
+"""
+    assess(target, result)
+
+
+def test_implicitly_closed_char_style() -> None:
+    rows = [
+        (
+            scr_ref("MAT 1:1"),
+            str("Update text"),
+        )
+    ]
+    usfm = r"""\id MAT - Test
+\c 1
+\v 1 Verse \bd one.
+\c 2
+\v 1 Verse one.
+"""
+
+    target = update_usfm(rows, usfm)
+    result = r"""\id MAT - Test
+\c 1
+\v 1 Update text
+\c 2
+\v 1 Verse one.
 """
     assess(target, result)
 
