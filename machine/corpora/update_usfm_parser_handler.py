@@ -184,10 +184,13 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         attributes: Sequence[UsfmAttribute],
         closed: bool,
     ) -> None:
-        if self._replace_with_new_tokens(state, closed):
-            self._skip_tokens(state)
-        else:
-            self._collect_tokens(state)
+
+        skip_tokens = self._replace_with_new_tokens(state, closed)
+        if closed:
+            if skip_tokens:
+                self._skip_tokens(state)
+            else:
+                self._collect_tokens(state)
 
         super().end_char(state, marker, attributes, closed)
 
@@ -207,10 +210,12 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
     def _end_embed(
         self, state: UsfmParserState, marker: str, attributes: Sequence[UsfmAttribute], closed: bool
     ) -> None:
-        if self._replace_with_new_tokens(state, closed):
-            self._skip_tokens(state)
-        else:
-            self._collect_tokens(state)
+        skip_tokens = self._replace_with_new_tokens(state, closed)
+        if closed:
+            if skip_tokens:
+                self._skip_tokens(state)
+            else:
+                self._collect_tokens(state)
 
         self._embed_row_texts.clear()
         self._embed_updated = False
