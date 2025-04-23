@@ -1,16 +1,12 @@
 import logging
 from abc import ABC, abstractmethod
-from contextlib import ExitStack
-from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import Any, Callable, Optional, Tuple
 
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from ..corpora.text_corpus import TextCorpus
 from ..utils.phased_progress_reporter import PhasedProgressReporter
 from ..utils.progress_status import ProgressStatus
-from .eflomal_aligner import EflomalAligner, is_eflomal_available, tokenize
-from .translation_file_service import PretranslationInfo, TranslationFileService
+from .translation_file_service import TranslationFileService
 
 logger = logging.getLogger(__name__)
 
@@ -48,10 +44,6 @@ class TranslationEngineBuildJob(ABC):
         logger.info("Pretranslating segments")
         self._batch_inference(progress_reporter, check_canceled)
 
-        if self._config.align_pretranslations and is_eflomal_available():
-            logger.info("Aligning source to pretranslations")
-            self._align(progress_reporter, check_canceled)
-
         self._save_model()
         return train_corpus_size, confidence
 
@@ -81,56 +73,6 @@ class TranslationEngineBuildJob(ABC):
         progress_reporter: PhasedProgressReporter,
         check_canceled: Optional[Callable[[], None]],
     ) -> None: ...
-
-    def _align(
-        self,
-        progress_reporter: PhasedProgressReporter,
-        check_canceled: Optional[Callable[[], None]],
-    ) -> None:
-        if check_canceled is not None:
-            check_canceled()
-
-        logger.info("Aligning source to pretranslations")
-        with ExitStack() as stack:
-            # phase_progress = stack.enter_context(progress_reporter.start_next_phase())
-            progress_reporter.start_next_phase()
-
-            src_tokenized = [
-                tokenize(s["translation"])
-                for s in stack.enter_context(self._translation_file_service.get_source_pretranslations())
-            ]
-            trg_info = [
-                pt_info for pt_info in stack.enter_context(self._translation_file_service.get_target_pretranslations())
-            ]
-            trg_tokenized = [tokenize(pt_info["translation"]) for pt_info in trg_info]
-
-            with TemporaryDirectory() as td:
-                aligner = EflomalAligner(Path(td))
-                logger.info("Training aligner")
-                aligner.train(src_tokenized, trg_tokenized)
-
-                if check_canceled is not None:
-                    check_canceled()
-
-                logger.info("Aligning pretranslations")
-                alignments = aligner.align()
-
-            if check_canceled is not None:
-                check_canceled()
-
-            writer = stack.enter_context(self._translation_file_service.open_target_pretranslation_writer())
-            for trg_pi, src_toks, trg_toks, alignment in zip(trg_info, src_tokenized, trg_tokenized, alignments):
-                writer.write(
-                    PretranslationInfo(
-                        corpusId=trg_pi["corpusId"],
-                        textId=trg_pi["textId"],
-                        refs=trg_pi["refs"],
-                        translation=trg_pi["translation"],
-                        source_toks=list(src_toks),
-                        translation_toks=list(trg_toks),
-                        alignment=alignment,
-                    )
-                )
 
     @abstractmethod
     def _save_model(self) -> None: ...

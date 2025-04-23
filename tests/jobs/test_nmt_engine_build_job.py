@@ -139,24 +139,6 @@ class _TestEnvironment:
                 )
             )
         )
-        decoy.when(self.translation_file_service.get_target_pretranslations()).then_do(
-            lambda: ContextManagedGenerator(
-                (
-                    pi
-                    for pi in [
-                        PretranslationInfo(
-                            corpusId="corpus1",
-                            textId="text1",
-                            refs=["ref1"],
-                            translation="Please, I have booked a room.",
-                            source_toks=[],
-                            translation_toks=[],
-                            alignment="",
-                        )
-                    ]
-                )
-            )
-        )
 
         self.target_pretranslations = ""
 

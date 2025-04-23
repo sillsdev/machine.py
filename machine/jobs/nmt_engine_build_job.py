@@ -1,5 +1,7 @@
 import logging
 from contextlib import ExitStack
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any, Callable, Optional, Sequence, Tuple
 
 from ..corpora.corpora_utils import batch
@@ -8,6 +10,7 @@ from ..corpora.text_corpus import TextCorpus
 from ..translation.translation_engine import TranslationEngine
 from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
 from ..utils.progress_status import ProgressStatus
+from .eflomal_aligner import EflomalAligner, is_eflomal_available, tokenize
 from .nmt_model_factory import NmtModelFactory
 from .shared_file_service_base import DictToJsonWriter
 from .translation_engine_build_job import TranslationEngineBuildJob
@@ -102,17 +105,65 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
         with ExitStack() as stack:
             phase_progress = stack.enter_context(progress_reporter.start_next_phase())
             engine = stack.enter_context(self._nmt_model_factory.create_engine())
-            src_pretranslations = stack.enter_context(self._translation_file_service.get_source_pretranslations())
-            writer = stack.enter_context(self._translation_file_service.open_target_pretranslation_writer())
+            pretranslations = [
+                pt_info for pt_info in stack.enter_context(self._translation_file_service.get_source_pretranslations())
+            ]
+            src_segments = [pt_info["translation"] for pt_info in pretranslations]
             current_inference_step = 0
             phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
             batch_size = self._config["inference_batch_size"]
-            for pi_batch in batch(src_pretranslations, batch_size):
+            for seg_batch in batch(iter(src_segments), batch_size):
                 if check_canceled is not None:
                     check_canceled()
-                _translate_batch(engine, pi_batch, writer)
-                current_inference_step += len(pi_batch)
+                for i, result in enumerate(engine.translate_batch(seg_batch)):
+                    pretranslations[current_inference_step + i]["translation"] = result.translation
+                current_inference_step += len(seg_batch)
                 phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
+
+            if self._config.align_pretranslations and is_eflomal_available():
+                logger.info("Aligning source to pretranslations")
+                pretranslations = self._align(src_segments, pretranslations, progress_reporter, check_canceled)
+
+            writer = stack.enter_context(self._translation_file_service.open_target_pretranslation_writer())
+            for pretranslation in pretranslations:
+                writer.write(pretranslation)
+
+    def _align(
+        self,
+        src_segments: Sequence[str],
+        pretranslations: Sequence[PretranslationInfo],
+        progress_reporter: PhasedProgressReporter,
+        check_canceled: Optional[Callable[[], None]],
+    ) -> Sequence[PretranslationInfo]:
+        if check_canceled is not None:
+            check_canceled()
+
+        logger.info("Aligning source to pretranslations")
+        progress_reporter.start_next_phase()
+
+        src_tokenized = [tokenize(s) for s in src_segments]
+        trg_tokenized = [tokenize(pt_info["translation"]) for pt_info in pretranslations]
+
+        with TemporaryDirectory() as td:
+            aligner = EflomalAligner(Path(td))
+            logger.info("Training aligner")
+            aligner.train(src_tokenized, trg_tokenized)
+
+            if check_canceled is not None:
+                check_canceled()
+
+            logger.info("Aligning pretranslations")
+            alignments = aligner.align()
+
+        if check_canceled is not None:
+            check_canceled()
+
+        for i in range(len(pretranslations)):
+            pretranslations[i]["source_toks"] = list(src_tokenized[i])
+            pretranslations[i]["translation_toks"] = list(trg_tokenized[i])
+            pretranslations[i]["alignment"] = alignments[i]
+
+        return pretranslations
 
     def _save_model(self) -> None:
         if "save_model" in self._config and self._config.save_model is not None:
