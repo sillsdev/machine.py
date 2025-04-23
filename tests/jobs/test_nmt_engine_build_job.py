@@ -36,7 +36,7 @@ def test_run(decoy: Decoy) -> None:
 
     pretranslations = json.loads(env.target_pretranslations)
     assert len(pretranslations) == 1
-    assert pretranslations[0]["pretranslation"] == "Please, I have booked a room."
+    assert pretranslations[0]["translation"] == "Please, I have booked a room."
     if is_eflomal_available():
         assert pretranslations[0]["source_toks"] == [
             "Por",
@@ -48,11 +48,11 @@ def test_run(decoy: Decoy) -> None:
             "habitación",
             ".",
         ]
-        assert pretranslations[0]["pretranslation_toks"] == ["Please", ",", "I", "have", "booked", "a", "room", "."]
+        assert pretranslations[0]["translation_toks"] == ["Please", ",", "I", "have", "booked", "a", "room", "."]
         assert len(pretranslations[0]["alignment"]) > 0
     else:
         assert pretranslations[0]["source_toks"] == []
-        assert pretranslations[0]["pretranslation_toks"] == []
+        assert pretranslations[0]["translation_toks"] == []
         assert len(pretranslations[0]["alignment"]) == 0
     decoy.verify(env.translation_file_service.save_model(Path("model.tar.gz"), "models/save-model.tar.gz"), times=1)
 
@@ -130,9 +130,9 @@ class _TestEnvironment:
                             corpusId="corpus1",
                             textId="text1",
                             refs=["ref1"],
-                            pretranslation="Por favor, tengo reservada una habitación.",
+                            translation="Por favor, tengo reservada una habitación.",
                             source_toks=[],
-                            pretranslation_toks=[],
+                            translation_toks=[],
                             alignment="",
                         )
                     ]
@@ -148,9 +148,9 @@ class _TestEnvironment:
                             corpusId="corpus1",
                             textId="text1",
                             refs=["ref1"],
-                            pretranslation="Please, I have booked a room.",
+                            translation="Please, I have booked a room.",
                             source_toks=[],
-                            pretranslation_toks=[],
+                            translation_toks=[],
                             alignment="",
                         )
                     ]

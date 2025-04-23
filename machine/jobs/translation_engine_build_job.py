@@ -48,7 +48,7 @@ class TranslationEngineBuildJob(ABC):
         logger.info("Pretranslating segments")
         self._batch_inference(progress_reporter, check_canceled)
 
-        if "align_pretranslations" in self._config and self._config.align_pretranslations and is_eflomal_available():
+        if self._config.align_pretranslations and is_eflomal_available():
             logger.info("Aligning source to pretranslations")
             self._align(progress_reporter, check_canceled)
 
@@ -96,13 +96,13 @@ class TranslationEngineBuildJob(ABC):
             progress_reporter.start_next_phase()
 
             src_tokenized = [
-                tokenize(s["pretranslation"])
+                tokenize(s["translation"])
                 for s in stack.enter_context(self._translation_file_service.get_source_pretranslations())
             ]
             trg_info = [
                 pt_info for pt_info in stack.enter_context(self._translation_file_service.get_target_pretranslations())
             ]
-            trg_tokenized = [tokenize(pt_info["pretranslation"]) for pt_info in trg_info]
+            trg_tokenized = [tokenize(pt_info["translation"]) for pt_info in trg_info]
 
             with TemporaryDirectory() as td:
                 aligner = EflomalAligner(Path(td))
@@ -125,9 +125,9 @@ class TranslationEngineBuildJob(ABC):
                         corpusId=trg_pi["corpusId"],
                         textId=trg_pi["textId"],
                         refs=trg_pi["refs"],
-                        pretranslation=trg_pi["pretranslation"],
+                        translation=trg_pi["translation"],
                         source_toks=list(src_toks),
-                        pretranslation_toks=list(trg_toks),
+                        translation_toks=list(trg_toks),
                         alignment=alignment,
                     )
                 )

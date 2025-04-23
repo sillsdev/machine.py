@@ -31,7 +31,7 @@ def test_run(decoy: Decoy) -> None:
 
     pretranslations = json.loads(env.target_pretranslations)
     assert len(pretranslations) == 1
-    assert pretranslations[0]["pretranslation"] == "Please, I have booked a room."
+    assert pretranslations[0]["translation"] == "Please, I have booked a room."
     decoy.verify(
         env.translation_file_service.save_model(matchers.Anything(), f"builds/{env.job._config.build_id}/model.zip"),
         times=1,
@@ -136,9 +136,9 @@ class _TestEnvironment:
                             corpusId="corpus1",
                             textId="text1",
                             refs=["ref1"],
-                            pretranslation="Por favor, tengo reservada una habitación.",
+                            translation="Por favor, tengo reservada una habitación.",
                             source_toks=[],
-                            pretranslation_toks=[],
+                            translation_toks=[],
                             alignment="",
                         )
                     ]
@@ -161,7 +161,14 @@ class _TestEnvironment:
         )
 
         self.job = SmtEngineBuildJob(
-            MockSettings({"build_id": "mybuild", "inference_batch_size": 100, "thot_mt": {"tokenizer": "latin"}}),
+            MockSettings(
+                {
+                    "build_id": "mybuild",
+                    "inference_batch_size": 100,
+                    "thot_mt": {"tokenizer": "latin"},
+                    "align_pretranslations": False,
+                }
+            ),
             self.smt_model_factory,
             self.translation_file_service,
         )
