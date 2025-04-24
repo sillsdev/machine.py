@@ -7,12 +7,10 @@ from typing import Any, Callable, Optional, Sequence, Tuple
 from ..corpora.corpora_utils import batch
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from ..corpora.text_corpus import TextCorpus
-from ..translation.translation_engine import TranslationEngine
 from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
 from ..utils.progress_status import ProgressStatus
 from .eflomal_aligner import EflomalAligner, is_eflomal_available, tokenize
 from .nmt_model_factory import NmtModelFactory
-from .shared_file_service_base import DictToJsonWriter
 from .translation_engine_build_job import TranslationEngineBuildJob
 from .translation_file_service import PretranslationInfo, TranslationFileService
 
@@ -172,14 +170,3 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
             self._translation_file_service.save_model(
                 model_path, f"models/{self._config.save_model + ''.join(model_path.suffixes)}"
             )
-
-
-def _translate_batch(
-    engine: TranslationEngine,
-    batch: Sequence[PretranslationInfo],
-    writer: DictToJsonWriter,
-) -> None:
-    source_segments = [pi["translation"] for pi in batch]
-    for i, result in enumerate(engine.translate_batch(source_segments)):
-        batch[i]["translation"] = result.translation
-        writer.write(batch[i])
