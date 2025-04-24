@@ -20,6 +20,7 @@ RUN apt-get update && \
     apt-get install --no-install-recommends -y \
     python$PYTHON_VERSION \
     python$PYTHON_VERSION-distutils \
+    python$PYTHON_VERSION-dev \
     git vim curl gdb ca-certificates gnupg2 tar make gcc libssl-dev zlib1g-dev libncurses5-dev \
     libbz2-dev libreadline-dev libreadline6-dev libxml2-dev xz-utils libgdbm-dev libgdbm-compat-dev tk-dev dirmngr \
     libxmlsec1-dev libsqlite3-dev libffi-dev liblzma-dev lzma lzma-dev uuid-dev && \
@@ -38,5 +39,7 @@ RUN pip install -U pip setuptools \
     && pip install cffi
 
 COPY ./.devcontainer/clearml.conf /root/clearml.conf
+
+ENV EFLOMAL_PATH=/workspaces/machine.py/.venv/lib/python${PYTHON_VERSION}/site-packages/eflomal/bin
 
 CMD ["bash"]

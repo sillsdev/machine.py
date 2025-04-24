@@ -137,6 +137,9 @@ class _TestEnvironment:
                             textId="text1",
                             refs=["ref1"],
                             translation="Por favor, tengo reservada una habitación.",
+                            source_toks=[],
+                            translation_toks=[],
+                            alignment="",
                         )
                     ]
                 )
@@ -158,7 +161,14 @@ class _TestEnvironment:
         )
 
         self.job = SmtEngineBuildJob(
-            MockSettings({"build_id": "mybuild", "inference_batch_size": 100, "thot_mt": {"tokenizer": "latin"}}),
+            MockSettings(
+                {
+                    "build_id": "mybuild",
+                    "inference_batch_size": 100,
+                    "thot_mt": {"tokenizer": "latin"},
+                    "align_pretranslations": False,
+                }
+            ),
             self.smt_model_factory,
             self.translation_file_service,
         )
