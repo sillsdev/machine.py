@@ -24,9 +24,13 @@ from .paratext_project_terms_parser_base import ParatextProjectTermsParserBase
 from .paratext_project_text_updater_base import ParatextProjectTextUpdaterBase
 from .paratext_text_corpus import ParatextTextCorpus
 from .place_markers_usfm_update_block_handler import PlaceMarkersAlignmentInfo, PlaceMarkersUsfmUpdateBlockHandler
+from .quotation_denormalization_action import QuotationDenormalizationAction
+from .quotation_denormalization_first_pass import QuotationDenormalizationFirstPass
+from .quotation_denormalization_resolution_settings import QuotationDenormalizationResolutionSettings
 from .quotation_denormalization_scripture_update_block_handler import (
     QuotationDenormalizationScriptureUpdateBlockHandler,
 )
+from .quotation_denormalization_settings import QuotationDenormalizationSettings
 from .scripture_element import ScriptureElement
 from .scripture_ref import EMPTY_SCRIPTURE_REF, ScriptureRef
 from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler, ScriptureTextType
@@ -124,7 +128,11 @@ __all__ = [
     "PlaceMarkersAlignmentInfo",
     "PlaceMarkersUsfmUpdateBlockHandler",
     "parse_usfm",
+    "QuotationDenormalizationAction",
+    "QuotationDenormalizationFirstPass",
     "QuotationDenormalizationScriptureUpdateBlockHandler",
+    "QuotationDenormalizationResolutionSettings",
+    "QuotationDenormalizationSettings",
     "RtlReferenceOrder",
     "ScriptureElement",
     "ScriptureRef",

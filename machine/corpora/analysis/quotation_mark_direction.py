@@ -1,6 +1,6 @@
-from enum import Enum
+from enum import Enum, auto
 
 
 class QuotationMarkDirection(Enum):
-    Opening = "Opening"
-    Closing = "Closing"
+    Opening = auto()
+    Closing = auto()

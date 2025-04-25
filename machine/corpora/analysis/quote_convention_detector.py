@@ -1,13 +1,14 @@
-from typing import Union
+from typing import List, Union
 
 from .chapter import Chapter
+from .depth_based_quotation_mark_resolver import DepthBasedQuotationMarkResolver
 from .preliminary_quotation_analyzer import PreliminaryQuotationAnalyzer
 from .quotation_mark_finder import QuotationMarkFinder
 from .quotation_mark_metadata import QuotationMarkMetadata
-from .quotation_mark_resolver import QuotationMarkResolver
 from .quotation_mark_string_match import QuotationMarkStringMatch
 from .quotation_mark_tabulator import QuotationMarkTabulator
 from .quote_convention import QuoteConvention
+from .quote_convention_detection_resolution_settings import QuoteConventionDetectionResolutionSettings
 from .quote_convention_set import QuoteConventionSet
 from .standard_quote_conventions import standard_quote_conventions
 from .usfm_structure_extractor import UsfmStructureExtractor
@@ -42,12 +43,14 @@ class QuoteConventionDetector(UsfmStructureExtractor):
     def _count_quotation_marks_in_chapter(
         self, chapter: Chapter, possible_quote_conventions: QuoteConventionSet
     ) -> None:
-        quotation_mark_matches: list[QuotationMarkStringMatch] = QuotationMarkFinder(
+        quotation_mark_matches: List[QuotationMarkStringMatch] = QuotationMarkFinder(
             possible_quote_conventions
         ).find_all_potential_quotation_marks_in_chapter(chapter)
 
-        resolved_quotation_marks: list[QuotationMarkMetadata] = list(
-            QuotationMarkResolver(possible_quote_conventions).resolve_quotation_marks(quotation_mark_matches)
+        resolved_quotation_marks: List[QuotationMarkMetadata] = list(
+            DepthBasedQuotationMarkResolver(
+                QuoteConventionDetectionResolutionSettings(possible_quote_conventions)
+            ).resolve_quotation_marks(quotation_mark_matches)
         )
 
         self.quotation_mark_tabulator.tabulate(resolved_quotation_marks)
