@@ -1,11 +1,11 @@
-from enum import Enum
+from enum import Enum, auto
 
 
 class UsfmMarkerType(Enum):
-    ParagraphMarker = "ParagraphMarker"
-    CharacterMarker = "CharacterMarker"
-    VerseMarker = "VerseMarker"
-    ChapterMarker = "ChapterMarker"
-    EmbedMarker = "Embed"
-    Other = "Other"
-    NoMarker = "NoMarker"
+    ParagraphMarker = auto()
+    CharacterMarker = auto()
+    VerseMarker = auto()
+    ChapterMarker = auto()
+    EmbedMarker = auto()
+    Other = auto()
+    NoMarker = auto()

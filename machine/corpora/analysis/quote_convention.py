@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Set
 
 from .quotation_mark_direction import QuotationMarkDirection
 
@@ -65,7 +65,7 @@ class QuoteConvention:
             return ""
         return (
             self.get_opening_quote_at_level(depth)
-            if direction == QuotationMarkDirection.Opening
+            if direction is QuotationMarkDirection.Opening
             else self.get_closing_quote_at_level(depth)
         )
 
@@ -80,6 +80,15 @@ class QuoteConvention:
             if level.get_closing_quote() == closing_quotation_mark:
                 return True
         return False
+
+    def get_possible_depths(self, quotation_mark: str, direction: QuotationMarkDirection) -> Set[int]:
+        depths: Set[int] = set()
+        for depth, level in enumerate(self.levels, start=1):
+            if direction is QuotationMarkDirection.Opening and level.get_opening_quote() == quotation_mark:
+                depths.add(depth)
+            elif direction is QuotationMarkDirection.Closing and level.get_closing_quote() == quotation_mark:
+                depths.add(depth)
+        return depths
 
     def is_compatible_with_observed_quotation_marks(
         self, opening_quotation_marks: list[str], closing_quotation_marks: list[str]

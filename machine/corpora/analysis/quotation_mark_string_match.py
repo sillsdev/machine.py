@@ -17,7 +17,7 @@ class QuotationMarkStringMatch:
     latin_letter_pattern: Pattern = regex.compile(r"^\p{script=Latin}$", regex.U)
     whitespace_pattern: Pattern = regex.compile(r"[\s~]", regex.U)
     punctuation_pattern: Pattern = regex.compile(r"[\.,;\?!\)\]\-—۔،؛]", regex.U)
-    quote_introducer_pattern: Pattern = regex.compile(r"[:,]", regex.U)
+    quote_introducer_pattern: Pattern = regex.compile(r"[:,]\\s*", regex.U)
 
     def __init__(self, text_segment: TextSegment, start_index: int, end_index: int):
         self.text_segment = text_segment
@@ -64,6 +64,12 @@ class QuotationMarkStringMatch:
                 return next_segment.get_text()[0]
             return None
         return self.text_segment.get_text()[self.end_index]
+
+    def does_leading_substring_match(self, regex_pattern: regex.Pattern) -> bool:
+        return regex_pattern.search(self.text_segment.substring_before(self.start_index)) is not None
+
+    def does_trailing_substring_match(self, regex_pattern: regex.Pattern) -> bool:
+        return regex_pattern.search(self.text_segment.substring_after(self.end_index)) is not None
 
     # this assumes that the two matches occur in the same verse
     def precedes(self, other: "QuotationMarkStringMatch") -> bool:
@@ -116,16 +122,11 @@ class QuotationMarkStringMatch:
     def has_trailing_punctuation(self) -> bool:
         return self.does_next_character_match(self.punctuation_pattern)
 
-    # TODO: refactor this to use a passed regex pattern
-    def has_leading_letter(self) -> bool:
-        if self.letter_pattern.search(self.text_segment.substring_before(self.start_index)):
-            return True
-        return False
+    def has_letter_in_leading_substring(self) -> bool:
+        return self.does_leading_substring_match(self.letter_pattern)
 
-    def has_trailing_letter(self) -> bool:
-        if self.letter_pattern.search(self.text_segment.substring_after(self.end_index)):
-            return True
-        return False
+    def has_letter_in_trailing_substring(self) -> bool:
+        return self.does_trailing_substring_match(self.letter_pattern)
 
     def has_leading_latin_letter(self) -> bool:
         return self.does_previous_character_match(self.latin_letter_pattern)
@@ -133,8 +134,8 @@ class QuotationMarkStringMatch:
     def has_trailing_latin_letter(self) -> bool:
         return self.does_next_character_match(self.latin_letter_pattern)
 
-    def has_leading_quote_introducer(self) -> bool:
-        return self.does_previous_character_match(self.quote_introducer_pattern)
+    def has_quote_introducer_in_leading_substring(self) -> bool:
+        return self.does_leading_substring_match(self.quote_introducer_pattern)
 
     def has_leading_closing_quotation_mark(self, quote_convention_set: QuoteConventionSet) -> bool:
         return self.does_previous_character_match(quote_convention_set.get_opening_quotation_mark_regex())
