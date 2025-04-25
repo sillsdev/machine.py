@@ -167,11 +167,11 @@ class QuotationMarkSequences:
 
 
 class QuotationMarkGrouper:
-    def __init__(self, quotation_marks: list[QuotationMarkStringMatch], quote_convention_set: QuoteConventionSet):
+    def __init__(self, quotation_marks: List[QuotationMarkStringMatch], quote_convention_set: QuoteConventionSet):
         self.quote_convention_set = quote_convention_set
         self._group_quotation_marks(quotation_marks)
 
-    def _group_quotation_marks(self, quotation_marks: list[QuotationMarkStringMatch]) -> None:
+    def _group_quotation_marks(self, quotation_marks: List[QuotationMarkStringMatch]) -> None:
         self.grouped_quotation_marks: Dict[str, List[QuotationMarkStringMatch]] = dict()
         for quotation_mark_match in quotation_marks:
             if quotation_mark_match.get_quotation_mark() not in self.grouped_quotation_marks:
@@ -230,7 +230,7 @@ class PreliminaryQuotationAnalyzer:
         self.earlier_quotation_mark_counts: dict[str, int] = dict()
         self.later_quotation_mark_counts: dict[str, int] = dict()
 
-    def narrow_down_possible_quote_conventions(self, chapters: list[Chapter]) -> QuoteConventionSet:
+    def narrow_down_possible_quote_conventions(self, chapters: List[Chapter]) -> QuoteConventionSet:
         for chapter in chapters:
             self._analyze_quotation_marks_for_chapter(chapter)
         return self._select_compatible_quote_conventions()
@@ -252,13 +252,13 @@ class PreliminaryQuotationAnalyzer:
     def _count_characters_in_text_segment(self, text_segment: TextSegment) -> None:
         self.character_count_statistics.count_characters(text_segment)
 
-    def _analyze_quotation_mark_sequence(self, quotation_marks: list[QuotationMarkStringMatch]) -> None:
+    def _analyze_quotation_mark_sequence(self, quotation_marks: List[QuotationMarkStringMatch]) -> None:
         quotation_mark_grouper: QuotationMarkGrouper = QuotationMarkGrouper(quotation_marks, self.quote_conventions)
         for earlier_mark, later_mark in quotation_mark_grouper.get_quotation_mark_pairs():
             self.quotation_mark_sequences.record_earlier_quotation_mark(earlier_mark)
             self.quotation_mark_sequences.record_later_quotation_mark(later_mark)
 
-    def _count_verse_starting_and_ending_quotation_marks(self, quotation_marks: list[QuotationMarkStringMatch]) -> None:
+    def _count_verse_starting_and_ending_quotation_marks(self, quotation_marks: List[QuotationMarkStringMatch]) -> None:
         for quotation_mark_match in quotation_marks:
             if quotation_mark_match.does_quotation_mark_match(self.apostrophe_pattern):
                 self._count_apostrophe(quotation_mark_match)
@@ -270,13 +270,13 @@ class PreliminaryQuotationAnalyzer:
     def _is_at_start_of_verse(self, quotation_mark_match: QuotationMarkStringMatch) -> bool:
         return (
             quotation_mark_match.get_text_segment().is_first_segment_in_verse()
-            and not quotation_mark_match.has_leading_letter()
+            and not quotation_mark_match.has_letter_in_leading_substring()
         )
 
     def _is_at_end_of_verse(self, quotation_mark_match: QuotationMarkStringMatch) -> bool:
         return (
             quotation_mark_match.get_text_segment().is_last_segment_in_verse()
-            and not quotation_mark_match.has_trailing_letter()
+            and not quotation_mark_match.has_letter_in_trailing_substring()
         )
 
     def _count_apostrophe(self, apostrophe_match: QuotationMarkStringMatch) -> None:

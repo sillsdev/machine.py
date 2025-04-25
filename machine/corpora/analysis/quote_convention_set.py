@@ -3,6 +3,7 @@ from typing import Dict, List, Set, Tuple, Union
 
 import regex
 
+from .quotation_mark_direction import QuotationMarkDirection
 from .quotation_mark_tabulator import QuotationMarkTabulator
 from .quote_convention import QuoteConvention
 
@@ -90,6 +91,12 @@ class QuoteConventionSet:
             paired_quotation_marks.update(self.opening_marks_by_closing_mark[quotation_mark])
         return paired_quotation_marks
 
+    def get_possible_depths(self, quotation_mark: str, direction: QuotationMarkDirection) -> Set[int]:
+        depths: Set[int] = set()
+        for convention in self.conventions:
+            depths.update(convention.get_possible_depths(quotation_mark, direction))
+        return depths
+
     def get_opening_quotation_mark_regex(self) -> Pattern:
         return self.opening_quotation_mark_regex
 
@@ -98,6 +105,14 @@ class QuoteConventionSet:
 
     def get_quotation_mark_regex(self) -> Pattern:
         return self.all_quotation_mark_regex
+
+    def does_metadata_match_quotation_mark(
+        self, quotation_mark: str, depth: int, direction: QuotationMarkDirection
+    ) -> bool:
+        for convention in self.conventions:
+            if convention.get_expected_quotation_mark(depth, direction) == quotation_mark:
+                return True
+        return False
 
     def filter_to_compatible_quote_conventions(
         self, opening_quotation_marks: list[str], closing_quotation_marks: list[str]
