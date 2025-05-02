@@ -202,12 +202,8 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
                     text = text.lstrip()
                 row_text += text
         elif len(text) > 0 and (self._current_text_type != ScriptureTextType.VERSE or state.is_verse_text):
-            is_embed_or_nested_dont_update = (
-                state.token is not None
-                and self._is_in_embed(state.token.marker)
-                and (not self._is_in_note_text() or self._is_in_nested_embed(state.token.marker))
-            )
-            if is_embed_or_nested_dont_update:
+            # ignore embed text
+            if self._current_text_type == ScriptureTextType.EMBED:
                 return
 
             if (
@@ -231,18 +227,6 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
         self._row_texts_stack.append("")
 
     def _end_non_verse_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
-        text = self._row_texts_stack.pop()
-        if self._text._include_all_text:
-            self._rows.append(self._text._create_scripture_row(scripture_ref, text, self._sentence_start))
-
-    def _start_note_text(self, state: UsfmParserState) -> None:
-        if self._text._include_markers:
-            return
-        self._row_texts_stack.append("")
-
-    def _end_note_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
-        if self._text._include_markers:
-            return
         text = self._row_texts_stack.pop()
         if self._text._include_all_text:
             self._rows.append(self._text._create_scripture_row(scripture_ref, text, self._sentence_start))
