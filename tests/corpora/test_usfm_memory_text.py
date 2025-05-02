@@ -111,11 +111,11 @@ description
 """,
         include_all_text=True,
     )
-    assert len(rows) == 5, str.join(",", [tr.text for tr in rows])
+    assert len(rows) == 4, str.join(",", [tr.text for tr in rows])
     assert rows[0].text == ""
     assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:0/1:q1")
-    assert rows[1].text == "World"
-    assert scripture_ref(rows[1]) == ScriptureRef.parse("MAT 1:0/1:q1/1:f")
+    assert rows[1].text == "First verse in line!?!"
+    assert scripture_ref(rows[1]) == ScriptureRef.parse("MAT 1:1")
 
 
 def test_get_rows_verse_para_comment_first() -> None:
@@ -129,11 +129,11 @@ def test_get_rows_verse_para_comment_first() -> None:
 """,
         include_all_text=True,
     )
-    assert rows[0].text == "World"
-    assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:0/1:f")
-    assert rows[1].text == "This is a comment"
-    assert scripture_ref(rows[1]) == ScriptureRef.parse("MAT 1:0/2:ip")
-    assert len(rows) == 3, str.join(",", [tr.text for tr in rows])
+    assert rows[0].text == "This is a comment"
+    assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:0/2:ip")
+    assert rows[1].text == "First verse in line!?!"
+    assert scripture_ref(rows[1]) == ScriptureRef.parse("MAT 1:1")
+    assert len(rows) == 2, str.join(",", [tr.text for tr in rows])
 
 
 def get_rows(usfm: str, include_markers: bool = False, include_all_text: bool = False) -> List[TextRow]:
