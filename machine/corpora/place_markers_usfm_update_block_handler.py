@@ -17,7 +17,7 @@ TOKENIZER = LatinWordTokenizer()
 STYLESHEET = UsfmStylesheet("usfm.sty")
 
 
-class PlaceMarkersScriptureUpdateBlockHandler(UsfmUpdateBlockHandler):
+class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
 
     def __init__(self, pt_info: Sequence[PretranslationInfo]):
         # TODO: when will len(refs) be >1?
