@@ -1,4 +1,4 @@
-from typing import List, Optional, Sequence, Tuple
+from typing import Iterable, List, Optional, Sequence, Tuple
 
 from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH, ignore_line_endings
 
@@ -8,6 +8,8 @@ from machine.corpora import (
     UpdateUsfmMarkerBehavior,
     UpdateUsfmParserHandler,
     UpdateUsfmTextBehavior,
+    UsfmUpdateBlock,
+    UsfmUpdateBlockHandler,
     parse_usfm,
 )
 
@@ -50,8 +52,8 @@ def test_get_usfm_strip_all_text() -> None:
 \r keep this reference
 \rem and this reference too
 \ip but remove this text
-\v 1 Chapter \add one\add*, \p verse \f + \fr 2:1: \ft This is a \fm ∆\fm* footnote.\f*one.
-\v 2 Chapter \add one\add*, \p verse \f + \fr 2:1: \ft This is a \fm ∆\fm* footnote.\f*two.
+\v 1 Chapter \add one\add*, \p verse \f + \fr 1:1: \ft This is a \+bd ∆\+bd* footnote.\f*one.
+\v 2 Chapter \add one\add*, \p verse \f + \fr 1:2: \ft This is a \+bd ∆\+bd* footnote.\f*two.
 \v 3 Verse 3
 \v 4 Verse 4
 """
@@ -66,17 +68,17 @@ def test_get_usfm_strip_all_text() -> None:
     )
 
     result = r"""\id MAT
-\c 1
-\r keep this reference
-\rem and this reference too
-\ip
-\v 1 Update 1 \add \add*
-\p \f + \fr 2:1: \ft \fm ∆\fm*\f*
-\v 2 \add \add*
-\p \f + \fr 2:1: \ft \fm ∆\fm*\f*
-\v 3 Update 3
-\v 4
-"""
+    \c 1
+    \r keep this reference
+    \rem and this reference too
+    \ip
+    \v 1 Update 1 \add \add*
+    \p \f + \fr 1:1: \ft This is a \+bd ∆\+bd* footnote.\f*
+    \v 2 \add \add*
+    \p \f + \fr 1:2: \ft This is a \+bd ∆\+bd* footnote.\f*
+    \v 3 Update 3
+    \v 4
+    """
     assess(target, result)
 
     target = update_usfm(
@@ -298,13 +300,12 @@ def test_get_usfm_verse_strip_note() -> None:
     assert "\\v 1 First verse of the second chapter.\r\n" in target
 
 
-def test_get_usfm_verse_replace_note() -> None:
+def test_get_usfm_verse_replace_with_note() -> None:
     rows = [
         (
             scr_ref("MAT 1:1"),
             str("updated text"),
         ),
-        (scr_ref("MAT 1:1/1:f"), str("This is a new footnote.")),
     ]
     usfm = r"""\id MAT - Test
 \c 1
@@ -313,7 +314,7 @@ def test_get_usfm_verse_replace_note() -> None:
     target = update_usfm(rows, usfm)
     result = r"""\id MAT - Test
 \c 1
-\v 1 updated text \f + \fr 2:1: \ft This is a new footnote. \f*
+\v 1 updated text \f + \fr 2:1: \ft This is a footnote.\f*
 """
     assess(target, result)
 
@@ -426,7 +427,7 @@ def test_get_usfm_merge_verse_segments() -> None:
     ]
     target = update_usfm(rows)
     assert target is not None
-    assert "\\v 2-3 Verse 2. Verse 2a. Verse 2b. \\fm ∆\\fm*\r\n" in target
+    assert "\\v 2-3 Verse 2. Verse 2a. Verse 2b.\r\n" in target
 
 
 def test_get_usfm_verse_opt_break() -> None:
@@ -527,7 +528,7 @@ def test_get_usfm_nonverse_relaxed() -> None:
 def test_get_usfm_nonverse_sidebar() -> None:
     rows = [
         (
-            scr_ref("MAT 2:3/2:esb/1:ms"),
+            scr_ref("MAT 2:3/1:esb/1:ms"),
             str("The first paragraph of the sidebar."),
         )
     ]
@@ -555,7 +556,7 @@ def test_get_usfm_nonverse_table() -> None:
 def test_get_usfm_nonverse_optbreak() -> None:
     rows = [
         (
-            scr_ref("MAT 2:3/2:esb/2:p"),
+            scr_ref("MAT 2:3/1:esb/2:p"),
             str("The second paragraph of the sidebar."),
         )
     ]
@@ -588,20 +589,16 @@ def test_get_usfm_nonverse_skip_note() -> None:
     assert "\\ip The introductory paragraph.\r\n" in target
 
 
-def test_get_usfm_nonverse_replace_note() -> None:
+def test_get_usfm_nonverse_replace_with_note() -> None:
     rows = [
         (
             scr_ref("MAT 1:0/3:ip"),
             str("The introductory paragraph."),
         ),
-        (
-            scr_ref("MAT 1:0/3:ip/1:fe"),
-            str("This is a new endnote."),
-        ),
     ]
     target = update_usfm(rows)
     assert target is not None
-    assert "\\ip The introductory paragraph. \\fe + \\ft This is a new endnote. \\fe*\r\n" in target
+    assert "\\ip The introductory paragraph. \\fe + \\ft This is an endnote.\\fe*\r\n" in target
 
 
 def test_get_usfm_verse_double_va_vp() -> None:
@@ -670,77 +667,6 @@ def test_get_usfm_verse_pretranslations_before_text() -> None:
     target = update_usfm(rows)
     assert target is not None
     assert "\\ip The introductory paragraph. \\fe + \\ft This is an endnote.\\fe*\r\n" in target
-
-
-def test_embed_style_preservation() -> None:
-    rows = [
-        (
-            scr_ref("MAT 1:1"),
-            str("Update the greeting"),
-        ),
-        (
-            scr_ref("MAT 1:1/1:f"),
-            str("Update the comment"),
-        ),
-        (
-            scr_ref("MAT 1:2"),
-            str("Update the greeting only"),
-        ),
-        (
-            scr_ref("MAT 1:3/1:f"),
-            str("Update the comment only"),
-        ),
-    ]
-    usfm = r"""\id MAT - Test
-\c 1
-\v 1 Hello \f \fr 1.1 \ft Some \+bd note\+bd* \f*\bd World \bd*
-\v 2 Good \f \fr 1.2 \ft Some other \+bd note\+bd* \f*\bd Morning \bd*
-\v 3 Pleasant \f \fr 1.3 \ft A third \+bd note\+bd* \f*\bd Evening \bd*
-"""
-
-    target = update_usfm(
-        rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE, style_behavior=UpdateUsfmMarkerBehavior.PRESERVE
-    )
-    result_pp = r"""\id MAT - Test
-\c 1
-\v 1 Update the greeting \f \fr 1.1 \ft Update the comment \+bd \+bd*\f*\bd \bd*
-\v 2 Update the greeting only \f \fr 1.2 \ft Some other \+bd note\+bd* \f*\bd \bd*
-\v 3 Pleasant \f \fr 1.3 \ft Update the comment only \+bd \+bd*\f*\bd Evening \bd*
-"""
-    assess(target, result_pp)
-
-    target = update_usfm(
-        rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE, style_behavior=UpdateUsfmMarkerBehavior.STRIP
-    )
-    result_ps = r"""\id MAT - Test
-\c 1
-\v 1 Update the greeting \f \fr 1.1 \ft Update the comment \f*
-\v 2 Update the greeting only \f \fr 1.2 \ft Some other \+bd note\+bd* \f*
-\v 3 Pleasant \f \fr 1.3 \ft Update the comment only \f*\bd Evening \bd*
-"""
-    assess(target, result_ps)
-
-    target = update_usfm(
-        rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.STRIP, style_behavior=UpdateUsfmMarkerBehavior.PRESERVE
-    )
-    result_sp = r"""\id MAT - Test
-\c 1
-\v 1 Update the greeting \bd \bd*
-\v 2 Update the greeting only \bd \bd*
-\v 3 Pleasant \bd Evening \bd*
-"""
-    assess(target, result_sp)
-
-    target = update_usfm(
-        rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.STRIP, style_behavior=UpdateUsfmMarkerBehavior.STRIP
-    )
-    result_ss = r"""\id MAT - Test
-\c 1
-\v 1 Update the greeting
-\v 2 Update the greeting only
-\v 3 Pleasant \bd Evening \bd*
-"""
-    assess(target, result_ss)
 
 
 def test_strip_paragraphs() -> None:
@@ -829,26 +755,6 @@ def test_beginning_of_verse_embed() -> None:
     assess(target, result)
 
 
-def test_empty_note() -> None:
-    rows = [
-        (
-            scr_ref("MAT 1:1/1:f"),
-            str("Update the note"),
-        )
-    ]
-    usfm = r"""\id MAT - Test
-\c 1
-\v 1 Empty Note \f \fr 1.1 \ft \f*
-"""
-
-    target = update_usfm(rows, usfm)
-    result = r"""\id MAT - Test
-\c 1
-\v 1 Empty Note \f \fr 1.1 \ft Update the note \f*
-"""
-    assess(target, result)
-
-
 def test_cross_reference_dont_update() -> None:
     rows = [
         (
@@ -869,7 +775,7 @@ def test_cross_reference_dont_update() -> None:
     assess(target, result)
 
 
-def test_preserve_fig_and_fm() -> None:
+def test_preserve_fig() -> None:
     rows = [
         (
             scr_ref("MAT 1:1"),
@@ -878,18 +784,18 @@ def test_preserve_fig_and_fm() -> None:
     ]
     usfm = r"""\id MAT - Test
 \c 1
-\v 1 initial text \fig stuff\fig* more text \fm * \fm* and more.
+\v 1 initial text \fig stuff\fig* more text and more.
 """
 
     target = update_usfm(rows, usfm)
     result = r"""\id MAT - Test
 \c 1
-\v 1 Update \fig stuff\fig*\fm * \fm*
+\v 1 Update \fig stuff\fig*
 """
     assess(target, result)
 
 
-def test_nested_xt() -> None:
+def test_note_explicit_end_markers() -> None:
     rows = [
         (
             scr_ref("MAT 1:1"),
@@ -902,13 +808,13 @@ def test_nested_xt() -> None:
     ]
     usfm = r"""\id MAT - Test
 \c 1
-\v 1 initial text \f + \fr 15.8 \ft Text (\+xt reference\+xt*). And more.\f* and the end.
+\v 1 initial text \f + \fr 2.4\fr* \fk The \+nd Lord\+nd*:\fk* \ft See \+nd Lord\+nd* in Word List.\ft*\f* and the end.
 """
 
     target = update_usfm(rows, usfm)
     result = r"""\id MAT - Test
 \c 1
-\v 1 Update text \f + \fr 15.8 \ft Update note \+xt reference\+xt*\f*
+\v 1 Update text \f + \fr 2.4\fr* \fk The \+nd Lord\+nd*:\fk* \ft See \+nd Lord\+nd* in Word List.\ft*\f*
 """
     assess(target, result)
 
@@ -920,66 +826,30 @@ def test_nested_xt() -> None:
     assess(target, result)
 
 
-def test_non_nested_xt() -> None:
+def test_update_block_verse() -> None:
     rows = [
         (
             scr_ref("MAT 1:1"),
-            str("Update text"),
-        ),
-        (
-            scr_ref("MAT 1:1/1:f"),
-            str("Update note"),
+            str("Update 1"),
         ),
     ]
     usfm = r"""\id MAT - Test
 \c 1
-\v 1 initial text \f + \fr 15.8 \ft Text \xt reference\f* and the end.
+\v 1 verse 1 \p inner verse paragraph
 """
 
-    target = update_usfm(rows, usfm)
-    result = r"""\id MAT - Test
-\c 1
-\v 1 Update text \f + \fr 15.8 \ft Update note \xt reference\f*
-"""
-    assess(target, result)
+    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_usfm(rows, usfm, update_block_handlers=[update_block_handler])
 
-    target = update_usfm(rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.STRIP)
-    result = r"""\id MAT - Test
-\c 1
-\v 1 Update text
-"""
-    assess(target, result)
-
-
-def test_multiple_ft_only_update_first() -> None:
-    rows = [
-        (
-            scr_ref("MAT 1:1"),
-            str("Update text"),
-        ),
-        (
-            scr_ref("MAT 1:1/1:f"),
-            str("Update note"),
-        ),
-    ]
-    usfm = r"""\id MAT - Test
-\c 1
-\v 1 initial text \f + \fr 15.8 \ft first note \ft second note\f* and the end.
-"""
-
-    target = update_usfm(rows, usfm)
-    result = r"""\id MAT - Test
-\c 1
-\v 1 Update text \f + \fr 15.8 \ft Update note \ft second note\f*
-"""
-    assess(target, result)
-
-    target = update_usfm(rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.STRIP)
-    result = r"""\id MAT - Test
-\c 1
-\v 1 Update text
-"""
-    assess(target, result)
+    assert len(update_block_handler.blocks) == 1
+    update_block = update_block_handler.blocks[0]
+    assert update_block.refs == scr_ref("MAT 1:1")
+    assert len(update_block.elements) == 4
+    assert update_block.elements[0].tokens[0].to_usfm() == "Update 1 "
+    assert update_block.elements[1].tokens[0].to_usfm() == "verse 1 "
+    assert update_block.elements[1].marked_for_removal is True
+    assert update_block.elements[2].tokens[0].to_usfm() == "\\p "
+    assert update_block.elements[3].tokens[0].to_usfm() == "inner verse paragraph "
 
 
 def scr_ref(*refs: str) -> List[ScriptureRef]:
@@ -994,7 +864,8 @@ def update_usfm(
     paragraph_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
     embed_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
     style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
-    preserve_paragraph_styles: Optional[Sequence[str]] = None,
+    preserve_paragraph_styles: Optional[Iterable[str]] = None,
+    update_block_handlers: Optional[Iterable[UsfmUpdateBlockHandler]] = None,
 ) -> Optional[str]:
     if source is None:
         updater = FileParatextProjectTextUpdater(USFM_TEST_PROJECT_PATH)
@@ -1007,11 +878,19 @@ def update_usfm(
             embed_behavior,
             style_behavior,
             preserve_paragraph_styles,
+            update_block_handlers,
         )
     else:
         source = source.strip().replace("\r\n", "\n") + "\r\n"
         updater = UpdateUsfmParserHandler(
-            rows, id_text, text_behavior, paragraph_behavior, embed_behavior, style_behavior, preserve_paragraph_styles
+            rows,
+            id_text,
+            text_behavior,
+            paragraph_behavior,
+            embed_behavior,
+            style_behavior,
+            preserve_paragraph_styles,
+            update_block_handlers,
         )
         parse_usfm(source, updater)
         return updater.get_usfm()
@@ -1026,3 +905,13 @@ def assess(target: Optional[str], truth: str) -> None:
 def read_usfm() -> str:
     with (USFM_TEST_PROJECT_PATH / "41MATTes.SFM").open("r", encoding="utf-8-sig", newline="\r\n") as file:
         return file.read()
+
+
+class TestUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
+    def __init__(self):
+        self.blocks: list[UsfmUpdateBlock] = []
+
+    def process_block(self, block: UsfmUpdateBlock) -> UsfmUpdateBlock:
+        new_block = block.copy()
+        self.blocks.append(new_block)
+        return new_block
