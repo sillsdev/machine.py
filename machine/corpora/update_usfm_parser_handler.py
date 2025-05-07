@@ -8,6 +8,7 @@ from .usfm_stylesheet import UsfmStylesheet
 from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
 from .usfm_tokenizer import UsfmTokenizer
 from .usfm_update_block import UsfmUpdateBlock
+from .usfm_update_block_element import UsfmUpdateBlockElementType
 from .usfm_update_block_handler import UsfmUpdateBlockHandler
 
 
@@ -38,7 +39,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         self._rows = rows or []
         self._tokens: List[UsfmToken] = []
         self._updated_text: List[UsfmToken] = []
-        self._update_block: UsfmUpdateBlock = UsfmUpdateBlock()
+        self._update_block_stack: list[UsfmUpdateBlock] = []
         self._embed_tokens: List[UsfmToken] = []
         self._id_text = id_text
         if update_block_handlers is None:
@@ -69,6 +70,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
 
     def start_book(self, state: UsfmParserState, marker: str, code: str) -> None:
         self._collect_readonly_tokens(state)
+        self._update_block_stack.append(UsfmUpdateBlock())
         start_book_tokens: List[UsfmToken] = []
         if self._id_text is not None:
             start_book_tokens.append(UsfmToken(UsfmTokenType.TEXT, text=self._id_text + " "))
@@ -77,7 +79,10 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         super().start_book(state, marker, code)
 
     def end_book(self, state: UsfmParserState, marker: str) -> None:
-        self._process_update_block(fire_handlers=False)
+        self._use_updated_text()
+        self._pop_new_tokens()
+        update_block = self._update_block_stack.pop()
+        self._tokens.extend(update_block.get_tokens())
 
         super().end_book(state, marker)
 
@@ -240,25 +245,19 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
             self._collect_tokens(state)
 
     def _start_verse_text(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:
-        self._update_block.update_refs(scripture_refs)
-        row_texts: List[str] = self._advance_rows(scripture_refs)
-        self._push_updated_text([UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in row_texts])
+        self._start_update_block(scripture_refs)
 
     def _end_verse_text(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:
-        self._pop_new_tokens()
-        self._process_update_block()
+        self._end_update_block(scripture_refs)
 
     def _start_non_verse_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
-        self._update_block.update_refs([scripture_ref])
-        row_texts = self._advance_rows([scripture_ref])
-        self._push_updated_text([UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in row_texts])
+        self._start_update_block([scripture_ref])
 
     def _end_non_verse_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
-        self._pop_new_tokens()
-        self._process_update_block()
+        self._end_update_block([scripture_ref])
 
     def _end_embed_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
-        self._update_block.add_embed(
+        self._update_block_stack[-1].add_embed(
             self._embed_tokens, marked_for_removal=self._embed_behavior == UpdateUsfmMarkerBehavior.STRIP
         )
         self._embed_tokens.clear()
@@ -299,10 +298,11 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
             token = state.tokens[self._token_index]
             if self._current_text_type == ScriptureTextType.EMBED:
                 self._embed_tokens.append(token)
-            elif self._current_text_type != ScriptureTextType.NONE or (
-                state.para_tag is not None and state.para_tag.marker == "id"
-            ):
-                self._update_block.add_token(token)
+            elif (
+                self._current_text_type != ScriptureTextType.NONE
+                or (state.para_tag is not None and state.para_tag.marker == "id")
+            ) and len(self._update_block_stack) > 0:
+                self._update_block_stack[-1].add_token(token)
             else:
                 self._tokens.append(token)
             self._token_index += 1
@@ -310,7 +310,10 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
     def _collect_readonly_tokens(self, state: UsfmParserState) -> None:
         while self._token_index <= state.index + state.special_token_count:
             token = state.tokens[self._token_index]
-            self._tokens.append(token)
+            if len(self._update_block_stack) > 0:
+                self._update_block_stack[-1].add_token(token)
+            else:
+                self._tokens.append(token)
             self._token_index += 1
 
     def _skip_tokens(self, state: UsfmParserState) -> None:
@@ -319,7 +322,8 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
             if self._current_text_type != ScriptureTextType.NONE or (
                 state.para_tag is not None and state.para_tag.marker == "id"
             ):
-                self._update_block.add_token(token, marked_for_removal=True)
+                if len(self._update_block_stack) > 0:
+                    self._update_block_stack[-1].add_token(token, marked_for_removal=True)
             self._token_index += 1
         self._token_index = state.index + 1 + state.special_token_count
 
@@ -356,14 +360,25 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
     def _has_new_text(self) -> bool:
         return any(self._replace_stack) and self._replace_stack[-1]
 
-    def _process_update_block(self, fire_handlers: bool = True) -> None:
+    def _start_update_block(self, scripture_refs: Sequence[ScriptureRef]) -> None:
+        self._update_block_stack.append(UsfmUpdateBlock(scripture_refs))
+        row_texts: List[str] = self._advance_rows(scripture_refs)
+        self._push_updated_text([UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in row_texts])
+
+    def _end_update_block(self, scripture_refs: Sequence[ScriptureRef]) -> None:
         self._use_updated_text()
-        update_block = self._update_block
-        if fire_handlers:
-            for handler in self._update_block_handlers:
-                update_block = handler.process_block(update_block)
-        self._tokens.extend(update_block.get_tokens())
-        self._update_block.clear()
+        self._pop_new_tokens()
+        update_block = self._update_block_stack.pop()
+        update_block.update_refs(scripture_refs)
+        for handler in self._update_block_handlers:
+            update_block = handler.process_block(update_block)
+        if (
+            len(self._update_block_stack) > 0
+            and self._update_block_stack[-1].elements[-1].type == UsfmUpdateBlockElementType.PARAGRAPH
+        ):
+            self._update_block_stack[-1].extend_last_element(update_block.get_tokens())
+        else:
+            self._tokens.extend(update_block.get_tokens())
 
     def _push_updated_text(self, tokens: List[UsfmToken]) -> None:
         self._replace_stack.append(any(tokens))
@@ -372,7 +387,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
 
     def _use_updated_text(self) -> None:
         if self._updated_text:
-            self._update_block.add_text(self._updated_text)
+            self._update_block_stack[-1].add_text(self._updated_text)
         self._updated_text.clear()
 
     def _clear_updated_text(self) -> None:

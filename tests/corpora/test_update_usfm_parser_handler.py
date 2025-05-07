@@ -1,4 +1,4 @@
-from typing import Iterable, List, Optional, Sequence, Tuple
+from typing import Iterable, List, Optional, Sequence, Tuple, Union
 
 from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH, ignore_line_endings
 
@@ -9,6 +9,7 @@ from machine.corpora import (
     UpdateUsfmParserHandler,
     UpdateUsfmTextBehavior,
     UsfmUpdateBlock,
+    UsfmUpdateBlockElementType,
     UsfmUpdateBlockHandler,
     parse_usfm,
 )
@@ -79,7 +80,7 @@ def test_get_usfm_strip_all_text() -> None:
     \v 3 Update 3
     \v 4
     """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
     target = update_usfm(
         rows,
@@ -100,7 +101,7 @@ def test_get_usfm_strip_all_text() -> None:
 \v 3 Update 3
 \v 4
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 def test_get_usfm_strip_paragraphs_preserve_paragraph_styles():
@@ -131,7 +132,7 @@ def test_get_usfm_strip_paragraphs_preserve_paragraph_styles():
 \v 1 Update 1
 """
 
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
     target_diff_paragraph = update_usfm(
         rows,
@@ -148,7 +149,7 @@ def test_get_usfm_strip_paragraphs_preserve_paragraph_styles():
 \v 1 Update 1
 """
 
-    assess(target_diff_paragraph, result_diff_paragraph)
+    assert_usfm_equals(target_diff_paragraph, result_diff_paragraph)
 
 
 def test_preserve_paragraphs():
@@ -179,7 +180,7 @@ def test_preserve_paragraphs():
 \v 1 Update 1
 """
 
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
     target_diff_paragraph = update_usfm(
         rows, usfm, text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING, preserve_paragraph_styles=("ip")
@@ -192,7 +193,7 @@ def test_preserve_paragraphs():
 \v 1 Update 1
 """
 
-    assess(target_diff_paragraph, result_diff_paragraph)
+    assert_usfm_equals(target_diff_paragraph, result_diff_paragraph)
 
 
 def test_paragraph_in_verse():
@@ -221,7 +222,7 @@ def test_paragraph_in_verse():
 \p inner verse paragraph
 """
 
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
     target_strip = update_usfm(
         rows,
@@ -238,7 +239,7 @@ def test_paragraph_in_verse():
 \v 2
 """
 
-    assess(target_strip, result_strip)
+    assert_usfm_equals(target_strip, result_strip)
 
 
 def test_get_usfm_prefer_existing():
@@ -267,7 +268,7 @@ def test_get_usfm_prefer_existing():
 \v 2 Update 2
 \v 3 Other text
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 def test_get_usfm_prefer_rows():
@@ -316,7 +317,7 @@ def test_get_usfm_verse_replace_with_note() -> None:
 \c 1
 \v 1 updated text \f + \fr 2:1: \ft This is a footnote.\f*
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 def test_get_usfm_row_verse_segment() -> None:
@@ -427,6 +428,8 @@ def test_get_usfm_merge_verse_segments() -> None:
     ]
     target = update_usfm(rows)
     assert target is not None
+    with open("c:\\develop\\temp\\test.usfm", "w", encoding="utf-8", newline="\n") as f:
+        f.write(target)
     assert "\\v 2-3 Verse 2. Verse 2a. Verse 2b.\r\n" in target
 
 
@@ -701,7 +704,7 @@ def test_strip_paragraphs() -> None:
 \p World
 """
 
-    assess(target, result_p)
+    assert_usfm_equals(target, result_p)
 
     target = update_usfm(rows, usfm, paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP)
     result_s = r"""\id MAT - Test
@@ -712,7 +715,7 @@ def test_strip_paragraphs() -> None:
 \v 2 Hello
 \p World
 """
-    assess(target, result_s)
+    assert_usfm_equals(target, result_s)
 
 
 def test_preservation_raw_strings() -> None:
@@ -732,7 +735,7 @@ def test_preservation_raw_strings() -> None:
 \c 1
 \v 1 Update all in one row \f \fr 1.1 \ft Some note \f*
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 def test_beginning_of_verse_embed() -> None:
@@ -752,7 +755,7 @@ def test_beginning_of_verse_embed() -> None:
 \c 1
 \v 1 Updated text
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 def test_cross_reference_dont_update() -> None:
@@ -772,7 +775,7 @@ def test_cross_reference_dont_update() -> None:
 \c 1
 \v 1 Cross reference verse \x - \xo 2:3-4 \xt Cool Book 3:24 \xta The annotation \x* and more content.
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 def test_preserve_fig() -> None:
@@ -792,7 +795,7 @@ def test_preserve_fig() -> None:
 \c 1
 \v 1 Update \fig stuff\fig*
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 def test_note_explicit_end_markers() -> None:
@@ -816,17 +819,17 @@ def test_note_explicit_end_markers() -> None:
 \c 1
 \v 1 Update text \f + \fr 2.4\fr* \fk The \+nd Lord\+nd*:\fk* \ft See \+nd Lord\+nd* in Word List.\ft*\f*
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
     target = update_usfm(rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.STRIP)
     result = r"""\id MAT - Test
 \c 1
 \v 1 Update text
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
-def test_update_block_verse() -> None:
+def test_update_block_verse_preserve_paras() -> None:
     rows = [
         (
             scr_ref("MAT 1:1"),
@@ -839,17 +842,304 @@ def test_update_block_verse() -> None:
 """
 
     update_block_handler = TestUsfmUpdateBlockHandler()
-    update_usfm(rows, usfm, update_block_handlers=[update_block_handler])
+    update_usfm(
+        rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE, update_block_handlers=[update_block_handler]
+    )
 
     assert len(update_block_handler.blocks) == 1
     update_block = update_block_handler.blocks[0]
-    assert update_block.refs == scr_ref("MAT 1:1")
-    assert len(update_block.elements) == 4
-    assert update_block.elements[0].tokens[0].to_usfm() == "Update 1 "
-    assert update_block.elements[1].tokens[0].to_usfm() == "verse 1 "
-    assert update_block.elements[1].marked_for_removal is True
-    assert update_block.elements[2].tokens[0].to_usfm() == "\\p "
-    assert update_block.elements[3].tokens[0].to_usfm() == "inner verse paragraph "
+    assert_update_block_equals(
+        update_block,
+        "MAT 1:1",
+        (UsfmUpdateBlockElementType.OTHER, "\\v 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "verse 1 ", True),
+        (UsfmUpdateBlockElementType.PARAGRAPH, "\\p ", False),
+        (UsfmUpdateBlockElementType.TEXT, "inner verse paragraph ", True),
+    )
+
+
+def test_update_block_verse_strip_paras() -> None:
+    rows = [
+        (
+            scr_ref("MAT 1:1"),
+            str("Update 1"),
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\c 1
+\v 1 verse 1 \p inner verse paragraph
+"""
+
+    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_usfm(
+        rows, usfm, paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP, update_block_handlers=[update_block_handler]
+    )
+
+    assert len(update_block_handler.blocks) == 1
+    update_block = update_block_handler.blocks[0]
+    assert_update_block_equals(
+        update_block,
+        "MAT 1:1",
+        (UsfmUpdateBlockElementType.OTHER, "\\v 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "verse 1 ", True),
+        (UsfmUpdateBlockElementType.PARAGRAPH, "\\p ", True),
+        (UsfmUpdateBlockElementType.TEXT, "inner verse paragraph ", True),
+    )
+
+
+def test_update_block_verse_range() -> None:
+    rows = [
+        (
+            scr_ref("MAT 1:1"),
+            str("Update 1"),
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\c 1
+\v 1-3 verse 1 through 3
+"""
+
+    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_usfm(
+        rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE, update_block_handlers=[update_block_handler]
+    )
+
+    assert len(update_block_handler.blocks) == 1
+    update_block = update_block_handler.blocks[0]
+    assert_update_block_equals(
+        update_block,
+        ["MAT 1:1", "MAT 1:2", "MAT 1:3"],
+        (UsfmUpdateBlockElementType.OTHER, "\\v 1-3 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "verse 1 through 3 ", True),
+    )
+
+
+def test_update_block_footnote_preserve_embeds() -> None:
+    rows = [
+        (
+            scr_ref("MAT 1:1"),
+            str("Update 1"),
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\c 1
+\v 1 verse\f \fr 1.1 \ft Some note \f* 1
+"""
+
+    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_usfm(
+        rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE, update_block_handlers=[update_block_handler]
+    )
+
+    assert len(update_block_handler.blocks) == 1
+    update_block = update_block_handler.blocks[0]
+    assert_update_block_equals(
+        update_block,
+        "MAT 1:1",
+        (UsfmUpdateBlockElementType.OTHER, "\\v 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "verse", True),
+        (UsfmUpdateBlockElementType.EMBED, "\\f \\fr 1.1 \\ft Some note \\f*", False),
+        (UsfmUpdateBlockElementType.TEXT, " 1 ", True),
+    )
+
+
+def test_update_block_footnote_strip_embeds() -> None:
+    rows = [
+        (
+            scr_ref("MAT 1:1"),
+            str("Update 1"),
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\c 1
+\v 1 verse\f \fr 1.1 \ft Some note \f* 1
+"""
+
+    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_usfm(rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.STRIP, update_block_handlers=[update_block_handler])
+
+    assert len(update_block_handler.blocks) == 1
+    update_block = update_block_handler.blocks[0]
+    assert_update_block_equals(
+        update_block,
+        "MAT 1:1",
+        (UsfmUpdateBlockElementType.OTHER, "\\v 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "verse", True),
+        (UsfmUpdateBlockElementType.EMBED, "\\f \\fr 1.1 \\ft Some note \\f*", True),
+        (UsfmUpdateBlockElementType.TEXT, " 1 ", True),
+    )
+
+
+def test_update_block_nonverse() -> None:
+    rows = [
+        (
+            scr_ref("MAT 1:0/1:s"),
+            str("Updated section Header"),
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\s Section header
+\c 1
+\v 1 verse 1
+"""
+
+    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_usfm(rows, usfm, update_block_handlers=[update_block_handler])
+
+    assert len(update_block_handler.blocks) == 2
+    update_block = update_block_handler.blocks[0]
+    assert_update_block_equals(
+        update_block,
+        "MAT 1:0/1:s",
+        (UsfmUpdateBlockElementType.TEXT, "Updated section Header ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Section header ", True),
+    )
+
+
+def test_update_block_verse_preserve_styles() -> None:
+    rows = [
+        (
+            scr_ref("MAT 1:1"),
+            str("Update 1"),
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\c 1
+\v 1 verse \bd 1\bd*
+"""
+
+    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_usfm(
+        rows, usfm, style_behavior=UpdateUsfmMarkerBehavior.PRESERVE, update_block_handlers=[update_block_handler]
+    )
+
+    assert len(update_block_handler.blocks) == 1
+    update_block = update_block_handler.blocks[0]
+    assert_update_block_equals(
+        update_block,
+        "MAT 1:1",
+        (UsfmUpdateBlockElementType.OTHER, "\\v 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "verse ", True),
+        (UsfmUpdateBlockElementType.STYLE, "\\bd ", False),
+        (UsfmUpdateBlockElementType.TEXT, "1", True),
+        (UsfmUpdateBlockElementType.STYLE, "\\bd*", False),
+        (UsfmUpdateBlockElementType.TEXT, " ", True),
+    )
+
+
+def test_update_block_verse_strip_styles() -> None:
+    rows = [
+        (
+            scr_ref("MAT 1:1"),
+            str("Update 1"),
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\c 1
+\v 1 verse \bd 1\bd*
+"""
+
+    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_usfm(rows, usfm, style_behavior=UpdateUsfmMarkerBehavior.STRIP, update_block_handlers=[update_block_handler])
+
+    assert len(update_block_handler.blocks) == 1
+    update_block = update_block_handler.blocks[0]
+    assert_update_block_equals(
+        update_block,
+        "MAT 1:1",
+        (UsfmUpdateBlockElementType.OTHER, "\\v 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "verse ", True),
+        (UsfmUpdateBlockElementType.STYLE, "\\bd ", True),
+        (UsfmUpdateBlockElementType.TEXT, "1", True),
+        (UsfmUpdateBlockElementType.STYLE, "\\bd*", True),
+        (UsfmUpdateBlockElementType.TEXT, " ", True),
+    )
+
+
+def test_update_block_verse_section_header() -> None:
+    rows = [
+        (
+            scr_ref("MAT 1:1"),
+            str("Update 1"),
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\c 1
+\p
+\v 1 Verse 1
+\s Section header
+\p
+\v 2 Verse 2
+"""
+
+    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_usfm(rows, usfm, update_block_handlers=[update_block_handler])
+
+    assert len(update_block_handler.blocks) == 4
+    update_block = update_block_handler.blocks[0]
+    assert_update_block_equals(update_block, "MAT 1:0/1:p")
+    update_block = update_block_handler.blocks[1]
+    assert_update_block_equals(update_block, "MAT 1:1/1:s", (UsfmUpdateBlockElementType.TEXT, "Section header ", False))
+    update_block = update_block_handler.blocks[2]
+    assert_update_block_equals(
+        update_block,
+        "MAT 1:1",
+        (UsfmUpdateBlockElementType.OTHER, "\\v 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Verse 1 ", True),
+        (UsfmUpdateBlockElementType.PARAGRAPH, "\\s Section header ", False),
+        (UsfmUpdateBlockElementType.PARAGRAPH, "\\p ", False),
+    )
+    update_block = update_block_handler.blocks[3]
+    assert_update_block_equals(
+        update_block,
+        "MAT 1:2",
+        (UsfmUpdateBlockElementType.OTHER, "\\v 2 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Verse 2 ", False),
+    )
+
+
+def test_update_block_verse_section_header_in_verse() -> None:
+    rows = [
+        (
+            scr_ref("MAT 1:1"),
+            str("Update 1"),
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\c 1
+\p
+\v 1 Beginning of verse
+\s Section header
+\p end of verse
+"""
+
+    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_usfm(rows, usfm, update_block_handlers=[update_block_handler])
+
+    assert len(update_block_handler.blocks) == 3
+    update_block = update_block_handler.blocks[0]
+    assert_update_block_equals(update_block, "MAT 1:0/1:p")
+    update_block = update_block_handler.blocks[1]
+    assert_update_block_equals(update_block, "MAT 1:1/1:s", (UsfmUpdateBlockElementType.TEXT, "Section header ", False))
+    update_block = update_block_handler.blocks[2]
+    assert_update_block_equals(
+        update_block,
+        "MAT 1:1",
+        (UsfmUpdateBlockElementType.OTHER, "\\v 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Beginning of verse ", True),
+        (UsfmUpdateBlockElementType.PARAGRAPH, "\\s Section header ", False),
+        (UsfmUpdateBlockElementType.PARAGRAPH, "\\p ", False),
+        (UsfmUpdateBlockElementType.TEXT, "end of verse ", True),
+    )
 
 
 def scr_ref(*refs: str) -> List[ScriptureRef]:
@@ -896,7 +1186,7 @@ def update_usfm(
         return updater.get_usfm()
 
 
-def assess(target: Optional[str], truth: str) -> None:
+def assert_usfm_equals(target: Optional[str], truth: str) -> None:
     assert target is not None
     for target_line, truth_line in zip(target.split("\n"), truth.split("\n")):
         assert target_line.strip() == truth_line.strip()
@@ -905,6 +1195,19 @@ def assess(target: Optional[str], truth: str) -> None:
 def read_usfm() -> str:
     with (USFM_TEST_PROJECT_PATH / "41MATTes.SFM").open("r", encoding="utf-8-sig", newline="\r\n") as file:
         return file.read()
+
+
+def assert_update_block_equals(
+    block: UsfmUpdateBlock,
+    expected_ref: Union[str, Iterable[str]],
+    *expected_elements: tuple[UsfmUpdateBlockElementType, str, bool],
+) -> None:
+    assert block.refs == [ScriptureRef.parse(expected_ref)] if isinstance(expected_ref, str) else list(expected_ref)
+    assert len(block.elements) == len(expected_elements)
+    for element, [expected_type, expected_usfm, expected_marked_for_removal] in zip(block.elements, expected_elements):
+        assert element.type == expected_type
+        assert "".join(token.to_usfm() for token in element.tokens) == expected_usfm
+        assert element.marked_for_removal == expected_marked_for_removal
 
 
 class TestUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):

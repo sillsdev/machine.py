@@ -39,12 +39,11 @@ class UsfmUpdateBlock:
             UsfmUpdateBlockElement(UsfmUpdateBlockElementType.EMBED, list(tokens), marked_for_removal)
         )
 
+    def extend_last_element(self, tokens: Iterable[UsfmToken]) -> None:
+        self._elements[-1].tokens.extend(tokens)
+
     def update_refs(self, refs: Iterable[ScriptureRef]) -> None:
         self._refs = list(refs)
-
-    def clear(self) -> None:
-        self._elements.clear()
-        self._refs.clear()
 
     def get_tokens(self) -> list[UsfmToken]:
         return [token for element in self._elements for token in element.get_tokens()]
