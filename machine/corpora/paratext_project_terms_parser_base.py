@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -45,7 +47,7 @@ class ParatextProjectTermsParserBase(ABC):
         else:
             term_id_to_category_dict = {}
 
-        terms_glosses_doc: Optional[ElementTree.ElementTree] = None
+        terms_glosses_doc: Optional[ElementTree.ElementTree[ElementTree.Element]] = None
         resource_name = None
         if self._settings.language_code is not None:
             resource_name = _SUPPORTED_LANGUAGE_TERMS_LOCALIZATION_XMLS.get(self._settings.language_code)
@@ -57,7 +59,7 @@ class ParatextProjectTermsParserBase(ABC):
             with open_binary(_SUPPORTED_LANGUAGE_TERMS_LOCALIZATION_XMLS_PACKAGE, resource_name) as stream:
                 terms_glosses_doc = ElementTree.parse(stream)
 
-        term_renderings_doc: Optional[ElementTree.ElementTree] = None
+        term_renderings_doc: Optional[ElementTree.ElementTree[ElementTree.Element]] = None
         if self._exists("TermRenderings.xml"):
             with self._open("TermRenderings.xml") as stream:
                 term_renderings_doc = ElementTree.parse(stream)
@@ -136,7 +138,7 @@ def _strip_parens(term_string: str, left: str = "(", right: str = ")") -> str:
     return term_string
 
 
-def _get_category_per_id(biblical_terms_doc: ElementTree.ElementTree) -> Dict[str, str]:
+def _get_category_per_id(biblical_terms_doc: ElementTree.ElementTree[ElementTree.Element]) -> Dict[str, str]:
     term_id_to_category_dict: Dict[str, str] = {}
 
     for term in biblical_terms_doc.findall(".//Term"):

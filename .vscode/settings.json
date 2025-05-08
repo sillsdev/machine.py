@@ -13,6 +13,9 @@
       "source.organizeImports": "explicit"
     },
   },
+  "files.associations": {
+    "*.SFM": "usfm",
+  },
   "black-formatter.path": [
     "poetry",
     "run",
