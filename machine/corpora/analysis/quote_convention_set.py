@@ -29,12 +29,20 @@ class QuoteConventionSet:
                     all_quotation_marks.add(opening_quote)
                     all_quotation_marks.add(closing_quote)
 
-            self.opening_quotation_mark_regex: Pattern = regex.compile(r"[" + "".join(opening_quotation_marks) + "]")
-            self.closing_quotation_mark_regex: Pattern = regex.compile(r"[" + "".join(closing_quotation_marks) + "]")
-            self.all_quotation_mark_regex: Pattern = regex.compile(r"[" + "".join(all_quotation_marks) + "]")
-        else:
+            if len(all_quotation_marks) > 0:
+                self.opening_quotation_mark_regex: Pattern = regex.compile(
+                    r"[" + "".join(opening_quotation_marks) + "]"
+                )
+                self.closing_quotation_mark_regex: Pattern = regex.compile(
+                    r"[" + "".join(closing_quotation_marks) + "]"
+                )
+                self.all_quotation_mark_regex: Pattern = regex.compile(r"[" + "".join(all_quotation_marks) + "]")
+
+        if len(opening_quotation_marks) == 0:
             self.opening_quotation_mark_regex = regex.compile(r"")
+        if len(closing_quotation_marks) == 0:
             self.closing_quotation_mark_regex = regex.compile(r"")
+        if len(all_quotation_marks) == 0:
             self.all_quotation_mark_regex = regex.compile(r"")
 
     def _create_quotation_mark_pair_map(self) -> None:
