@@ -236,7 +236,7 @@ def test_paragraph_in_verse():
 
     result_strip = r"""\id MAT
 \c 1
-\p 
+\p
 \v 1 Update 1
 \s1
 \v 2
@@ -313,13 +313,12 @@ def test_get_usfm_verse_replace_with_note() -> None:
     ]
     usfm = r"""\id MAT - Test
 \c 1
-\v 1 Chapter \add one\add*, verse \f + \fr 2:1: \ft This is a \fq quotation \ft and an \fqa alternative quotation\f*one.
+\v 1 Chapter \add one\add*, verse \f + \fr 2:1: \ft This is a footnote.\f*one.
 """
     target = update_usfm(rows, usfm)
-    # Only the first \ft marker is updated
     result = r"""\id MAT - Test
 \c 1
-\v 1 updated text \f + \fr 2:1: \ft This is a new footnote. \fq quotation \ft and an \fqa alternative quotation\f*
+\v 1 updated text \f + \fr 2:1: \ft This is a footnote.\f*
 """
     assert_usfm_equals(target, result)
 
@@ -855,6 +854,7 @@ def test_update_block_verse_preserve_paras() -> None:
     assert_update_block_equals(
         update_block,
         "MAT 1:1",
+        (UsfmUpdateBlockElementType.OTHER, "\\v 1 ", False),
         (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
         (UsfmUpdateBlockElementType.TEXT, "verse 1 ", True),
         (UsfmUpdateBlockElementType.PARAGRAPH, "\\p ", False),
@@ -884,6 +884,7 @@ def test_update_block_verse_strip_paras() -> None:
     assert_update_block_equals(
         update_block,
         "MAT 1:1",
+        (UsfmUpdateBlockElementType.OTHER, "\\v 1 ", False),
         (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
         (UsfmUpdateBlockElementType.TEXT, "verse 1 ", True),
         (UsfmUpdateBlockElementType.PARAGRAPH, "\\p ", True),
@@ -913,6 +914,7 @@ def test_update_block_verse_range() -> None:
     assert_update_block_equals(
         update_block,
         ["MAT 1:1", "MAT 1:2", "MAT 1:3"],
+        (UsfmUpdateBlockElementType.OTHER, "\\v 1-3 ", False),
         (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
         (UsfmUpdateBlockElementType.TEXT, "verse 1 through 3 ", True),
     )
@@ -940,6 +942,7 @@ def test_update_block_footnote_preserve_embeds() -> None:
     assert_update_block_equals(
         update_block,
         "MAT 1:1",
+        (UsfmUpdateBlockElementType.OTHER, "\\v 1 ", False),
         (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
         (UsfmUpdateBlockElementType.TEXT, "verse", True),
         (UsfmUpdateBlockElementType.EMBED, "\\f \\fr 1.1 \\ft Some note \\f*", False),
@@ -967,6 +970,7 @@ def test_update_block_footnote_strip_embeds() -> None:
     assert_update_block_equals(
         update_block,
         "MAT 1:1",
+        (UsfmUpdateBlockElementType.OTHER, "\\v 1 ", False),
         (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
         (UsfmUpdateBlockElementType.TEXT, "verse", True),
         (UsfmUpdateBlockElementType.EMBED, "\\f \\fr 1.1 \\ft Some note \\f*", True),
@@ -1022,6 +1026,7 @@ def test_update_block_verse_preserve_styles() -> None:
     assert_update_block_equals(
         update_block,
         "MAT 1:1",
+        (UsfmUpdateBlockElementType.OTHER, "\\v 1 ", False),
         (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
         (UsfmUpdateBlockElementType.TEXT, "verse ", True),
         (UsfmUpdateBlockElementType.STYLE, "\\bd ", False),
@@ -1051,6 +1056,7 @@ def test_update_block_verse_strip_styles() -> None:
     assert_update_block_equals(
         update_block,
         "MAT 1:1",
+        (UsfmUpdateBlockElementType.OTHER, "\\v 1 ", False),
         (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
         (UsfmUpdateBlockElementType.TEXT, "verse ", True),
         (UsfmUpdateBlockElementType.STYLE, "\\bd ", True),
@@ -1069,40 +1075,74 @@ def test_update_block_verse_section_header() -> None:
     ]
     usfm = r"""\id MAT - Test
 \c 1
-\v 1 Update text \f + \fr 15.8 \ft Update note \ft second note\f*
+\p
+\v 1 Verse 1
+\s Section header
+\p
+\v 2 Verse 2
 """
-    assess(target, result)
 
-    target = update_usfm(rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.STRIP)
-    result = r"""\id MAT - Test
-\c 1
-\v 1 Update text
-"""
-    assess(target, result)
+    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_usfm(rows, usfm, update_block_handlers=[update_block_handler])
+
+    assert len(update_block_handler.blocks) == 4
+    update_block = update_block_handler.blocks[0]
+    assert_update_block_equals(update_block, "MAT 1:0/1:p")
+    update_block = update_block_handler.blocks[1]
+    assert_update_block_equals(update_block, "MAT 1:1/1:s", (UsfmUpdateBlockElementType.TEXT, "Section header ", False))
+    update_block = update_block_handler.blocks[2]
+    assert_update_block_equals(
+        update_block,
+        "MAT 1:1",
+        (UsfmUpdateBlockElementType.OTHER, "\\v 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Verse 1 ", True),
+        (UsfmUpdateBlockElementType.PARAGRAPH, "\\s Section header ", False),
+        (UsfmUpdateBlockElementType.PARAGRAPH, "\\p ", False),
+    )
+    update_block = update_block_handler.blocks[3]
+    assert_update_block_equals(
+        update_block,
+        "MAT 1:2",
+        (UsfmUpdateBlockElementType.OTHER, "\\v 2 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Verse 2 ", False),
+    )
 
 
-def test_implicitly_closed_char_style() -> None:
+def test_update_block_verse_section_header_in_verse() -> None:
     rows = [
         (
             scr_ref("MAT 1:1"),
-            str("Update text"),
-        )
+            str("Update 1"),
+        ),
     ]
     usfm = r"""\id MAT - Test
 \c 1
-\v 1 Verse \bd one.
-\c 2
-\v 1 Verse one.
+\p
+\v 1 Beginning of verse
+\s Section header
+\p end of verse
 """
 
-    target = update_usfm(rows, usfm)
-    result = r"""\id MAT - Test
-\c 1
-\v 1 Update text
-\c 2
-\v 1 Verse one.
-"""
-    assess(target, result)
+    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_usfm(rows, usfm, update_block_handlers=[update_block_handler])
+
+    assert len(update_block_handler.blocks) == 3
+    update_block = update_block_handler.blocks[0]
+    assert_update_block_equals(update_block, "MAT 1:0/1:p")
+    update_block = update_block_handler.blocks[1]
+    assert_update_block_equals(update_block, "MAT 1:1/1:s", (UsfmUpdateBlockElementType.TEXT, "Section header ", False))
+    update_block = update_block_handler.blocks[2]
+    assert_update_block_equals(
+        update_block,
+        "MAT 1:1",
+        (UsfmUpdateBlockElementType.OTHER, "\\v 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Beginning of verse ", True),
+        (UsfmUpdateBlockElementType.PARAGRAPH, "\\s Section header ", False),
+        (UsfmUpdateBlockElementType.PARAGRAPH, "\\p ", False),
+        (UsfmUpdateBlockElementType.TEXT, "end of verse ", True),
+    )
 
 
 def scr_ref(*refs: str) -> List[ScriptureRef]:

@@ -12,7 +12,7 @@ class UsfmUpdateBlockElementType(Enum):
     OTHER = auto()
 
 
-@dataclass
+@dataclass(frozen=True)
 class UsfmUpdateBlockElement:
     type: UsfmUpdateBlockElementType
     tokens: list[UsfmToken]

@@ -131,14 +131,14 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     def end_char(
         self, state: UsfmParserState, marker: str, attributes: Optional[Sequence[UsfmAttribute]], closed: bool
     ) -> None:
-        if self._is_embed_part_style(marker):
-            if self._in_nested_embed:
-                self._in_nested_embed = False
-            elif self._is_note_text(marker):
-                self._end_note_text_wrapper(state)
-        if self._is_embed_style(marker):
-            self._end_embed(state, marker, attributes, closed)
-            self._in_embed = False
+        if _is_embed_style(marker):
+            self._end_embed_text_wrapper(state)
+
+    def start_note(self, state: UsfmParserState, marker: str, caller: str, category: Optional[str]) -> None:
+        self._start_embed_text_wrapper(state, marker)
+
+    def end_note(self, state: UsfmParserState, marker: str, closed: bool) -> None:
+        self._end_embed_text_wrapper(state)
 
     def _start_verse_text(self, state: UsfmParserState, scripture_refs: Optional[Sequence[ScriptureRef]]) -> None: ...
 
@@ -238,23 +238,3 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         ):
             self._start_parent_element(para_tag.marker)
             self._start_non_verse_text_wrapper(state)
-
-    def _is_in_embed(self, marker: Optional[str]) -> bool:
-        return self._in_embed or self._is_embed_style(marker)
-
-    def _is_in_nested_embed(self, marker: Optional[str]) -> bool:
-        return self._in_nested_embed or (
-            marker is not None
-            and marker.startswith("+")
-            and marker[1] in EMBED_PART_START_CHAR_STYLES
-            and marker != "fm"
-        )
-
-    def _is_note_text(self, marker: Optional[str]) -> bool:
-        return marker == "ft"
-
-    def _is_embed_part_style(self, marker: Optional[str]) -> bool:
-        return marker is not None and marker.startswith(EMBED_PART_START_CHAR_STYLES) and marker != "fm"
-
-    def _is_embed_style(self, marker: Optional[str]) -> bool:
-        return marker is not None and marker.strip("*") in EMBED_STYLES
