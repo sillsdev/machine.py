@@ -64,6 +64,9 @@ from .usfm_stylesheet import UsfmStylesheet
 from .usfm_tag import UsfmJustification, UsfmStyleAttribute, UsfmStyleType, UsfmTag, UsfmTextProperties, UsfmTextType
 from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
 from .usfm_tokenizer import RtlReferenceOrder, UsfmTokenizer
+from .usfm_update_block import UsfmUpdateBlock
+from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
+from .usfm_update_block_handler import UsfmUpdateBlockHandler
 from .usx_file_alignment_collection import UsxFileAlignmentCollection
 from .usx_file_alignment_corpus import UsxFileAlignmentCorpus
 from .usx_file_text import UsxFileText
@@ -95,8 +98,8 @@ __all__ = [
     "is_scripture",
     "lowercase",
     "MemoryAlignmentCollection",
-    "MemoryText",
     "MemoryStreamContainer",
+    "MemoryText",
     "MultiKeyRef",
     "nfc_normalize",
     "nfd_normalize",
@@ -130,9 +133,9 @@ __all__ = [
     "TextRow",
     "TextRowFlags",
     "unescape_spaces",
-    "UpdateUsfmTextBehavior",
     "UpdateUsfmMarkerBehavior",
     "UpdateUsfmParserHandler",
+    "UpdateUsfmTextBehavior",
     "UsfmAttribute",
     "UsfmElementType",
     "UsfmFileText",
@@ -152,6 +155,10 @@ __all__ = [
     "UsfmToken",
     "UsfmTokenizer",
     "UsfmTokenType",
+    "UsfmUpdateBlock",
+    "UsfmUpdateBlockElement",
+    "UsfmUpdateBlockElementType",
+    "UsfmUpdateBlockHandler",
     "UsxFileAlignmentCollection",
     "UsxFileAlignmentCorpus",
     "UsxFileText",
