@@ -17,7 +17,7 @@ class QuotationMarkStringMatch:
     latin_letter_pattern: Pattern = regex.compile(r"^\p{script=Latin}$", regex.U)
     whitespace_pattern: Pattern = regex.compile(r"[\s~]", regex.U)
     punctuation_pattern: Pattern = regex.compile(r"[\.,;\?!\)\]\-—۔،؛]", regex.U)
-    quote_introducer_pattern: Pattern = regex.compile(r"[:,]\\s*", regex.U)
+    quote_introducer_pattern: Pattern = regex.compile(r"[:,]\s*$", regex.U)
 
     def __init__(self, text_segment: TextSegment, start_index: int, end_index: int):
         self.text_segment = text_segment

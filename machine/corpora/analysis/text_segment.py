@@ -15,6 +15,19 @@ class TextSegment:
         self.num_segments_in_verse: int = 0
         self.usfm_token: Union[UsfmToken, None] = None
 
+    def __eq__(self, value):
+        if not isinstance(value, TextSegment):
+            return False
+        if self.text != value.text:
+            return False
+        if self.index_in_verse != value.index_in_verse:
+            return False
+        if self.usfm_token != value.usfm_token:
+            return False
+        if self.immediate_preceding_marker != value.immediate_preceding_marker:
+            return False
+        return True
+
     def get_text(self) -> str:
         return self.text
 

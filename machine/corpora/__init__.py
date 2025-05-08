@@ -2,6 +2,7 @@ from .aligned_word_pair import AlignedWordPair
 from .alignment_collection import AlignmentCollection
 from .alignment_corpus import AlignmentCorpus
 from .alignment_row import AlignmentRow
+from .basic_quotation_mark_resolver import BasicQuotationMarkResolver
 from .corpora_utils import batch
 from .corpus import Corpus
 from .dbl_bundle_text_corpus import DblBundleTextCorpus
@@ -88,6 +89,7 @@ __all__ = [
     "AlignmentCollection",
     "AlignmentCorpus",
     "AlignmentRow",
+    "BasicQuotationMarkResolver",
     "batch",
     "Corpus",
     "create_versification_ref_corpus",

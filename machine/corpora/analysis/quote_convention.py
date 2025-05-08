@@ -111,10 +111,18 @@ class QuoteConvention:
         return QuoteConvention(self.get_name() + "_normalized", [level.normalize() for level in self.levels])
 
     def print_summary(self) -> None:
-        print(self.get_name())
+        print(self._get_summary_message())
+
+    def _get_summary_message(self) -> str:
+        summary = self.get_name() + "\n"
         for level, convention in enumerate(self.levels):
             ordinal_name = self._get_ordinal_name(level + 1)
-            print("%s%s-level quote%s" % (convention.get_opening_quote(), ordinal_name, convention.get_closing_quote()))
+            summary += "%s%s-level quote%s\n" % (
+                convention.get_opening_quote(),
+                ordinal_name,
+                convention.get_closing_quote(),
+            )
+        return summary
 
     def _get_ordinal_name(self, level) -> str:
         if level == 1:

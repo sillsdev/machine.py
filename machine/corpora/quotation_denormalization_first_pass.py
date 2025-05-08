@@ -1,5 +1,6 @@
 from typing import Dict, List, Set
 
+from .analysis.chapter import Chapter
 from .analysis.depth_based_quotation_mark_resolver import DepthBasedQuotationMarkResolver
 from .analysis.quotation_mark_finder import QuotationMarkFinder
 from .analysis.quotation_mark_resolution_issue import QuotationMarkResolutionIssue
@@ -35,9 +36,10 @@ class QuotationDenormalizationFirstPass(UsfmStructureExtractor):
             normalized_opening_quotation_mark = normalized_source_quote_convention.get_opening_quote_at_level(level)
             if normalized_opening_quotation_mark not in target_marks_by_normalized_source_marks:
                 target_marks_by_normalized_source_marks[normalized_opening_quotation_mark] = set()
-            target_marks_by_normalized_source_marks[normalized_opening_quotation_mark].add(
-                target_quote_convention.get_closing_quote_at_level(level)
-            )
+            if level <= target_quote_convention.get_num_levels():
+                target_marks_by_normalized_source_marks[normalized_opening_quotation_mark].add(
+                    target_quote_convention.get_closing_quote_at_level(level)
+                )
 
         for normalized_source_mark in target_marks_by_normalized_source_marks:
             if len(target_marks_by_normalized_source_marks[normalized_source_mark]) > 1:
@@ -52,28 +54,26 @@ class QuotationDenormalizationFirstPass(UsfmStructureExtractor):
 
         return best_actions_by_chapter
 
-    def _find_best_action_for_chapter(self, chapter) -> QuotationDenormalizationAction:
+    def _find_best_action_for_chapter(self, chapter: Chapter) -> QuotationDenormalizationAction:
         quotation_mark_matches: List[QuotationMarkStringMatch] = (
             self._quotation_mark_finder.find_all_potential_quotation_marks_in_chapter(chapter)
         )
 
         self._quotation_mark_resolver.reset()
+
+        # use list() to force evaluation of the generator
         list(self._quotation_mark_resolver.resolve_quotation_marks(quotation_mark_matches))
 
         return self._choose_best_action_based_on_observed_issues(self._quotation_mark_resolver.get_issues())
 
     def _choose_best_action_based_on_observed_issues(self, issues) -> QuotationDenormalizationAction:
         print(issues)
-        if (
-            QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK in issues
-            or QuotationMarkResolutionIssue.UNEXPECTED_QUOTATION_MARK in issues
-        ):
+        if QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK in issues:
             return QuotationDenormalizationAction.SKIP
 
         if (
             QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK in issues
             or QuotationMarkResolutionIssue.TOO_DEEP_NESTING in issues
-            or QuotationMarkResolutionIssue.INCOMPATIBLE_QUOTATION_MARK in issues
         ):
             if self._will_basic_denormalization_work:
                 return QuotationDenormalizationAction.APPLY_BASIC
