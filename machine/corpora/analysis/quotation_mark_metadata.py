@@ -20,6 +20,18 @@ class QuotationMarkMetadata:
         self.start_index = start_index
         self.end_index = end_index
 
+    def __eq__(self, other):
+        if not isinstance(other, QuotationMarkMetadata):
+            return False
+        return (
+            self.quotation_mark == other.quotation_mark
+            and self.depth == other.depth
+            and self.direction == other.direction
+            and self.text_segment == other.text_segment
+            and self.start_index == other.start_index
+            and self.end_index == other.end_index
+        )
+
     def get_quotation_mark(self) -> str:
         return self.quotation_mark
 

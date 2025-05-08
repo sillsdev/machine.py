@@ -1,4 +1,7 @@
+from .chapter import Chapter
 from .depth_based_quotation_mark_resolver import DepthBasedQuotationMarkResolver
+from .quotation_mark_direction import QuotationMarkDirection
+from .quotation_mark_metadata import QuotationMarkMetadata
 from .quotation_mark_resolution_issue import QuotationMarkResolutionIssue
 from .quotation_mark_resolution_settings import QuotationMarkResolutionSettings
 from .quotation_mark_resolver import QuotationMarkResolver
@@ -9,9 +12,13 @@ from .quote_convention_detector import QuoteConventionAnalysis, QuoteConventionD
 from .quote_convention_set import QuoteConventionSet
 from .text_segment import TextSegment
 from .usfm_marker_type import UsfmMarkerType
+from .verse import Verse
 
 __all__ = [
+    "Chapter",
     "DepthBasedQuotationMarkResolver",
+    "QuotationMarkDirection",
+    "QuotationMarkMetadata",
     "QuotationMarkStringMatch",
     "QuoteConvention",
     "QuoteConventionAnalysis",
@@ -23,4 +30,5 @@ __all__ = [
     "QuoteConventionSet",
     "TextSegment",
     "UsfmMarkerType",
+    "Verse",
 ]
