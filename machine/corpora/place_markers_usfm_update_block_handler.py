@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import List, Sequence
 
 from ..jobs.translation_file_service import PretranslationInfo
+from ..scripture.verse_ref import VerseRef
 from ..tokenization import LatinWordTokenizer
 from ..translation import WordAlignmentMatrix
 from .aligned_word_pair import AlignedWordPair
@@ -20,22 +21,37 @@ STYLESHEET = UsfmStylesheet("usfm.sty")
 class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
 
     def __init__(self, pt_info: Sequence[PretranslationInfo]):
-        # TODO: when will len(refs) be >1?
-        self._pt_info = {info["refs"][0]: info for info in pt_info}
+        self._pt_info = {}
+        for info in pt_info:
+            if len(info["refs"]) == 1:
+                ref_str = info["refs"][0]
+            else:
+                ref_str_start = VerseRef.from_string(info["refs"][0])
+                ref_str_end = VerseRef.from_string(info["refs"][-1])
+                ref_str = str(VerseRef.from_range(ref_str_start, ref_str_end))
+            self._pt_info[ref_str] = info
+        # self._pt_info = {info["refs"][0]: info for info in pt_info}
 
     def process_block(self, block: UsfmUpdateBlock) -> UsfmUpdateBlock:
+        block_ref = str(
+            block.refs[0]
+            if len(block.refs) == 1
+            else VerseRef.from_range(block.refs[0].verse_ref, block.refs[-1].verse_ref)
+        )
+
         # Nothing to do if there are no markers to place, no alignment to use, or if the block represents an embed
         if (
             len(block.elements) == 0
-            or str(block.refs[0]) not in self._pt_info.keys()
-            or len(self._pt_info[str(block.refs[0])]["alignment"]) == 0
-            or block.elements[0].type == UsfmUpdateBlockElementType.EMBED
+            or block_ref not in self._pt_info.keys()
+            or len(self._pt_info[block_ref]["alignment"]) == 0
+            # TODO: is this too restrictive?
+            or block.elements[0].tokens[0].marker != "v"
             or not any(
                 (
                     element.type in [UsfmUpdateBlockElementType.PARAGRAPH, UsfmUpdateBlockElementType.STYLE]
                     and not element.marked_for_removal
                 )
-                for element in block.elements[1:]
+                for element in block.elements[1:]  # TODO: all of block
             )
         ):
             return block
@@ -47,7 +63,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         trg_sent = ""
         to_place = []
         src_marker_idxs = []
-        placed_elements = [orig_elements[0]]
+        placed_elements = [orig_elements[0]]  # TODO: no elements to start
         ignored_elements = []
 
         # Section headers should be ignored but re-inserted in the same position relative to other paragraph markers
@@ -56,10 +72,10 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         for i, element in reversed(list(enumerate(orig_elements))):
             if element.type == UsfmUpdateBlockElementType.PARAGRAPH and not element.marked_for_removal:
                 if STYLESHEET.get_tag(str(element.tokens[0].marker)).text_type == UsfmTextType.SECTION:
-                    if i < len(orig_elements) - 1 and orig_elements[i + 1].type == UsfmUpdateBlockElementType.TEXT:
-                        header_elements.insert(0, (para_markers_left, [element, orig_elements.pop(i + 1)]))
-                    else:
-                        header_elements.insert(0, (para_markers_left, [element]))
+                    # if i < len(orig_elements) - 1 and orig_elements[i + 1].type == UsfmUpdateBlockElementType.TEXT:
+                    #     header_elements.insert(0, (para_markers_left, [element, orig_elements.pop(i + 1)]))
+                    # else:
+                    header_elements.insert(0, (para_markers_left, element))
                     orig_elements.pop(i)
                 else:
                     para_markers_left += 1
@@ -73,7 +89,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
             elif element.type != UsfmUpdateBlockElementType.EMBED:
                 break
 
-        for element in orig_elements[1:]:
+        for element in orig_elements[1:]:  # TODO: all
             if element.type == UsfmUpdateBlockElementType.TEXT:
                 if element.marked_for_removal:
                     src_sent += element.tokens[0].to_usfm()
@@ -86,8 +102,8 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                 to_place.append(element)
                 src_marker_idxs.append(len(src_sent))
 
-        src_toks = self._pt_info[str(block.refs[0])]["source_toks"]
-        trg_toks = self._pt_info[str(block.refs[0])]["translation_toks"]
+        src_toks = self._pt_info[block_ref]["source_toks"]
+        trg_toks = self._pt_info[block_ref]["translation_toks"]
 
         # Don't do anything if the source sentence or pretranslation has changed
         if (
@@ -114,7 +130,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                 if i == 0:
                     adj_src_toks.append(i)
 
-        alignment = to_word_alignment_matrix(self._pt_info[str(block.refs[0])]["alignment"])
+        alignment = to_word_alignment_matrix(self._pt_info[block_ref]["alignment"])
         adj_trg_toks = [
             self._predict_marker_location(alignment, adj_src_tok, src_toks, trg_toks) for adj_src_tok in adj_src_toks
         ]
@@ -146,7 +162,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         for j, (insert_idx, element) in enumerate(to_insert):
             if element.type == UsfmUpdateBlockElementType.PARAGRAPH:
                 while len(header_elements) > 0 and header_elements[0][0] == para_markers_left:
-                    placed_elements += header_elements.pop(0)[1]
+                    placed_elements.append(header_elements.pop(0)[1])
                 para_markers_left -= 1
 
             placed_elements.append(element)
@@ -157,11 +173,11 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
             placed_elements.append(UsfmUpdateBlockElement(UsfmUpdateBlockElementType.TEXT, [text_token]))
         for element in end_elements:
             while len(header_elements) > 0 and header_elements[0][0] == para_markers_left:
-                placed_elements += header_elements.pop(0)[1]
+                placed_elements.append(header_elements.pop(0)[1])
             para_markers_left -= 1
             placed_elements.append(element)
         while len(header_elements) > 0:
-            placed_elements += header_elements.pop(0)[1]
+            placed_elements.append(header_elements.pop(0)[1])
 
         block._elements = placed_elements + ignored_elements
         return block

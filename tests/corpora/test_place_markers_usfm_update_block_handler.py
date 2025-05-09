@@ -105,6 +105,52 @@ def test_list_paragraph_markers():
     assess(target, result)
 
 
+# TODO: unfinished
+def test_poetry_paragraph_markers():
+    source = "poetry"
+    pretranslation = "poetry"
+    rows = [(scr_ref("MAT 1:1"), str(pretranslation))]
+    usfm = r"""\id MAT
+\c 1
+\v 1 poetry
+\q1 poetry
+\q1 poetry
+\q1 poetry
+\q1 poetry
+\b
+\q1
+"""
+
+    pt_info = [
+        PretranslationInfo(
+            corpusId="",
+            textId="",
+            refs=["MAT 1:1"],
+            translation=pretranslation,
+            source_toks=[t for t in TOKENIZER.tokenize(source)],
+            translation_toks=[t for t in TOKENIZER.tokenize(pretranslation)],
+            alignment="",
+        ),
+    ]
+    target = update_usfm(
+        rows,
+        usfm,
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+    )
+    result = r"""\id MAT
+\c 1
+\v 1 poetry
+\q1 poetry
+\q1 poetry
+\q1 poetry
+\q1 poetry
+\b
+\q1
+"""
+    assess(target, result)
+
+
 def test_style_markers():
     source = "This is the first sentence. This text is in English, and this test is for style markers."
     pretranslation = "Esta es la primera oración. Este texto está en inglés y esta prueba es para marcadores de estilo."
@@ -253,14 +299,15 @@ def test_embeds():
         embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
         update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
     )
+    # NOTE: currently not updating embeds
     result = r"""\id MAT
 \c 1
 \v 1 New verse 1 \f \fr 1.1 \ft Some note \f*
 \v 2 New verse 2 \f \fr 1.2 \ft Some other note \f*
 \v 3 New verse 3 \f \fr 1.3 \ft A third note \f*
-\v 4 New verse 4 \f \fr 1.4 \ft New embed text \f*
+\v 4 New verse 4 \f \fr 1.4 \ft A fourth note \f*
 \v 5 New verse 5 \f \fr 1.5 \ft A \+w stylish\+w* note \f*
-\v 6 New verse 6 \f \fr 1.6 \ft New verse 6 embed text \f*
+\v 6 New verse 6 \f \fr 1.6 \ft Another \+w stylish\+w* note \f*
 """
     assess(target, result)
 
@@ -342,6 +389,37 @@ def test_headers():
 \s1 Header followed by a reference
 \r (reference)
 \p
+"""
+    assess(target, result)
+
+
+def test_verse_ranges():
+    rows = [([ScriptureRef.parse(f"MAT 1:{i}") for i in range(1, 6)], "New verse range text")]
+    usfm = r"""\id MAT
+\c 1
+\v 1-5 Verse range
+"""
+
+    pt_info = [
+        PretranslationInfo(
+            corpusId="",
+            textId="",
+            refs=[str(ScriptureRef.parse(f"MAT 1:{i}")) for i in range(1, 6)],
+            translation="New verse range text",
+            source_toks=["Verse", "range"],
+            translation_toks=["New", "verse", "range", "text"],
+            alignment="0-1 1-2",
+        ),
+    ]
+    target = update_usfm(
+        rows,
+        usfm,
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+    )
+    result = r"""\id MAT
+\c 1
+\v 1-5 New verse range text
 """
     assess(target, result)
 
