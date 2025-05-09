@@ -30,21 +30,18 @@ class BasicQuotationMarkResolver(QuotationMarkResolver):
         quote_match: QuotationMarkStringMatch,
     ) -> Generator[QuotationMarkMetadata, None, None]:
         if self._is_opening_quote(quote_match):
-            print("Opening quote: %s" % quote_match.get_context())
             quote: Union[QuotationMarkMetadata, None] = self._resolve_opening_mark(quote_match)
             if quote is not None:
                 yield quote
             else:
                 self._issues.add(QuotationMarkResolutionIssue.UNEXPECTED_QUOTATION_MARK)
         elif self._is_closing_quote(quote_match):
-            print("Closing quote: %s" % quote_match.get_context())
             quote: Union[QuotationMarkMetadata, None] = self._resolve_closing_mark(quote_match)
             if quote is not None:
                 yield quote
             else:
                 self._issues.add(QuotationMarkResolutionIssue.UNEXPECTED_QUOTATION_MARK)
         else:
-            print("Unknown quote %s" % quote_match.get_context())
             self._issues.add(QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK)
 
     def _is_opening_quote(
