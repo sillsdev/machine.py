@@ -12,6 +12,7 @@ from .quote_convention_detector import QuoteConventionAnalysis, QuoteConventionD
 from .quote_convention_set import QuoteConventionSet
 from .text_segment import TextSegment
 from .usfm_marker_type import UsfmMarkerType
+from .usfm_structure_extractor import UsfmStructureExtractor
 from .verse import Verse
 
 __all__ = [
@@ -30,5 +31,6 @@ __all__ = [
     "QuoteConventionSet",
     "TextSegment",
     "UsfmMarkerType",
+    "UsfmStructureExtractor",
     "Verse",
 ]

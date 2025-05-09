@@ -25,9 +25,6 @@ class QuotationDenormalizationResolutionSettings(QuotationMarkResolutionSettings
     def should_rely_on_paragraph_markers(self):
         return False
 
-    def should_quit_on_error(self) -> bool:
-        return False
-
     def get_possible_depths(self, quotation_mark: str, direction: QuotationMarkDirection) -> Set[int]:
         return self._normalized_source_quote_convention.get_possible_depths(quotation_mark, direction)
 
