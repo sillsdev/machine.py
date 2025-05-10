@@ -4,96 +4,85 @@ from typing import List, Sequence
 
 from ..jobs.eflomal_aligner import to_word_alignment_matrix
 from ..jobs.translation_file_service import PretranslationInfo
-from ..scripture.verse_ref import VerseRef
 from ..tokenization import LatinWordTokenizer
 from ..translation import WordAlignmentMatrix
-from .aligned_word_pair import AlignedWordPair
-from .usfm_stylesheet import UsfmStylesheet
-from .usfm_tag import UsfmTextType
 from .usfm_token import UsfmToken, UsfmTokenType
 from .usfm_update_block import UsfmUpdateBlock
 from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
 from .usfm_update_block_handler import UsfmUpdateBlockHandler
 
 TOKENIZER = LatinWordTokenizer()
-STYLESHEET = UsfmStylesheet("usfm.sty")
 
 
 class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
 
     def __init__(self, pt_info: Sequence[PretranslationInfo]):
-        self._pt_info = {}
-        for info in pt_info:
-            if len(info["refs"]) == 1:
-                ref_str = info["refs"][0]
-            else:
-                ref_str_start = VerseRef.from_string(info["refs"][0])
-                ref_str_end = VerseRef.from_string(info["refs"][-1])
-                ref_str = str(VerseRef.from_range(ref_str_start, ref_str_end))
-            self._pt_info[ref_str] = info
-        # self._pt_info = {info["refs"][0]: info for info in pt_info}
+        self._pt_info = {info["refs"][0]: info for info in pt_info}
 
     def process_block(self, block: UsfmUpdateBlock) -> UsfmUpdateBlock:
-        block_ref = str(
-            block.refs[0]
-            if len(block.refs) == 1
-            else VerseRef.from_range(block.refs[0].verse_ref, block.refs[-1].verse_ref)
-        )
+        ref = str(block.refs[0])
+        elements = list(block.elements)
 
-        # Nothing to do if there are no markers to place, no alignment to use, or if the block represents an embed
+        # Nothing to do if there are no markers to place or no alignment to use
         if (
-            len(block.elements) == 0
-            or block_ref not in self._pt_info.keys()
-            or len(self._pt_info[block_ref]["alignment"]) == 0
-            # TODO: is this too restrictive?
-            or block.elements[0].tokens[0].marker != "v"
+            len(elements) == 0
+            or ref not in self._pt_info.keys()
+            or len(self._pt_info[ref]["alignment"]) == 0
             or not any(
                 (
-                    element.type in [UsfmUpdateBlockElementType.PARAGRAPH, UsfmUpdateBlockElementType.STYLE]
-                    and not element.marked_for_removal
+                    e.type in [UsfmUpdateBlockElementType.PARAGRAPH, UsfmUpdateBlockElementType.STYLE]
+                    and not e.marked_for_removal
                 )
-                for element in block.elements[1:]  # TODO: all of block
+                for e in elements
             )
         ):
             return block
 
-        # Work on a copy in case the block needs to be returned unchanged
-        orig_elements = list(block.elements)
+        # Paragraph markers at the end of the block should stay there
+        # Section headers should be ignored but re-inserted in the same position relative to other paragraph markers
+        end_elements = []
+        eob_empty_paras = True
+        header_elements = []
+        para_markers_left = 0
+        for i, element in reversed(list(enumerate(elements))):
+            if element.type == UsfmUpdateBlockElementType.PARAGRAPH and not element.marked_for_removal:
+                if len(element.tokens) > 1:
+                    header_elements.insert(0, (para_markers_left, element))
+                    elements.pop(i)
+                else:
+                    para_markers_left += 1
+
+                    if eob_empty_paras:
+                        end_elements.insert(0, element)
+                        elements.pop(i)
+            elif element.type != UsfmUpdateBlockElementType.EMBED:
+                eob_empty_paras = False
+
+        src_toks = self._pt_info[ref]["source_toks"]
+        trg_toks = self._pt_info[ref]["translation_toks"]
+        src_tok_idx = 0
 
         src_sent = ""
         trg_sent = ""
         to_place = []
-        src_marker_idxs = []
-        placed_elements = [orig_elements[0]]  # TODO: no elements to start
+        adj_src_toks = []
+        placed_elements = [elements.pop(0)] if elements[0].type == UsfmUpdateBlockElementType.OTHER else []
         ignored_elements = []
-
-        # Section headers should be ignored but re-inserted in the same position relative to other paragraph markers
-        header_elements = []
-        para_markers_left = 0
-        for i, element in reversed(list(enumerate(orig_elements))):
-            if element.type == UsfmUpdateBlockElementType.PARAGRAPH and not element.marked_for_removal:
-                if STYLESHEET.get_tag(str(element.tokens[0].marker)).text_type == UsfmTextType.SECTION:
-                    # if i < len(orig_elements) - 1 and orig_elements[i + 1].type == UsfmUpdateBlockElementType.TEXT:
-                    #     header_elements.insert(0, (para_markers_left, [element, orig_elements.pop(i + 1)]))
-                    # else:
-                    header_elements.insert(0, (para_markers_left, element))
-                    orig_elements.pop(i)
-                else:
-                    para_markers_left += 1
-
-        # Paragraph markers at the end of the block should stay there
-        end_elements = []
-        for i, element in reversed(list(enumerate(orig_elements))):
-            if element.type == UsfmUpdateBlockElementType.PARAGRAPH and not element.marked_for_removal:
-                end_elements.insert(0, element)
-                orig_elements.pop(i)
-            elif element.type != UsfmUpdateBlockElementType.EMBED:
-                break
-
-        for element in orig_elements[1:]:  # TODO: all
+        for element in elements:
             if element.type == UsfmUpdateBlockElementType.TEXT:
                 if element.marked_for_removal:
-                    src_sent += element.tokens[0].to_usfm()
+                    text = element.tokens[0].to_usfm()
+                    src_sent += text
+
+                    # Handle tokens split across text elements
+                    if len(text.strip()) > 0 and (
+                        src_toks[src_tok_idx] not in text or text.strip().index(src_toks[src_tok_idx]) > 0
+                    ):
+                        src_tok_idx += 1
+                    # Track seen tokens
+                    while src_tok_idx < len(src_toks) and src_toks[src_tok_idx] in text:
+                        text = text[text.index(src_toks[src_tok_idx]) + len(src_toks[src_tok_idx]) :]
+                        src_tok_idx += 1
                 else:
                     trg_sent += element.tokens[0].to_usfm()
 
@@ -101,63 +90,33 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                 ignored_elements.append(element)
             elif element.type in [UsfmUpdateBlockElementType.PARAGRAPH, UsfmUpdateBlockElementType.STYLE]:
                 to_place.append(element)
-                src_marker_idxs.append(len(src_sent))
+                adj_src_toks.append(src_tok_idx)
 
-        src_toks = self._pt_info[block_ref]["source_toks"]
-        trg_toks = self._pt_info[block_ref]["translation_toks"]
-
-        # Don't do anything if the source sentence or pretranslation has changed
-        if (
-            list(t for t in TOKENIZER.tokenize(src_sent)) != src_toks
-            or list(t for t in TOKENIZER.tokenize(trg_sent)) != trg_toks
-        ):
-            return block
-
-        src_tok_starts = []
-        for tok in src_toks:
-            src_tok_starts.append(src_sent.index(tok, src_tok_starts[-1] + 1 if len(src_tok_starts) > 0 else 0))
         trg_tok_starts = []
         for tok in trg_toks:
             trg_tok_starts.append(trg_sent.index(tok, trg_tok_starts[-1] + 1 if len(trg_tok_starts) > 0 else 0))
 
-        # Get index of the text token immediately following each marker
-        # and predict the corresponding token on the target side
-        adj_src_toks = []
-        for idx in src_marker_idxs:
-            for i, start_idx in reversed(list(enumerate(src_tok_starts))):
-                if start_idx < idx:
-                    adj_src_toks.append(i + 1)
-                    break
-                if i == 0:
-                    adj_src_toks.append(i)
-
-        alignment = to_word_alignment_matrix(self._pt_info[block_ref]["alignment"])
-        adj_trg_toks = [
-            self._predict_marker_location(alignment, adj_src_tok, src_toks, trg_toks) for adj_src_tok in adj_src_toks
-        ]
-
-        # Collect the markers to be inserted
+        # Predict marker placements and get insertion order
         to_insert = []
-        for element, adj_trg_tok in zip(to_place, adj_trg_toks):
+        alignment = to_word_alignment_matrix(self._pt_info[ref]["alignment"])
+        for element, adj_src_tok in zip(to_place, adj_src_toks):
+            adj_trg_tok = self._predict_marker_location(alignment, adj_src_tok, src_toks, trg_toks)
             trg_str_idx = trg_tok_starts[adj_trg_tok] if adj_trg_tok < len(trg_tok_starts) else len(trg_sent)
 
-            # Determine the order of the markers in the sentence to handle ambiguity for directly adjacent markers
-            insert_pos = 0
-            while insert_pos < len(to_insert) and to_insert[insert_pos][0] <= trg_str_idx:
-                insert_pos += 1
-            to_insert.insert(insert_pos, (trg_str_idx, element))
+            to_insert.append((trg_str_idx, element))
+        to_insert.sort(key=lambda x: x[0])
+        to_insert += [(len(trg_sent), element) for element in end_elements]
 
         # Construct new text tokens to put between markers
         # and reincorporate headers and empty end-of-verse paragraph markers
-        if len(to_insert) == 0 or to_insert[0][0] > 0:
+        if len(to_insert) == 0:
+            placed_elements.append(
+                UsfmUpdateBlockElement(UsfmUpdateBlockElementType.TEXT, [UsfmToken(UsfmTokenType.TEXT, text=trg_sent)])
+            )
+        elif to_insert[0][0] > 0:
             placed_elements.append(
                 UsfmUpdateBlockElement(
-                    UsfmUpdateBlockElementType.TEXT,
-                    [
-                        UsfmToken(
-                            UsfmTokenType.TEXT, text=trg_sent[: to_insert[0][0]] if len(to_insert) > 0 else trg_sent
-                        )
-                    ],
+                    UsfmUpdateBlockElementType.TEXT, [UsfmToken(UsfmTokenType.TEXT, text=trg_sent[: to_insert[0][0]])]
                 )
             )
         for j, (insert_idx, element) in enumerate(to_insert):
@@ -167,16 +126,12 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                 para_markers_left -= 1
 
             placed_elements.append(element)
-            text_token = UsfmToken(
-                UsfmTokenType.TEXT,
-                text=(trg_sent[insert_idx : to_insert[j + 1][0]] if j + 1 < len(to_insert) else trg_sent[insert_idx:]),
-            )
-            placed_elements.append(UsfmUpdateBlockElement(UsfmUpdateBlockElementType.TEXT, [text_token]))
-        for element in end_elements:
-            while len(header_elements) > 0 and header_elements[0][0] == para_markers_left:
-                placed_elements.append(header_elements.pop(0)[1])
-            para_markers_left -= 1
-            placed_elements.append(element)
+            if insert_idx < len(trg_sent) and (j + 1 == len(to_insert) or insert_idx < to_insert[j + 1][0]):
+                if j + 1 < len(to_insert):
+                    text_token = UsfmToken(UsfmTokenType.TEXT, text=(trg_sent[insert_idx : to_insert[j + 1][0]]))
+                else:
+                    text_token = UsfmToken(UsfmTokenType.TEXT, text=(trg_sent[insert_idx:]))
+                placed_elements.append(UsfmUpdateBlockElement(UsfmUpdateBlockElementType.TEXT, [text_token]))
         while len(header_elements) > 0:
             placed_elements.append(header_elements.pop(0)[1])
 
@@ -244,10 +199,6 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                 else:  # continue the search outwards
                     src_hyp += -1 if hyp < 0 else 1
             if trg_hyp != -1:
-                # TODO: experiment w/ using adj_src_tok instead of src_hyp
-                # probably doesn't work well w/ word order switches, e.g. eng vs spa noun/adj
-                # one issue it does fix is markers getting sucked to punctuation
-                # (could be the source of some of the \w\w* issues)
                 num_crossings = num_align_crossings(adj_src_tok, trg_hyp)
                 if num_crossings < best_num_crossings:
                     best_hyp = trg_hyp
