@@ -4,19 +4,16 @@ from typing import List, Sequence
 
 from ..jobs.eflomal_aligner import to_word_alignment_matrix
 from ..jobs.translation_file_service import PretranslationInfo
-from ..tokenization import LatinWordTokenizer
 from ..translation import WordAlignmentMatrix
 from .usfm_token import UsfmToken, UsfmTokenType
 from .usfm_update_block import UsfmUpdateBlock
 from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
 from .usfm_update_block_handler import UsfmUpdateBlockHandler
 
-TOKENIZER = LatinWordTokenizer()
-
 
 class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
 
-    def __init__(self, pt_info: Sequence[PretranslationInfo]):
+    def __init__(self, pt_info: Sequence[PretranslationInfo]) -> None:
         self._pt_info = {info["refs"][0]: info for info in pt_info}
 
     def process_block(self, block: UsfmUpdateBlock) -> UsfmUpdateBlock:
@@ -55,7 +52,10 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                     if eob_empty_paras:
                         end_elements.insert(0, element)
                         elements.pop(i)
-            elif element.type != UsfmUpdateBlockElementType.EMBED:
+            elif not (
+                element.type == UsfmUpdateBlockElementType.EMBED
+                or (element.type == UsfmUpdateBlockElementType.TEXT and len(element.tokens[0].to_usfm().strip()) == 0)
+            ):
                 eob_empty_paras = False
 
         src_toks = self._pt_info[ref]["source_toks"]
@@ -74,14 +74,12 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                     text = element.tokens[0].to_usfm()
                     src_sent += text
 
-                    # Handle tokens split across text elements
-                    if len(text.strip()) > 0 and (
-                        src_toks[src_tok_idx] not in text or text.strip().index(src_toks[src_tok_idx]) > 0
-                    ):
-                        src_tok_idx += 1
                     # Track seen tokens
                     while src_tok_idx < len(src_toks) and src_toks[src_tok_idx] in text:
                         text = text[text.index(src_toks[src_tok_idx]) + len(src_toks[src_tok_idx]) :]
+                        src_tok_idx += 1
+                    # Handle tokens split across text elements
+                    if len(text.strip()) > 0:
                         src_tok_idx += 1
                 else:
                     trg_sent += element.tokens[0].to_usfm()
@@ -109,11 +107,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
 
         # Construct new text tokens to put between markers
         # and reincorporate headers and empty end-of-verse paragraph markers
-        if len(to_insert) == 0:
-            placed_elements.append(
-                UsfmUpdateBlockElement(UsfmUpdateBlockElementType.TEXT, [UsfmToken(UsfmTokenType.TEXT, text=trg_sent)])
-            )
-        elif to_insert[0][0] > 0:
+        if to_insert[0][0] > 0:
             placed_elements.append(
                 UsfmUpdateBlockElement(
                     UsfmUpdateBlockElementType.TEXT, [UsfmToken(UsfmTokenType.TEXT, text=trg_sent[: to_insert[0][0]])]

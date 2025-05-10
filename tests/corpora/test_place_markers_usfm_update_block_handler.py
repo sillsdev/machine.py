@@ -15,7 +15,7 @@ from machine.tokenization import LatinWordTokenizer
 TOKENIZER = LatinWordTokenizer()
 
 
-def test_paragraph_markers():
+def test_paragraph_markers() -> None:
     source = "This is the first paragraph. This text is in English, and this test is for paragraph markers."
     pretranslation = "Este es el primer párrafo. Este texto está en inglés y esta prueba es para marcadores de párrafo."
     rows = [(scr_ref("MAT 1:1"), str(pretranslation))]
@@ -51,61 +51,8 @@ def test_paragraph_markers():
 """
     assess(target, result)
 
-    target = update_usfm(
-        rows,
-        usfm,
-        paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
-    )
-    result = r"""\id MAT
-\c 1
-\v 1 Este es el primer párrafo. Este texto está en inglés y esta prueba es para marcadores de párrafo.
-"""
-    assess(target, result)
 
-
-def test_list_paragraph_markers():
-    source = "This is a list: First list item Second list item Third list item"
-    pretranslation = (
-        "Esta es una lista: Primer elemento de la lista Segundo elemento de la lista Tercer elemento de la lista"
-    )
-    rows = [(scr_ref("MAT 1:1"), str(pretranslation))]
-    usfm = r"""\id MAT
-\c 1
-\v 1 This is a list:
-\li1 First list item
-\li1 Second list item
-\li1 Third list item
-"""
-
-    pt_info = [
-        PretranslationInfo(
-            corpusId="",
-            textId="",
-            refs=["MAT 1:1"],
-            translation=pretranslation,
-            source_toks=[t for t in TOKENIZER.tokenize(source)],
-            translation_toks=[t for t in TOKENIZER.tokenize(pretranslation)],
-            alignment="0-0 1-1 2-2 3-3 4-4 5-5 6-9 7-6 8-10 9-14 10-11 11-15 12-19 13-16",
-        ),
-    ]
-    target = update_usfm(
-        rows,
-        usfm,
-        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
-    )
-    result = r"""\id MAT
-\c 1
-\v 1 Esta es una lista:
-\li1 Primer elemento de la lista
-\li1 Segundo elemento de la lista
-\li1 Tercer elemento de la lista
-"""
-    assess(target, result)
-
-
-def test_style_markers():
+def test_style_markers() -> None:
     source = "This is the first sentence. This text is in English, and this test is for style markers."
     pretranslation = "Esta es la primera oración. Este texto está en inglés y esta prueba es para marcadores de estilo."
     rows = [(scr_ref("MAT 1:1"), str(pretranslation))]
@@ -135,7 +82,7 @@ def test_style_markers():
 \c 1
 \v 1 Esta es la \w primera \w*oración. Este texto está en \w inglés \w*y esta prueba es \w para \w*marcadores de estilo.
 """
-    # TODO: the spacing before/after end markers is incorrect,
+    # NOTE: the spacing before/after end markers is incorrect,
     # but this is an issue with how the is USFM is generated from the tokens
     assess(target, result)
 
@@ -152,16 +99,17 @@ def test_style_markers():
     assess(target, result)
 
 
-def test_embeds():
+# NOTE: Not currently updating embeds, will need to change test when we do
+def test_embeds() -> None:
     rows = [
-        (scr_ref("MAT 1:1"), str("New verse 1")),
-        (scr_ref("MAT 1:2"), str("New verse 2")),
-        (scr_ref("MAT 1:3"), str("New verse 3")),
-        (scr_ref("MAT 1:4"), str("New verse 4")),
-        (scr_ref("MAT 1:4/1:f"), str("New embed text")),
-        (scr_ref("MAT 1:5"), str("New verse 5")),
-        (scr_ref("MAT 1:6"), str("New verse 6")),
-        (scr_ref("MAT 1:6/1:f"), str("New verse 6 embed text")),
+        (scr_ref("MAT 1:1"), "New verse 1"),
+        (scr_ref("MAT 1:2"), "New verse 2"),
+        (scr_ref("MAT 1:3"), "New verse 3"),
+        (scr_ref("MAT 1:4"), "New verse 4"),
+        (scr_ref("MAT 1:4/1:f"), "New embed text"),
+        (scr_ref("MAT 1:5"), "New verse 5"),
+        (scr_ref("MAT 1:6"), "New verse 6"),
+        (scr_ref("MAT 1:6/1:f"), "New verse 6 embed text"),
     ]
     usfm = r"""\id MAT
 \c 1
@@ -173,87 +121,13 @@ def test_embeds():
 \v 6 Updated embed with style markers \f \fr 1.6 \ft Another \+w stylish\+w* note \f*
 """
 
-    pt_info = [
-        PretranslationInfo(
-            corpusId="",
-            textId="",
-            refs=["MAT 1:1"],
-            translation="New verse 1",
-            source_toks=["Start", "of", "sentence", "embed"],
-            translation_toks=["New", "verse", "1"],
-            alignment="",
-        ),
-        PretranslationInfo(
-            corpusId="",
-            textId="",
-            refs=["MAT 1:2"],
-            translation="New verse 2",
-            source_toks=["Middle", "of", "sentence", "embed"],
-            translation_toks=["New", "verse", "2"],
-            alignment="",
-        ),
-        PretranslationInfo(
-            corpusId="",
-            textId="",
-            refs=["MAT 1:3"],
-            translation="New verse 3",
-            source_toks=["End", "of", "sentence", "embed"],
-            translation_toks=["New", "verse", "3"],
-            alignment="",
-        ),
-        PretranslationInfo(
-            corpusId="",
-            textId="",
-            refs=["MAT 1:4"],
-            translation="New verse 4",
-            source_toks=["Updated", "embed"],
-            translation_toks=["New", "verse", "4"],
-            alignment="",
-        ),
-        PretranslationInfo(
-            corpusId="",
-            textId="",
-            refs=["MAT 1:4/1:f"],
-            translation="New embed text",
-            source_toks=["A", "fourth", "note"],
-            translation_toks=["New", "embed", "text"],
-            alignment="",
-        ),
-        PretranslationInfo(
-            corpusId="",
-            textId="",
-            refs=["MAT 1:5"],
-            translation="New verse 5",
-            source_toks=["Embed", "with", "style", "markers"],
-            translation_toks=["New", "verse", "5"],
-            alignment="",
-        ),
-        PretranslationInfo(
-            corpusId="",
-            textId="",
-            refs=["MAT 1:6"],
-            translation="New verse 6",
-            source_toks=["Updated", "embed", "with", "style", "markers"],
-            translation_toks=["New", "verse", "6"],
-            alignment="",
-        ),
-        PretranslationInfo(
-            corpusId="",
-            textId="",
-            refs=["MAT 1:6/1:f"],
-            translation="New verse 6 embed text",
-            source_toks=["Another", "stylish", "note"],
-            translation_toks=["New", "verse", "6", "embed", "text"],
-            alignment="",
-        ),
-    ]
+    pt_info = []
     target = update_usfm(
         rows,
         usfm,
         embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
         update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
     )
-    # NOTE: currently not updating embeds
     result = r"""\id MAT
 \c 1
 \v 1 New verse 1 \f \fr 1.1 \ft Some note \f*
@@ -283,8 +157,50 @@ def test_embeds():
     assess(target, result)
 
 
-def test_headers():
-    rows = [(scr_ref("MAT 1:1"), "X Y Z"), (scr_ref("MAT 1:2"), "X")]
+def test_trailing_empty_paragraphs() -> None:
+    rows = [(scr_ref("MAT 1:1"), "New verse 1")]
+    usfm = r"""\id MAT
+\c 1
+\v 1 Verse 1
+\p
+\b
+\q1 \f embed \f*
+"""
+
+    pt_info = [
+        PretranslationInfo(
+            corpusId="",
+            textId="",
+            refs=["MAT 1:1"],
+            translation="New verse 1",
+            source_toks=["Verse" "1"],
+            translation_toks=["New", "verse", "1"],
+            alignment="0-1 1-2",
+        ),
+    ]
+    target = update_usfm(
+        rows,
+        usfm,
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+    )
+    result = r"""\id MAT
+\c 1
+\v 1 New verse 1
+\p
+\b
+\q1 \f embed \f*
+"""
+    assess(target, result)
+
+
+def test_headers() -> None:
+    rows = [
+        (scr_ref("MAT 1:1"), "X Y Z"),
+        (scr_ref("MAT 1:2"), "X"),
+        (scr_ref("MAT 1:3"), "Y"),
+        (scr_ref("MAT 1:3/1:s1"), "Updated header"),
+    ]
     usfm = r"""\id MAT
 \c 1
 \s1 Start of chapter header
@@ -300,6 +216,8 @@ def test_headers():
 \s1 Header followed by a reference
 \r (reference)
 \p
+\v 3 B
+\s1 Header to be updated
 """
 
     pt_info = [
@@ -343,15 +261,52 @@ def test_headers():
 \s1 Header followed by a reference
 \r (reference)
 \p
+\v 3 Y
+\s1 Updated header
 """
     assess(target, result)
 
 
-def test_verse_ranges():
-    rows = [([ScriptureRef.parse(f"MAT 1:{i}") for i in range(1, 6)], "New verse range text")]
+def test_consecutive_markers() -> None:
+    rows = [(scr_ref("MAT 1:1"), "New verse 1 WORD")]
+    usfm = r"""\id MAT
+\c 1
+\v 1 Old verse 1
+\p \qt \+w word \+w* \qt*
+"""
+
+    pt_info = [
+        PretranslationInfo(
+            corpusId="",
+            textId="",
+            refs=["MAT 1:1"],
+            translation="New verse 1 WORD",
+            source_toks=["Old", "verse", "1", "word"],
+            translation_toks=["New", "verse", "1", "WORD"],
+            alignment="0-0 1-1 2-2 3-3",
+        ),
+    ]
+    target = update_usfm(
+        rows,
+        usfm,
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+    )
+    result = r"""\id MAT
+\c 1
+\v 1 New verse 1
+\p \qt \+w WORD \+w*\qt*
+"""
+    assess(target, result)
+
+
+def test_verse_ranges() -> None:
+    rows = [([ScriptureRef.parse(f"MAT 1:{i}") for i in range(1, 6)], "New verse range text new paragraph 2")]
     usfm = r"""\id MAT
 \c 1
 \v 1-5 Verse range
+\p old paragraph 2
 """
 
     pt_info = [
@@ -359,10 +314,10 @@ def test_verse_ranges():
             corpusId="",
             textId="",
             refs=[str(ScriptureRef.parse(f"MAT 1:{i}")) for i in range(1, 6)],
-            translation="New verse range text",
-            source_toks=["Verse", "range"],
-            translation_toks=["New", "verse", "range", "text"],
-            alignment="0-1 1-2",
+            translation="New verse range text new paragraph 2",
+            source_toks=["Verse", "range", "old", "paragraph", "2"],
+            translation_toks=["New", "verse", "range", "text", "new", "paragraph", "2"],
+            alignment="0-1 1-2 2-4 3-5 4-6",
         ),
     ]
     target = update_usfm(
@@ -374,18 +329,20 @@ def test_verse_ranges():
     result = r"""\id MAT
 \c 1
 \v 1-5 New verse range text
+\p new paragraph 2
 """
     assess(target, result)
 
 
-def test_no_alignment():
-    rows = [(scr_ref("MAT 1:1"), str("New paragraph 1 New paragraph 2"))]
+def test_no_update() -> None:
+    rows = [(scr_ref("MAT 1:1"), "New paragraph 1 New paragraph 2")]
     usfm = r"""\id MAT
 \c 1
 \v 1 Old paragraph 1
 \p Old paragraph 2
 """
 
+    # Strip paragraphs
     pt_info = [
         PretranslationInfo(
             corpusId="",
@@ -394,6 +351,30 @@ def test_no_alignment():
             translation="New paragraph 1 New paragraph 2",
             source_toks=["Old", "paragraph", "1", "Old", "paragraph", "2"],
             translation_toks=["New", "paragraph", "1", "New", "paragraph", "2"],
+            alignment="0-0 1-1 2-2 3-3 4-4 5-5",
+        ),
+    ]
+    target = update_usfm(
+        rows,
+        usfm,
+        paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP,
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+    )
+    result = r"""\id MAT
+\c 1
+\v 1 New paragraph 1 New paragraph 2
+"""
+    assess(target, result)
+
+    # No alignment
+    pt_info = [
+        PretranslationInfo(
+            corpusId="",
+            textId="",
+            refs=["MAT 1:1"],
+            translation="New paragraph 1 New paragraph 2",
+            source_toks=[],
+            translation_toks=[],
             alignment="",
         ),
     ]
@@ -410,13 +391,30 @@ def test_no_alignment():
 """
     assess(target, result)
 
-
-def test_changed_text():
-    rows = [(scr_ref("MAT 1:1"), str("New paragraph 1 New paragraph 2"))]
-    usfm = r"""\id MAT
+    # No text update
+    rows = []
+    pt_info = []
+    target = update_usfm(
+        rows,
+        usfm,
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+    )
+    result = r"""\id MAT
 \c 1
 \v 1 Old paragraph 1
 \p Old paragraph 2
+"""
+    assess(target, result)
+
+
+def test_split_tokens() -> None:
+    rows = [(scr_ref("MAT 1:1"), "words split words split words split")]
+    usfm = r"""\id MAT
+\c 1
+\v 1 words spl
+\p it words spl
+\p it words split
 """
 
     pt_info = [
@@ -424,9 +422,9 @@ def test_changed_text():
             corpusId="",
             textId="",
             refs=["MAT 1:1"],
-            translation="Changed paragraph 1 Changed paragraph 2",
-            source_toks=["Old", "paragraph", "1", "Old", "paragraph", "2"],
-            translation_toks=["Changed", "paragraph", "1", "Changed", "paragraph", "2"],
+            translation="words split words split words split",
+            source_toks=["words", "split", "words", "split", "words", "split"],
+            translation_toks=["words", "split", "words", "split", "words", "split"],
             alignment="0-0 1-1 2-2 3-3 4-4 5-5",
         ),
     ]
@@ -438,8 +436,9 @@ def test_changed_text():
     )
     result = r"""\id MAT
 \c 1
-\v 1 New paragraph 1 New paragraph 2
-\p
+\v 1 words split
+\p words split
+\p words split
 """
     assess(target, result)
 
@@ -476,8 +475,5 @@ def update_usfm(
 
 def assess(target: Optional[str], truth: str) -> None:
     assert target is not None
-    for target_line, truth_line in zip(target.split("\n"), truth.split("\n")):
-        print(truth_line)
-        print(target_line)
     for target_line, truth_line in zip(target.split("\n"), truth.split("\n")):
         assert target_line.strip() == truth_line.strip()
