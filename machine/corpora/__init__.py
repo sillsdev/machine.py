@@ -23,6 +23,7 @@ from .paratext_project_settings_parser_base import ParatextProjectSettingsParser
 from .paratext_project_terms_parser_base import ParatextProjectTermsParserBase
 from .paratext_project_text_updater_base import ParatextProjectTextUpdaterBase
 from .paratext_text_corpus import ParatextTextCorpus
+from .place_markers_usfm_update_block_handler import AlignmentInfo, PlaceMarkersUsfmUpdateBlockHandler
 from .scripture_element import ScriptureElement
 from .scripture_ref import EMPTY_SCRIPTURE_REF, ScriptureRef
 from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler, ScriptureTextType
@@ -79,6 +80,7 @@ __all__ = [
     "AlignedWordPair",
     "AlignmentCollection",
     "AlignmentCorpus",
+    "AlignmentInfo",
     "AlignmentRow",
     "batch",
     "Corpus",
@@ -112,6 +114,7 @@ __all__ = [
     "ParatextProjectTermsParserBase",
     "ParatextProjectTextUpdaterBase",
     "ParatextTextCorpus",
+    "PlaceMarkersUsfmUpdateBlockHandler",
     "parse_usfm",
     "RtlReferenceOrder",
     "ScriptureElement",

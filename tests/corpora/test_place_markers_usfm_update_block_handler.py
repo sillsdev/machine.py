@@ -1,15 +1,15 @@
 from typing import List, Optional, Sequence, Tuple
 
 from machine.corpora import (
+    AlignmentInfo,
+    PlaceMarkersUsfmUpdateBlockHandler,
     ScriptureRef,
     UpdateUsfmMarkerBehavior,
     UpdateUsfmParserHandler,
     UpdateUsfmTextBehavior,
+    UsfmUpdateBlockHandler,
     parse_usfm,
 )
-from machine.corpora.place_markers_usfm_update_block_handler import PlaceMarkersUsfmUpdateBlockHandler
-from machine.corpora.usfm_update_block_handler import UsfmUpdateBlockHandler
-from machine.jobs.translation_file_service import PretranslationInfo
 from machine.tokenization import LatinWordTokenizer
 
 TOKENIZER = LatinWordTokenizer()
@@ -26,12 +26,9 @@ def test_paragraph_markers() -> None:
 \p and this test is for paragraph markers.
 """
 
-    pt_info = [
-        PretranslationInfo(
-            corpusId="",
-            textId="",
+    align_info = [
+        AlignmentInfo(
             refs=["MAT 1:1"],
-            translation=pretranslation,
             source_toks=[t for t in TOKENIZER.tokenize(source)],
             translation_toks=[t for t in TOKENIZER.tokenize(pretranslation)],
             alignment="0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10 12-11 13-12 14-13 15-14 16-15 17-18 18-16 19-19",
@@ -41,7 +38,7 @@ def test_paragraph_markers() -> None:
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
     )
     result = r"""\id MAT
 \c 1
@@ -61,12 +58,9 @@ def test_style_markers() -> None:
 \v 1 This is the \w first\w* sentence. This text is in \w English\w*, and this test is \w for\w* style markers.
 """
 
-    pt_info = [
-        PretranslationInfo(
-            corpusId="",
-            textId="",
+    align_info = [
+        AlignmentInfo(
             refs=["MAT 1:1"],
-            translation=pretranslation,
             source_toks=[t for t in TOKENIZER.tokenize(source)],
             translation_toks=[t for t in TOKENIZER.tokenize(pretranslation)],
             alignment="0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10 12-11 13-12 14-13 15-14 16-15 17-18 18-16 19-19",
@@ -76,7 +70,7 @@ def test_style_markers() -> None:
         rows,
         usfm,
         style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
     )
     result = r"""\id MAT
 \c 1
@@ -90,7 +84,7 @@ def test_style_markers() -> None:
         rows,
         usfm,
         style_behavior=UpdateUsfmMarkerBehavior.STRIP,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
     )
     result = r"""\id MAT
 \c 1
@@ -121,12 +115,12 @@ def test_embeds() -> None:
 \v 6 Updated embed with style markers \f \fr 1.6 \ft Another \+w stylish\+w* note \f*
 """
 
-    pt_info = []
+    align_info = []
     target = update_usfm(
         rows,
         usfm,
         embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
     )
     result = r"""\id MAT
 \c 1
@@ -143,7 +137,7 @@ def test_embeds() -> None:
         rows,
         usfm,
         embed_behavior=UpdateUsfmMarkerBehavior.STRIP,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
     )
     result = r"""\id MAT
 \c 1
@@ -167,12 +161,9 @@ def test_trailing_empty_paragraphs() -> None:
 \q1 \f embed \f*
 """
 
-    pt_info = [
-        PretranslationInfo(
-            corpusId="",
-            textId="",
+    align_info = [
+        AlignmentInfo(
             refs=["MAT 1:1"],
-            translation="New verse 1",
             source_toks=["Verse" "1"],
             translation_toks=["New", "verse", "1"],
             alignment="0-1 1-2",
@@ -182,7 +173,7 @@ def test_trailing_empty_paragraphs() -> None:
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
     )
     result = r"""\id MAT
 \c 1
@@ -220,21 +211,15 @@ def test_headers() -> None:
 \s1 Header to be updated
 """
 
-    pt_info = [
-        PretranslationInfo(
-            corpusId="",
-            textId="",
+    align_info = [
+        AlignmentInfo(
             refs=["MAT 1:1"],
-            translation="X Y Z",
             source_toks=["A", "B", "C"],
             translation_toks=["X", "Y", "Z"],
             alignment="0-0 1-1 2-2",
         ),
-        PretranslationInfo(
-            corpusId="",
-            textId="",
+        AlignmentInfo(
             refs=["MAT 1:2"],
-            translation="X",
             source_toks=["A"],
             translation_toks=["X"],
             alignment="0-0",
@@ -244,7 +229,7 @@ def test_headers() -> None:
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
     )
     result = r"""\id MAT
 \c 1
@@ -275,12 +260,9 @@ def test_consecutive_markers() -> None:
 \p \qt \+w word \+w* \qt*
 """
 
-    pt_info = [
-        PretranslationInfo(
-            corpusId="",
-            textId="",
+    align_info = [
+        AlignmentInfo(
             refs=["MAT 1:1"],
-            translation="New verse 1 WORD",
             source_toks=["Old", "verse", "1", "word"],
             translation_toks=["New", "verse", "1", "WORD"],
             alignment="0-0 1-1 2-2 3-3",
@@ -291,7 +273,7 @@ def test_consecutive_markers() -> None:
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
         style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
     )
     result = r"""\id MAT
 \c 1
@@ -309,12 +291,9 @@ def test_verse_ranges() -> None:
 \p old paragraph 2
 """
 
-    pt_info = [
-        PretranslationInfo(
-            corpusId="",
-            textId="",
+    align_info = [
+        AlignmentInfo(
             refs=[str(ScriptureRef.parse(f"MAT 1:{i}")) for i in range(1, 6)],
-            translation="New verse range text new paragraph 2",
             source_toks=["Verse", "range", "old", "paragraph", "2"],
             translation_toks=["New", "verse", "range", "text", "new", "paragraph", "2"],
             alignment="0-1 1-2 2-4 3-5 4-6",
@@ -324,7 +303,7 @@ def test_verse_ranges() -> None:
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
     )
     result = r"""\id MAT
 \c 1
@@ -343,12 +322,9 @@ def test_no_update() -> None:
 """
 
     # Strip paragraphs
-    pt_info = [
-        PretranslationInfo(
-            corpusId="",
-            textId="",
+    align_info = [
+        AlignmentInfo(
             refs=["MAT 1:1"],
-            translation="New paragraph 1 New paragraph 2",
             source_toks=["Old", "paragraph", "1", "Old", "paragraph", "2"],
             translation_toks=["New", "paragraph", "1", "New", "paragraph", "2"],
             alignment="0-0 1-1 2-2 3-3 4-4 5-5",
@@ -358,7 +334,7 @@ def test_no_update() -> None:
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
     )
     result = r"""\id MAT
 \c 1
@@ -367,12 +343,9 @@ def test_no_update() -> None:
     assess(target, result)
 
     # No alignment
-    pt_info = [
-        PretranslationInfo(
-            corpusId="",
-            textId="",
+    align_info = [
+        AlignmentInfo(
             refs=["MAT 1:1"],
-            translation="New paragraph 1 New paragraph 2",
             source_toks=[],
             translation_toks=[],
             alignment="",
@@ -382,7 +355,7 @@ def test_no_update() -> None:
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
     )
     result = r"""\id MAT
 \c 1
@@ -393,12 +366,12 @@ def test_no_update() -> None:
 
     # No text update
     rows = []
-    pt_info = []
+    align_info = []
     target = update_usfm(
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
     )
     result = r"""\id MAT
 \c 1
@@ -417,12 +390,9 @@ def test_split_tokens() -> None:
 \p it words split
 """
 
-    pt_info = [
-        PretranslationInfo(
-            corpusId="",
-            textId="",
+    align_info = [
+        AlignmentInfo(
             refs=["MAT 1:1"],
-            translation="words split words split words split",
             source_toks=["words", "split", "words", "split", "words", "split"],
             translation_toks=["words", "split", "words", "split", "words", "split"],
             alignment="0-0 1-1 2-2 3-3 4-4 5-5",
@@ -432,7 +402,7 @@ def test_split_tokens() -> None:
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(pt_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
     )
     result = r"""\id MAT
 \c 1
