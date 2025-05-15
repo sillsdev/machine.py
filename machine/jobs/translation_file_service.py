@@ -16,8 +16,8 @@ class PretranslationInfo(TypedDict):
     textId: str  # noqa: N815
     refs: List[str]
     translation: str
-    source_toks: List[str]
-    translation_toks: List[str]
+    source_tokens: List[str]
+    translation_tokens: List[str]
     alignment: str
 
 
@@ -65,8 +65,8 @@ class TranslationFileService:
                         textId=pi["textId"],
                         refs=list(pi["refs"]),
                         translation=pi["translation"],
-                        source_toks=list(pi["source_toks"]),
-                        translation_toks=list(pi["translation_toks"]),
+                        source_tokens=list(pi["source_tokens"]),
+                        translation_tokens=list(pi["translation_tokens"]),
                         alignment=pi["alignment"],
                     )
 
