@@ -137,8 +137,8 @@ class _TestEnvironment:
                             textId="text1",
                             refs=["ref1"],
                             translation="Por favor, tengo reservada una habitación.",
-                            source_toks=[],
-                            translation_toks=[],
+                            source_tokens=[],
+                            translation_tokens=[],
                             alignment="",
                         )
                     ]
