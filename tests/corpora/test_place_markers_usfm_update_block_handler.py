@@ -1,7 +1,8 @@
 from typing import List, Optional, Sequence, Tuple
 
 from machine.corpora import (
-    AlignmentInfo,
+    AlignedWordPair,
+    PlaceMarkersAlignmentInfo,
     PlaceMarkersUsfmUpdateBlockHandler,
     ScriptureRef,
     UpdateUsfmMarkerBehavior,
@@ -11,6 +12,7 @@ from machine.corpora import (
     parse_usfm,
 )
 from machine.tokenization import LatinWordTokenizer
+from machine.translation import WordAlignmentMatrix
 
 TOKENIZER = LatinWordTokenizer()
 
@@ -27,11 +29,13 @@ def test_paragraph_markers() -> None:
 """
 
     align_info = [
-        AlignmentInfo(
+        PlaceMarkersAlignmentInfo(
             refs=["MAT 1:1"],
-            source_toks=[t for t in TOKENIZER.tokenize(source)],
-            translation_toks=[t for t in TOKENIZER.tokenize(pretranslation)],
-            alignment="0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10 12-11 13-12 14-13 15-14 16-15 17-18 18-16 19-19",
+            source_tokens=[t for t in TOKENIZER.tokenize(source)],
+            translation_tokens=[t for t in TOKENIZER.tokenize(pretranslation)],
+            alignment=to_word_alignment_matrix(
+                "0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10 12-11 13-12 14-13 15-14 16-15 17-18 18-16 19-19"
+            ),
         ),
     ]
     target = update_usfm(
@@ -59,11 +63,13 @@ def test_style_markers() -> None:
 """
 
     align_info = [
-        AlignmentInfo(
+        PlaceMarkersAlignmentInfo(
             refs=["MAT 1:1"],
-            source_toks=[t for t in TOKENIZER.tokenize(source)],
-            translation_toks=[t for t in TOKENIZER.tokenize(pretranslation)],
-            alignment="0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10 12-11 13-12 14-13 15-14 16-15 17-18 18-16 19-19",
+            source_tokens=[t for t in TOKENIZER.tokenize(source)],
+            translation_tokens=[t for t in TOKENIZER.tokenize(pretranslation)],
+            alignment=to_word_alignment_matrix(
+                "0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10 12-11 13-12 14-13 15-14 16-15 17-18 18-16 19-19"
+            ),
         ),
     ]
     target = update_usfm(
@@ -162,11 +168,11 @@ def test_trailing_empty_paragraphs() -> None:
 """
 
     align_info = [
-        AlignmentInfo(
+        PlaceMarkersAlignmentInfo(
             refs=["MAT 1:1"],
-            source_toks=["Verse" "1"],
-            translation_toks=["New", "verse", "1"],
-            alignment="0-1 1-2",
+            source_tokens=["Verse" "1"],
+            translation_tokens=["New", "verse", "1"],
+            alignment=to_word_alignment_matrix("0-1 1-2"),
         ),
     ]
     target = update_usfm(
@@ -212,17 +218,17 @@ def test_headers() -> None:
 """
 
     align_info = [
-        AlignmentInfo(
+        PlaceMarkersAlignmentInfo(
             refs=["MAT 1:1"],
-            source_toks=["A", "B", "C"],
-            translation_toks=["X", "Y", "Z"],
-            alignment="0-0 1-1 2-2",
+            source_tokens=["A", "B", "C"],
+            translation_tokens=["X", "Y", "Z"],
+            alignment=to_word_alignment_matrix("0-0 1-1 2-2"),
         ),
-        AlignmentInfo(
+        PlaceMarkersAlignmentInfo(
             refs=["MAT 1:2"],
-            source_toks=["A"],
-            translation_toks=["X"],
-            alignment="0-0",
+            source_tokens=["A"],
+            translation_tokens=["X"],
+            alignment=to_word_alignment_matrix("0-0"),
         ),
     ]
     target = update_usfm(
@@ -261,11 +267,11 @@ def test_consecutive_markers() -> None:
 """
 
     align_info = [
-        AlignmentInfo(
+        PlaceMarkersAlignmentInfo(
             refs=["MAT 1:1"],
-            source_toks=["Old", "verse", "1", "word"],
-            translation_toks=["New", "verse", "1", "WORD"],
-            alignment="0-0 1-1 2-2 3-3",
+            source_tokens=["Old", "verse", "1", "word"],
+            translation_tokens=["New", "verse", "1", "WORD"],
+            alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3"),
         ),
     ]
     target = update_usfm(
@@ -292,11 +298,11 @@ def test_verse_ranges() -> None:
 """
 
     align_info = [
-        AlignmentInfo(
+        PlaceMarkersAlignmentInfo(
             refs=[str(ScriptureRef.parse(f"MAT 1:{i}")) for i in range(1, 6)],
-            source_toks=["Verse", "range", "old", "paragraph", "2"],
-            translation_toks=["New", "verse", "range", "text", "new", "paragraph", "2"],
-            alignment="0-1 1-2 2-4 3-5 4-6",
+            source_tokens=["Verse", "range", "old", "paragraph", "2"],
+            translation_tokens=["New", "verse", "range", "text", "new", "paragraph", "2"],
+            alignment=to_word_alignment_matrix("0-1 1-2 2-4 3-5 4-6"),
         ),
     ]
     target = update_usfm(
@@ -323,11 +329,11 @@ def test_no_update() -> None:
 
     # Strip paragraphs
     align_info = [
-        AlignmentInfo(
+        PlaceMarkersAlignmentInfo(
             refs=["MAT 1:1"],
-            source_toks=["Old", "paragraph", "1", "Old", "paragraph", "2"],
-            translation_toks=["New", "paragraph", "1", "New", "paragraph", "2"],
-            alignment="0-0 1-1 2-2 3-3 4-4 5-5",
+            source_tokens=["Old", "paragraph", "1", "Old", "paragraph", "2"],
+            translation_tokens=["New", "paragraph", "1", "New", "paragraph", "2"],
+            alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3 4-4 5-5"),
         ),
     ]
     target = update_usfm(
@@ -344,11 +350,11 @@ def test_no_update() -> None:
 
     # No alignment
     align_info = [
-        AlignmentInfo(
+        PlaceMarkersAlignmentInfo(
             refs=["MAT 1:1"],
-            source_toks=[],
-            translation_toks=[],
-            alignment="",
+            source_tokens=[],
+            translation_tokens=[],
+            alignment=to_word_alignment_matrix(""),
         ),
     ]
     target = update_usfm(
@@ -391,11 +397,11 @@ def test_split_tokens() -> None:
 """
 
     align_info = [
-        AlignmentInfo(
+        PlaceMarkersAlignmentInfo(
             refs=["MAT 1:1"],
-            source_toks=["words", "split", "words", "split", "words", "split"],
-            translation_toks=["words", "split", "words", "split", "words", "split"],
-            alignment="0-0 1-1 2-2 3-3 4-4 5-5",
+            source_tokens=["words", "split", "words", "split", "words", "split"],
+            translation_tokens=["words", "split", "words", "split", "words", "split"],
+            alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3 4-4 5-5"),
         ),
     ]
     target = update_usfm(
@@ -415,6 +421,18 @@ def test_split_tokens() -> None:
 
 def scr_ref(*refs: str) -> List[ScriptureRef]:
     return [ScriptureRef.parse(ref) for ref in refs]
+
+
+def to_word_alignment_matrix(alignment_str: str) -> WordAlignmentMatrix:
+    word_pairs = AlignedWordPair.from_string(alignment_str)
+    row_count = 0
+    column_count = 0
+    for pair in word_pairs:
+        if pair.source_index + 1 > row_count:
+            row_count = pair.source_index + 1
+        if pair.target_index + 1 > column_count:
+            column_count = pair.target_index + 1
+    return WordAlignmentMatrix.from_word_pairs(row_count, column_count, word_pairs)
 
 
 def update_usfm(

@@ -1,24 +1,24 @@
 from __future__ import annotations
 
-from typing import List, Sequence, TypedDict
+from typing import Iterable, List, TypedDict
 
-from ..translation.word_alignment_matrix import AlignedWordPair, WordAlignmentMatrix
+from ..translation.word_alignment_matrix import WordAlignmentMatrix
 from .usfm_token import UsfmToken, UsfmTokenType
 from .usfm_update_block import UsfmUpdateBlock
 from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
 from .usfm_update_block_handler import UsfmUpdateBlockHandler
 
 
-class AlignmentInfo(TypedDict):
+class PlaceMarkersAlignmentInfo(TypedDict):
     refs: List[str]
-    source_toks: List[str]
-    translation_toks: List[str]
-    alignment: str
+    source_tokens: List[str]
+    translation_tokens: List[str]
+    alignment: WordAlignmentMatrix
 
 
 class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
 
-    def __init__(self, align_info: Sequence[AlignmentInfo]) -> None:
+    def __init__(self, align_info: Iterable[PlaceMarkersAlignmentInfo]) -> None:
         self._align_info = {info["refs"][0]: info for info in align_info}
 
     def process_block(self, block: UsfmUpdateBlock) -> UsfmUpdateBlock:
@@ -29,7 +29,8 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         if (
             len(elements) == 0
             or ref not in self._align_info.keys()
-            or len(self._align_info[ref]["alignment"]) == 0
+            or self._align_info[ref]["alignment"].row_count == 0
+            or self._align_info[ref]["alignment"].column_count == 0
             or not any(
                 (
                     e.type in [UsfmUpdateBlockElementType.PARAGRAPH, UsfmUpdateBlockElementType.STYLE]
@@ -63,8 +64,8 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
             ):
                 eob_empty_paras = False
 
-        src_toks = self._align_info[ref]["source_toks"]
-        trg_toks = self._align_info[ref]["translation_toks"]
+        src_toks = self._align_info[ref]["source_tokens"]
+        trg_toks = self._align_info[ref]["translation_tokens"]
         src_tok_idx = 0
 
         src_sent = ""
@@ -101,9 +102,10 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
 
         # Predict marker placements and get insertion order
         to_insert = []
-        alignment = to_word_alignment_matrix(self._align_info[ref]["alignment"])
         for element, adj_src_tok in zip(to_place, adj_src_toks):
-            adj_trg_tok = self._predict_marker_location(alignment, adj_src_tok, src_toks, trg_toks)
+            adj_trg_tok = self._predict_marker_location(
+                self._align_info[ref]["alignment"], adj_src_tok, src_toks, trg_toks
+            )
             trg_str_idx = trg_tok_starts[adj_trg_tok] if adj_trg_tok < len(trg_tok_starts) else len(trg_sent)
 
             to_insert.append((trg_str_idx, element))
@@ -207,15 +209,3 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
 
         # If no alignments found, insert at the end of the sentence
         return best_hyp if best_hyp != -1 else len(trg_toks)
-
-
-def to_word_alignment_matrix(alignment_str: str) -> WordAlignmentMatrix:
-    word_pairs = AlignedWordPair.from_string(alignment_str)
-    row_count = 0
-    column_count = 0
-    for pair in word_pairs:
-        if pair.source_index + 1 > row_count:
-            row_count = pair.source_index + 1
-        if pair.target_index + 1 > column_count:
-            column_count = pair.target_index + 1
-    return WordAlignmentMatrix.from_word_pairs(row_count, column_count, word_pairs)
