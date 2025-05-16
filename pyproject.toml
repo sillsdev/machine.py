@@ -32,7 +32,7 @@ reportMissingModuleSource = false
 
 [tool.poetry]
 name = "sil-machine"
-version = "1.6.3"
+version = "1.7.0"
 description = "A natural language processing library that is focused on providing tools for resource-poor languages."
 license = "MIT"
 authors = ["SIL International"]
