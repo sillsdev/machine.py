@@ -65,9 +65,9 @@ class TranslationFileService:
                         textId=pi["textId"],
                         refs=list(pi["refs"]),
                         translation=pi["translation"],
-                        source_tokens=list(pi["source_tokens"]),
-                        translation_tokens=list(pi["translation_tokens"]),
-                        alignment=pi["alignment"],
+                        source_tokens=list(),
+                        translation_tokens=list(),
+                        alignment="",
                     )
 
         return ContextManagedGenerator(generator())
