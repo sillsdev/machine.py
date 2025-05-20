@@ -157,8 +157,8 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
             check_canceled()
 
         for i in range(len(pretranslations)):
-            pretranslations[i]["source_tokens"] = list(src_tokenized[i])
-            pretranslations[i]["translation_tokens"] = list(trg_tokenized[i])
+            pretranslations[i]["sourceTokens"] = list(src_tokenized[i])
+            pretranslations[i]["translationTokens"] = list(trg_tokenized[i])
             pretranslations[i]["alignment"] = alignments[i]
 
         return pretranslations
