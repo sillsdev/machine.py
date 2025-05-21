@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Callable, ContextManager, Iterable, Optional, Sequence, Type
+from typing import Callable, ContextManager, Iterable, Literal, Optional, Sequence, Type
 
 from .progress_status import ProgressStatus
 
@@ -12,6 +12,13 @@ class Phase:
     message: Optional[str] = None
     percentage: float = 0
     report_steps: bool = True
+    stage: Optional[Literal["train", "inference"]] = None
+
+
+@dataclass(frozen=True)
+class PhaseProgressStatus(ProgressStatus):
+    phase_stage: Optional[Literal["train", "inference"]] = None
+    phase_step: Optional[int] = None
 
 
 class PhaseProgress(ContextManager[Callable[[ProgressStatus], None]]):
@@ -87,7 +94,16 @@ class PhasedProgressReporter:
 
         percent_completed = self._percent_completed + (self._current_phase_percentage * (value.percent_completed or 0))
         message = self._phases[self._current_phase_index].message if value.message is None else value.message
-        self._progress(ProgressStatus(self._step, percent_completed, message))
+        self._progress(
+            PhaseProgressStatus(
+                self._step,
+                percent_completed,
+                message,
+                value.step_count,
+                self.current_phase.stage if self.current_phase is not None else None,
+                value.step,
+            )
+        )
 
     @property
     def _current_phase_percentage(self) -> float:
