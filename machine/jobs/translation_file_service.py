@@ -16,8 +16,8 @@ class PretranslationInfo(TypedDict):
     textId: str  # noqa: N815
     refs: List[str]
     translation: str
-    source_tokens: List[str]
-    translation_tokens: List[str]
+    sourceTokens: List[str]  # noqa: N815
+    translationTokens: List[str]  # noqa: N815
     alignment: str
 
 
@@ -65,9 +65,9 @@ class TranslationFileService:
                         textId=pi["textId"],
                         refs=list(pi["refs"]),
                         translation=pi["translation"],
-                        source_tokens=list(pi["source_tokens"]),
-                        translation_tokens=list(pi["translation_tokens"]),
-                        alignment=pi["alignment"],
+                        sourceTokens=list(),
+                        translationTokens=list(),
+                        alignment="",
                     )
 
         return ContextManagedGenerator(generator())

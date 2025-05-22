@@ -38,7 +38,7 @@ def test_run(decoy: Decoy) -> None:
     assert len(pretranslations) == 1
     assert pretranslations[0]["translation"] == "Please, I have booked a room."
     if is_eflomal_available():
-        assert pretranslations[0]["source_tokens"] == [
+        assert pretranslations[0]["sourceTokens"] == [
             "Por",
             "favor",
             ",",
@@ -48,11 +48,11 @@ def test_run(decoy: Decoy) -> None:
             "habitación",
             ".",
         ]
-        assert pretranslations[0]["translation_tokens"] == ["Please", ",", "I", "have", "booked", "a", "room", "."]
+        assert pretranslations[0]["translationTokens"] == ["Please", ",", "I", "have", "booked", "a", "room", "."]
         assert len(pretranslations[0]["alignment"]) > 0
     else:
-        assert pretranslations[0]["source_tokens"] == []
-        assert pretranslations[0]["translation_tokens"] == []
+        assert pretranslations[0]["sourceTokens"] == []
+        assert pretranslations[0]["translationTokens"] == []
         assert len(pretranslations[0]["alignment"]) == 0
     decoy.verify(env.translation_file_service.save_model(Path("model.tar.gz"), "models/save-model.tar.gz"), times=1)
 
@@ -131,8 +131,8 @@ class _TestEnvironment:
                             textId="text1",
                             refs=["ref1"],
                             translation="Por favor, tengo reservada una habitación.",
-                            source_tokens=[],
-                            translation_tokens=[],
+                            sourceTokens=[],
+                            translationTokens=[],
                             alignment="",
                         )
                     ]
