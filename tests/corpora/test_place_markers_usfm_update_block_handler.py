@@ -161,10 +161,10 @@ def test_trailing_empty_paragraphs() -> None:
     rows = [(scr_ref("MAT 1:1"), "New verse 1")]
     usfm = r"""\id MAT
 \c 1
-\v 1 Verse 1
+\v 1 \f embed 1 \f*Verse 1
 \p
 \b
-\q1 \f embed \f*
+\q1 \f embed 2 \f*
 """
 
     align_info = [
@@ -183,10 +183,10 @@ def test_trailing_empty_paragraphs() -> None:
     )
     result = r"""\id MAT
 \c 1
-\v 1 New verse 1
+\v 1 New verse 1 \f embed 1 \f*\f embed 2 \f*
 \p
 \b
-\q1 \f embed \f*
+\q1
 """
     assess(target, result)
 
@@ -415,6 +415,35 @@ def test_split_tokens() -> None:
 \v 1 words split
 \p words split
 \p words split
+"""
+    assess(target, result)
+
+
+def test_no_text() -> None:
+    rows = [(scr_ref("MAT 1:1"), "")]
+    usfm = r"""\id MAT
+\c 1
+\v 1 \w \w*
+"""
+
+    align_info = [
+        PlaceMarkersAlignmentInfo(
+            refs=["MAT 1:1"],
+            source_tokens=[],
+            translation_tokens=[],
+            alignment=to_word_alignment_matrix(""),
+        ),
+    ]
+    target = update_usfm(
+        rows,
+        usfm,
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+    )
+    result = r"""\id MAT
+\c 1
+\v 1  \w \w*
 """
     assess(target, result)
 

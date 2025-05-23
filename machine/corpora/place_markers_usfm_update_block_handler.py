@@ -73,6 +73,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         to_place = []
         adj_src_toks = []
         placed_elements = [elements.pop(0)] if elements[0].type == UsfmUpdateBlockElementType.OTHER else []
+        embed_elements = []
         ignored_elements = []
         for element in elements:
             if element.type == UsfmUpdateBlockElementType.TEXT:
@@ -90,8 +91,10 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                 else:
                     trg_sent += element.tokens[0].to_usfm()
 
-            if element.marked_for_removal or element.type == UsfmUpdateBlockElementType.EMBED:
+            if element.marked_for_removal:
                 ignored_elements.append(element)
+            elif element.type == UsfmUpdateBlockElementType.EMBED:
+                embed_elements.append(element)
             elif element.type in [UsfmUpdateBlockElementType.PARAGRAPH, UsfmUpdateBlockElementType.STYLE]:
                 to_place.append(element)
                 adj_src_toks.append(src_tok_idx)
@@ -110,7 +113,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
 
             to_insert.append((trg_str_idx, element))
         to_insert.sort(key=lambda x: x[0])
-        to_insert += [(len(trg_sent), element) for element in end_elements]
+        to_insert += [(len(trg_sent), element) for element in embed_elements + end_elements]
 
         # Construct new text tokens to put between markers
         # and reincorporate headers and empty end-of-verse paragraph markers
