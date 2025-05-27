@@ -100,8 +100,10 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                 adj_src_toks.append(src_tok_idx)
 
         trg_tok_starts = []
+        prev_len = 0
         for tok in trg_toks:
-            trg_tok_starts.append(trg_sent.index(tok, trg_tok_starts[-1] + 1 if len(trg_tok_starts) > 0 else 0))
+            trg_tok_starts.append(trg_sent.index(tok, trg_tok_starts[-1] + prev_len if len(trg_tok_starts) > 0 else 0))
+            prev_len = len(tok)
 
         # Predict marker placements and get insertion order
         to_insert = []

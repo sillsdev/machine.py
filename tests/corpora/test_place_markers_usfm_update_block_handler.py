@@ -448,6 +448,36 @@ def test_no_text() -> None:
     assess(target, result)
 
 
+def test_consecutive_substring() -> None:
+    rows = [(scr_ref("MAT 1:1"), "string ring")]
+    usfm = r"""\id MAT
+\c 1
+\v 1 string
+\p ring
+"""
+
+    align_info = [
+        PlaceMarkersAlignmentInfo(
+            refs=["MAT 1:1"],
+            source_tokens=["string", "ring"],
+            translation_tokens=["string", "ring"],
+            alignment=to_word_alignment_matrix("0-0 1-1"),
+        ),
+    ]
+    target = update_usfm(
+        rows,
+        usfm,
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+    )
+    result = r"""\id MAT
+\c 1
+\v 1 string
+\p ring
+"""
+    assess(target, result)
+
+
 def scr_ref(*refs: str) -> List[ScriptureRef]:
     return [ScriptureRef.parse(ref) for ref in refs]
 
