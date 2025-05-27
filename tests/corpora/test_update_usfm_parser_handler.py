@@ -1140,6 +1140,55 @@ def test_update_block_verse_section_header_in_verse() -> None:
     )
 
 
+def test_header_reference_paragraphs() -> None:
+    rows = [
+        (scr_ref("MAT 1:1"), "new verse 1"),
+        (scr_ref("MAT 1:2"), "new verse 2"),
+        (scr_ref("MAT 1:3"), "new verse 3"),
+        (scr_ref("MAT 2:1"), "new verse 1"),
+        (scr_ref("MAT 2:2"), "new verse 2"),
+    ]
+    usfm = r"""\id MAT
+\c 1
+\s1 beginning-of-chapter header
+\p
+\v 1 verse 1
+\s1 header between verses
+\p
+\v 2 verse 2
+\s1 mid-verse header
+\p more verse 2
+\v 3 verse 3
+\c 2
+\v 1 consecutive elements
+\s1 header
+\r reference
+\p
+\v 2 verse 2
+"""
+
+    target = update_usfm(rows, usfm, paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP)
+    result = r"""\id MAT
+\c 1
+\s1 beginning-of-chapter header
+\p
+\v 1 new verse 1
+\s1 header between verses
+\p
+\v 2 new verse 2
+\s1 mid-verse header
+\p
+\v 3 new verse 3
+\c 2
+\v 1 new verse 1
+\s1 header
+\r reference
+\p
+\v 2 new verse 2
+"""
+    assert_usfm_equals(target, result)
+
+
 def scr_ref(*refs: str) -> List[ScriptureRef]:
     return [ScriptureRef.parse(ref) for ref in refs]
 
