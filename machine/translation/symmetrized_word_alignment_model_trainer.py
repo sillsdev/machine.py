@@ -22,7 +22,11 @@ class SymmetrizedWordAlignmentModelTrainer(Trainer):
         check_canceled: Optional[Callable[[], None]] = None,
     ) -> None:
         reporter = PhasedProgressReporter(
-            progress, [Phase("Training direct alignment model"), Phase("Training inverse alignment model")]
+            progress,
+            [
+                Phase("Training direct alignment model", stage="train"),
+                Phase("Training inverse alignment model", stage="inference"),
+            ],
         )
 
         with reporter.start_next_phase() as phase_progress:
