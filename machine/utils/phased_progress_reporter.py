@@ -12,12 +12,12 @@ class Phase:
     message: Optional[str] = None
     percentage: float = 0
     report_steps: bool = True
-    stage: Optional[Literal["train", "inference"]] = None
+    stage: Optional[Literal["train", "train_truecaser", "inference"]] = None
 
 
 @dataclass(frozen=True)
 class PhaseProgressStatus(ProgressStatus):
-    phase_stage: Optional[Literal["train", "inference"]] = None
+    phase_stage: Optional[Literal["train", "train_truecaser", "inference"]] = None
     phase_step: Optional[int] = None
 
 

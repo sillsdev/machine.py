@@ -9,6 +9,7 @@ from clearml import Task
 from dynaconf.base import Settings
 
 from ..utils.canceled_error import CanceledError
+from ..utils.phased_progress_reporter import PhaseProgressStatus
 from ..utils.progress_status import ProgressStatus
 from .async_scheduler import AsyncScheduler
 
@@ -64,6 +65,17 @@ def get_clearml_progress_caller(
                 progress_info.last_progress_time = current_time
             progress_info.last_percent_completed = percent_completed
             progress_info.last_message = message
+            # Report the step within the phase
+            if isinstance(progress_status, PhaseProgressStatus):
+                if progress_status.phase_stage is not None:
+                    if progress_status.phase_step is not None:
+                        task.get_logger().report_single_value(
+                            name=f"{progress_status.phase_stage}_step", value=progress_status.phase_step
+                        )
+                    if progress_status.step_count is not None:
+                        task.get_logger().report_single_value(
+                            name=f"{progress_status.phase_stage}_step_count", value=progress_status.step_count
+                        )
 
     return clearml_progress
 
