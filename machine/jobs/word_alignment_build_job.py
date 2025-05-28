@@ -59,8 +59,8 @@ class WordAlignmentBuildJob:
 
     def _get_progress_reporter(self, progress: Optional[Callable[[ProgressStatus], None]]) -> PhasedProgressReporter:
         phases = [
-            Phase(message="Training Word Alignment model", percentage=0.9),
-            Phase(message="Aligning segments", percentage=0.1),
+            Phase(message="Training Word Alignment model", percentage=0.9, stage="train"),
+            Phase(message="Aligning segments", percentage=0.1, stage="inference"),
         ]
         return PhasedProgressReporter(progress, phases)
 
