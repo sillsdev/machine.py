@@ -178,6 +178,8 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
 
     def opt_break(self, state: UsfmParserState) -> None:
         super().opt_break(state)
+        if len(self._row_texts_stack) == 0:
+            return
         if self._text._include_markers:
             self._row_texts_stack[-1] += "//"
         elif self._current_text_type != ScriptureTextType.VERSE or state.is_verse_text:

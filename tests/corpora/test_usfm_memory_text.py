@@ -136,6 +136,22 @@ def test_get_rows_verse_para_comment_first() -> None:
     assert len(rows) == 2, str.join(",", [tr.text for tr in rows])
 
 
+def test_get_rows_opt_break_outside_of_segment() -> None:
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\c 1
+//
+\p
+\v 1 This is the first verse.
+""",
+        include_all_text=True,
+        include_markers=True,
+    )
+    assert len(rows) == 2, str.join(",", [tr.text for tr in rows])
+    assert rows[0].text == ""
+    assert rows[1].text == "This is the first verse."
+
+
 def get_rows(usfm: str, include_markers: bool = False, include_all_text: bool = False) -> List[TextRow]:
     text = UsfmMemoryText(
         UsfmStylesheet("usfm.sty"),
