@@ -235,6 +235,16 @@ def test_get_rows_include_markers_all_text() -> None:
     assert rows[27].text == "Here is some sidebar // content."
 
 
+def test_pre_header_paragraph() -> None:
+    corpus = UsfmFileTextCorpus(USFM_TEST_PROJECT_PATH, include_markers=True, include_all_text=True)
+
+    text = corpus.get_text("NAM")
+    assert text is not None
+    rows = list(text)
+
+    assert rows[2].text == "header"
+
+
 def test_get_rows_invalid_id() -> None:
     corpus = UsfmFileTextCorpus(USFM_INVALID_ID_PROJECT_PATH)
 
