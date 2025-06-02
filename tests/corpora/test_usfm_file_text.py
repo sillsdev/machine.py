@@ -157,7 +157,7 @@ def test_get_rows_include_markers() -> None:
     assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:1", corpus.versification)
     assert (
         rows[0].text
-        == "Chapter \\pn one\\+pro WON\\+pro*\\pn*, verse one.\\f + \\fr 1:1: \\ft This is a footnote for v1.\\f*"
+        == "Chapter \\pn one\\+pro WON\\+pro*\\pn*, verse one.\\f + \\fr 1:1: \\ft This is a footnote for v1.\\f* \\li1"
     )
 
     assert scripture_ref(rows[1]) == ScriptureRef.parse("MAT 1:2", corpus.versification)
@@ -185,23 +185,25 @@ def test_get_rows_include_markers() -> None:
     assert not rows[11].is_range_start
 
     assert scripture_ref(rows[12]) == ScriptureRef.parse("MAT 2:4b", corpus.versification)
-    assert rows[12].text == "Chapter two, verse four."
+    assert rows[12].text == "Chapter two, verse four. \\p"
 
     assert scripture_ref(rows[13]) == ScriptureRef.parse("MAT 2:5", corpus.versification)
     assert rows[13].text == "Chapter two, verse five \\rq (MAT 3:1)\\rq*."
 
     assert scripture_ref(rows[14]) == ScriptureRef.parse("MAT 2:6", corpus.versification)
-    assert rows[14].text == 'Chapter two, verse \\w six|strong="12345" \\w*.'
+    assert rows[14].text == 'Chapter two, verse \\w six|strong="12345" \\w*. \\p'
+
+    assert scripture_ref(rows[17]) == ScriptureRef.parse("MAT 2:8", corpus.versification)
+    assert rows[17].text == "This is a list: \\b \\tr \\tc1"
 
     assert scripture_ref(rows[18]) == ScriptureRef.parse("MAT 2:9", corpus.versification)
-    assert rows[18].text == "Chapter\\tcr2 2\\tc3 verse\\tcr4 9"
+    assert rows[18].text == "Chapter\\tcr2 2\\tc3 verse\\tcr4 9 \\tr \\tc1-2"
 
     assert scripture_ref(rows[19]) == ScriptureRef.parse("MAT 2:10", corpus.versification)
     assert rows[19].text == "\\tc3-4 Chapter 2 verse 10"
 
 
 def test_get_rows_include_markers_all_text() -> None:
-
     corpus = UsfmFileTextCorpus(USFM_TEST_PROJECT_PATH, include_markers=True, include_all_text=True)
 
     text = corpus.get_text("MAT")
@@ -216,7 +218,7 @@ def test_get_rows_include_markers_all_text() -> None:
     assert scripture_ref(rows[8]) == ScriptureRef.parse("MAT 1:1", corpus.versification)
     assert (
         rows[8].text
-        == "Chapter \\pn one\\+pro WON\\+pro*\\pn*, verse one.\\f + \\fr 1:1: \\ft This is a footnote for v1.\\f*"
+        == "Chapter \\pn one\\+pro WON\\+pro*\\pn*, verse one.\\f + \\fr 1:1: \\ft This is a footnote for v1.\\f* \\li1"
     )
 
     assert scripture_ref(rows[9]) == ScriptureRef.parse("MAT 1:2", corpus.versification)
