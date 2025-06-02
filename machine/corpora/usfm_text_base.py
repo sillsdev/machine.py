@@ -196,9 +196,10 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
             text = text.rstrip("\r\n")
             if len(text) > 0:
                 if not text.isspace():
-                    for token in self._next_para_tokens:
-                        row_text += str(token)
-                    self._next_para_tokens.clear()
+                    if self._current_text_type == ScriptureTextType.VERSE:
+                        for token in self._next_para_tokens:
+                            row_text += str(token) + " "
+                        self._next_para_tokens.clear()
                     self._next_para_text_started = True
                 if len(row_text) == 0 or row_text[-1].isspace():
                     text = text.lstrip()
@@ -222,6 +223,9 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
 
     def _end_verse_text(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:
         text = self._row_texts_stack.pop()
+        if self._text._include_markers:
+            for token in self._next_para_tokens:
+                text += str(token) + " "
         self._rows.extend(self._text._create_scripture_rows(scripture_refs, text, self._sentence_start))
         self._sentence_start = (state.token and state.token.marker == "c") or has_sentence_ending(text)
 
