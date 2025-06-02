@@ -170,7 +170,7 @@ def test_trailing_empty_paragraphs() -> None:
     align_info = [
         PlaceMarkersAlignmentInfo(
             refs=["MAT 1:1"],
-            source_tokens=["Verse" "1"],
+            source_tokens=["Verse", "1"],
             translation_tokens=["New", "verse", "1"],
             alignment=to_word_alignment_matrix("0-1 1-2"),
         ),
