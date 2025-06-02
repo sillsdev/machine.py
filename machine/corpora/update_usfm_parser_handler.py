@@ -5,10 +5,11 @@ from .scripture_ref import ScriptureRef
 from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler, ScriptureTextType
 from .usfm_parser_state import UsfmParserState
 from .usfm_stylesheet import UsfmStylesheet
+from .usfm_tag import UsfmTextType
 from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
 from .usfm_tokenizer import UsfmTokenizer
 from .usfm_update_block import UsfmUpdateBlock
-from .usfm_update_block_element import UsfmUpdateBlockElementType
+from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
 from .usfm_update_block_handler import UsfmUpdateBlockHandler
 
 
@@ -93,12 +94,12 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         unknown: bool,
         attributes: Optional[Sequence[UsfmAttribute]],
     ) -> None:
-        if (
-            state.is_verse_text
-            and (self._has_new_text() or self._text_behavior == UpdateUsfmTextBehavior.STRIP_EXISTING)
-            and self._paragraph_behavior == UpdateUsfmMarkerBehavior.STRIP
-        ):
-            self._skip_updatable_tokens(state)
+        if state.is_verse_text:
+            # Only strip paragraph markers in a verse
+            if self._paragraph_behavior == UpdateUsfmMarkerBehavior.PRESERVE:
+                self._collect_updatable_tokens(state)
+            else:
+                self._skip_updatable_tokens(state)
         else:
             self._collect_updatable_tokens(state)
 
@@ -159,6 +160,12 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         pub_number: str,
     ) -> None:
         self._use_updated_text()
+
+        # Ensure that a paragraph that contains a verse is not marked for removal
+        if len(self._update_block_stack) > 0:
+            last_paragraph = self._update_block_stack[-1].get_last_paragraph()
+            if last_paragraph is not None:
+                last_paragraph.marked_for_removal = False
 
         super().verse(state, number, marker, alt_number, pub_number)
 
@@ -245,16 +252,17 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
             self._collect_updatable_tokens(state)
 
     def _start_verse_text(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:
+        self._collect_updatable_tokens(state)
         self._start_update_block(scripture_refs)
 
     def _end_verse_text(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:
-        self._end_update_block(scripture_refs)
+        self._end_update_block(state, scripture_refs)
 
     def _start_non_verse_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
         self._start_update_block([scripture_ref])
 
     def _end_non_verse_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
-        self._end_update_block([scripture_ref])
+        self._end_update_block(state, [scripture_ref])
 
     def _end_embed_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
         self._update_block_stack[-1].add_embed(
@@ -365,20 +373,29 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         row_texts: List[str] = self._advance_rows(scripture_refs)
         self._push_updated_text([UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in row_texts])
 
-    def _end_update_block(self, scripture_refs: Sequence[ScriptureRef]) -> None:
+    def _end_update_block(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:
         self._use_updated_text()
         self._pop_new_tokens()
         update_block = self._update_block_stack.pop()
         update_block.update_refs(scripture_refs)
+
+        # Strip off any non-verse paragraphs that are at the end of the update block
+        para_elems: list[UsfmUpdateBlockElement] = []
+        while len(update_block.elements) > 0 and _is_nonverse_paragraph(state, update_block.elements[-1]):
+            para_elems.append(update_block.pop())
+
         for handler in self._update_block_handlers:
             update_block = handler.process_block(update_block)
+        tokens = update_block.get_tokens()
+        for elem in reversed(para_elems):
+            tokens.extend(elem.get_tokens())
         if (
             len(self._update_block_stack) > 0
             and self._update_block_stack[-1].elements[-1].type == UsfmUpdateBlockElementType.PARAGRAPH
         ):
-            self._update_block_stack[-1].extend_last_element(update_block.get_tokens())
+            self._update_block_stack[-1].extend_last_element(tokens)
         else:
-            self._tokens.extend(update_block.get_tokens())
+            self._tokens.extend(tokens)
 
     def _push_updated_text(self, tokens: List[UsfmToken]) -> None:
         self._replace_stack.append(any(tokens))
@@ -398,3 +415,13 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
 
     def _is_in_preserved_paragraph(self, state: UsfmParserState) -> bool:
         return state.para_tag is not None and state.para_tag.marker in self._preserve_paragraph_styles
+
+
+def _is_nonverse_paragraph(state: UsfmParserState, element: UsfmUpdateBlockElement) -> bool:
+    if element.type != UsfmUpdateBlockElementType.PARAGRAPH:
+        return False
+    para_token = element.tokens[0]
+    if para_token.marker is None:
+        return False
+    para_tag = state.stylesheet.get_tag(para_token.marker)
+    return para_tag.text_type != UsfmTextType.VERSE_TEXT and para_tag.text_type != UsfmTextType.NOT_SPECIFIED
