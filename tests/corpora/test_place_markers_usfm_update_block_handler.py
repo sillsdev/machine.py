@@ -201,14 +201,17 @@ def test_headers() -> None:
     usfm = r"""\id MAT
 \c 1
 \s1 Start of chapter header
+\p
 \v 1 A
 \p B
 \s1 Mid-verse header
 \p C
-\s1 End of verse header
+\s1 Header between verse text and empty end-of-verse paragraphs
 \p
 \p
-\s1 Header after all paragraphs
+\p
+\s1 Header after all verse paragraphs
+\p
 \v 2 A
 \s1 Header followed by a reference
 \r (reference)
@@ -240,14 +243,17 @@ def test_headers() -> None:
     result = r"""\id MAT
 \c 1
 \s1 Start of chapter header
+\p
 \v 1 X
 \p Y
 \s1 Mid-verse header
 \p Z
-\s1 End of verse header
+\s1 Header between verse text and empty end-of-verse paragraphs
 \p
 \p
-\s1 Header after all paragraphs
+\p
+\s1 Header after all verse paragraphs
+\p
 \v 2 X
 \s1 Header followed by a reference
 \r (reference)
@@ -474,6 +480,44 @@ def test_consecutive_substring() -> None:
 \c 1
 \v 1 string
 \p ring
+"""
+    assess(target, result)
+
+
+def test_verses_out_of_order() -> None:
+    rows = [(scr_ref("MAT 1:1"), "new verse 1 new paragraph 2"), (scr_ref("MAT 1:2"), "new verse 2")]
+    usfm = r"""\id MAT
+\c 1
+\v 2 verse 2
+\v 1 verse 1
+\p paragraph 2
+"""
+
+    align_info = [
+        PlaceMarkersAlignmentInfo(
+            refs=["MAT 1:1"],
+            source_tokens=["verse", "1", "paragraph", "2"],
+            translation_tokens=["new", "verse", "1", "new", "paragraph", "2"],
+            alignment=to_word_alignment_matrix("0-1 1-2 2-4 3-5"),
+        ),
+        PlaceMarkersAlignmentInfo(
+            refs=["MAT 1:2"],
+            source_tokens=["verse", "2"],
+            translation_tokens=["new", "verse", "2"],
+            alignment=to_word_alignment_matrix("0-1 1-2"),
+        ),
+    ]
+    target = update_usfm(
+        rows,
+        usfm,
+        text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING,
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+    )
+    result = r"""\id MAT
+\c 1
+\v 2 new verse 2
+\v 1
+\p
 """
     assess(target, result)
 
