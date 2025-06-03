@@ -485,19 +485,20 @@ def test_consecutive_substring() -> None:
 
 
 def test_verses_out_of_order() -> None:
-    rows = [(scr_ref("MAT 1:1"), "new verse 1"), (scr_ref("MAT 1:2"), "new verse 2")]
+    rows = [(scr_ref("MAT 1:1"), "new verse 1 new paragraph 2"), (scr_ref("MAT 1:2"), "new verse 2")]
     usfm = r"""\id MAT
 \c 1
 \v 2 verse 2
 \v 1 verse 1
+\p paragraph 2
 """
 
     align_info = [
         PlaceMarkersAlignmentInfo(
             refs=["MAT 1:1"],
-            source_tokens=["verse", "1"],
-            translation_tokens=["new", "verse", "1"],
-            alignment=to_word_alignment_matrix("0-1 1-2"),
+            source_tokens=["verse", "1", "paragraph", "2"],
+            translation_tokens=["new", "verse", "1", "new", "paragraph", "2"],
+            alignment=to_word_alignment_matrix("0-1 1-2 2-4 3-5"),
         ),
         PlaceMarkersAlignmentInfo(
             refs=["MAT 1:2"],
@@ -516,6 +517,7 @@ def test_verses_out_of_order() -> None:
 \c 1
 \v 2 new verse 2
 \v 1
+\p
 """
     assess(target, result)
 
