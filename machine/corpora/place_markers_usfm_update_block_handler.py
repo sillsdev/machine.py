@@ -72,7 +72,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         trg_sent = ""
         to_place = []
         adj_src_toks = []
-        placed_elements = [elements.pop(0)] if elements[0].type == UsfmUpdateBlockElementType.OTHER else []
+        placed_elements = []
         embed_elements = []
         ignored_elements = []
         for element in elements:
@@ -98,6 +98,9 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
             elif element.type in [UsfmUpdateBlockElementType.PARAGRAPH, UsfmUpdateBlockElementType.STYLE]:
                 to_place.append(element)
                 adj_src_toks.append(src_tok_idx)
+
+        if len(trg_sent.strip()) == 0:
+            return block
 
         trg_tok_starts = []
         prev_len = 0
