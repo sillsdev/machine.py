@@ -117,7 +117,7 @@ class QuotationMarkStringMatch:
         return self.does_next_character_match(self.whitespace_pattern)
 
     def has_leading_punctuation(self) -> bool:
-        return self.does_next_character_match(self.punctuation_pattern)
+        return self.does_previous_character_match(self.punctuation_pattern)
 
     def has_trailing_punctuation(self) -> bool:
         return self.does_next_character_match(self.punctuation_pattern)
@@ -138,7 +138,7 @@ class QuotationMarkStringMatch:
         return self.does_leading_substring_match(self.quote_introducer_pattern)
 
     def has_leading_closing_quotation_mark(self, quote_convention_set: QuoteConventionSet) -> bool:
-        return self.does_previous_character_match(quote_convention_set.get_opening_quotation_mark_regex())
+        return self.does_previous_character_match(quote_convention_set.get_closing_quotation_mark_regex())
 
     def has_trailing_closing_quotation_mark(self, quote_convention_set: QuoteConventionSet) -> bool:
         return self.does_next_character_match(quote_convention_set.get_closing_quotation_mark_regex())

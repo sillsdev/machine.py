@@ -28,10 +28,8 @@ from .place_markers_usfm_update_block_handler import PlaceMarkersAlignmentInfo, 
 from .quotation_denormalization_action import QuotationDenormalizationAction
 from .quotation_denormalization_first_pass import QuotationDenormalizationFirstPass
 from .quotation_denormalization_resolution_settings import QuotationDenormalizationResolutionSettings
-from .quotation_denormalization_scripture_update_block_handler import (
-    QuotationDenormalizationScriptureUpdateBlockHandler,
-)
 from .quotation_denormalization_settings import QuotationDenormalizationSettings
+from .quotation_denormalization_usfm_update_block_handler import QuotationDenormalizationUsfmUpdateBlockHandler
 from .scripture_element import ScriptureElement
 from .scripture_ref import EMPTY_SCRIPTURE_REF, ScriptureRef
 from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler, ScriptureTextType
@@ -127,7 +125,7 @@ __all__ = [
     "parse_usfm",
     "QuotationDenormalizationAction",
     "QuotationDenormalizationFirstPass",
-    "QuotationDenormalizationScriptureUpdateBlockHandler",
+    "QuotationDenormalizationUsfmUpdateBlockHandler",
     "QuotationDenormalizationResolutionSettings",
     "QuotationDenormalizationSettings",
     "RtlReferenceOrder",

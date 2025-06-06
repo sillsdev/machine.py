@@ -46,7 +46,7 @@ class QuotationDenormalizationFirstPass(UsfmStructureExtractor):
                 return False
         return True
 
-    def get_best_actions_by_chapter(self, usfm_text: str) -> List[QuotationDenormalizationAction]:
+    def get_best_actions_by_chapter(self) -> List[QuotationDenormalizationAction]:
         best_actions_by_chapter: List[QuotationDenormalizationAction] = []
 
         for chapter in self.get_chapters():
@@ -67,7 +67,6 @@ class QuotationDenormalizationFirstPass(UsfmStructureExtractor):
         return self._choose_best_action_based_on_observed_issues(self._quotation_mark_resolver.get_issues())
 
     def _choose_best_action_based_on_observed_issues(self, issues) -> QuotationDenormalizationAction:
-        print(issues)
         if QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK in issues:
             return QuotationDenormalizationAction.SKIP
 
