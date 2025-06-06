@@ -31,12 +31,14 @@ class QuoteConventionSet:
 
             if len(all_quotation_marks) > 0:
                 self.opening_quotation_mark_regex: Pattern = regex.compile(
-                    r"[" + "".join(opening_quotation_marks) + "]"
+                    r"[" + "".join(sorted(list(opening_quotation_marks))) + "]"
                 )
                 self.closing_quotation_mark_regex: Pattern = regex.compile(
-                    r"[" + "".join(closing_quotation_marks) + "]"
+                    r"[" + "".join(sorted(list(closing_quotation_marks))) + "]"
                 )
-                self.all_quotation_mark_regex: Pattern = regex.compile(r"[" + "".join(all_quotation_marks) + "]")
+                self.all_quotation_mark_regex: Pattern = regex.compile(
+                    r"[" + "".join(sorted(list(all_quotation_marks))) + "]"
+                )
 
         if len(opening_quotation_marks) == 0:
             self.opening_quotation_mark_regex = regex.compile(r"")
@@ -65,20 +67,20 @@ class QuoteConventionSet:
                 return convention
         return None
 
+    def get_all_quote_convention_names(self) -> List[str]:
+        return sorted([qc.name for qc in self.conventions])
+
     def get_possible_opening_marks(self) -> list[str]:
-        return list(self.closing_marks_by_opening_mark.keys())
+        return sorted(list(self.closing_marks_by_opening_mark.keys()))
 
     def get_possible_closing_marks(self) -> list[str]:
-        return list(self.opening_marks_by_closing_mark.keys())
+        return sorted(list(self.opening_marks_by_closing_mark.keys()))
 
     def is_valid_opening_quotation_mark(self, quotation_mark: str) -> bool:
         return quotation_mark in self.closing_marks_by_opening_mark
 
     def is_valid_closing_quotation_mark(self, quotation_mark: str) -> bool:
-        for closing_mark_set in self.closing_marks_by_opening_mark.values():
-            if quotation_mark in closing_mark_set:
-                return True
-        return False
+        return quotation_mark in self.opening_marks_by_closing_mark
 
     def are_marks_a_valid_pair(self, opening_mark: str, closing_mark: str) -> bool:
         return (opening_mark in self.closing_marks_by_opening_mark) and (

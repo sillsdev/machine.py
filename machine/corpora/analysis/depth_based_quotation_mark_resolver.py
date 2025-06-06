@@ -227,9 +227,7 @@ class DepthBasedQuotationMarkResolver(QuotationMarkResolver):
         # if the quote convention is ambiguous, use whitespace as a clue
         if self._settings.is_valid_opening_quotation_mark(match):
             return (
-                match.has_trailing_whitespace()
-                or match.has_trailing_punctuation()
-                # or match.has_trailing_closing_quotation_mark(self._possible_quote_convention_set)
+                match.has_trailing_whitespace() or match.has_trailing_punctuation() or match.is_at_end_of_segment()
             ) and not match.has_leading_whitespace()
         return True
 

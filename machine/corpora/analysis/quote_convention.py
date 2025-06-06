@@ -61,7 +61,7 @@ class QuoteConvention:
         return self.levels[level - 1].get_closing_quote()
 
     def get_expected_quotation_mark(self, depth: int, direction: QuotationMarkDirection) -> str:
-        if depth > len(self.levels):
+        if depth > len(self.levels) or depth < 1:
             return ""
         return (
             self.get_opening_quote_at_level(depth)
