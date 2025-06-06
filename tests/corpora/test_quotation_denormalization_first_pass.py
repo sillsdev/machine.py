@@ -526,7 +526,7 @@ def run_quotation_denormalization_first_pass(
     first_pass_analyzer = QuotationDenormalizationFirstPass(source_quote_convention, target_quote_convention)
     parse_usfm(normalized_usfm, first_pass_analyzer)
 
-    return first_pass_analyzer.get_best_actions_by_chapter(normalized_usfm)
+    return first_pass_analyzer.get_best_actions_by_chapter()
 
 
 def run_quotation_denormalization_first_pass_on_chapter(

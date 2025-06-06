@@ -35,10 +35,10 @@ class TextSegment:
         return len(self.text)
 
     def substring_before(self, index: int) -> str:
-        return self.text[0:index]
+        return self.text[:index]
 
     def substring_after(self, index: int) -> str:
-        return self.text[index:-1]
+        return self.text[index:]
 
     def get_immediate_preceding_marker_type(self) -> UsfmMarkerType:
         return self.immediate_preceding_marker
