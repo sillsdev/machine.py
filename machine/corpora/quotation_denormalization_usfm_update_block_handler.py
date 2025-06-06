@@ -54,9 +54,11 @@ class QuotationDenormalizationUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         )
         self._current_denormalization_action = QuotationDenormalizationAction.APPLY_FULL
         self._current_chapter_number: int = 0
+        self._current_verse_number: int = 0
 
     def process_block(self, block: UsfmUpdateBlock) -> UsfmUpdateBlock:
         self._check_for_chapter_change(block)
+        self._check_for_verse_change(block)
         if self._current_denormalization_action is QuotationDenormalizationAction.SKIP:
             return block
         if self._current_denormalization_action is QuotationDenormalizationAction.APPLY_BASIC:
@@ -134,3 +136,15 @@ class QuotationDenormalizationUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         self._verse_text_quotation_mark_resolver.reset()
         self._next_scripture_text_segment_builder = TextSegment.Builder()
         self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.ChapterMarker)
+
+    def _check_for_verse_change(self, block: UsfmUpdateBlock) -> None:
+        for scripture_ref in block.refs:
+            if (
+                scripture_ref.chapter_num == self._current_chapter_number
+                and scripture_ref.verse_num != self._current_verse_number
+            ):
+                self._current_verse_number = scripture_ref.verse_num
+                self._start_new_verse(self._current_verse_number)
+
+    def _start_new_verse(self, new_chapter_number: int) -> None:
+        self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.VerseMarker)

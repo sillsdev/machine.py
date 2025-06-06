@@ -45,6 +45,15 @@ class UsfmUpdateBlock:
     def update_refs(self, refs: Iterable[ScriptureRef]) -> None:
         self._refs = list(refs)
 
+    def get_last_paragraph(self) -> UsfmUpdateBlockElement | None:
+        for element in reversed(self._elements):
+            if element.type == UsfmUpdateBlockElementType.PARAGRAPH:
+                return element
+        return None
+
+    def pop(self) -> UsfmUpdateBlockElement:
+        return self._elements.pop()
+
     def get_tokens(self) -> list[UsfmToken]:
         return [token for element in self._elements for token in element.get_tokens()]
 
