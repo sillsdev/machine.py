@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Callable, ContextManager, Iterable, Literal, Optional, Sequence, Type
+from typing import Callable, ContextManager, Iterable, Optional, Sequence, Type
 
 from .progress_status import ProgressStatus
 
@@ -12,12 +12,12 @@ class Phase:
     message: Optional[str] = None
     percentage: float = 0
     report_steps: bool = True
-    stage: Optional[Literal["train", "inference"]] = None
+    stage: Optional[str] = None
 
 
 @dataclass(frozen=True)
 class PhaseProgressStatus(ProgressStatus):
-    phase_stage: Optional[Literal["train", "inference"]] = None
+    phase_stage: Optional[str] = None
     phase_step: Optional[int] = None
 
 
