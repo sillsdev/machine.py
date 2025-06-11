@@ -69,7 +69,10 @@ def run(args: dict) -> None:
         if scheduler is not None and task is not None:
             scheduler.schedule(
                 update_runtime_properties(
-                    task.id, task.session.host, task.session.token, create_runtime_properties(task, 100, "Completed")
+                    task.id,
+                    task.session.host,
+                    task.session.token,
+                    create_runtime_properties(task, 100, "Completed", None),
                 )
             )
             task.get_logger().report_single_value(name="train_corpus_size", value=train_corpus_size)
