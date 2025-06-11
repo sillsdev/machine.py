@@ -31,9 +31,9 @@ class SmtEngineBuildJob(TranslationEngineBuildJob):
         self, progress: Optional[Callable[[ProgressStatus], None]], corpus_size: int
     ) -> PhasedProgressReporter:
         phases = [
-            Phase(message="Training SMT model", percentage=0.85),
+            Phase(message="Training SMT model", percentage=0.85, stage="train"),
             Phase(message="Training truecaser", percentage=0.05),
-            Phase(message="Pretranslating segments", percentage=0.1),
+            Phase(message="Pretranslating segments", percentage=0.1, stage="inference"),
         ]
         return PhasedProgressReporter(progress, phases)
 
