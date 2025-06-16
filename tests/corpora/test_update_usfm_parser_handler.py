@@ -1213,6 +1213,28 @@ def test_header_reference_paragraphs() -> None:
     assert_usfm_equals(target, result)
 
 
+def test_pass_remark():
+    rows = [
+        (
+            scr_ref("MAT 1:1"),
+            str("Update 1"),
+        ),
+    ]
+    usfm = r"""\id MAT
+\c 1
+\v 1 This is a verse
+"""
+
+    target = update_usfm(rows, usfm, text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING, remarks=["An added remark"])
+    result = r"""\id MAT
+\rem An added remark
+\c 1
+\v 1 Update 1
+"""
+
+    assert_usfm_equals(target, result)
+
+
 def scr_ref(*refs: str) -> List[ScriptureRef]:
     return [ScriptureRef.parse(ref) for ref in refs]
 
@@ -1227,6 +1249,7 @@ def update_usfm(
     style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
     preserve_paragraph_styles: Optional[Iterable[str]] = None,
     update_block_handlers: Optional[Iterable[UsfmUpdateBlockHandler]] = None,
+    remarks: Optional[Iterable[str]] = None,
 ) -> Optional[str]:
     if source is None:
         updater = FileParatextProjectTextUpdater(USFM_TEST_PROJECT_PATH)
@@ -1240,6 +1263,7 @@ def update_usfm(
             style_behavior,
             preserve_paragraph_styles,
             update_block_handlers,
+            remarks,
         )
     else:
         source = source.strip().replace("\r\n", "\n") + "\r\n"
@@ -1252,6 +1276,7 @@ def update_usfm(
             style_behavior,
             preserve_paragraph_styles,
             update_block_handlers,
+            remarks,
         )
         parse_usfm(source, updater)
         return updater.get_usfm()

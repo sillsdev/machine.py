@@ -82,7 +82,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
             start_book_tokens.append(UsfmToken(UsfmTokenType.TEXT, text=self._id_text + " "))
         for remark in self._remarks:
             start_book_tokens.append(UsfmToken(UsfmTokenType.PARAGRAPH, "rem"))
-            start_book_tokens.append(UsfmToken(UsfmTokenType.TEXT, remark))
+            start_book_tokens.append(UsfmToken(UsfmTokenType.TEXT, text=remark))
         self._push_updated_text(start_book_tokens)
 
         super().start_book(state, marker, code)
