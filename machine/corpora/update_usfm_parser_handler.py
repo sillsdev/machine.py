@@ -35,6 +35,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
         preserve_paragraph_styles: Optional[Union[Iterable[str], str]] = None,
         update_block_handlers: Optional[Iterable[UsfmUpdateBlockHandler]] = None,
+        remarks: Optional[Iterable[str]] = None,
     ) -> None:
         super().__init__()
         self._rows = rows or []
@@ -53,6 +54,10 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
             self._preserve_paragraph_styles = set([preserve_paragraph_styles])
         else:
             self._preserve_paragraph_styles = set(preserve_paragraph_styles)
+        if remarks is None:
+            self._remarks = []
+        else:
+            self._remarks = list(remarks)
         self._text_behavior = text_behavior
         self._paragraph_behavior = paragraph_behavior
         self._embed_behavior = embed_behavior
@@ -75,6 +80,9 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         start_book_tokens: List[UsfmToken] = []
         if self._id_text is not None:
             start_book_tokens.append(UsfmToken(UsfmTokenType.TEXT, text=self._id_text + " "))
+        for remark in self._remarks:
+            start_book_tokens.append(UsfmToken(UsfmTokenType.PARAGRAPH, "rem"))
+            start_book_tokens.append(UsfmToken(UsfmTokenType.TEXT, remark))
         self._push_updated_text(start_book_tokens)
 
         super().start_book(state, marker, code)
