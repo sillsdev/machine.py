@@ -55,8 +55,6 @@ def run(args: dict) -> None:
             except TypeError as e:
                 raise TypeError(f"Build options could not be parsed: {e}") from e
             SETTINGS.update({model_type: build_options})
-            if "align_pretranslations" in build_options:
-                SETTINGS.update({"align_pretranslations": build_options["align_pretranslations"]})
         SETTINGS.data_dir = os.path.expanduser(cast(str, SETTINGS.data_dir))
 
         logger.info(f"Config: {SETTINGS.as_dict()}")
