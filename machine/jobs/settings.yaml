@@ -3,7 +3,7 @@ default:
   shared_file_uri: s3:/silnlp/
   shared_file_folder: production
   inference_batch_size: 1024
-  align_pretranslations: false
+  align_pretranslations: true
   huggingface:
     parent_model_name: facebook/nllb-200-distilled-1.3B
     train_params:
