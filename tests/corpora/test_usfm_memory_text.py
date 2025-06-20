@@ -171,6 +171,25 @@ def test_get_rows_paragraph_before_nonverse_paragraph() -> None:
     assert rows[2].text == "header"
 
 
+def test_get_rows_style_starting_nonverse_paragraph_after_empty_paragraph() -> None:
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\c 1
+\p
+\v 1 verse 1
+\b
+\s1 \w header\w*
+\q1
+\v 2 verse 2
+""",
+        include_all_text=True,
+        include_markers=True,
+    )
+    assert len(rows) == 4, str.join(",", [tr.text for tr in rows])
+    assert rows[1].text == "verse 1 \\b \\q1"
+    assert rows[2].text == "\\w header\\w*"
+
+
 def get_rows(usfm: str, include_markers: bool = False, include_all_text: bool = False) -> List[TextRow]:
     text = UsfmMemoryText(
         UsfmStylesheet("usfm.sty"),
