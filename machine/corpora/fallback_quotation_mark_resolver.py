@@ -8,7 +8,7 @@ from .analysis.quotation_mark_resolver import QuotationMarkResolver
 from .analysis.quotation_mark_string_match import QuotationMarkStringMatch
 
 
-class BasicQuotationMarkResolver(QuotationMarkResolver):
+class FallbackQuotationMarkResolver(QuotationMarkResolver):
 
     def __init__(self, settings: QuotationMarkResolutionSettings):
         self._settings: QuotationMarkResolutionSettings = settings

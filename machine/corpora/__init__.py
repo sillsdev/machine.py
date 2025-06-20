@@ -2,12 +2,12 @@ from .aligned_word_pair import AlignedWordPair
 from .alignment_collection import AlignmentCollection
 from .alignment_corpus import AlignmentCorpus
 from .alignment_row import AlignmentRow
-from .basic_quotation_mark_resolver import BasicQuotationMarkResolver
 from .corpora_utils import batch
 from .corpus import Corpus
 from .dbl_bundle_text_corpus import DblBundleTextCorpus
 from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .dictionary_text_corpus import DictionaryTextCorpus
+from .fallback_quotation_mark_resolver import FallbackQuotationMarkResolver
 from .file_paratext_project_settings_parser import FileParatextProjectSettingsParser
 from .file_paratext_project_text_updater import FileParatextProjectTextUpdater
 from .flatten import flatten
@@ -25,11 +25,13 @@ from .paratext_project_terms_parser_base import ParatextProjectTermsParserBase
 from .paratext_project_text_updater_base import ParatextProjectTextUpdaterBase
 from .paratext_text_corpus import ParatextTextCorpus
 from .place_markers_usfm_update_block_handler import PlaceMarkersAlignmentInfo, PlaceMarkersUsfmUpdateBlockHandler
-from .quotation_denormalization_action import QuotationDenormalizationAction
 from .quotation_denormalization_first_pass import QuotationDenormalizationFirstPass
-from .quotation_denormalization_resolution_settings import QuotationDenormalizationResolutionSettings
-from .quotation_denormalization_settings import QuotationDenormalizationSettings
 from .quotation_denormalization_usfm_update_block_handler import QuotationDenormalizationUsfmUpdateBlockHandler
+from .quotation_mark_update_first_pass import QuotationMarkUpdateFirstPass
+from .quotation_mark_update_resolution_settings import QuotationMarkUpdateResolutionSettings
+from .quotation_mark_update_settings import QuotationMarkUpdateSettings
+from .quotation_mark_update_strategy import QuotationMarkUpdateStrategy
+from .quote_convention_changing_usfm_update_block_handler import QuoteConventionChangingUsfmUpdateBlockHandler
 from .scripture_element import ScriptureElement
 from .scripture_ref import EMPTY_SCRIPTURE_REF, ScriptureRef
 from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler, ScriptureTextType
@@ -87,7 +89,7 @@ __all__ = [
     "AlignmentCollection",
     "AlignmentCorpus",
     "AlignmentRow",
-    "BasicQuotationMarkResolver",
+    "FallbackQuotationMarkResolver",
     "batch",
     "Corpus",
     "create_versification_ref_corpus",
@@ -123,11 +125,13 @@ __all__ = [
     "PlaceMarkersAlignmentInfo",
     "PlaceMarkersUsfmUpdateBlockHandler",
     "parse_usfm",
-    "QuotationDenormalizationAction",
+    "QuoteConventionChangingUsfmUpdateBlockHandler",
+    "QuotationMarkUpdateResolutionSettings",
+    "QuotationMarkUpdateStrategy",
+    "QuotationMarkUpdateFirstPass",
     "QuotationDenormalizationFirstPass",
     "QuotationDenormalizationUsfmUpdateBlockHandler",
-    "QuotationDenormalizationResolutionSettings",
-    "QuotationDenormalizationSettings",
+    "QuotationMarkUpdateSettings",
     "RtlReferenceOrder",
     "ScriptureElement",
     "ScriptureRef",

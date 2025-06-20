@@ -48,6 +48,20 @@ class QuoteConvention:
         self.name = name
         self.levels = levels
 
+    def __eq__(self, value):
+        if not isinstance(value, QuoteConvention):
+            return False
+        if self.name != value.name:
+            return False
+        if len(self.levels) != len(value.levels):
+            return False
+        for level, other_level in zip(self.levels, value.levels):
+            if level.get_opening_quote() != other_level.get_opening_quote():
+                return False
+            if level.get_closing_quote() != other_level.get_closing_quote():
+                return False
+        return True
+
     def get_name(self) -> str:
         return self.name
 
