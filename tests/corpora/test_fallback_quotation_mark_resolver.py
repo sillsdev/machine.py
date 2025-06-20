@@ -1,4 +1,4 @@
-from machine.corpora import BasicQuotationMarkResolver, QuotationDenormalizationResolutionSettings
+from machine.corpora import FallbackQuotationMarkResolver, QuotationMarkUpdateResolutionSettings
 from machine.corpora.analysis import (
     QuotationMarkDirection,
     QuotationMarkMetadata,
@@ -17,8 +17,8 @@ def test_reset():
     )
     assert english_quote_convention is not None
 
-    basic_quotation_mark_resolver = BasicQuotationMarkResolver(
-        QuotationDenormalizationResolutionSettings(english_quote_convention, english_quote_convention)
+    basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
+        QuotationMarkUpdateResolutionSettings(english_quote_convention, english_quote_convention)
     )
 
     basic_quotation_mark_resolver._last_quotation_mark = QuotationMarkMetadata(
@@ -37,8 +37,8 @@ def test_simple_quotation_mark_resolution():
     )
     assert english_quote_convention is not None
 
-    basic_quotation_mark_resolver = BasicQuotationMarkResolver(
-        QuotationDenormalizationResolutionSettings(english_quote_convention, english_quote_convention)
+    basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
+        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize(), english_quote_convention)
     )
 
     actual_resolved_quotation_marks = list(
@@ -70,8 +70,8 @@ def test_is_opening_quote():
     )
     assert english_quote_convention is not None
 
-    basic_quotation_mark_resolver = BasicQuotationMarkResolver(
-        QuotationDenormalizationResolutionSettings(english_quote_convention, english_quote_convention)
+    basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
+        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize(), english_quote_convention)
     )
 
     # valid opening quote at start of segment
@@ -113,7 +113,7 @@ def test_is_opening_quote_with_unambiguous_quote_convention():
     )
     assert english_quote_convention is not None
 
-    basic_quotation_mark_resolver = BasicQuotationMarkResolver(
+    basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
         QuoteConventionDetectionResolutionSettings(QuoteConventionSet([english_quote_convention]))
     )
 
@@ -140,8 +140,8 @@ def test_is_opening_quote_stateful():
     )
     assert english_quote_convention is not None
 
-    basic_quotation_mark_resolver = BasicQuotationMarkResolver(
-        QuotationDenormalizationResolutionSettings(english_quote_convention, english_quote_convention)
+    basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
+        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize(), english_quote_convention)
     )
 
     # no preceding quote
@@ -161,8 +161,8 @@ def test_does_most_recent_opening_mark_immediately_precede():
     )
     assert english_quote_convention is not None
 
-    basic_quotation_mark_resolver = BasicQuotationMarkResolver(
-        QuotationDenormalizationResolutionSettings(english_quote_convention, english_quote_convention)
+    basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
+        QuotationMarkUpdateResolutionSettings(english_quote_convention, english_quote_convention)
     )
 
     # no preceding quote
@@ -201,8 +201,8 @@ def test_is_closing_quote():
     )
     assert english_quote_convention is not None
 
-    basic_quotation_mark_resolver = BasicQuotationMarkResolver(
-        QuotationDenormalizationResolutionSettings(english_quote_convention, english_quote_convention)
+    basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
+        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize(), english_quote_convention)
     )
 
     # valid closing quote at end of segment
@@ -244,7 +244,7 @@ def test_is_closing_quote_with_unambiguous_quote_convention():
     )
     assert english_quote_convention is not None
 
-    basic_quotation_mark_resolver = BasicQuotationMarkResolver(
+    basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
         QuoteConventionDetectionResolutionSettings(QuoteConventionSet([english_quote_convention]))
     )
 
@@ -271,8 +271,8 @@ def test_resolve_opening_quote():
     )
     assert english_quote_convention is not None
 
-    basic_quotation_mark_resolver = BasicQuotationMarkResolver(
-        QuotationDenormalizationResolutionSettings(english_quote_convention, english_quote_convention)
+    basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
+        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize(), english_quote_convention)
     )
 
     expected_resolved_quotation_mark = QuotationMarkMetadata(
@@ -291,8 +291,8 @@ def test_resolve_closing_quote():
     )
     assert english_quote_convention is not None
 
-    basic_quotation_mark_resolver = BasicQuotationMarkResolver(
-        QuotationDenormalizationResolutionSettings(english_quote_convention, english_quote_convention)
+    basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
+        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize(), english_quote_convention)
     )
 
     expected_resolved_quotation_mark = QuotationMarkMetadata(
@@ -310,4 +310,5 @@ def assert_resolved_quotation_marks_equal(
 ) -> None:
     assert len(actual_resolved_quotation_marks) == len(expected_resolved_quotation_marks)
     for actual_mark, expected_mark in zip(actual_resolved_quotation_marks, expected_resolved_quotation_marks):
+        print(f"Actual: {actual_mark.get_quotation_mark()}, Expected: {expected_mark.get_quotation_mark()}")
         assert actual_mark == expected_mark

@@ -1,7 +1,7 @@
 from enum import Enum, auto
 
 
-class QuotationDenormalizationAction(Enum):
+class QuotationMarkUpdateStrategy(Enum):
     APPLY_FULL = auto()
-    APPLY_BASIC = auto()
+    APPLY_FALLBACK = auto()
     SKIP = auto()
