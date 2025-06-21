@@ -80,10 +80,8 @@ def test_style_markers() -> None:
     )
     result = r"""\id MAT
 \c 1
-\v 1 Esta es la \w primera \w*oración. Este texto está en \w inglés \w*y esta prueba es \w para \w*marcadores de estilo.
+\v 1 Esta es la \w primera\w* oración. Este texto está en \w inglés\w* y esta prueba es \w para\w* marcadores de estilo.
 """
-    # NOTE: the spacing before/after end markers is incorrect,
-    # but this is an issue with how the is USFM is generated from the tokens
     assess(target, result)
 
     target = update_usfm(
@@ -269,7 +267,7 @@ def test_consecutive_markers() -> None:
     usfm = r"""\id MAT
 \c 1
 \v 1 Old verse 1
-\p \qt \+w word \+w* \qt*
+\p \qt \+w word\+w*\qt*
 """
 
     align_info = [
@@ -290,7 +288,7 @@ def test_consecutive_markers() -> None:
     result = r"""\id MAT
 \c 1
 \v 1 New verse 1
-\p \qt \+w WORD \+w*\qt*
+\p \qt \+w WORD\+w*\qt*
 """
     assess(target, result)
 
