@@ -35,6 +35,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                 (
                     e.type in [UsfmUpdateBlockElementType.PARAGRAPH, UsfmUpdateBlockElementType.STYLE]
                     and not e.marked_for_removal
+                    and len(e.tokens) == 1
                 )
                 for e in elements
             )
@@ -114,7 +115,18 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
             adj_trg_tok = self._predict_marker_location(
                 self._align_info[ref]["alignment"], adj_src_tok, src_toks, trg_toks
             )
-            trg_str_idx = trg_tok_starts[adj_trg_tok] if adj_trg_tok < len(trg_tok_starts) else len(trg_sent)
+
+            if (
+                adj_trg_tok > 0
+                and element.type == UsfmUpdateBlockElementType.STYLE
+                and element.tokens[0].marker[-1] == "*"
+            ):
+                # Insert end tokens directly after the token they follow
+                trg_str_idx = trg_tok_starts[adj_trg_tok - 1] + len(trg_toks[adj_trg_tok - 1])
+            elif adj_trg_tok < len(trg_tok_starts):
+                trg_str_idx = trg_tok_starts[adj_trg_tok]
+            else:
+                trg_str_idx = len(trg_sent)
 
             to_insert.append((trg_str_idx, element))
         to_insert.sort(key=lambda x: x[0])
