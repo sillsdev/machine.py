@@ -154,14 +154,14 @@ class HuggingFaceNmtModelTrainer(Trainer):
         tgt_lang = self._tgt_lang
         if tgt_lang is None:
             tgt_lang = "tgt"
+        if src_lang == tgt_lang:
+            src_lang += "_src"
+            tgt_lang += "_trg"
 
         if isinstance(self._corpus, Dataset):
             train_dataset = self._corpus
         else:
-            if src_lang == tgt_lang:
-                train_dataset = self._corpus.filter_nonempty().to_hf_dataset("src", "trg")
-            else:
-                train_dataset = self._corpus.filter_nonempty().to_hf_dataset(src_lang, tgt_lang)
+            train_dataset = self._corpus.filter_nonempty().to_hf_dataset(src_lang, tgt_lang)
 
         def find_missing_characters(tokenizer: Any, train_dataset: Dataset, lang_codes: List[str]) -> List[str]:
             vocab = tokenizer.get_vocab().keys()
@@ -209,13 +209,19 @@ class HuggingFaceNmtModelTrainer(Trainer):
                     use_fast=True,
                 )
                 # using unofficially supported behavior to set the normalizer
+                lang_codes = []
                 tokenizer.backend_tokenizer.normalizer = norm_tok.backend_tokenizer.normalizer  # type: ignore
                 if self._add_unk_src_tokens and self._add_unk_tgt_tokens:
-                    lang_codes = [src_lang, tgt_lang]
+                    if self._src_lang is not None:
+                        lang_codes.append(self._src_lang)
+                    if self._tgt_lang is not None:
+                        lang_codes.append(self._tgt_lang)
                 elif self._add_unk_src_tokens:
-                    lang_codes = [src_lang]
+                    if self._src_lang is not None:
+                        lang_codes.append(self._src_lang)
                 else:
-                    lang_codes = [tgt_lang]
+                    if self._tgt_lang is not None:
+                        lang_codes.append(self._tgt_lang)
                 missing_tokens = find_missing_characters(tokenizer, train_dataset, lang_codes)
                 if missing_tokens:
                     tokenizer = add_tokens(tokenizer, missing_tokens)
