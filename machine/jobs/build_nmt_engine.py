@@ -8,6 +8,8 @@ from clearml import Task
 
 from ..utils.canceled_error import CanceledError
 from ..utils.progress_status import ProgressStatus
+from .async_scheduler import AsyncScheduler
+from .build_clearml_helper import create_runtime_properties, update_runtime_properties
 from .config import SETTINGS
 from .nmt_engine_build_job import NmtEngineBuildJob
 from .nmt_model_factory import NmtModelFactory
@@ -29,6 +31,7 @@ def run(args: dict) -> None:
     task = None
     if args["clearml"]:
         task = Task.init()
+        scheduler = AsyncScheduler()
 
         def clearml_check_canceled() -> None:
             if task.get_status() == "stopped":
@@ -38,7 +41,12 @@ def run(args: dict) -> None:
 
         def clearml_progress(status: ProgressStatus) -> None:
             if status.percent_completed is not None:
-                task.set_progress(round(status.percent_completed * 100))
+                scheduler.schedule(
+                    update_runtime_properties(
+                        task,
+                        create_runtime_properties(task, round(status.percent_completed * 100), None, status),
+                    )
+                )
 
         progress = clearml_progress
 
