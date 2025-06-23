@@ -211,17 +211,10 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 # using unofficially supported behavior to set the normalizer
                 lang_codes = []
                 tokenizer.backend_tokenizer.normalizer = norm_tok.backend_tokenizer.normalizer  # type: ignore
-                if self._add_unk_src_tokens and self._add_unk_tgt_tokens:
-                    if self._src_lang is not None:
-                        lang_codes.append(self._src_lang)
-                    if self._tgt_lang is not None:
-                        lang_codes.append(self._tgt_lang)
-                elif self._add_unk_src_tokens:
-                    if self._src_lang is not None:
-                        lang_codes.append(self._src_lang)
-                else:
-                    if self._tgt_lang is not None:
-                        lang_codes.append(self._tgt_lang)
+                if self._add_unk_src_tokens and self._src_lang is not None:
+                    lang_codes.append(self._src_lang)
+                if self._add_unk_tgt_tokens and self._tgt_lang is not None:
+                    lang_codes.append(self._tgt_lang)
                 missing_tokens = find_missing_characters(tokenizer, train_dataset, lang_codes)
                 if missing_tokens:
                     tokenizer = add_tokens(tokenizer, missing_tokens)
