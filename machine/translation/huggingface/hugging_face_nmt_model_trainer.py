@@ -158,7 +158,10 @@ class HuggingFaceNmtModelTrainer(Trainer):
         if isinstance(self._corpus, Dataset):
             train_dataset = self._corpus
         else:
-            train_dataset = self._corpus.filter_nonempty().to_hf_dataset(src_lang, tgt_lang)
+            if src_lang == tgt_lang:
+                train_dataset = self._corpus.filter_nonempty().to_hf_dataset("src", "trg")
+            else:
+                train_dataset = self._corpus.filter_nonempty().to_hf_dataset(src_lang, tgt_lang)
 
         def find_missing_characters(tokenizer: Any, train_dataset: Dataset, lang_codes: List[str]) -> List[str]:
             vocab = tokenizer.get_vocab().keys()
