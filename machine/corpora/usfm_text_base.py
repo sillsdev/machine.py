@@ -14,7 +14,7 @@ from .text_row import TextRow
 from .usfm_parser import UsfmParser
 from .usfm_parser_state import UsfmParserState
 from .usfm_stylesheet import UsfmStylesheet
-from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
+from .usfm_token import UsfmAttribute, UsfmTokenType
 from .usfm_tokenizer import UsfmTokenizer
 
 
@@ -82,10 +82,8 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
 
         self._text = text
         self._rows: List[TextRow] = []
-        self._next_para_tokens: List[UsfmToken] = []
         self._row_texts_stack: List[str] = []
         self._sentence_start: bool = False
-        self._next_para_text_started = False
 
     @property
     def rows(self) -> Iterable[TextRow]:
@@ -97,18 +95,6 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
             raise ValueError(f"The book {code} is not a valid book id.")
         if code != self._text.id:
             raise ValueError(f"The \\id marker {code} does not match the text id {self._text.id}.")
-
-    def verse(
-        self,
-        state: UsfmParserState,
-        number: str,
-        marker: str,
-        alt_number: Optional[str],
-        pub_number: Optional[str],
-    ) -> None:
-        super().verse(state, number, marker, alt_number, pub_number)
-        self._next_para_text_started = True
-        self._next_para_tokens.clear()
 
     def start_para(
         self,
@@ -195,12 +181,6 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
         if self._text._include_markers:
             text = text.rstrip("\r\n")
             if len(text) > 0:
-                if not text.isspace():
-                    if self._current_text_type == ScriptureTextType.VERSE:
-                        for token in self._next_para_tokens:
-                            row_text += str(token) + " "
-                        self._next_para_tokens.clear()
-                    self._next_para_text_started = True
                 if len(row_text) == 0 or row_text[-1].isspace():
                     text = text.lstrip()
                 row_text += text
@@ -223,9 +203,6 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
 
     def _end_verse_text(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:
         text = self._row_texts_stack.pop()
-        if self._text._include_markers:
-            for token in self._next_para_tokens:
-                text += str(token) + " "
         self._rows.extend(self._text._create_scripture_rows(scripture_refs, text, self._sentence_start))
         self._sentence_start = (state.token and state.token.marker == "c") or has_sentence_ending(text)
 
@@ -243,10 +220,7 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
 
         assert state.token is not None
 
-        if self._next_para_text_started:
-            self._row_texts_stack[-1] += str(state.token)
-        else:
-            self._next_para_tokens.append(state.token)
+        self._row_texts_stack[-1] += str(state.token)
 
     def _handle_para(self, state: UsfmParserState) -> None:
         if len(self._row_texts_stack) == 0:
@@ -257,8 +231,7 @@ class _TextRowCollector(ScriptureRefUsfmParserHandler):
         for i, row_text in enumerate(self._row_texts_stack):
             if len(row_text) > 0 and not row_text[-1].isspace():
                 self._row_texts_stack[i] += " "
-        if self._current_text_type == ScriptureTextType.VERSE:
-            self._next_para_tokens.append(state.token)
-            self._next_para_text_started = False
+        if self._current_text_type == ScriptureTextType.VERSE and self._text._include_markers:
+            self._row_texts_stack[-1] += str(state.token) + " "
         if not state.is_verse_para:
             self._sentence_start = True
