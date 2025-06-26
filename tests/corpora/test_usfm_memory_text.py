@@ -6,6 +6,7 @@ from machine.corpora import ScriptureRef, TextRow, UsfmMemoryText
 from machine.corpora.update_usfm_parser_handler import (
     UpdateUsfmMarkerBehavior,
     UpdateUsfmParserHandler,
+    UpdateUsfmRow,
     UpdateUsfmTextBehavior,
 )
 from machine.corpora.usfm_parser import parse_usfm
@@ -201,16 +202,3 @@ def get_rows(usfm: str, include_markers: bool = False, include_all_text: bool = 
     )
 
     return list(text.get_rows())
-
-
-def update_usfm(
-    usfm: str,
-    rows: Optional[Sequence[Tuple[Sequence[ScriptureRef], str]]] = None,
-    text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_EXISTING,
-    embed_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
-    style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
-) -> str:
-
-    handler = UpdateUsfmParserHandler(rows, "MAT", text_behavior, embed_behavior, style_behavior)
-    parse_usfm(usfm, handler)
-    return handler.get_usfm()
