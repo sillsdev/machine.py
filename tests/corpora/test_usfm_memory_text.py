@@ -1,15 +1,8 @@
-from typing import List, Optional, Sequence, Tuple
+from typing import List
 
 from testutils.corpora_test_helpers import scripture_ref
 
 from machine.corpora import ScriptureRef, TextRow, UsfmMemoryText
-from machine.corpora.update_usfm_parser_handler import (
-    UpdateUsfmMarkerBehavior,
-    UpdateUsfmParserHandler,
-    UpdateUsfmRow,
-    UpdateUsfmTextBehavior,
-)
-from machine.corpora.usfm_parser import parse_usfm
 from machine.corpora.usfm_stylesheet import UsfmStylesheet
 
 
