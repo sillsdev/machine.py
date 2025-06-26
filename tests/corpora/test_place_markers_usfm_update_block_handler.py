@@ -9,6 +9,7 @@ from machine.corpora import (
     UpdateUsfmParserHandler,
     UpdateUsfmTextBehavior,
     UsfmUpdateBlockHandler,
+    UpdateUsfmRow,
     parse_usfm,
 )
 from machine.tokenization import LatinWordTokenizer
@@ -20,7 +21,14 @@ TOKENIZER = LatinWordTokenizer()
 def test_paragraph_markers() -> None:
     source = "This is the first paragraph. This text is in English, and this test is for paragraph markers."
     pretranslation = "Este es el primer párrafo. Este texto está en inglés y esta prueba es para marcadores de párrafo."
-    rows = [(scr_ref("MAT 1:1"), str(pretranslation))]
+    align_info = PlaceMarkersAlignmentInfo(
+        source_tokens=[t for t in TOKENIZER.tokenize(source)],
+        translation_tokens=[t for t in TOKENIZER.tokenize(pretranslation)],
+        alignment=to_word_alignment_matrix(
+            "0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10 12-11 13-12 14-13 15-14 16-15 17-18 18-16 19-19"
+        ),
+    )
+    rows = [UpdateUsfmRow(scr_ref("MAT 1:1"), str(pretranslation), {"alignment_info": align_info})]
     usfm = r"""\id MAT
 \c 1
 \v 1 This is the first paragraph.
@@ -28,21 +36,11 @@ def test_paragraph_markers() -> None:
 \p and this test is for paragraph markers.
 """
 
-    align_info = [
-        PlaceMarkersAlignmentInfo(
-            refs=["MAT 1:1"],
-            source_tokens=[t for t in TOKENIZER.tokenize(source)],
-            translation_tokens=[t for t in TOKENIZER.tokenize(pretranslation)],
-            alignment=to_word_alignment_matrix(
-                "0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10 12-11 13-12 14-13 15-14 16-15 17-18 18-16 19-19"
-            ),
-        ),
-    ]
     target = update_usfm(
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
     result = r"""\id MAT
 \c 1
@@ -56,27 +54,24 @@ def test_paragraph_markers() -> None:
 def test_style_markers() -> None:
     source = "This is the first sentence. This text is in English, and this test is for style markers."
     pretranslation = "Esta es la primera oración. Este texto está en inglés y esta prueba es para marcadores de estilo."
-    rows = [(scr_ref("MAT 1:1"), str(pretranslation))]
+    align_info = PlaceMarkersAlignmentInfo(
+        source_tokens=[t for t in TOKENIZER.tokenize(source)],
+        translation_tokens=[t for t in TOKENIZER.tokenize(pretranslation)],
+        alignment=to_word_alignment_matrix(
+            "0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10 12-11 13-12 14-13 15-14 16-15 17-18 18-16 19-19"
+        ),
+    )
+    rows = [UpdateUsfmRow(scr_ref("MAT 1:1"), str(pretranslation), metadata={"alignment_info": align_info})]
     usfm = r"""\id MAT
 \c 1
 \v 1 This is the \w first\w* sentence. This text is in \w English\w*, and this test is \w for\w* style markers.
 """
 
-    align_info = [
-        PlaceMarkersAlignmentInfo(
-            refs=["MAT 1:1"],
-            source_tokens=[t for t in TOKENIZER.tokenize(source)],
-            translation_tokens=[t for t in TOKENIZER.tokenize(pretranslation)],
-            alignment=to_word_alignment_matrix(
-                "0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10 12-11 13-12 14-13 15-14 16-15 17-18 18-16 19-19"
-            ),
-        ),
-    ]
     target = update_usfm(
         rows,
         usfm,
         style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
     result = r"""\id MAT
 \c 1
@@ -88,7 +83,7 @@ def test_style_markers() -> None:
         rows,
         usfm,
         style_behavior=UpdateUsfmMarkerBehavior.STRIP,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
     result = r"""\id MAT
 \c 1
@@ -100,14 +95,14 @@ def test_style_markers() -> None:
 # NOTE: Not currently updating embeds, will need to change test when we do
 def test_embeds() -> None:
     rows = [
-        (scr_ref("MAT 1:1"), "New verse 1"),
-        (scr_ref("MAT 1:2"), "New verse 2"),
-        (scr_ref("MAT 1:3"), "New verse 3"),
-        (scr_ref("MAT 1:4"), "New verse 4"),
-        (scr_ref("MAT 1:4/1:f"), "New embed text"),
-        (scr_ref("MAT 1:5"), "New verse 5"),
-        (scr_ref("MAT 1:6"), "New verse 6"),
-        (scr_ref("MAT 1:6/1:f"), "New verse 6 embed text"),
+        UpdateUsfmRow(scr_ref("MAT 1:1"), "New verse 1"),
+        UpdateUsfmRow(scr_ref("MAT 1:2"), "New verse 2"),
+        UpdateUsfmRow(scr_ref("MAT 1:3"), "New verse 3"),
+        UpdateUsfmRow(scr_ref("MAT 1:4"), "New verse 4"),
+        UpdateUsfmRow(scr_ref("MAT 1:4/1:f"), "New embed text"),
+        UpdateUsfmRow(scr_ref("MAT 1:5"), "New verse 5"),
+        UpdateUsfmRow(scr_ref("MAT 1:6"), "New verse 6"),
+        UpdateUsfmRow(scr_ref("MAT 1:6/1:f"), "New verse 6 embed text"),
     ]
     usfm = r"""\id MAT
 \c 1
@@ -119,12 +114,11 @@ def test_embeds() -> None:
 \v 6 Updated embed with style markers \f \fr 1.6 \ft Another \+w stylish\+w* note \f*
 """
 
-    align_info = []
     target = update_usfm(
         rows,
         usfm,
         embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
     result = r"""\id MAT
 \c 1
@@ -141,7 +135,7 @@ def test_embeds() -> None:
         rows,
         usfm,
         embed_behavior=UpdateUsfmMarkerBehavior.STRIP,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
     result = r"""\id MAT
 \c 1
@@ -156,7 +150,19 @@ def test_embeds() -> None:
 
 
 def test_trailing_empty_paragraphs() -> None:
-    rows = [(scr_ref("MAT 1:1"), "New verse 1")]
+    rows = [
+        UpdateUsfmRow(
+            scr_ref("MAT 1:1"),
+            "New verse 1",
+            metadata={
+                "alignment_info": PlaceMarkersAlignmentInfo(
+                    source_tokens=["Verse", "1"],
+                    translation_tokens=["New", "verse", "1"],
+                    alignment=to_word_alignment_matrix("0-1 1-2"),
+                )
+            },
+        )
+    ]
     usfm = r"""\id MAT
 \c 1
 \v 1 \f embed 1 \f*Verse 1
@@ -165,19 +171,11 @@ def test_trailing_empty_paragraphs() -> None:
 \q1 \f embed 2 \f*
 """
 
-    align_info = [
-        PlaceMarkersAlignmentInfo(
-            refs=["MAT 1:1"],
-            source_tokens=["Verse", "1"],
-            translation_tokens=["New", "verse", "1"],
-            alignment=to_word_alignment_matrix("0-1 1-2"),
-        ),
-    ]
     target = update_usfm(
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
     result = r"""\id MAT
 \c 1
@@ -191,10 +189,30 @@ def test_trailing_empty_paragraphs() -> None:
 
 def test_headers() -> None:
     rows = [
-        (scr_ref("MAT 1:1"), "X Y Z"),
-        (scr_ref("MAT 1:2"), "X"),
-        (scr_ref("MAT 1:3"), "Y"),
-        (scr_ref("MAT 1:3/1:s1"), "Updated header"),
+        UpdateUsfmRow(
+            scr_ref("MAT 1:1"),
+            "X Y Z",
+            metadata={
+                "alignment_info": PlaceMarkersAlignmentInfo(
+                    source_tokens=["A", "B", "C"],
+                    translation_tokens=["X", "Y", "Z"],
+                    alignment=to_word_alignment_matrix("0-0 1-1 2-2"),
+                )
+            },
+        ),
+        UpdateUsfmRow(
+            scr_ref("MAT 1:2"),
+            "X",
+            metadata={
+                "alignment_info": PlaceMarkersAlignmentInfo(
+                    source_tokens=["A"],
+                    translation_tokens=["X"],
+                    alignment=to_word_alignment_matrix("0-0"),
+                )
+            },
+        ),
+        UpdateUsfmRow(scr_ref("MAT 1:3"), "Y"),
+        UpdateUsfmRow(scr_ref("MAT 1:3/1:s1"), "Updated header"),
     ]
     usfm = r"""\id MAT
 \c 1
@@ -218,25 +236,11 @@ def test_headers() -> None:
 \s1 Header to be updated
 """
 
-    align_info = [
-        PlaceMarkersAlignmentInfo(
-            refs=["MAT 1:1"],
-            source_tokens=["A", "B", "C"],
-            translation_tokens=["X", "Y", "Z"],
-            alignment=to_word_alignment_matrix("0-0 1-1 2-2"),
-        ),
-        PlaceMarkersAlignmentInfo(
-            refs=["MAT 1:2"],
-            source_tokens=["A"],
-            translation_tokens=["X"],
-            alignment=to_word_alignment_matrix("0-0"),
-        ),
-    ]
     target = update_usfm(
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
     result = r"""\id MAT
 \c 1
@@ -263,27 +267,31 @@ def test_headers() -> None:
 
 
 def test_consecutive_markers() -> None:
-    rows = [(scr_ref("MAT 1:1"), "New verse 1 WORD")]
+    rows = [
+        UpdateUsfmRow(
+            scr_ref("MAT 1:1"),
+            "New verse 1 WORD",
+            metadata={
+                "alignment_info": PlaceMarkersAlignmentInfo(
+                    source_tokens=["Old", "verse", "1", "word"],
+                    translation_tokens=["New", "verse", "1", "WORD"],
+                    alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3"),
+                )
+            },
+        )
+    ]
     usfm = r"""\id MAT
 \c 1
 \v 1 Old verse 1
 \p \qt \+w word\+w*\qt*
 """
 
-    align_info = [
-        PlaceMarkersAlignmentInfo(
-            refs=["MAT 1:1"],
-            source_tokens=["Old", "verse", "1", "word"],
-            translation_tokens=["New", "verse", "1", "WORD"],
-            alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3"),
-        ),
-    ]
     target = update_usfm(
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
         style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
     result = r"""\id MAT
 \c 1
@@ -294,26 +302,30 @@ def test_consecutive_markers() -> None:
 
 
 def test_verse_ranges() -> None:
-    rows = [([ScriptureRef.parse(f"MAT 1:{i}") for i in range(1, 6)], "New verse range text new paragraph 2")]
+    rows = [
+        UpdateUsfmRow(
+            [ScriptureRef.parse(f"MAT 1:{i}") for i in range(1, 6)],
+            "New verse range text new paragraph 2",
+            metadata={
+                "alignment_info": PlaceMarkersAlignmentInfo(
+                    source_tokens=["Verse", "range", "old", "paragraph", "2"],
+                    translation_tokens=["New", "verse", "range", "text", "new", "paragraph", "2"],
+                    alignment=to_word_alignment_matrix("0-1 1-2 2-4 3-5 4-6"),
+                )
+            },
+        )
+    ]
     usfm = r"""\id MAT
 \c 1
 \v 1-5 Verse range
 \p old paragraph 2
 """
 
-    align_info = [
-        PlaceMarkersAlignmentInfo(
-            refs=[str(ScriptureRef.parse(f"MAT 1:{i}")) for i in range(1, 6)],
-            source_tokens=["Verse", "range", "old", "paragraph", "2"],
-            translation_tokens=["New", "verse", "range", "text", "new", "paragraph", "2"],
-            alignment=to_word_alignment_matrix("0-1 1-2 2-4 3-5 4-6"),
-        ),
-    ]
     target = update_usfm(
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
     result = r"""\id MAT
 \c 1
@@ -324,27 +336,31 @@ def test_verse_ranges() -> None:
 
 
 def test_no_update() -> None:
-    rows = [(scr_ref("MAT 1:1"), "New paragraph 1 New paragraph 2")]
+    # Strip paragraphs
+    rows = [
+        UpdateUsfmRow(
+            scr_ref("MAT 1:1"),
+            "New paragraph 1 New paragraph 2",
+            metadata={
+                "alignment_info": PlaceMarkersAlignmentInfo(
+                    source_tokens=["Old", "paragraph", "1", "Old", "paragraph", "2"],
+                    translation_tokens=["New", "paragraph", "1", "New", "paragraph", "2"],
+                    alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3 4-4 5-5"),
+                )
+            },
+        )
+    ]
     usfm = r"""\id MAT
 \c 1
 \v 1 Old paragraph 1
 \p Old paragraph 2
 """
 
-    # Strip paragraphs
-    align_info = [
-        PlaceMarkersAlignmentInfo(
-            refs=["MAT 1:1"],
-            source_tokens=["Old", "paragraph", "1", "Old", "paragraph", "2"],
-            translation_tokens=["New", "paragraph", "1", "New", "paragraph", "2"],
-            alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3 4-4 5-5"),
-        ),
-    ]
     target = update_usfm(
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
     result = r"""\id MAT
 \c 1
@@ -353,19 +369,25 @@ def test_no_update() -> None:
     assess(target, result)
 
     # No alignment
-    align_info = [
-        PlaceMarkersAlignmentInfo(
-            refs=["MAT 1:1"],
-            source_tokens=[],
-            translation_tokens=[],
-            alignment=to_word_alignment_matrix(""),
-        ),
+    rows = [
+        UpdateUsfmRow(
+            scr_ref("MAT 1:1"),
+            "New paragraph 1 New paragraph 2",
+            metadata={
+                "alignment_info": PlaceMarkersAlignmentInfo(
+                    source_tokens=[],
+                    translation_tokens=[],
+                    alignment=to_word_alignment_matrix(""),
+                )
+            },
+        )
     ]
+
     target = update_usfm(
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
     result = r"""\id MAT
 \c 1
@@ -376,12 +398,11 @@ def test_no_update() -> None:
 
     # No text update
     rows = []
-    align_info = []
     target = update_usfm(
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
     result = r"""\id MAT
 \c 1
@@ -392,7 +413,19 @@ def test_no_update() -> None:
 
 
 def test_split_tokens() -> None:
-    rows = [(scr_ref("MAT 1:1"), "words split words split words split")]
+    rows = [
+        UpdateUsfmRow(
+            scr_ref("MAT 1:1"),
+            "words split words split words split",
+            metadata={
+                "alignment_info": PlaceMarkersAlignmentInfo(
+                    source_tokens=["words", "split", "words", "split", "words", "split"],
+                    translation_tokens=["words", "split", "words", "split", "words", "split"],
+                    alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3 4-4 5-5"),
+                )
+            },
+        )
+    ]
     usfm = r"""\id MAT
 \c 1
 \v 1 words spl
@@ -400,19 +433,11 @@ def test_split_tokens() -> None:
 \p it words split
 """
 
-    align_info = [
-        PlaceMarkersAlignmentInfo(
-            refs=["MAT 1:1"],
-            source_tokens=["words", "split", "words", "split", "words", "split"],
-            translation_tokens=["words", "split", "words", "split", "words", "split"],
-            alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3 4-4 5-5"),
-        ),
-    ]
     target = update_usfm(
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
     result = r"""\id MAT
 \c 1
@@ -424,26 +449,30 @@ def test_split_tokens() -> None:
 
 
 def test_no_text() -> None:
-    rows = [(scr_ref("MAT 1:1"), "")]
+    rows = [
+        UpdateUsfmRow(
+            scr_ref("MAT 1:1"),
+            "",
+            metadata={
+                "alignment_info": PlaceMarkersAlignmentInfo(
+                    source_tokens=[],
+                    translation_tokens=[],
+                    alignment=to_word_alignment_matrix(""),
+                )
+            },
+        )
+    ]
     usfm = r"""\id MAT
 \c 1
 \v 1 \w \w*
 """
 
-    align_info = [
-        PlaceMarkersAlignmentInfo(
-            refs=["MAT 1:1"],
-            source_tokens=[],
-            translation_tokens=[],
-            alignment=to_word_alignment_matrix(""),
-        ),
-    ]
     target = update_usfm(
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
         style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
     result = r"""\id MAT
 \c 1
@@ -453,26 +482,30 @@ def test_no_text() -> None:
 
 
 def test_consecutive_substring() -> None:
-    rows = [(scr_ref("MAT 1:1"), "string ring")]
+    rows = [
+        UpdateUsfmRow(
+            scr_ref("MAT 1:1"),
+            "string ring",
+            metadata={
+                "alignment_info": PlaceMarkersAlignmentInfo(
+                    source_tokens=["string", "ring"],
+                    translation_tokens=["string", "ring"],
+                    alignment=to_word_alignment_matrix("0-0 1-1"),
+                )
+            },
+        )
+    ]
     usfm = r"""\id MAT
 \c 1
 \v 1 string
 \p ring
 """
 
-    align_info = [
-        PlaceMarkersAlignmentInfo(
-            refs=["MAT 1:1"],
-            source_tokens=["string", "ring"],
-            translation_tokens=["string", "ring"],
-            alignment=to_word_alignment_matrix("0-0 1-1"),
-        ),
-    ]
     target = update_usfm(
         rows,
         usfm,
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
     result = r"""\id MAT
 \c 1
@@ -483,7 +516,30 @@ def test_consecutive_substring() -> None:
 
 
 def test_verses_out_of_order() -> None:
-    rows = [(scr_ref("MAT 1:1"), "new verse 1 new paragraph 2"), (scr_ref("MAT 1:2"), "new verse 2")]
+    rows = [
+        UpdateUsfmRow(
+            scr_ref("MAT 1:1"),
+            "new verse 1 new paragraph 2",
+            metadata={
+                "alignment_info": PlaceMarkersAlignmentInfo(
+                    source_tokens=["verse", "1", "paragraph", "2"],
+                    translation_tokens=["new", "verse", "1", "new", "paragraph", "2"],
+                    alignment=to_word_alignment_matrix("0-1 1-2 2-4 3-5"),
+                )
+            },
+        ),
+        UpdateUsfmRow(
+            scr_ref("MAT 1:2"),
+            "new verse 2",
+            metadata={
+                "alignment_info": PlaceMarkersAlignmentInfo(
+                    source_tokens=["verse", "2"],
+                    translation_tokens=["new", "verse", "2"],
+                    alignment=to_word_alignment_matrix("0-1 1-2"),
+                )
+            },
+        ),
+    ]
     usfm = r"""\id MAT
 \c 1
 \v 2 verse 2
@@ -491,25 +547,11 @@ def test_verses_out_of_order() -> None:
 \p paragraph 2
 """
 
-    align_info = [
-        PlaceMarkersAlignmentInfo(
-            refs=["MAT 1:1"],
-            source_tokens=["verse", "1", "paragraph", "2"],
-            translation_tokens=["new", "verse", "1", "new", "paragraph", "2"],
-            alignment=to_word_alignment_matrix("0-1 1-2 2-4 3-5"),
-        ),
-        PlaceMarkersAlignmentInfo(
-            refs=["MAT 1:2"],
-            source_tokens=["verse", "2"],
-            translation_tokens=["new", "verse", "2"],
-            alignment=to_word_alignment_matrix("0-1 1-2"),
-        ),
-    ]
     target = update_usfm(
         rows,
         usfm,
         text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING,
-        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler(align_info)],
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
     result = r"""\id MAT
 \c 1
@@ -537,7 +579,7 @@ def to_word_alignment_matrix(alignment_str: str) -> WordAlignmentMatrix:
 
 
 def update_usfm(
-    rows: Sequence[Tuple[Sequence[ScriptureRef], str]],
+    rows: Sequence[UpdateUsfmRow],
     source: str,
     id_text: Optional[str] = None,
     text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_NEW,

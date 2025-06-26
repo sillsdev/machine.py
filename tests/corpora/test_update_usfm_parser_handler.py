@@ -12,12 +12,13 @@ from machine.corpora import (
     UsfmUpdateBlockElementType,
     UsfmUpdateBlockHandler,
     parse_usfm,
+    UpdateUsfmRow,
 )
 
 
 def test_get_usfm_verse_char_style() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("First verse of the first chapter."),
         )
@@ -39,11 +40,11 @@ def test_get_usfm_id_text() -> None:
 
 def test_get_usfm_strip_all_text() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Update 1"),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:3"),
             str("Update 3"),
         ),
@@ -108,9 +109,9 @@ def test_get_usfm_strip_all_text() -> None:
 
 def test_get_usfm_strip_paragraphs_preserve_paragraph_styles():
     rows = [
-        (scr_ref("MAT 1:0/1:rem"), "New remark"),
-        (scr_ref("MAT 1:0/3:ip"), "Another new remark"),
-        (scr_ref("MAT 1:1"), "Update 1"),
+        UpdateUsfmRow(scr_ref("MAT 1:0/1:rem"), "New remark"),
+        UpdateUsfmRow(scr_ref("MAT 1:0/3:ip"), "Another new remark"),
+        UpdateUsfmRow(scr_ref("MAT 1:1"), "Update 1"),
     ]
     usfm = r"""\id MAT
 \c 1
@@ -156,11 +157,11 @@ def test_get_usfm_strip_paragraphs_preserve_paragraph_styles():
 
 def test_preserve_paragraphs():
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:0/1:rem"),
             str("Update remark"),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Update 1"),
         ),
@@ -200,7 +201,7 @@ def test_preserve_paragraphs():
 
 def test_paragraph_in_verse():
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Update 1"),
         ),
@@ -245,11 +246,11 @@ def test_paragraph_in_verse():
 
 def test_get_usfm_prefer_existing():
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Update 1"),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:2"),
             str("Update 2"),
         ),
@@ -274,11 +275,11 @@ def test_get_usfm_prefer_existing():
 
 def test_get_usfm_prefer_rows():
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:6"),
             str("Text 6"),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:7"),
             str("Text 7"),
         ),
@@ -292,7 +293,7 @@ def test_get_usfm_prefer_rows():
 
 def test_get_usfm_verse_strip_note() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:1"),
             str("First verse of the second chapter."),
         )
@@ -304,7 +305,7 @@ def test_get_usfm_verse_strip_note() -> None:
 
 def test_get_usfm_verse_replace_with_note() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("updated text"),
         ),
@@ -323,7 +324,7 @@ def test_get_usfm_verse_replace_with_note() -> None:
 
 def test_get_usfm_row_verse_segment() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:1a"),
             str("First verse of the second chapter."),
         )
@@ -335,7 +336,7 @@ def test_get_usfm_row_verse_segment() -> None:
 
 def test_get_usfm_verse_segment() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:7"),
             str("Seventh verse of the second chapter."),
         )
@@ -347,7 +348,7 @@ def test_get_usfm_verse_segment() -> None:
 
 def test_get_usfm_verse_multiple_paras() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:2"),
             str("Second verse of the first chapter."),
         )
@@ -362,7 +363,7 @@ def test_get_usfm_verse_multiple_paras() -> None:
 
 def test_get_usfm_verse_table() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:9"),
             str("Ninth verse of the second chapter."),
         )
@@ -374,7 +375,7 @@ def test_get_usfm_verse_table() -> None:
 
 def test_get_usfm_verse_range_single_row_multiple_verses() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:11", "MAT 2:12"),
             str("Eleventh verse of the second chapter. Twelfth verse of the second chapter."),
         )
@@ -386,7 +387,7 @@ def test_get_usfm_verse_range_single_row_multiple_verses() -> None:
 
 def test_get_usfm_verse_range_single_row_single_verse() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:11"),
             str("Eleventh verse of the second chapter."),
         )
@@ -398,11 +399,11 @@ def test_get_usfm_verse_range_single_row_single_verse() -> None:
 
 def test_get_usfm_verse_range_multiple_rows_single_verse() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:11"),
             str("Eleventh verse of the second chapter."),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:12"),
             str("Twelfth verse of the second chapter."),
         ),
@@ -414,15 +415,15 @@ def test_get_usfm_verse_range_multiple_rows_single_verse() -> None:
 
 def test_get_usfm_merge_verse_segments() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:2"),
             str("Verse 2."),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:2a"),
             str("Verse 2a."),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:2b"),
             str("Verse 2b."),
         ),
@@ -434,11 +435,11 @@ def test_get_usfm_merge_verse_segments() -> None:
 
 def test_get_usfm_verse_opt_break() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:2"),
             str("Second verse of the second chapter."),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:3"),
             str("Third verse of the second chapter."),
         ),
@@ -450,7 +451,7 @@ def test_get_usfm_verse_opt_break() -> None:
 
 def test_get_usfm_verse_milestone() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:10"),
             str("Tenth verse of the second chapter."),
         )
@@ -462,7 +463,7 @@ def test_get_usfm_verse_milestone() -> None:
 
 def test_get_usfm_verse_unmatched() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:3"),
             str("Third verse of the first chapter."),
         )
@@ -474,7 +475,7 @@ def test_get_usfm_verse_unmatched() -> None:
 
 def test_get_usfm_nonverse_char_style() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:0/3:s1"),
             str("The second chapter."),
         )
@@ -486,7 +487,7 @@ def test_get_usfm_nonverse_char_style() -> None:
 
 def test_get_usfm_nonverse_paragraph() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:0/8:s"),
             str("The first chapter."),
         )
@@ -498,23 +499,23 @@ def test_get_usfm_nonverse_paragraph() -> None:
 
 def test_get_usfm_nonverse_relaxed() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:0/s"),
             str("The first chapter."),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("First verse of the first chapter."),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:0/tr/tc1"),
             str("The first cell of the table."),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:0/tr/tc2"),
             str("The second cell of the table."),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:0/tr/tc1"),
             str("The third cell of the table."),
         ),
@@ -529,7 +530,7 @@ def test_get_usfm_nonverse_relaxed() -> None:
 
 def test_get_usfm_nonverse_sidebar() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:3/1:esb/1:ms"),
             str("The first paragraph of the sidebar."),
         )
@@ -541,11 +542,11 @@ def test_get_usfm_nonverse_sidebar() -> None:
 
 def test_get_usfm_nonverse_table() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:0/1:tr/1:tc1"),
             str("The first cell of the table."),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:0/2:tr/1:tc1"),
             str("The third cell of the table."),
         ),
@@ -557,7 +558,7 @@ def test_get_usfm_nonverse_table() -> None:
 
 def test_get_usfm_nonverse_optbreak() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:3/1:esb/2:p"),
             str("The second paragraph of the sidebar."),
         )
@@ -569,7 +570,7 @@ def test_get_usfm_nonverse_optbreak() -> None:
 
 def test_get_usfm_nonverse_milestone() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 2:7a/1:s"),
             str("A new section header."),
         )
@@ -581,7 +582,7 @@ def test_get_usfm_nonverse_milestone() -> None:
 
 def test_get_usfm_nonverse_skip_note() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:0/3:ip"),
             str("The introductory paragraph."),
         )
@@ -593,7 +594,7 @@ def test_get_usfm_nonverse_skip_note() -> None:
 
 def test_get_usfm_nonverse_replace_with_note() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:0/3:ip"),
             str("The introductory paragraph."),
         ),
@@ -605,7 +606,7 @@ def test_get_usfm_nonverse_replace_with_note() -> None:
 
 def test_get_usfm_verse_double_va_vp() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 3:1"),
             str("Updating later in the book to start."),
         )
@@ -618,7 +619,7 @@ def test_get_usfm_verse_double_va_vp() -> None:
 
 def test_get_usfm_verse_last_segment() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Updating the last verse."),
         )
@@ -640,27 +641,27 @@ def test_get_usfm_verse_last_segment() -> None:
 
 def test_get_usfm_verse_pretranslations_before_text() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("GEN 1:1"),
             str("Pretranslations before the start"),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("GEN 1:2"),
             str("Pretranslations before the start"),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("GEN 1:3"),
             str("Pretranslations before the start"),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("GEN 1:4"),
             str("Pretranslations before the start"),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("GEN 1:5"),
             str("Pretranslations before the start"),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:0/3:ip"),
             str("The introductory paragraph."),
         ),
@@ -673,11 +674,11 @@ def test_get_usfm_verse_pretranslations_before_text() -> None:
 
 def test_strip_paragraphs() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:0/2:p"),
             str("Update Paragraph"),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Update Verse 1"),
         ),
@@ -721,7 +722,7 @@ def test_strip_paragraphs() -> None:
 
 def test_preservation_raw_strings() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str(r"Update all in one row \f \fr 1.1 \ft Some note \f*"),
         )
@@ -741,7 +742,7 @@ def test_preservation_raw_strings() -> None:
 
 def test_beginning_of_verse_embed() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str(r"Updated text"),
         )
@@ -761,7 +762,7 @@ def test_beginning_of_verse_embed() -> None:
 
 def test_cross_reference_dont_update() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1/1:x"),
             str("Update the cross reference"),
         )
@@ -781,7 +782,7 @@ def test_cross_reference_dont_update() -> None:
 
 def test_preserve_fig() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Update"),
         )
@@ -801,11 +802,11 @@ def test_preserve_fig() -> None:
 
 def test_note_explicit_end_markers() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Update text"),
         ),
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1/1:f"),
             str("Update note"),
         ),
@@ -832,7 +833,7 @@ def test_note_explicit_end_markers() -> None:
 
 def test_update_block_verse_preserve_paras() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Update 1"),
         ),
@@ -861,7 +862,7 @@ def test_update_block_verse_preserve_paras() -> None:
 
 def test_update_block_verse_strip_paras() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Update 1"),
         ),
@@ -890,7 +891,7 @@ def test_update_block_verse_strip_paras() -> None:
 
 def test_update_block_verse_range() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Update 1"),
         ),
@@ -917,7 +918,7 @@ def test_update_block_verse_range() -> None:
 
 def test_update_block_footnote_preserve_embeds() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Update 1"),
         ),
@@ -946,7 +947,7 @@ def test_update_block_footnote_preserve_embeds() -> None:
 
 def test_update_block_footnote_strip_embeds() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Update 1"),
         ),
@@ -973,7 +974,7 @@ def test_update_block_footnote_strip_embeds() -> None:
 
 def test_update_block_nonverse() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:0/1:s"),
             str("Updated section Header"),
         ),
@@ -999,7 +1000,7 @@ def test_update_block_nonverse() -> None:
 
 def test_update_block_verse_preserve_styles() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Update 1"),
         ),
@@ -1030,7 +1031,7 @@ def test_update_block_verse_preserve_styles() -> None:
 
 def test_update_block_verse_strip_styles() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Update 1"),
         ),
@@ -1059,7 +1060,7 @@ def test_update_block_verse_strip_styles() -> None:
 
 def test_update_block_verse_section_header() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Update 1"),
         ),
@@ -1100,7 +1101,7 @@ def test_update_block_verse_section_header() -> None:
 
 def test_update_block_verse_section_header_in_verse() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Update 1"),
         ),
@@ -1135,7 +1136,7 @@ def test_update_block_verse_section_header_in_verse() -> None:
 
 def test_update_block_nonverse_paragraph_end_of_verse() -> None:
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Update 1"),
         ),
@@ -1166,11 +1167,11 @@ def test_update_block_nonverse_paragraph_end_of_verse() -> None:
 
 def test_header_reference_paragraphs() -> None:
     rows = [
-        (scr_ref("MAT 1:1"), "new verse 1"),
-        (scr_ref("MAT 1:2"), "new verse 2"),
-        (scr_ref("MAT 1:3"), "new verse 3"),
-        (scr_ref("MAT 2:1"), "new verse 1"),
-        (scr_ref("MAT 2:2"), "new verse 2"),
+        UpdateUsfmRow(scr_ref("MAT 1:1"), "new verse 1"),
+        UpdateUsfmRow(scr_ref("MAT 1:2"), "new verse 2"),
+        UpdateUsfmRow(scr_ref("MAT 1:3"), "new verse 3"),
+        UpdateUsfmRow(scr_ref("MAT 2:1"), "new verse 1"),
+        UpdateUsfmRow(scr_ref("MAT 2:2"), "new verse 2"),
     ]
     usfm = r"""\id MAT
 \c 1
@@ -1215,7 +1216,7 @@ def test_header_reference_paragraphs() -> None:
 
 def test_pass_remark():
     rows = [
-        (
+        UpdateUsfmRow(
             scr_ref("MAT 1:1"),
             str("Update 1"),
         ),
@@ -1240,7 +1241,7 @@ def scr_ref(*refs: str) -> List[ScriptureRef]:
 
 
 def update_usfm(
-    rows: Optional[Sequence[Tuple[Sequence[ScriptureRef], str]]] = None,
+    rows: Optional[Sequence[UpdateUsfmRow]] = None,
     source: Optional[str] = None,
     id_text: Optional[str] = None,
     text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_NEW,

@@ -16,6 +16,7 @@ from machine.corpora import (
     UpdateUsfmTextBehavior,
     ZipParatextProjectSettingsParser,
     ZipParatextProjectTextUpdater,
+    UpdateUsfmRow,
 )
 
 
@@ -28,8 +29,8 @@ def test_parse_parallel_corpus():
     rows = list(p_corpus.get_rows())
     assert rows
 
-    pretranslations: List[Tuple[List[ScriptureRef], str]] = [
-        ([ScriptureRef() for s in r.source_refs], r.source_text) for r in rows
+    pretranslations: List[UpdateUsfmRow] = [
+        (UpdateUsfmRow(refs=[ScriptureRef.parse(s) for s in r.source_refs], text=r.source_text)) for r in rows
     ]
 
     target_settings = FileParatextProjectSettingsParser(USFM_TARGET_PROJECT_PATH).parse()
@@ -84,8 +85,10 @@ def test_create_usfm_file():
         with open(PRETRANSLATION_PATH, "r") as pretranslation_stream:
             pretranslations = [
                 (
-                    [ScriptureRef.parse(r, settings.versification).to_relaxed() for r in p["refs"] or []],
-                    p.get("translation", ""),
+                    UpdateUsfmRow(
+                        refs=[ScriptureRef.parse(r, settings.versification).to_relaxed() for r in p["refs"] or []],
+                        text=p.get("translation", ""),
+                    )
                 )
                 for p in json.load(pretranslation_stream)
             ]
