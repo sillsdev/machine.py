@@ -54,8 +54,8 @@ from .token_processors import (
 from .update_usfm_parser_handler import (
     UpdateUsfmMarkerBehavior,
     UpdateUsfmParserHandler,
-    UpdateUsfmTextBehavior,
     UpdateUsfmRow,
+    UpdateUsfmTextBehavior,
 )
 from .usfm_file_text import UsfmFileText
 from .usfm_file_text_corpus import UsfmFileTextCorpus

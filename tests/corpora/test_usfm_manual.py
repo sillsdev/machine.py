@@ -2,7 +2,7 @@ import json
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import pytest
 from testutils.corpora_test_helpers import TEST_DATA_PATH, USFM_SOURCE_PROJECT_PATH, USFM_TARGET_PROJECT_PATH
@@ -13,10 +13,10 @@ from machine.corpora import (
     ParatextTextCorpus,
     ScriptureRef,
     StandardParallelTextCorpus,
+    UpdateUsfmRow,
     UpdateUsfmTextBehavior,
     ZipParatextProjectSettingsParser,
     ZipParatextProjectTextUpdater,
-    UpdateUsfmRow,
 )
 
 

@@ -1,4 +1,4 @@
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence
 
 from machine.corpora import (
     AlignedWordPair,
@@ -7,9 +7,9 @@ from machine.corpora import (
     ScriptureRef,
     UpdateUsfmMarkerBehavior,
     UpdateUsfmParserHandler,
+    UpdateUsfmRow,
     UpdateUsfmTextBehavior,
     UsfmUpdateBlockHandler,
-    UpdateUsfmRow,
     parse_usfm,
 )
 from machine.tokenization import LatinWordTokenizer

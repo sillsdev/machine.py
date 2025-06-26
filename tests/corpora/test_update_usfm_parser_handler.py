@@ -1,4 +1,4 @@
-from typing import Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Iterable, List, Optional, Sequence, Union
 
 from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH, ignore_line_endings
 
@@ -7,12 +7,12 @@ from machine.corpora import (
     ScriptureRef,
     UpdateUsfmMarkerBehavior,
     UpdateUsfmParserHandler,
+    UpdateUsfmRow,
     UpdateUsfmTextBehavior,
     UsfmUpdateBlock,
     UsfmUpdateBlockElementType,
     UsfmUpdateBlockHandler,
     parse_usfm,
-    UpdateUsfmRow,
 )
 
 

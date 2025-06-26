@@ -1,15 +1,14 @@
 from abc import ABC, abstractmethod
-from typing import BinaryIO, Iterable, Optional, Sequence, Tuple, Union
+from typing import BinaryIO, Iterable, Optional, Sequence, Union
 
 from ..utils.typeshed import StrPath
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
-from .scripture_ref import ScriptureRef
 from .update_usfm_parser_handler import (
     UpdateUsfmMarkerBehavior,
     UpdateUsfmParserHandler,
-    UpdateUsfmTextBehavior,
     UpdateUsfmRow,
+    UpdateUsfmTextBehavior,
 )
 from .usfm_parser import parse_usfm
 from .usfm_update_block_handler import UsfmUpdateBlockHandler

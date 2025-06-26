@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, List, TypedDict
+from typing import List, TypedDict
 
 from ..translation.word_alignment_matrix import WordAlignmentMatrix
 from .usfm_token import UsfmToken, UsfmTokenType
@@ -19,7 +19,6 @@ class PlaceMarkersAlignmentInfo(TypedDict):
 class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
 
     def process_block(self, block: UsfmUpdateBlock) -> UsfmUpdateBlock:
-        ref = str(block.refs[0])
         elements = list(block.elements)
 
         # Nothing to do if there are no markers to place or no alignment to use
