@@ -1,5 +1,19 @@
 from .chapter import Chapter
-from .depth_based_quotation_mark_resolver import DepthBasedQuotationMarkResolver
+from .depth_based_quotation_mark_resolver import (
+    DepthBasedQuotationMarkResolver,
+    QuotationContinuerState,
+    QuotationContinuerStyle,
+    QuotationMarkCategorizer,
+    QuotationMarkResolverState,
+)
+from .preliminary_quotation_analyzer import (
+    ApostropheProportionStatistics,
+    PreliminaryApostropheAnalyzer,
+    PreliminaryQuotationAnalyzer,
+    QuotationMarkGrouper,
+    QuotationMarkSequences,
+    QuotationMarkWordPositions,
+)
 from .quotation_mark_direction import QuotationMarkDirection
 from .quotation_mark_finder import QuotationMarkFinder
 from .quotation_mark_metadata import QuotationMarkMetadata
@@ -18,13 +32,23 @@ from .usfm_structure_extractor import UsfmStructureExtractor
 from .verse import Verse
 
 __all__ = [
+    "ApostropheProportionStatistics",
     "Chapter",
     "DepthBasedQuotationMarkResolver",
+    "PreliminaryApostropheAnalyzer",
+    "PreliminaryQuotationAnalyzer",
     "SingleLevelQuoteConvention",
+    "QuotationContinuerState",
+    "QuotationContinuerStyle",
+    "QuotationMarkCategorizer",
     "QuotationMarkCounts",
     "QuotationMarkDirection",
+    "QuotationMarkGrouper",
     "QuotationMarkMetadata",
+    "QuotationMarkResolverState",
+    "QuotationMarkSequences",
     "QuotationMarkStringMatch",
+    "QuotationMarkWordPositions",
     "QuoteConvention",
     "QuoteConventionAnalysis",
     "QuoteConventionDetectionResolutionSettings",

@@ -10,7 +10,7 @@ from .text_segment import TextSegment
 from .verse import Verse
 
 
-class CharacterCountStatistics:
+class ApostropheProportionStatistics:
     def __init__(self):
         self.reset()
 
@@ -84,31 +84,12 @@ class QuotationMarkWordPositions:
         num_initial_marks: int = self._get_word_initial_occurrences(quotation_mark)
         num_final_marks: int = self._get_word_final_occurrences(quotation_mark)
         num_total_marks: int = self._get_total_occurrences(quotation_mark)
-        return num_total_marks > 0 and abs(num_initial_marks - num_final_marks) / num_total_marks > 0.3
+        return num_total_marks > 0 and abs(num_initial_marks - num_final_marks) / num_total_marks < 0.3
 
     def is_mark_commonly_mid_word(self, quotation_mark: str) -> bool:
         num_mid_word_marks: int = self._get_mid_word_occurrences(quotation_mark)
         num_total_marks: int = self._get_total_occurrences(quotation_mark)
         return num_total_marks > 0 and num_mid_word_marks / num_total_marks > 0.3
-
-
-class QuotationMarkVersePositions:
-    def __init__(self):
-        self.reset()
-
-    def reset(self) -> None:
-        self.verse_starting_quotation_mark_counts: Dict[str, int] = dict()
-        self.verse_ending_quotation_mark_counts: Dict[str, int] = dict()
-
-    def process_verse_starting_quotation_mark(self, quotation_mark_match: QuotationMarkStringMatch) -> None:
-        if quotation_mark_match.get_quotation_mark() not in self.verse_starting_quotation_mark_counts:
-            self.verse_starting_quotation_mark_counts[quotation_mark_match.get_quotation_mark()] = 0
-        self.verse_starting_quotation_mark_counts[quotation_mark_match.get_quotation_mark()] += 1
-
-    def process_verse_ending_quotation_mark(self, quotation_mark_match: QuotationMarkStringMatch) -> None:
-        if quotation_mark_match.get_quotation_mark() not in self.verse_ending_quotation_mark_counts:
-            self.verse_ending_quotation_mark_counts[quotation_mark_match.get_quotation_mark()] = 0
-        self.verse_ending_quotation_mark_counts[quotation_mark_match.get_quotation_mark()] += 1
 
 
 class QuotationMarkSequences:
@@ -211,83 +192,39 @@ class QuotationMarkGrouper:
         )
 
 
-class PreliminaryQuotationAnalyzer:
+class PreliminaryApostropheAnalyzer:
     apostrophe_pattern = regex.compile(r"[\'\u2019]", regex.U)
 
-    def __init__(self, quote_conventions: QuoteConventionSet):
-        self.quote_conventions = quote_conventions
-        self.character_count_statistics = CharacterCountStatistics()
-        self.word_position_statistics = QuotationMarkWordPositions()
-        self.verse_positions = QuotationMarkVersePositions()
-        self.quotation_mark_sequences = QuotationMarkSequences()
-        self._reset_analysis()
+    def __init__(self):
+        self._apostrophe_proportion_statistics = ApostropheProportionStatistics()
+        self._word_position_statistics = QuotationMarkWordPositions()
+        self.reset()
 
-    def _reset_analysis(self) -> None:
-        self.character_count_statistics.reset()
-        self.word_position_statistics.reset()
-        self.verse_positions.reset()
-        self.quotation_mark_sequences.reset()
-        self.earlier_quotation_mark_counts: dict[str, int] = dict()
-        self.later_quotation_mark_counts: dict[str, int] = dict()
+    def reset(self) -> None:
+        self._apostrophe_proportion_statistics.reset()
+        self._word_position_statistics.reset()
 
-    def narrow_down_possible_quote_conventions(self, chapters: List[Chapter]) -> QuoteConventionSet:
-        for chapter in chapters:
-            self._analyze_quotation_marks_for_chapter(chapter)
-        return self._select_compatible_quote_conventions()
-
-    def _analyze_quotation_marks_for_chapter(self, chapter: Chapter) -> None:
-        for verse in chapter.get_verses():
-            self._analyze_quotation_marks_for_verse(verse)
-
-    def _analyze_quotation_marks_for_verse(self, verse: Verse) -> None:
-        self._count_characters_in_verse(verse)
-        quotation_marks = QuotationMarkFinder(self.quote_conventions).find_all_potential_quotation_marks_in_verse(verse)
-        self._analyze_quotation_mark_sequence(quotation_marks)
-        self._count_verse_starting_and_ending_quotation_marks(quotation_marks)
-
-    def _count_characters_in_verse(self, verse: Verse) -> None:
-        for text_segment in verse.get_text_segments():
-            self._count_characters_in_text_segment(text_segment)
-
-    def _count_characters_in_text_segment(self, text_segment: TextSegment) -> None:
-        self.character_count_statistics.count_characters(text_segment)
-
-    def _analyze_quotation_mark_sequence(self, quotation_marks: List[QuotationMarkStringMatch]) -> None:
-        quotation_mark_grouper: QuotationMarkGrouper = QuotationMarkGrouper(quotation_marks, self.quote_conventions)
-        for earlier_mark, later_mark in quotation_mark_grouper.get_quotation_mark_pairs():
-            self.quotation_mark_sequences.record_earlier_quotation_mark(earlier_mark)
-            self.quotation_mark_sequences.record_later_quotation_mark(later_mark)
-
-    def _count_verse_starting_and_ending_quotation_marks(self, quotation_marks: List[QuotationMarkStringMatch]) -> None:
+    def process_quotation_marks(
+        self, text_segments: List[TextSegment], quotation_marks: List[QuotationMarkStringMatch]
+    ) -> None:
+        for text_segment in text_segments:
+            self._apostrophe_proportion_statistics.count_characters(text_segment)
         for quotation_mark_match in quotation_marks:
-            if quotation_mark_match.does_quotation_mark_match(self.apostrophe_pattern):
-                self._count_apostrophe(quotation_mark_match)
-            if self._is_at_start_of_verse(quotation_mark_match):
-                self.verse_positions.process_verse_starting_quotation_mark(quotation_mark_match)
-            if self._is_at_end_of_verse(quotation_mark_match):
-                self.verse_positions.process_verse_ending_quotation_mark(quotation_mark_match)
+            self._process_quotation_mark(quotation_mark_match)
 
-    def _is_at_start_of_verse(self, quotation_mark_match: QuotationMarkStringMatch) -> bool:
-        return (
-            quotation_mark_match.get_text_segment().is_first_segment_in_verse()
-            and not quotation_mark_match.has_letter_in_leading_substring()
-        )
-
-    def _is_at_end_of_verse(self, quotation_mark_match: QuotationMarkStringMatch) -> bool:
-        return (
-            quotation_mark_match.get_text_segment().is_last_segment_in_verse()
-            and not quotation_mark_match.has_letter_in_trailing_substring()
-        )
+    def _process_quotation_mark(self, quotation_mark_match: QuotationMarkStringMatch) -> None:
+        if quotation_mark_match.does_quotation_mark_match(self.apostrophe_pattern):
+            self._count_apostrophe(quotation_mark_match)
 
     def _count_apostrophe(self, apostrophe_match: QuotationMarkStringMatch) -> None:
         apostrophe: str = apostrophe_match.get_quotation_mark()
-        self.character_count_statistics.add_apostrophe()
+        self._apostrophe_proportion_statistics.add_apostrophe()
         if self._is_match_word_initial(apostrophe_match):
-            self.word_position_statistics.count_word_initial_apostrophe(apostrophe)
+            self._word_position_statistics.count_word_initial_apostrophe(apostrophe)
         elif self._is_match_mid_word(apostrophe_match):
-            self.word_position_statistics.count_mid_word_apostrophe(apostrophe)
+            self._word_position_statistics.count_mid_word_apostrophe(apostrophe)
         elif self._is_match_word_final(apostrophe_match):
-            self.word_position_statistics.count_word_final_apostrophe(apostrophe)
+            self._word_position_statistics.count_word_final_apostrophe(apostrophe)
 
     def _is_match_word_initial(self, apostrophe_match: QuotationMarkStringMatch) -> bool:
         if apostrophe_match.has_trailing_whitespace():
@@ -310,68 +247,103 @@ class PreliminaryQuotationAnalyzer:
             return False
         return True
 
+    def is_apostrophe_only(self, mark: str) -> bool:
+        if not self.apostrophe_pattern.search(mark):
+            return False
+
+        if self._word_position_statistics.is_mark_rarely_initial(
+            mark
+        ) or self._word_position_statistics.is_mark_rarely_final(mark):
+            return True
+
+        if self._word_position_statistics.are_initial_and_final_rates_similar(
+            mark
+        ) and self._word_position_statistics.is_mark_commonly_mid_word(mark):
+            return True
+
+        if self._apostrophe_proportion_statistics.is_apostrophe_proportion_greater_than(0.02):
+            return True
+
+        return False
+
+
+class PreliminaryQuotationAnalyzer:
+
+    def __init__(self, quote_conventions: QuoteConventionSet):
+        self._quote_conventions = quote_conventions
+        self._apostrophe_analyzer = PreliminaryApostropheAnalyzer()
+        self._quotation_mark_sequences = QuotationMarkSequences()
+        self.reset()
+
+    def reset(self) -> None:
+        self._apostrophe_analyzer.reset()
+        self._quotation_mark_sequences.reset()
+
+    def narrow_down_possible_quote_conventions(self, chapters: List[Chapter]) -> QuoteConventionSet:
+        for chapter in chapters:
+            self._analyze_quotation_marks_for_chapter(chapter)
+        return self._select_compatible_quote_conventions()
+
+    def _analyze_quotation_marks_for_chapter(self, chapter: Chapter) -> None:
+        for verse in chapter.get_verses():
+            self._analyze_quotation_marks_for_verse(verse)
+
+    def _analyze_quotation_marks_for_verse(self, verse: Verse) -> None:
+        quotation_marks: List[QuotationMarkStringMatch] = QuotationMarkFinder(
+            self._quote_conventions
+        ).find_all_potential_quotation_marks_in_verse(verse)
+        self._analyze_quotation_mark_sequence(quotation_marks)
+        self._apostrophe_analyzer.process_quotation_marks(verse.get_text_segments(), quotation_marks)
+
+    def _analyze_quotation_mark_sequence(self, quotation_marks: List[QuotationMarkStringMatch]) -> None:
+        quotation_mark_grouper: QuotationMarkGrouper = QuotationMarkGrouper(quotation_marks, self._quote_conventions)
+        for earlier_mark, later_mark in quotation_mark_grouper.get_quotation_mark_pairs():
+            self._quotation_mark_sequences.record_earlier_quotation_mark(earlier_mark)
+            self._quotation_mark_sequences.record_later_quotation_mark(later_mark)
+
     def _select_compatible_quote_conventions(self) -> QuoteConventionSet:
         opening_quotation_marks = self._find_opening_quotation_marks()
         closing_quotation_marks = self._find_closing_quotation_marks()
 
-        return self.quote_conventions.filter_to_compatible_quote_conventions(
+        return self._quote_conventions.filter_to_compatible_quote_conventions(
             opening_quotation_marks, closing_quotation_marks
         )
 
     def _find_opening_quotation_marks(self) -> List[str]:
         return [
             quotation_mark
-            for quotation_mark in self.quote_conventions.get_possible_opening_marks()
+            for quotation_mark in self._quote_conventions.get_possible_opening_marks()
             if self._is_opening_quotation_mark(quotation_mark)
         ]
 
     def _is_opening_quotation_mark(self, quotation_mark: str) -> bool:
-        if self._is_apostrophe_only(quotation_mark):
+        if self._apostrophe_analyzer.is_apostrophe_only(quotation_mark):
             return False
 
-        if self.quotation_mark_sequences.is_mark_much_more_common_earlier(quotation_mark):
+        if self._quotation_mark_sequences.is_mark_much_more_common_earlier(quotation_mark):
             return True
-        if self.quotation_mark_sequences.is_mark_common_early_and_late(
+        if self._quotation_mark_sequences.is_mark_common_early_and_late(
             quotation_mark
-        ) and self.quote_conventions.is_quotation_mark_direction_ambiguous(quotation_mark):
+        ) and self._quote_conventions.is_quotation_mark_direction_ambiguous(quotation_mark):
             return True
         return False
 
     def _find_closing_quotation_marks(self) -> List[str]:
         return [
             quotation_mark
-            for quotation_mark in self.quote_conventions.get_possible_closing_marks()
+            for quotation_mark in self._quote_conventions.get_possible_closing_marks()
             if self._is_closing_quotation_mark(quotation_mark)
         ]
 
     def _is_closing_quotation_mark(self, quotation_mark: str) -> bool:
-        if self._is_apostrophe_only(quotation_mark):
+        if self._apostrophe_analyzer.is_apostrophe_only(quotation_mark):
             return False
 
-        if self.quotation_mark_sequences.is_mark_much_more_common_later(quotation_mark):
+        if self._quotation_mark_sequences.is_mark_much_more_common_later(quotation_mark):
             return True
 
-        if self.quotation_mark_sequences.is_mark_common_early_and_late(
+        if self._quotation_mark_sequences.is_mark_common_early_and_late(
             quotation_mark
-        ) and self.quote_conventions.is_quotation_mark_direction_ambiguous(quotation_mark):
+        ) and self._quote_conventions.is_quotation_mark_direction_ambiguous(quotation_mark):
             return True
-        return False
-
-    def _is_apostrophe_only(self, mark: str) -> bool:
-        if not self.apostrophe_pattern.search(mark):
-            return False
-
-        if self.word_position_statistics.is_mark_rarely_initial(
-            mark
-        ) or self.word_position_statistics.is_mark_rarely_final(mark):
-            return True
-
-        if self.word_position_statistics.are_initial_and_final_rates_similar(
-            mark
-        ) and self.word_position_statistics.is_mark_commonly_mid_word(mark):
-            return True
-
-        if self.character_count_statistics.is_apostrophe_proportion_greater_than(0.02):
-            return True
-
         return False
