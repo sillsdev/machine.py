@@ -1,5 +1,7 @@
 from typing import Set
 
+import regex
+
 from .analysis.quotation_mark_direction import QuotationMarkDirection
 from .analysis.quotation_mark_resolution_settings import QuotationMarkResolutionSettings
 from .analysis.quotation_mark_string_match import QuotationMarkStringMatch
@@ -18,6 +20,12 @@ class QuotationMarkUpdateResolutionSettings(QuotationMarkResolutionSettings):
 
     def is_valid_closing_quotation_mark(self, quotation_mark_match: QuotationMarkStringMatch) -> bool:
         return quotation_mark_match.is_valid_closing_quotation_mark(self._quote_convention_singleton_set)
+
+    def get_opening_quotation_mark_regex(self) -> regex.Pattern:
+        return self._quote_convention_singleton_set.get_opening_quotation_mark_regex()
+
+    def get_closing_quotation_mark_regex(self) -> regex.Pattern:
+        return self._quote_convention_singleton_set.get_closing_quotation_mark_regex()
 
     def are_marks_a_valid_pair(self, opening_mark: str, closing_mark: str) -> bool:
         return self._quote_convention_singleton_set.are_marks_a_valid_pair(opening_mark, closing_mark)

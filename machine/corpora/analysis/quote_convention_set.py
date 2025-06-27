@@ -14,6 +14,11 @@ class QuoteConventionSet:
         self._create_quote_regexes()
         self._create_quotation_mark_pair_map()
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, QuoteConventionSet):
+            return False
+        return self.conventions == other.conventions
+
     def _create_quote_regexes(self) -> None:
         opening_quotation_marks: Set[str] = set()
         closing_quotation_marks: Set[str] = set()

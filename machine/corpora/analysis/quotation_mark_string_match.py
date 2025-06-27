@@ -24,6 +24,15 @@ class QuotationMarkStringMatch:
         self.start_index = start_index
         self.end_index = end_index
 
+    def __eq__(self, value):
+        if not isinstance(value, QuotationMarkStringMatch):
+            return False
+        return (
+            self.text_segment == value.text_segment
+            and self.start_index == value.start_index
+            and self.end_index == value.end_index
+        )
+
     def get_quotation_mark(self) -> str:
         return self.text_segment.get_text()[self.start_index : self.end_index]
 
@@ -55,6 +64,18 @@ class QuotationMarkStringMatch:
             return None
         return self.text_segment.get_text()[self.start_index - 1]
 
+    def get_previous_character_string_match(self) -> Union["QuotationMarkStringMatch", None]:
+        if self.start_index == 0:
+            previous_segment = self.text_segment.get_previous_segment()
+            if previous_segment is not None and not self.text_segment.is_marker_in_preceding_context(
+                UsfmMarkerType.ParagraphMarker
+            ):
+                return QuotationMarkStringMatch(
+                    previous_segment, previous_segment.length() - 1, previous_segment.length()
+                )
+            return None
+        return QuotationMarkStringMatch(self.text_segment, self.start_index - 1, self.end_index - 1)
+
     def get_next_character(self) -> Union[str, None]:
         if self.is_at_end_of_segment():
             next_segment = self.text_segment.get_next_segment()
@@ -64,6 +85,16 @@ class QuotationMarkStringMatch:
                 return next_segment.get_text()[0]
             return None
         return self.text_segment.get_text()[self.end_index]
+
+    def get_next_character_string_match(self) -> Union["QuotationMarkStringMatch", None]:
+        if self.is_at_end_of_segment():
+            next_segment = self.text_segment.get_next_segment()
+            if next_segment is not None and not next_segment.is_marker_in_preceding_context(
+                UsfmMarkerType.ParagraphMarker
+            ):
+                return QuotationMarkStringMatch(next_segment, 0, 1)
+            return None
+        return QuotationMarkStringMatch(self.text_segment, self.start_index + 1, self.end_index + 1)
 
     def does_leading_substring_match(self, regex_pattern: regex.Pattern) -> bool:
         return regex_pattern.search(self.text_segment.substring_before(self.start_index)) is not None
@@ -136,9 +167,3 @@ class QuotationMarkStringMatch:
 
     def has_quote_introducer_in_leading_substring(self) -> bool:
         return self.does_leading_substring_match(self.quote_introducer_pattern)
-
-    def has_leading_closing_quotation_mark(self, quote_convention_set: QuoteConventionSet) -> bool:
-        return self.does_previous_character_match(quote_convention_set.get_closing_quotation_mark_regex())
-
-    def has_trailing_closing_quotation_mark(self, quote_convention_set: QuoteConventionSet) -> bool:
-        return self.does_next_character_match(quote_convention_set.get_closing_quotation_mark_regex())

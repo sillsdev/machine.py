@@ -1,3 +1,4 @@
+from enum import Enum, auto
 from typing import Generator, Set, Union
 
 import regex
@@ -14,6 +15,9 @@ from .usfm_marker_type import UsfmMarkerType
 class QuotationMarkResolverState:
 
     def __init__(self):
+        self.reset()
+
+    def reset(self) -> None:
         self.quotation_stack: list[QuotationMarkMetadata] = []
         self.current_depth: int = 0
 
@@ -53,10 +57,20 @@ class QuotationMarkResolverState:
         return self.quotation_stack[-1].get_quotation_mark()
 
 
+class QuotationContinuerStyle(Enum):
+    UNDETERMINED = auto()
+    ENGLISH = auto()
+    SPANISH = auto()
+
+
 class QuotationContinuerState:
     def __init__(self):
+        self.reset()
+
+    def reset(self) -> None:
         self.quotation_continuer_stack: list[QuotationMarkMetadata] = []
         self.current_depth = 0
+        self.continuer_style = QuotationContinuerStyle.UNDETERMINED
 
     def get_current_depth(self) -> int:
         return self.current_depth
@@ -64,88 +78,47 @@ class QuotationContinuerState:
     def has_continuer_been_observed(self) -> bool:
         return len(self.quotation_continuer_stack) > 0
 
+    def get_continuer_style(self) -> QuotationContinuerStyle:
+        return self.continuer_style
+
     def add_quotation_continuer(
-        self, quote_match: QuotationMarkStringMatch, quotation_mark_resolver_state: QuotationMarkResolverState
+        self,
+        quote_match: QuotationMarkStringMatch,
+        quotation_mark_resolver_state: QuotationMarkResolverState,
+        quotation_continuer_style: QuotationContinuerStyle,
     ) -> QuotationMarkMetadata:
         quote = quote_match.resolve(len(self.quotation_continuer_stack) + 1, QuotationMarkDirection.Opening)
         self.quotation_continuer_stack.append(quote)
         self.current_depth += 1
+        self.continuer_style = quotation_continuer_style
         if len(self.quotation_continuer_stack) == len(quotation_mark_resolver_state.quotation_stack):
             self.quotation_continuer_stack.clear()
             self.current_depth = 0
         return quote
 
 
-class DepthBasedQuotationMarkResolver(QuotationMarkResolver):
+class QuotationMarkCategorizer:
     apostrophe_pattern = regex.compile(r"[\'\u2019\u2018]", regex.U)
 
-    def __init__(self, settings: QuotationMarkResolutionSettings):
-        self._settings = settings
-        self._quotation_mark_resolver_state = QuotationMarkResolverState()
-        self._quotation_continuer_state = QuotationContinuerState()
-        self._issues: Set[QuotationMarkResolutionIssue] = set()
-
-    def reset(self) -> None:
-        self._quotation_mark_resolver_state = QuotationMarkResolverState()
-        self._quotation_continuer_state = QuotationContinuerState()
-        self._issues = set()
-
-    def resolve_quotation_marks(
-        self, quote_matches: list[QuotationMarkStringMatch]
-    ) -> Generator[QuotationMarkMetadata, None, None]:
-        for quote_index, quote_match in enumerate(quote_matches):
-            previous_mark = None if quote_index == 0 else quote_matches[quote_index - 1]
-            next_mark = None if quote_index == len(quote_matches) - 1 else quote_matches[quote_index + 1]
-            yield from self._resolve_quotation_mark(quote_match, previous_mark, next_mark)
-        if self._quotation_mark_resolver_state.has_open_quotation_mark():
-            self._issues.add(QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK)
-
-    def _resolve_quotation_mark(
+    def __init__(
         self,
-        quote_match: QuotationMarkStringMatch,
-        previous_mark: Union[QuotationMarkStringMatch, None],
-        next_mark: Union[QuotationMarkStringMatch, None],
-    ) -> Generator[QuotationMarkMetadata, None, None]:
-        if self._is_opening_quote(quote_match):
-            if self._is_quotation_continuer(quote_match, previous_mark, next_mark):
-                yield self._process_quotation_continuer(quote_match)
-            else:
-                if self._is_depth_too_great():
-                    self._issues.add(QuotationMarkResolutionIssue.TOO_DEEP_NESTING)
-                    return
+        quotation_mark_resolution_settings: QuotationMarkResolutionSettings,
+        quotation_mark_resolver_state: QuotationMarkResolverState,
+        quotation_continuer_state: QuotationContinuerState,
+    ):
+        self._settings = quotation_mark_resolution_settings
+        self._quotation_mark_resolver_state = quotation_mark_resolver_state
+        self._quotation_continuer_state = quotation_continuer_state
 
-                yield self._process_opening_mark(quote_match)
-        elif self._is_apostrophe(quote_match, next_mark):
-            pass
-        elif self._is_closing_quote(quote_match):
-            if not self._quotation_mark_resolver_state.has_open_quotation_mark():
-                self._issues.add(QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK)
-                return
-            yield self._process_closing_mark(quote_match)
-        elif self._is_malformed_closing_quote(quote_match):
-            yield self._process_closing_mark(quote_match)
-        elif self._is_malformed_opening_quote(quote_match):
-            yield self._process_opening_mark(quote_match)
-        elif self._is_unpaired_closing_quote(quote_match):
-            self._issues.add(QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK)
-        else:
-            self._issues.add(QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK)
-
-    def _is_quotation_continuer(
+    def is_english_quotation_continuer(
         self,
         quote_match: QuotationMarkStringMatch,
         previous_match: Union[QuotationMarkStringMatch, None],
         next_match: Union[QuotationMarkStringMatch, None],
     ) -> bool:
-        if (
-            self._settings.should_rely_on_paragraph_markers()
-            and not quote_match.get_text_segment().is_marker_in_preceding_context(UsfmMarkerType.ParagraphMarker)
-        ):
+        if self._quotation_continuer_state.get_continuer_style() == QuotationContinuerStyle.SPANISH:
             return False
-        if not self._quotation_mark_resolver_state.has_open_quotation_mark():
-            return False
-
-        if quote_match.has_quote_introducer_in_leading_substring():
+        if not self._meets_quote_continuer_prerequisites(quote_match, previous_match, next_match):
             return False
 
         if not self._quotation_continuer_state.has_continuer_been_observed():
@@ -161,45 +134,73 @@ class DepthBasedQuotationMarkResolver(QuotationMarkResolver):
             if self._quotation_mark_resolver_state.are_more_than_n_quotes_open(1):
                 if next_match is None or next_match.get_start_index() != quote_match.get_end_index():
                     return False
-        elif (
-            self._quotation_continuer_state.get_current_depth()
-            >= self._quotation_mark_resolver_state.get_current_depth()
-        ):
-            return False
         else:
             if (
                 quote_match.get_quotation_mark()
-                != self._quotation_mark_resolver_state.get_deepest_opening_quotation_mark()
+                != self._quotation_mark_resolver_state.get_opening_quotation_mark_at_depth(
+                    self._quotation_continuer_state.get_current_depth() + 1
+                )
             ):
                 return False
 
         return True
 
-    def _process_quotation_continuer(self, quote_match: QuotationMarkStringMatch) -> QuotationMarkMetadata:
-        return self._quotation_continuer_state.add_quotation_continuer(quote_match, self._quotation_mark_resolver_state)
+    def is_spanish_quotation_continuer(
+        self,
+        quote_match: QuotationMarkStringMatch,
+        previous_match: Union[QuotationMarkStringMatch, None],
+        next_match: Union[QuotationMarkStringMatch, None],
+    ) -> bool:
+        if self._quotation_continuer_state.get_continuer_style() == QuotationContinuerStyle.ENGLISH:
+            return False
+        if not self._meets_quote_continuer_prerequisites(quote_match, previous_match, next_match):
+            return False
 
-    def _is_depth_too_great(self) -> bool:
-        return self._quotation_mark_resolver_state.are_more_than_n_quotes_open(4)
+        if not self._quotation_continuer_state.has_continuer_been_observed():
+            if quote_match.start_index > 0:
+                return False
 
-    def _process_opening_mark(self, quote_match: QuotationMarkStringMatch) -> QuotationMarkMetadata:
-        if not self._settings.does_metadata_match_quotation_mark(
-            quote_match.get_quotation_mark(),
-            self._quotation_mark_resolver_state.get_current_depth(),
-            QuotationMarkDirection.Opening,
+            # this has only been observed with guillemets so far
+            if quote_match.get_quotation_mark() != "»":
+                return False
+            if not self._settings.are_marks_a_valid_pair(
+                self._quotation_mark_resolver_state.get_opening_quotation_mark_at_depth(
+                    self._quotation_continuer_state.get_current_depth() + 1
+                ),
+                quote_match.get_quotation_mark(),
+            ):
+                return False
+            if self._quotation_mark_resolver_state.are_more_than_n_quotes_open(1):
+                if next_match is None or next_match.get_start_index() != quote_match.get_end_index():
+                    return False
+        else:
+            if not self._settings.are_marks_a_valid_pair(
+                self._quotation_mark_resolver_state.get_opening_quotation_mark_at_depth(
+                    self._quotation_continuer_state.get_current_depth() + 1
+                ),
+                quote_match.get_quotation_mark(),
+            ):
+                return False
+
+        return True
+
+    def _meets_quote_continuer_prerequisites(
+        self,
+        quote_match: QuotationMarkStringMatch,
+        previous_match: Union[QuotationMarkStringMatch, None],
+        next_match: Union[QuotationMarkStringMatch, None],
+    ) -> bool:
+        if (
+            self._settings.should_rely_on_paragraph_markers()
+            and not quote_match.get_text_segment().is_marker_in_preceding_context(UsfmMarkerType.ParagraphMarker)
         ):
-            self._issues.add(QuotationMarkResolutionIssue.INCOMPATIBLE_QUOTATION_MARK)
-        return self._quotation_mark_resolver_state.add_opening_quotation_mark(quote_match)
+            return False
+        if not self._quotation_mark_resolver_state.has_open_quotation_mark():
+            return False
 
-    def _process_closing_mark(self, quote_match: QuotationMarkStringMatch) -> QuotationMarkMetadata:
-        if not self._settings.does_metadata_match_quotation_mark(
-            quote_match.get_quotation_mark(),
-            self._quotation_mark_resolver_state.get_current_depth() - 1,
-            QuotationMarkDirection.Closing,
-        ):
-            self._issues.add(QuotationMarkResolutionIssue.INCOMPATIBLE_QUOTATION_MARK)
-        return self._quotation_mark_resolver_state.add_closing_quotation_mark(quote_match)
+        return True
 
-    def _is_opening_quote(
+    def is_opening_quote(
         self,
         match: QuotationMarkStringMatch,
     ) -> bool:
@@ -216,7 +217,7 @@ class DepthBasedQuotationMarkResolver(QuotationMarkResolver):
             ) and not (match.has_trailing_whitespace() or match.has_trailing_punctuation())
         return True
 
-    def _is_closing_quote(
+    def is_closing_quote(
         self,
         match: QuotationMarkStringMatch,
     ) -> bool:
@@ -227,11 +228,14 @@ class DepthBasedQuotationMarkResolver(QuotationMarkResolver):
         # if the quote convention is ambiguous, use whitespace as a clue
         if self._settings.is_valid_opening_quotation_mark(match):
             return (
-                match.has_trailing_whitespace() or match.has_trailing_punctuation() or match.is_at_end_of_segment()
+                match.has_trailing_whitespace()
+                or match.has_trailing_punctuation()
+                or match.is_at_end_of_segment()
+                or match.does_next_character_match(self._settings.get_closing_quotation_mark_regex())
             ) and not match.has_leading_whitespace()
         return True
 
-    def _is_malformed_opening_quote(
+    def is_malformed_opening_quote(
         self,
         match: QuotationMarkStringMatch,
     ) -> bool:
@@ -250,7 +254,7 @@ class DepthBasedQuotationMarkResolver(QuotationMarkResolver):
 
         return False
 
-    def _is_malformed_closing_quote(
+    def is_malformed_closing_quote(
         self,
         match: QuotationMarkStringMatch,
     ) -> bool:
@@ -259,7 +263,8 @@ class DepthBasedQuotationMarkResolver(QuotationMarkResolver):
 
         return (
             (
-                (match.is_at_end_of_segment() or not match.has_trailing_whitespace())
+                match.is_at_end_of_segment()
+                or not match.has_trailing_whitespace()
                 or (match.has_leading_whitespace() and match.has_trailing_whitespace())
             )
             and self._quotation_mark_resolver_state.has_open_quotation_mark()
@@ -268,7 +273,7 @@ class DepthBasedQuotationMarkResolver(QuotationMarkResolver):
             )
         )
 
-    def _is_unpaired_closing_quote(
+    def is_unpaired_closing_quote(
         self,
         match: QuotationMarkStringMatch,
     ) -> bool:
@@ -288,7 +293,7 @@ class DepthBasedQuotationMarkResolver(QuotationMarkResolver):
             self._quotation_mark_resolver_state.get_deepest_opening_quotation_mark() == match.get_previous_character()
         )
 
-    def _is_apostrophe(
+    def is_apostrophe(
         self,
         match: QuotationMarkStringMatch,
         next_match: Union[QuotationMarkStringMatch, None],
@@ -334,6 +339,94 @@ class DepthBasedQuotationMarkResolver(QuotationMarkResolver):
             return True
 
         return False
+
+
+class DepthBasedQuotationMarkResolver(QuotationMarkResolver):
+    def __init__(self, settings: QuotationMarkResolutionSettings):
+        self._settings = settings
+        self._quotation_mark_resolver_state = QuotationMarkResolverState()
+        self._quotation_continuer_state = QuotationContinuerState()
+        self._quotation_mark_categorizer = QuotationMarkCategorizer(
+            self._settings, self._quotation_mark_resolver_state, self._quotation_continuer_state
+        )
+        self._issues: Set[QuotationMarkResolutionIssue] = set()
+
+    def reset(self) -> None:
+        self._quotation_mark_resolver_state.reset()
+        self._quotation_continuer_state.reset()
+        self._issues = set()
+
+    def resolve_quotation_marks(
+        self, quote_matches: list[QuotationMarkStringMatch]
+    ) -> Generator[QuotationMarkMetadata, None, None]:
+        for quote_index, quote_match in enumerate(quote_matches):
+            previous_mark = None if quote_index == 0 else quote_matches[quote_index - 1]
+            next_mark = None if quote_index == len(quote_matches) - 1 else quote_matches[quote_index + 1]
+            yield from self._resolve_quotation_mark(quote_match, previous_mark, next_mark)
+        if self._quotation_mark_resolver_state.has_open_quotation_mark():
+            self._issues.add(QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK)
+
+    def _resolve_quotation_mark(
+        self,
+        quote_match: QuotationMarkStringMatch,
+        previous_mark: Union[QuotationMarkStringMatch, None],
+        next_mark: Union[QuotationMarkStringMatch, None],
+    ) -> Generator[QuotationMarkMetadata, None, None]:
+        if self._quotation_mark_categorizer.is_opening_quote(quote_match):
+            if self._quotation_mark_categorizer.is_english_quotation_continuer(quote_match, previous_mark, next_mark):
+                yield self._process_quotation_continuer(quote_match, QuotationContinuerStyle.ENGLISH)
+            else:
+                if self._is_depth_too_great():
+                    self._issues.add(QuotationMarkResolutionIssue.TOO_DEEP_NESTING)
+                    return
+
+                yield self._process_opening_mark(quote_match)
+        elif self._quotation_mark_categorizer.is_apostrophe(quote_match, next_mark):
+            pass
+        elif self._quotation_mark_categorizer.is_closing_quote(quote_match):
+            if self._quotation_mark_categorizer.is_spanish_quotation_continuer(quote_match, previous_mark, next_mark):
+                yield self._process_quotation_continuer(quote_match, QuotationContinuerStyle.SPANISH)
+            elif not self._quotation_mark_resolver_state.has_open_quotation_mark():
+                self._issues.add(QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK)
+                return
+            else:
+                yield self._process_closing_mark(quote_match)
+        elif self._quotation_mark_categorizer.is_malformed_closing_quote(quote_match):
+            yield self._process_closing_mark(quote_match)
+        elif self._quotation_mark_categorizer.is_malformed_opening_quote(quote_match):
+            yield self._process_opening_mark(quote_match)
+        elif self._quotation_mark_categorizer.is_unpaired_closing_quote(quote_match):
+            self._issues.add(QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK)
+        else:
+            self._issues.add(QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK)
+
+    def _process_quotation_continuer(
+        self, quote_match: QuotationMarkStringMatch, continuer_style: QuotationContinuerStyle
+    ) -> QuotationMarkMetadata:
+        return self._quotation_continuer_state.add_quotation_continuer(
+            quote_match, self._quotation_mark_resolver_state, continuer_style
+        )
+
+    def _is_depth_too_great(self) -> bool:
+        return self._quotation_mark_resolver_state.are_more_than_n_quotes_open(3)
+
+    def _process_opening_mark(self, quote_match: QuotationMarkStringMatch) -> QuotationMarkMetadata:
+        if not self._settings.does_metadata_match_quotation_mark(
+            quote_match.get_quotation_mark(),
+            self._quotation_mark_resolver_state.get_current_depth(),
+            QuotationMarkDirection.Opening,
+        ):
+            self._issues.add(QuotationMarkResolutionIssue.INCOMPATIBLE_QUOTATION_MARK)
+        return self._quotation_mark_resolver_state.add_opening_quotation_mark(quote_match)
+
+    def _process_closing_mark(self, quote_match: QuotationMarkStringMatch) -> QuotationMarkMetadata:
+        if not self._settings.does_metadata_match_quotation_mark(
+            quote_match.get_quotation_mark(),
+            self._quotation_mark_resolver_state.get_current_depth() - 1,
+            QuotationMarkDirection.Closing,
+        ):
+            self._issues.add(QuotationMarkResolutionIssue.INCOMPATIBLE_QUOTATION_MARK)
+        return self._quotation_mark_resolver_state.add_closing_quotation_mark(quote_match)
 
     def get_issues(self) -> Set[QuotationMarkResolutionIssue]:
         return self._issues

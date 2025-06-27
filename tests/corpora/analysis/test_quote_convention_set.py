@@ -1,8 +1,13 @@
+from pytest import approx
+
 from machine.corpora.analysis import (
     QuotationMarkDirection,
+    QuotationMarkMetadata,
+    QuotationMarkTabulator,
     QuoteConvention,
     QuoteConventionSet,
     SingleLevelQuoteConvention,
+    TextSegment,
 )
 
 
@@ -1141,5 +1146,181 @@ def test_filter_to_compatible_quote_conventions() -> None:
 
 
 def test_find_most_similar_convention() -> None:
-    # TODO: test this after testing QuotationMarkTabulator
-    pass
+    standard_english_quote_convention: QuoteConvention = QuoteConvention(
+        "standard_english",
+        [
+            SingleLevelQuoteConvention("\u201c", "\u201d"),
+            SingleLevelQuoteConvention("\u2018", "\u2019"),
+            SingleLevelQuoteConvention("\u201c", "\u201d"),
+            SingleLevelQuoteConvention("\u2018", "\u2019"),
+        ],
+    )
+
+    standard_french_quote_convention: QuoteConvention = QuoteConvention(
+        "standard_french",
+        [
+            SingleLevelQuoteConvention("\u00ab", "\u00bb"),
+            SingleLevelQuoteConvention("\u2039", "\u203a"),
+            SingleLevelQuoteConvention("\u00ab", "\u00bb"),
+            SingleLevelQuoteConvention("\u2039", "\u203a"),
+        ],
+    )
+
+    western_european_quote_convention: QuoteConvention = QuoteConvention(
+        "western_european",
+        [
+            SingleLevelQuoteConvention("\u00ab", "\u00bb"),
+            SingleLevelQuoteConvention("\u201c", "\u201d"),
+            SingleLevelQuoteConvention("\u2018", "\u2019"),
+        ],
+    )
+
+    all_three_quote_convention_set = QuoteConventionSet(
+        [
+            standard_english_quote_convention,
+            standard_french_quote_convention,
+            western_european_quote_convention,
+        ]
+    )
+    two_french_quote_convention_set = QuoteConventionSet(
+        [western_european_quote_convention, standard_french_quote_convention]
+    )
+
+    multiple_english_quotes_tabulator = QuotationMarkTabulator()
+    multiple_english_quotes_tabulator.tabulate(
+        [
+            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1),
+            QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 5, 6),
+            QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 13, 14),
+            QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 14, 15),
+            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 28, 29),
+            QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 42, 43),
+        ]
+    )
+    assert all_three_quote_convention_set.find_most_similar_convention(multiple_english_quotes_tabulator) == (
+        standard_english_quote_convention,
+        1.0,
+    )
+
+    multiple_western_european_quotes_tabulator = QuotationMarkTabulator()
+    multiple_western_european_quotes_tabulator.tabulate(
+        [
+            QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1),
+            QuotationMarkMetadata("\u201c", 2, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 5, 6),
+            QuotationMarkMetadata("\u201d", 2, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 13, 14),
+            QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 14, 15),
+            QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 28, 29),
+            QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 42, 43),
+        ]
+    )
+    assert all_three_quote_convention_set.find_most_similar_convention(multiple_western_european_quotes_tabulator) == (
+        western_european_quote_convention,
+        1.0,
+    )
+
+    multiple_french_quotes_tabulator = QuotationMarkTabulator()
+    multiple_french_quotes_tabulator.tabulate(
+        [
+            QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1),
+            QuotationMarkMetadata("\u2039", 2, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 5, 6),
+            QuotationMarkMetadata("\u203a", 2, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 13, 14),
+            QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 14, 15),
+            QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 28, 29),
+            QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 42, 43),
+        ]
+    )
+    assert all_three_quote_convention_set.find_most_similar_convention(multiple_french_quotes_tabulator) == (
+        standard_french_quote_convention,
+        1.0,
+    )
+    assert two_french_quote_convention_set.find_most_similar_convention(multiple_french_quotes_tabulator) == (
+        standard_french_quote_convention,
+        1.0,
+    )
+
+    noisy_multiple_english_quotes_tabulator = QuotationMarkTabulator()
+    noisy_multiple_english_quotes_tabulator.tabulate(
+        [
+            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1),
+            QuotationMarkMetadata("\u201c", 2, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 5, 6),
+            QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 13, 14),
+            QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 14, 15),
+            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 28, 29),
+            QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 42, 43),
+        ]
+    )
+    assert all_three_quote_convention_set.find_most_similar_convention(noisy_multiple_english_quotes_tabulator) == (
+        standard_english_quote_convention,
+        approx(0.9, rel=1e-9),
+    )
+    assert two_french_quote_convention_set.find_most_similar_convention(noisy_multiple_english_quotes_tabulator) == (
+        western_european_quote_convention,
+        approx(0.1, rel=1e-9),
+    )
+
+    noisy_multiple_french_quotes_tabulator = QuotationMarkTabulator()
+    noisy_multiple_french_quotes_tabulator.tabulate(
+        [
+            QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1),
+            QuotationMarkMetadata("\u2039", 2, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 5, 6),
+            QuotationMarkMetadata("\u203a", 2, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 13, 14),
+            QuotationMarkMetadata("\u2039", 2, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 5, 6),
+            QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 13, 14),
+            QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 14, 15),
+            QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 28, 29),
+            QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 42, 43),
+        ]
+    )
+    assert all_three_quote_convention_set.find_most_similar_convention(noisy_multiple_french_quotes_tabulator) == (
+        standard_french_quote_convention,
+        approx(0.916666666666, rel=1e-9),
+    )
+
+    too_deep_english_quotes_tabulator = QuotationMarkTabulator()
+    too_deep_english_quotes_tabulator.tabulate(
+        [
+            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1),
+            QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 5, 6),
+            QuotationMarkMetadata("\u201c", 3, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 13, 14),
+            QuotationMarkMetadata("\u2018", 4, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 15, 16),
+            QuotationMarkMetadata("\u201c", 5, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 17, 18),
+        ]
+    )
+    assert all_three_quote_convention_set.find_most_similar_convention(too_deep_english_quotes_tabulator) == (
+        standard_english_quote_convention,
+        approx(0.967741935483871, rel=1e-9),
+    )
+
+    # in case of ties, the earlier convention in the list should be returned
+    unknown_quote_tabulator = QuotationMarkTabulator()
+    unknown_quote_tabulator.tabulate(
+        [QuotationMarkMetadata("\u201a", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1)]
+    )
+    assert all_three_quote_convention_set.find_most_similar_convention(unknown_quote_tabulator) == (
+        standard_english_quote_convention,
+        0.0,
+    )
+
+    single_french_opening_quote_tabulator = QuotationMarkTabulator()
+    single_french_opening_quote_tabulator.tabulate(
+        [QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1)]
+    )
+    assert all_three_quote_convention_set.find_most_similar_convention(single_french_opening_quote_tabulator) == (
+        standard_french_quote_convention,
+        1.0,
+    )
+    assert two_french_quote_convention_set.find_most_similar_convention(single_french_opening_quote_tabulator) == (
+        western_european_quote_convention,
+        1.0,
+    )
+
+    # Default values should be returned when the QuoteConventionSet is empty
+    single_english_opening_quote_tabulator = QuotationMarkTabulator()
+    single_english_opening_quote_tabulator.tabulate(
+        [QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1)]
+    )
+    empty_quote_convention_set = QuoteConventionSet([])
+    assert empty_quote_convention_set.find_most_similar_convention(single_english_opening_quote_tabulator) == (
+        None,
+        float("-inf"),
+    )
