@@ -289,9 +289,9 @@ def test_mismatched_quotation_marks() -> None:
     of the field which Yahweh God had made.
     He said to the woman, “Has God really said,
     ‘You shall not eat of any tree of the garden’?”
-    \\v 2 The woman said to the serpent, 
-    “We may eat fruit from the trees of the garden, 
-    \\v 3 but not the fruit of the tree which is in the middle of the garden. 
+    \\v 2 The woman said to the serpent,
+    “We may eat fruit from the trees of the garden,
+    \\v 3 but not the fruit of the tree which is in the middle of the garden.
     God has said, ‘You shall not eat of it. You shall not touch it, lest you die.’
     """
     analysis = detect_quote_convention(usfm)
