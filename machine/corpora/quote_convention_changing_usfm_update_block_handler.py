@@ -94,13 +94,13 @@ class QuoteConventionChangingUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         text_segments: List[TextSegment] = []
         for token in element.get_tokens():
             if token.type == UsfmTokenType.VERSE:
-                self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.VerseMarker)
+                self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.VERSE)
             elif token.type == UsfmTokenType.PARAGRAPH:
-                self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.ParagraphMarker)
+                self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.PARAGRAPH)
             elif token.type == UsfmTokenType.CHARACTER:
-                self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.CharacterMarker)
+                self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.CHARACTER)
             elif token.type == UsfmTokenType.NOTE:
-                self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.EmbedMarker)
+                self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.EMBED)
             elif token.type == UsfmTokenType.TEXT:
                 text_segment: Union[TextSegment, None] = self._create_text_segment(token)
                 if text_segment is not None:
@@ -135,7 +135,7 @@ class QuoteConventionChangingUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         self._current_strategy = self._settings.get_action_for_chapter(new_chapter_number)
         self._verse_text_quotation_mark_resolver.reset()
         self._next_scripture_text_segment_builder = TextSegment.Builder()
-        self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.ChapterMarker)
+        self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.CHAPTER)
 
     def _check_for_verse_change(self, block: UsfmUpdateBlock) -> None:
         for scripture_ref in block.refs:
@@ -147,4 +147,4 @@ class QuoteConventionChangingUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                 self._start_new_verse(self._current_verse_number)
 
     def _start_new_verse(self, new_chapter_number: int) -> None:
-        self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.VerseMarker)
+        self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.VERSE)

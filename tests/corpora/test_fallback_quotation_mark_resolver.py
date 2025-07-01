@@ -22,7 +22,7 @@ def test_reset():
     )
 
     basic_quotation_mark_resolver._last_quotation_mark = QuotationMarkMetadata(
-        '"', 1, QuotationMarkDirection.Opening, TextSegment.Builder().set_text('"\'test text"').build(), 0, 1
+        '"', 1, QuotationMarkDirection.OPENING, TextSegment.Builder().set_text('"\'test text"').build(), 0, 1
     )
     basic_quotation_mark_resolver._issues.add(QuotationMarkResolutionIssue.UNEXPECTED_QUOTATION_MARK)
 
@@ -51,10 +51,10 @@ def test_simple_quotation_mark_resolution():
     )
     expected_resolved_quotation_marks = [
         QuotationMarkMetadata(
-            '"', 1, QuotationMarkDirection.Opening, TextSegment.Builder().set_text('"test text"').build(), 0, 1
+            '"', 1, QuotationMarkDirection.OPENING, TextSegment.Builder().set_text('"test text"').build(), 0, 1
         ),
         QuotationMarkMetadata(
-            '"', 1, QuotationMarkDirection.Closing, TextSegment.Builder().set_text('"test text"').build(), 10, 11
+            '"', 1, QuotationMarkDirection.CLOSING, TextSegment.Builder().set_text('"test text"').build(), 10, 11
         ),
     ]
 
@@ -150,7 +150,7 @@ def test_is_opening_quote_stateful():
 
     # immediately preceding quote
     basic_quotation_mark_resolver._last_quotation_mark = QuotationMarkMetadata(
-        '"', 1, QuotationMarkDirection.Opening, TextSegment.Builder().set_text('"\'test text"').build(), 0, 1
+        '"', 1, QuotationMarkDirection.OPENING, TextSegment.Builder().set_text('"\'test text"').build(), 0, 1
     )
     assert basic_quotation_mark_resolver._is_opening_quote(quote_match) is True
 
@@ -171,26 +171,26 @@ def test_does_most_recent_opening_mark_immediately_precede():
 
     # correct preceding quote
     basic_quotation_mark_resolver._last_quotation_mark = QuotationMarkMetadata(
-        '"', 1, QuotationMarkDirection.Opening, TextSegment.Builder().set_text('"\'test text"').build(), 0, 1
+        '"', 1, QuotationMarkDirection.OPENING, TextSegment.Builder().set_text('"\'test text"').build(), 0, 1
     )
     assert basic_quotation_mark_resolver._does_most_recent_opening_mark_immediately_precede(nested_quote_match) is True
 
     # wrong direction for preceding quote
     basic_quotation_mark_resolver._last_quotation_mark = QuotationMarkMetadata(
-        '"', 1, QuotationMarkDirection.Closing, TextSegment.Builder().set_text('"\'test text"').build(), 0, 1
+        '"', 1, QuotationMarkDirection.CLOSING, TextSegment.Builder().set_text('"\'test text"').build(), 0, 1
     )
     assert basic_quotation_mark_resolver._does_most_recent_opening_mark_immediately_precede(nested_quote_match) is False
 
     # different text segment for preceding quote
     basic_quotation_mark_resolver._last_quotation_mark = QuotationMarkMetadata(
-        '"', 1, QuotationMarkDirection.Opening, TextSegment.Builder().set_text('"\'different text"').build(), 0, 1
+        '"', 1, QuotationMarkDirection.OPENING, TextSegment.Builder().set_text('"\'different text"').build(), 0, 1
     )
     assert basic_quotation_mark_resolver._does_most_recent_opening_mark_immediately_precede(nested_quote_match) is False
 
     # previous quote is not *immediately* before the current quote
     nested_quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text('" \'test text"').build(), 2, 3)
     basic_quotation_mark_resolver._last_quotation_mark = QuotationMarkMetadata(
-        '"', 1, QuotationMarkDirection.Opening, TextSegment.Builder().set_text('" \'test text"').build(), 0, 1
+        '"', 1, QuotationMarkDirection.OPENING, TextSegment.Builder().set_text('" \'test text"').build(), 0, 1
     )
     assert basic_quotation_mark_resolver._does_most_recent_opening_mark_immediately_precede(nested_quote_match) is False
 
@@ -276,7 +276,7 @@ def test_resolve_opening_quote():
     )
 
     expected_resolved_quotation_mark = QuotationMarkMetadata(
-        '"', 1, QuotationMarkDirection.Opening, TextSegment.Builder().set_text('"test text"').build(), 0, 1
+        '"', 1, QuotationMarkDirection.OPENING, TextSegment.Builder().set_text('"test text"').build(), 0, 1
     )
     actual_resolved_quotation_mark = basic_quotation_mark_resolver._resolve_opening_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text('"test text"').build(), 0, 1)
@@ -296,7 +296,7 @@ def test_resolve_closing_quote():
     )
 
     expected_resolved_quotation_mark = QuotationMarkMetadata(
-        '"', 1, QuotationMarkDirection.Closing, TextSegment.Builder().set_text('"test text"').build(), 10, 11
+        '"', 1, QuotationMarkDirection.CLOSING, TextSegment.Builder().set_text('"test text"').build(), 10, 11
     )
     actual_resolved_quotation_mark = basic_quotation_mark_resolver._resolve_closing_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text('"test text"').build(), 10, 11)
@@ -310,5 +310,4 @@ def assert_resolved_quotation_marks_equal(
 ) -> None:
     assert len(actual_resolved_quotation_marks) == len(expected_resolved_quotation_marks)
     for actual_mark, expected_mark in zip(actual_resolved_quotation_marks, expected_resolved_quotation_marks):
-        print(f"Actual: {actual_mark.get_quotation_mark()}, Expected: {expected_mark.get_quotation_mark()}")
         assert actual_mark == expected_mark

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import List, Union
 
 from .chapter import Chapter
@@ -14,23 +15,17 @@ from .standard_quote_conventions import standard_quote_conventions
 from .usfm_structure_extractor import UsfmStructureExtractor
 
 
+@dataclass
 class QuoteConventionAnalysis:
-    def __init__(self, best_quote_convention: QuoteConvention, best_quote_convention_score: float):
-        self.best_quote_convention = best_quote_convention
-        self.best_quote_convention_score = best_quote_convention_score
-
-    def get_best_quote_convention(self) -> QuoteConvention:
-        return self.best_quote_convention
-
-    def get_best_quote_convention_similarity_score(self) -> float:
-        return self.best_quote_convention_score * 100
+    best_quote_convention: QuoteConvention
+    best_quote_convention_score: float
 
 
 class QuoteConventionDetector(UsfmStructureExtractor):
 
     def __init__(self):
         super().__init__()
-        self.quotation_mark_tabulator = QuotationMarkTabulator()
+        self._quotation_mark_tabulator = QuotationMarkTabulator()
 
     def _count_quotation_marks_in_chapters(self, chapters: list[Chapter]) -> None:
         possible_quote_conventions: QuoteConventionSet = PreliminaryQuotationAnalyzer(
@@ -53,17 +48,17 @@ class QuoteConventionDetector(UsfmStructureExtractor):
             ).resolve_quotation_marks(quotation_mark_matches)
         )
 
-        self.quotation_mark_tabulator.tabulate(resolved_quotation_marks)
+        self._quotation_mark_tabulator.tabulate(resolved_quotation_marks)
 
     def detect_quotation_convention(self, print_summary: bool) -> Union[QuoteConventionAnalysis, None]:
         self._count_quotation_marks_in_chapters(self.get_chapters())
 
         (best_quote_convention, score) = standard_quote_conventions.find_most_similar_convention(
-            self.quotation_mark_tabulator
+            self._quotation_mark_tabulator
         )
 
         if print_summary:
-            self.quotation_mark_tabulator.print_summary()
+            self._quotation_mark_tabulator.print_summary()
 
         if score > 0 and best_quote_convention is not None:
             return QuoteConventionAnalysis(best_quote_convention, score)

@@ -13,16 +13,16 @@ class QuotationMarkFinder:
     quote_pattern = regex.compile(r"(\p{Quotation_Mark}|<<|>>|<|>)", regex.U)
 
     def __init__(self, quote_convention_set: QuoteConventionSet):
-        self.quote_convention_set = quote_convention_set
+        self._quote_convention_set = quote_convention_set
 
     def find_all_potential_quotation_marks_in_chapter(self, chapter: Chapter) -> List[QuotationMarkStringMatch]:
         quotation_matches: List[QuotationMarkStringMatch] = []
-        for verse in chapter.get_verses():
+        for verse in chapter.verses:
             quotation_matches.extend(self.find_all_potential_quotation_marks_in_verse(verse))
         return quotation_matches
 
     def find_all_potential_quotation_marks_in_verse(self, verse: Verse) -> List[QuotationMarkStringMatch]:
-        return self.find_all_potential_quotation_marks_in_text_segments(verse.get_text_segments())
+        return self.find_all_potential_quotation_marks_in_text_segments(verse.text_segments)
 
     def find_all_potential_quotation_marks_in_text_segments(
         self, text_segments: List[TextSegment]
@@ -36,9 +36,9 @@ class QuotationMarkFinder:
         self, text_segment: TextSegment
     ) -> List[QuotationMarkStringMatch]:
         quotation_matches: List[QuotationMarkStringMatch] = []
-        for quote_match in self.quote_pattern.finditer(text_segment.get_text()):
-            if self.quote_convention_set.is_valid_opening_quotation_mark(
+        for quote_match in self.quote_pattern.finditer(text_segment.text):
+            if self._quote_convention_set.is_valid_opening_quotation_mark(
                 quote_match.group()
-            ) or self.quote_convention_set.is_valid_closing_quotation_mark(quote_match.group()):
+            ) or self._quote_convention_set.is_valid_closing_quotation_mark(quote_match.group()):
                 quotation_matches.append(QuotationMarkStringMatch(text_segment, quote_match.start(), quote_match.end()))
         return quotation_matches

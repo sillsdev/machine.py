@@ -7,26 +7,26 @@ from .quote_convention import QuoteConvention
 
 class QuotationMarkCounts:
     def __init__(self):
-        self.string_counts: Dict[str, int] = dict()
-        self.total_count = 0
+        self._string_counts: Dict[str, int] = dict()
+        self._total_count = 0
 
     def count_quotation_mark(self, quotation_mark: str) -> None:
-        if quotation_mark not in self.string_counts:
-            self.string_counts[quotation_mark] = 0
-        self.string_counts[quotation_mark] += 1
-        self.total_count += 1
+        if quotation_mark not in self._string_counts:
+            self._string_counts[quotation_mark] = 0
+        self._string_counts[quotation_mark] += 1
+        self._total_count += 1
 
-    def get_best_proportion(self) -> tuple[str, int, int]:
-        best_str = max(self.string_counts, key=lambda x: self.string_counts[x])
-        return (best_str, self.string_counts[best_str], self.total_count)
+    def find_best_quotation_mark_proportion(self) -> tuple[str, int, int]:
+        best_str = max(self._string_counts, key=lambda x: self._string_counts[x])
+        return (best_str, self._string_counts[best_str], self._total_count)
 
     def calculate_num_differences(self, expected_quotation_mark: str) -> int:
-        if expected_quotation_mark not in self.string_counts:
-            return self.total_count
-        return self.total_count - self.string_counts[expected_quotation_mark]
+        if expected_quotation_mark not in self._string_counts:
+            return self._total_count
+        return self._total_count - self._string_counts[expected_quotation_mark]
 
     def get_observed_count(self) -> int:
-        return self.total_count
+        return self._total_count
 
 
 class QuotationMarkTabulator:
@@ -41,19 +41,19 @@ class QuotationMarkTabulator:
             self._count_quotation_mark(quotation_mark)
 
     def _count_quotation_mark(self, quote: QuotationMarkMetadata) -> None:
-        key = (quote.get_depth(), quote.get_direction())
-        quotation_mark = quote.get_quotation_mark()
+        key = (quote.depth, quote.direction)
+        quotation_mark = quote.quotation_mark
         if key not in self.quotation_counts_by_depth_and_direction:
             self.quotation_counts_by_depth_and_direction[key] = QuotationMarkCounts()
         self.quotation_counts_by_depth_and_direction[key].count_quotation_mark(quotation_mark)
 
-    def _has_depth_and_direction_been_observed(self, depth: int, direction: QuotationMarkDirection) -> bool:
+    def _depth_and_direction_observed(self, depth: int, direction: QuotationMarkDirection) -> bool:
         return (depth, direction) in self.quotation_counts_by_depth_and_direction
 
-    def _get_most_common_quote_by_depth_and_direction(
+    def _find_most_common_quotation_mark_with_depth_and_direction(
         self, depth: int, direction: QuotationMarkDirection
     ) -> tuple[str, int, int]:
-        return self.quotation_counts_by_depth_and_direction[(depth, direction)].get_best_proportion()
+        return self.quotation_counts_by_depth_and_direction[(depth, direction)].find_best_quotation_mark_proportion()
 
     def calculate_similarity(self, quote_convention: QuoteConvention) -> float:
         num_differences = 0
@@ -75,14 +75,18 @@ class QuotationMarkTabulator:
 
     def print_summary(self) -> None:
         for depth in range(1, 5):
-            if self._has_depth_and_direction_been_observed(
-                depth, QuotationMarkDirection.Opening
-            ) and self._has_depth_and_direction_been_observed(depth, QuotationMarkDirection.Closing):
+            if self._depth_and_direction_observed(
+                depth, QuotationMarkDirection.OPENING
+            ) and self._depth_and_direction_observed(depth, QuotationMarkDirection.CLOSING):
                 (opening_quotation_mark, observed_opening_count, total_opening_count) = (
-                    self._get_most_common_quote_by_depth_and_direction(depth, QuotationMarkDirection.Opening)
+                    self._find_most_common_quotation_mark_with_depth_and_direction(
+                        depth, QuotationMarkDirection.OPENING
+                    )
                 )
                 (closing_quotation_mark, observed_closing_count, total_closing_count) = (
-                    self._get_most_common_quote_by_depth_and_direction(depth, QuotationMarkDirection.Closing)
+                    self._find_most_common_quotation_mark_with_depth_and_direction(
+                        depth, QuotationMarkDirection.CLOSING
+                    )
                 )
                 print(
                     "The most common level %i quotes are %s (%i of %i opening quotes) and %s (%i of %i closing quotes)"

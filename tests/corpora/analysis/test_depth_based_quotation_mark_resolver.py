@@ -22,27 +22,27 @@ from machine.corpora.analysis import (
 # QuotationMarkResolverState tests
 def test_get_current_depth_quotation_mark_resolver_state() -> None:
     quotation_mark_resolver_state = QuotationMarkResolverState()
-    assert quotation_mark_resolver_state.get_current_depth() == 1
+    assert quotation_mark_resolver_state.current_depth == 1
 
     quotation_mark_resolver_state.add_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert quotation_mark_resolver_state.get_current_depth() == 2
+    assert quotation_mark_resolver_state.current_depth == 2
 
     quotation_mark_resolver_state.add_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1)
     )
-    assert quotation_mark_resolver_state.get_current_depth() == 3
+    assert quotation_mark_resolver_state.current_depth == 3
 
     quotation_mark_resolver_state.add_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 0, 1)
     )
-    assert quotation_mark_resolver_state.get_current_depth() == 2
+    assert quotation_mark_resolver_state.current_depth == 2
 
     quotation_mark_resolver_state.add_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert quotation_mark_resolver_state.get_current_depth() == 1
+    assert quotation_mark_resolver_state.current_depth == 1
 
 
 def test_has_open_quotation_mark() -> None:
@@ -173,28 +173,28 @@ def test_get_current_depth_quotation_continuer_state() -> None:
     )
 
     quotation_continuer_state = QuotationContinuerState()
-    assert quotation_continuer_state.get_current_depth() == 0
+    assert quotation_continuer_state.current_depth == 0
 
     quotation_continuer_state.add_quotation_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1),
         quotation_mark_resolver_state,
         QuotationContinuerStyle.ENGLISH,
     )
-    assert quotation_continuer_state.get_current_depth() == 1
+    assert quotation_continuer_state.current_depth == 1
 
     quotation_continuer_state.add_quotation_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1),
         quotation_mark_resolver_state,
         QuotationContinuerStyle.ENGLISH,
     )
-    assert quotation_continuer_state.get_current_depth() == 2
+    assert quotation_continuer_state.current_depth == 2
 
     quotation_continuer_state.add_quotation_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1),
         quotation_mark_resolver_state,
         QuotationContinuerStyle.ENGLISH,
     )
-    assert quotation_continuer_state.get_current_depth() == 0
+    assert quotation_continuer_state.current_depth == 0
 
 
 def test_has_continuer_been_observed() -> None:
@@ -210,28 +210,28 @@ def test_has_continuer_been_observed() -> None:
     )
 
     quotation_continuer_state = QuotationContinuerState()
-    assert not quotation_continuer_state.has_continuer_been_observed()
+    assert not quotation_continuer_state.continuer_has_been_observed()
 
     quotation_continuer_state.add_quotation_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1),
         quotation_mark_resolver_state,
         QuotationContinuerStyle.ENGLISH,
     )
-    assert quotation_continuer_state.has_continuer_been_observed()
+    assert quotation_continuer_state.continuer_has_been_observed()
 
     quotation_continuer_state.add_quotation_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1),
         quotation_mark_resolver_state,
         QuotationContinuerStyle.ENGLISH,
     )
-    assert quotation_continuer_state.has_continuer_been_observed()
+    assert quotation_continuer_state.continuer_has_been_observed()
 
     quotation_continuer_state.add_quotation_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1),
         quotation_mark_resolver_state,
         QuotationContinuerStyle.ENGLISH,
     )
-    assert not quotation_continuer_state.has_continuer_been_observed()
+    assert not quotation_continuer_state.continuer_has_been_observed()
 
 
 def test_get_continuer_style() -> None:
@@ -247,28 +247,28 @@ def test_get_continuer_style() -> None:
     )
 
     quotation_continuer_state = QuotationContinuerState()
-    assert quotation_continuer_state.get_continuer_style() is QuotationContinuerStyle.UNDETERMINED
+    assert quotation_continuer_state.continuer_style is QuotationContinuerStyle.UNDETERMINED
 
     quotation_continuer_state.add_quotation_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1),
         quotation_mark_resolver_state,
         QuotationContinuerStyle.ENGLISH,
     )
-    assert quotation_continuer_state.get_continuer_style() is QuotationContinuerStyle.ENGLISH
+    assert quotation_continuer_state.continuer_style is QuotationContinuerStyle.ENGLISH
 
     quotation_continuer_state.add_quotation_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1),
         quotation_mark_resolver_state,
         QuotationContinuerStyle.SPANISH,
     )
-    assert quotation_continuer_state.get_continuer_style() is QuotationContinuerStyle.SPANISH
+    assert quotation_continuer_state.continuer_style is QuotationContinuerStyle.SPANISH
 
     quotation_continuer_state.add_quotation_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1),
         quotation_mark_resolver_state,
         QuotationContinuerStyle.ENGLISH,
     )
-    assert quotation_continuer_state.get_continuer_style() is QuotationContinuerStyle.ENGLISH
+    assert quotation_continuer_state.continuer_style is QuotationContinuerStyle.ENGLISH
 
 
 def test_add_quotation_continuer() -> None:
@@ -290,7 +290,7 @@ def test_add_quotation_continuer() -> None:
         quotation_mark_resolver_state,
         QuotationContinuerStyle.ENGLISH,
     ) == QuotationMarkMetadata(
-        "\u201c", 1, QuotationMarkDirection.Opening, TextSegment.Builder().set_text("\u201c").build(), 0, 1
+        "\u201c", 1, QuotationMarkDirection.OPENING, TextSegment.Builder().set_text("\u201c").build(), 0, 1
     )
 
     assert quotation_continuer_state.add_quotation_continuer(
@@ -298,16 +298,16 @@ def test_add_quotation_continuer() -> None:
         quotation_mark_resolver_state,
         QuotationContinuerStyle.SPANISH,
     ) == QuotationMarkMetadata(
-        "\u2018", 2, QuotationMarkDirection.Opening, TextSegment.Builder().set_text("\u2018").build(), 0, 1
+        "\u2018", 2, QuotationMarkDirection.OPENING, TextSegment.Builder().set_text("\u2018").build(), 0, 1
     )
-    assert quotation_continuer_state.get_continuer_style() == QuotationContinuerStyle.SPANISH
+    assert quotation_continuer_state.continuer_style == QuotationContinuerStyle.SPANISH
 
     assert quotation_continuer_state.add_quotation_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1),
         quotation_mark_resolver_state,
         QuotationContinuerStyle.ENGLISH,
     ) == QuotationMarkMetadata(
-        "\u201c", 3, QuotationMarkDirection.Opening, TextSegment.Builder().set_text("\u201c").build(), 0, 1
+        "\u201c", 3, QuotationMarkDirection.OPENING, TextSegment.Builder().set_text("\u201c").build(), 0, 1
     )
 
 
@@ -335,10 +335,10 @@ def test_is_english_quotation_continuer() -> None:
     )
 
     # Should always be false if the continuer style is Spanish
-    quotation_continuer_state.continuer_style = QuotationContinuerStyle.ENGLISH
+    quotation_continuer_state._continuer_style = QuotationContinuerStyle.ENGLISH
     assert quotation_mark_categorizer.is_english_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder().set_text("\u201ctest").add_preceding_marker(UsfmMarkerType.ParagraphMarker).build(),
+            TextSegment.Builder().set_text("\u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
@@ -346,17 +346,17 @@ def test_is_english_quotation_continuer() -> None:
         None,
     )
 
-    quotation_continuer_state.continuer_style = QuotationContinuerStyle.SPANISH
+    quotation_continuer_state._continuer_style = QuotationContinuerStyle.SPANISH
     assert not quotation_mark_categorizer.is_english_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder().set_text("\u201ctest").add_preceding_marker(UsfmMarkerType.ParagraphMarker).build(),
+            TextSegment.Builder().set_text("\u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
         None,
         None,
     )
-    quotation_continuer_state.continuer_style = QuotationContinuerStyle.ENGLISH
+    quotation_continuer_state._continuer_style = QuotationContinuerStyle.ENGLISH
 
     # Should be false if there's no preceding paragraph marker (and the settings say to rely on markers)
     assert not quotation_mark_categorizer.is_english_quotation_continuer(
@@ -371,7 +371,7 @@ def test_is_english_quotation_continuer() -> None:
 
     assert quotation_mark_categorizer.is_english_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder().set_text("\u201ctest").add_preceding_marker(UsfmMarkerType.ParagraphMarker).build(),
+            TextSegment.Builder().set_text("\u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
@@ -401,7 +401,7 @@ def test_is_english_quotation_continuer() -> None:
     )
     assert not empty_quotation_mark_categorizer.is_english_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder().set_text("\u201ctest").add_preceding_marker(UsfmMarkerType.ParagraphMarker).build(),
+            TextSegment.Builder().set_text("\u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
@@ -412,7 +412,7 @@ def test_is_english_quotation_continuer() -> None:
     # Should be false if the starting index of the quotation mark is greater than 0
     assert not quotation_mark_categorizer.is_english_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder().set_text(" \u201ctest").add_preceding_marker(UsfmMarkerType.ParagraphMarker).build(),
+            TextSegment.Builder().set_text(" \u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             1,
             2,
         ),
@@ -423,7 +423,7 @@ def test_is_english_quotation_continuer() -> None:
     # Should be false if the mark does not match the already opened mark
     assert not quotation_mark_categorizer.is_english_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder().set_text("\u2018test").add_preceding_marker(UsfmMarkerType.ParagraphMarker).build(),
+            TextSegment.Builder().set_text("\u2018test").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
@@ -438,7 +438,7 @@ def test_is_english_quotation_continuer() -> None:
     )
     assert not quotation_mark_categorizer.is_english_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder().set_text("\u201ctest").add_preceding_marker(UsfmMarkerType.ParagraphMarker).build(),
+            TextSegment.Builder().set_text("\u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
@@ -447,38 +447,26 @@ def test_is_english_quotation_continuer() -> None:
     )
     assert quotation_mark_categorizer.is_english_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder()
-            .set_text("\u201c\u2018test")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
-            .build(),
+            TextSegment.Builder().set_text("\u201c\u2018test").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
         None,
         QuotationMarkStringMatch(
-            TextSegment.Builder()
-            .set_text("\u201c\u2018test")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
-            .build(),
+            TextSegment.Builder().set_text("\u201c\u2018test").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             1,
             2,
         ),
     )
     assert quotation_mark_categorizer.is_english_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder()
-            .set_text("\u201c\u201ctest")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
-            .build(),
+            TextSegment.Builder().set_text("\u201c\u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
         None,
         QuotationMarkStringMatch(
-            TextSegment.Builder()
-            .set_text("\u201c\u201ctest")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
-            .build(),
+            TextSegment.Builder().set_text("\u201c\u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             1,
             2,
         ),
@@ -487,10 +475,7 @@ def test_is_english_quotation_continuer() -> None:
     # When there are multiple open quotes, the continuer must match the deepest observed mark
     quotation_continuer_state.add_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder()
-            .set_text("\u201c\u2018test")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
-            .build(),
+            TextSegment.Builder().set_text("\u201c\u2018test").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
@@ -500,10 +485,7 @@ def test_is_english_quotation_continuer() -> None:
 
     assert not quotation_mark_categorizer.is_english_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder()
-            .set_text("\u201c\u201ctest")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
-            .build(),
+            TextSegment.Builder().set_text("\u201c\u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             1,
             2,
         ),
@@ -513,10 +495,7 @@ def test_is_english_quotation_continuer() -> None:
 
     assert quotation_mark_categorizer.is_english_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder()
-            .set_text("\u201c\u2018test")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
-            .build(),
+            TextSegment.Builder().set_text("\u201c\u2018test").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             1,
             2,
         ),
@@ -536,7 +515,7 @@ def test_is_english_quotation_continuer() -> None:
         QuotationMarkStringMatch(
             TextSegment.Builder()
             .set_text("\u201c\u2018\u201ctest")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
+            .add_preceding_marker(UsfmMarkerType.PARAGRAPH)
             .build(),
             1,
             2,
@@ -549,7 +528,7 @@ def test_is_english_quotation_continuer() -> None:
         QuotationMarkStringMatch(
             TextSegment.Builder()
             .set_text("\u201c\u2018\u201ctest")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
+            .add_preceding_marker(UsfmMarkerType.PARAGRAPH)
             .build(),
             1,
             2,
@@ -561,7 +540,7 @@ def test_is_english_quotation_continuer() -> None:
         QuotationMarkStringMatch(
             TextSegment.Builder()
             .set_text("\u201c\u2018\u2018test")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
+            .add_preceding_marker(UsfmMarkerType.PARAGRAPH)
             .build(),
             2,
             3,
@@ -573,7 +552,7 @@ def test_is_english_quotation_continuer() -> None:
         QuotationMarkStringMatch(
             TextSegment.Builder()
             .set_text("\u201c\u2018\u201ctest")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
+            .add_preceding_marker(UsfmMarkerType.PARAGRAPH)
             .build(),
             2,
             3,
@@ -604,10 +583,10 @@ def test_is_spanish_quotation_continuer() -> None:
     )
 
     # Should always be false if the continuer style is English
-    quotation_continuer_state.continuer_style = QuotationContinuerStyle.SPANISH
+    quotation_continuer_state._continuer_style = QuotationContinuerStyle.SPANISH
     assert quotation_mark_categorizer.is_spanish_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder().set_text("\u00bbtest").add_preceding_marker(UsfmMarkerType.ParagraphMarker).build(),
+            TextSegment.Builder().set_text("\u00bbtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
@@ -615,17 +594,17 @@ def test_is_spanish_quotation_continuer() -> None:
         None,
     )
 
-    quotation_continuer_state.continuer_style = QuotationContinuerStyle.ENGLISH
+    quotation_continuer_state._continuer_style = QuotationContinuerStyle.ENGLISH
     assert not quotation_mark_categorizer.is_spanish_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder().set_text("\u00bbtest").add_preceding_marker(UsfmMarkerType.ParagraphMarker).build(),
+            TextSegment.Builder().set_text("\u00bbtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
         None,
         None,
     )
-    quotation_continuer_state.continuer_style = QuotationContinuerStyle.SPANISH
+    quotation_continuer_state._continuer_style = QuotationContinuerStyle.SPANISH
 
     # Should be false if there's no preceding paragraph marker (and the settings say to rely on markers)
     assert not quotation_mark_categorizer.is_spanish_quotation_continuer(
@@ -640,7 +619,7 @@ def test_is_spanish_quotation_continuer() -> None:
 
     assert quotation_mark_categorizer.is_spanish_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder().set_text("\u00bbtest").add_preceding_marker(UsfmMarkerType.ParagraphMarker).build(),
+            TextSegment.Builder().set_text("\u00bbtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
@@ -670,7 +649,7 @@ def test_is_spanish_quotation_continuer() -> None:
     )
     assert not empty_quotation_mark_categorizer.is_spanish_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder().set_text("\u00bbtest").add_preceding_marker(UsfmMarkerType.ParagraphMarker).build(),
+            TextSegment.Builder().set_text("\u00bbtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
@@ -681,7 +660,7 @@ def test_is_spanish_quotation_continuer() -> None:
     # Should be false if the starting index of the quotation mark is greater than 0
     assert not quotation_mark_categorizer.is_spanish_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder().set_text(" \u00bbtest").add_preceding_marker(UsfmMarkerType.ParagraphMarker).build(),
+            TextSegment.Builder().set_text(" \u00bbtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             1,
             2,
         ),
@@ -692,7 +671,7 @@ def test_is_spanish_quotation_continuer() -> None:
     # Should be false if the mark does not match the already opened mark
     assert not quotation_mark_categorizer.is_spanish_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder().set_text("\u201dtest").add_preceding_marker(UsfmMarkerType.ParagraphMarker).build(),
+            TextSegment.Builder().set_text("\u201dtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
@@ -707,7 +686,7 @@ def test_is_spanish_quotation_continuer() -> None:
     )
     assert not quotation_mark_categorizer.is_spanish_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder().set_text("\u00bbtest").add_preceding_marker(UsfmMarkerType.ParagraphMarker).build(),
+            TextSegment.Builder().set_text("\u00bbtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
@@ -716,38 +695,26 @@ def test_is_spanish_quotation_continuer() -> None:
     )
     assert quotation_mark_categorizer.is_spanish_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder()
-            .set_text("\u00bb\u201dtest")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
-            .build(),
+            TextSegment.Builder().set_text("\u00bb\u201dtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
         None,
         QuotationMarkStringMatch(
-            TextSegment.Builder()
-            .set_text("\u00bb\u201dtest")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
-            .build(),
+            TextSegment.Builder().set_text("\u00bb\u201dtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             1,
             2,
         ),
     )
     assert quotation_mark_categorizer.is_spanish_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder()
-            .set_text("\u00bb\u00bbtest")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
-            .build(),
+            TextSegment.Builder().set_text("\u00bb\u00bbtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
         None,
         QuotationMarkStringMatch(
-            TextSegment.Builder()
-            .set_text("\u00bb\u00bbtest")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
-            .build(),
+            TextSegment.Builder().set_text("\u00bb\u00bbtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             1,
             2,
         ),
@@ -756,10 +723,7 @@ def test_is_spanish_quotation_continuer() -> None:
     # When there are multiple open quotes, the continuer must match the deepest observed mark
     quotation_continuer_state.add_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder()
-            .set_text("\u00bb\u201dtest")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
-            .build(),
+            TextSegment.Builder().set_text("\u00bb\u201dtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
@@ -769,10 +733,7 @@ def test_is_spanish_quotation_continuer() -> None:
 
     assert not quotation_mark_categorizer.is_spanish_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder()
-            .set_text("\u00bb\u201ctest")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
-            .build(),
+            TextSegment.Builder().set_text("\u00bb\u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             1,
             2,
         ),
@@ -782,10 +743,7 @@ def test_is_spanish_quotation_continuer() -> None:
 
     assert quotation_mark_categorizer.is_spanish_quotation_continuer(
         QuotationMarkStringMatch(
-            TextSegment.Builder()
-            .set_text("\u00bb\u201dtest")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
-            .build(),
+            TextSegment.Builder().set_text("\u00bb\u201dtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             1,
             2,
         ),
@@ -805,7 +763,7 @@ def test_is_spanish_quotation_continuer() -> None:
         QuotationMarkStringMatch(
             TextSegment.Builder()
             .set_text("\u00bb\u201d\u2019test")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
+            .add_preceding_marker(UsfmMarkerType.PARAGRAPH)
             .build(),
             1,
             2,
@@ -818,7 +776,7 @@ def test_is_spanish_quotation_continuer() -> None:
         QuotationMarkStringMatch(
             TextSegment.Builder()
             .set_text("\u00bb\u201d\u2019test")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
+            .add_preceding_marker(UsfmMarkerType.PARAGRAPH)
             .build(),
             1,
             2,
@@ -830,7 +788,7 @@ def test_is_spanish_quotation_continuer() -> None:
         QuotationMarkStringMatch(
             TextSegment.Builder()
             .set_text("\u00bb\u201d\u201dtest")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
+            .add_preceding_marker(UsfmMarkerType.PARAGRAPH)
             .build(),
             2,
             3,
@@ -842,7 +800,7 @@ def test_is_spanish_quotation_continuer() -> None:
         QuotationMarkStringMatch(
             TextSegment.Builder()
             .set_text("\u00bb\u201d\u2019test")
-            .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
+            .add_preceding_marker(UsfmMarkerType.PARAGRAPH)
             .build(),
             2,
             3,
@@ -2067,10 +2025,10 @@ def test_basic_quotation_mark_recognition() -> None:
             ]
         )
     ) == [
-        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, text_segment, 0, 1),
-        QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.Opening, text_segment, 11, 12),
-        QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.Closing, text_segment, 17, 18),
-        QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Closing, text_segment, 18, 19),
+        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.OPENING, text_segment, 0, 1),
+        QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.OPENING, text_segment, 11, 12),
+        QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.CLOSING, text_segment, 17, 18),
+        QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.CLOSING, text_segment, 18, 19),
     ]
     assert standard_english_quotation_mark_resolver.get_issues() == set()
 
@@ -2093,7 +2051,7 @@ def test_resolution_only_of_passed_matches() -> None:
             ]
         )
     ) == [
-        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, text_segment, 0, 1),
+        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.OPENING, text_segment, 0, 1),
     ]
     assert standard_english_quotation_mark_resolver.get_issues() == {
         QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK
@@ -2137,10 +2095,10 @@ def test_resolution_across_segments() -> None:
             ]
         )
     ) == [
-        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, text_segment1, 0, 1),
-        QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.Opening, text_segment2, 0, 1),
-        QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.Closing, text_segment2, 6, 7),
-        QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Closing, text_segment2, 7, 8),
+        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.OPENING, text_segment1, 0, 1),
+        QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.OPENING, text_segment2, 0, 1),
+        QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.CLOSING, text_segment2, 6, 7),
+        QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.CLOSING, text_segment2, 7, 8),
     ]
     assert standard_english_quotation_mark_resolver.get_issues() == set()
 
@@ -2158,7 +2116,7 @@ def test_resolution_with_apostrophes() -> None:
     text_segment = (
         TextSegment.Builder()
         .set_text("\u201cThis\u2019 is a \u2018quote\u2019\u201d")
-        .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
+        .add_preceding_marker(UsfmMarkerType.PARAGRAPH)
         .build()
     )
     assert list(
@@ -2172,10 +2130,10 @@ def test_resolution_with_apostrophes() -> None:
             ]
         )
     ) == [
-        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, text_segment, 0, 1),
-        QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.Opening, text_segment, 12, 13),
-        QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.Closing, text_segment, 18, 19),
-        QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Closing, text_segment, 19, 20),
+        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.OPENING, text_segment, 0, 1),
+        QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.OPENING, text_segment, 12, 13),
+        QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.CLOSING, text_segment, 18, 19),
+        QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.CLOSING, text_segment, 19, 20),
     ]
     assert standard_english_quotation_mark_resolver.get_issues() == set()
 
@@ -2189,10 +2147,7 @@ def test_resolution_with_apostrophes() -> None:
     typewriter_english_quotation_mark_resolver = DepthBasedQuotationMarkResolver(typewriter_english_resolver_settings)
 
     text_segment = (
-        TextSegment.Builder()
-        .set_text("\"This' is a 'quote'\"")
-        .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
-        .build()
+        TextSegment.Builder().set_text("\"This' is a 'quote'\"").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build()
     )
     assert list(
         typewriter_english_quotation_mark_resolver.resolve_quotation_marks(
@@ -2205,10 +2160,10 @@ def test_resolution_with_apostrophes() -> None:
             ]
         )
     ) == [
-        QuotationMarkMetadata('"', 1, QuotationMarkDirection.Opening, text_segment, 0, 1),
-        QuotationMarkMetadata("'", 2, QuotationMarkDirection.Opening, text_segment, 12, 13),
-        QuotationMarkMetadata("'", 2, QuotationMarkDirection.Closing, text_segment, 18, 19),
-        QuotationMarkMetadata('"', 1, QuotationMarkDirection.Closing, text_segment, 19, 20),
+        QuotationMarkMetadata('"', 1, QuotationMarkDirection.OPENING, text_segment, 0, 1),
+        QuotationMarkMetadata("'", 2, QuotationMarkDirection.OPENING, text_segment, 12, 13),
+        QuotationMarkMetadata("'", 2, QuotationMarkDirection.CLOSING, text_segment, 18, 19),
+        QuotationMarkMetadata('"', 1, QuotationMarkDirection.CLOSING, text_segment, 19, 20),
     ]
     assert standard_english_quotation_mark_resolver.get_issues() == set()
 
@@ -2227,7 +2182,7 @@ def test_english_quote_continuers() -> None:
     text_segment2 = (
         TextSegment.Builder()
         .set_text("\u201c\u2018This is the rest\u2019 of it\u201d")
-        .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
+        .add_preceding_marker(UsfmMarkerType.PARAGRAPH)
         .build()
     )
     assert list(
@@ -2242,12 +2197,12 @@ def test_english_quote_continuers() -> None:
             ]
         )
     ) == [
-        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, text_segment1, 0, 1),
-        QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.Opening, text_segment1, 11, 12),
-        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, text_segment2, 0, 1),
-        QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.Opening, text_segment2, 1, 2),
-        QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.Closing, text_segment2, 18, 19),
-        QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Closing, text_segment2, 25, 26),
+        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.OPENING, text_segment1, 0, 1),
+        QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.OPENING, text_segment1, 11, 12),
+        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.OPENING, text_segment2, 0, 1),
+        QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.OPENING, text_segment2, 1, 2),
+        QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.CLOSING, text_segment2, 18, 19),
+        QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.CLOSING, text_segment2, 25, 26),
     ]
     assert standard_english_quotation_mark_resolver.get_issues() == set()
 
@@ -2266,7 +2221,7 @@ def test_spanish_quote_continuers() -> None:
     text_segment2 = (
         TextSegment.Builder()
         .set_text("\u00bb\u201dThis is the rest\u201d of it\u00bb")
-        .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
+        .add_preceding_marker(UsfmMarkerType.PARAGRAPH)
         .build()
     )
     assert list(
@@ -2281,12 +2236,12 @@ def test_spanish_quote_continuers() -> None:
             ]
         )
     ) == [
-        QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.Opening, text_segment1, 0, 1),
-        QuotationMarkMetadata("\u201c", 2, QuotationMarkDirection.Opening, text_segment1, 11, 12),
-        QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.Opening, text_segment2, 0, 1),
-        QuotationMarkMetadata("\u201d", 2, QuotationMarkDirection.Opening, text_segment2, 1, 2),
-        QuotationMarkMetadata("\u201d", 2, QuotationMarkDirection.Closing, text_segment2, 18, 19),
-        QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.Closing, text_segment2, 25, 26),
+        QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.OPENING, text_segment1, 0, 1),
+        QuotationMarkMetadata("\u201c", 2, QuotationMarkDirection.OPENING, text_segment1, 11, 12),
+        QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.OPENING, text_segment2, 0, 1),
+        QuotationMarkMetadata("\u201d", 2, QuotationMarkDirection.OPENING, text_segment2, 1, 2),
+        QuotationMarkMetadata("\u201d", 2, QuotationMarkDirection.CLOSING, text_segment2, 18, 19),
+        QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.CLOSING, text_segment2, 25, 26),
     ]
     assert western_european_quotation_mark_resolver.get_issues() == set()
 
@@ -2305,7 +2260,7 @@ def test_malformed_quotation_marks() -> None:
     text_segment2 = (
         TextSegment.Builder()
         .set_text("This is the rest \u2019 of it \u201d")
-        .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
+        .add_preceding_marker(UsfmMarkerType.PARAGRAPH)
         .build()
     )
     assert list(
@@ -2318,10 +2273,10 @@ def test_malformed_quotation_marks() -> None:
             ]
         )
     ) == [
-        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, text_segment1, 0, 1),
-        QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.Opening, text_segment1, 12, 13),
-        QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.Closing, text_segment2, 17, 18),
-        QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Closing, text_segment2, 25, 26),
+        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.OPENING, text_segment1, 0, 1),
+        QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.OPENING, text_segment1, 12, 13),
+        QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.CLOSING, text_segment2, 17, 18),
+        QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.CLOSING, text_segment2, 25, 26),
     ]
     assert standard_english_quotation_mark_resolver.get_issues() == set()
 
@@ -2346,9 +2301,9 @@ def test_unpaired_quotation_mark_issue() -> None:
             ]
         )
     ) == [
-        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, text_segment, 0, 1),
-        QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.Opening, text_segment, 11, 12),
-        QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.Closing, text_segment, 17, 18),
+        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.OPENING, text_segment, 0, 1),
+        QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.OPENING, text_segment, 11, 12),
+        QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.CLOSING, text_segment, 17, 18),
     ]
     assert standard_english_quotation_mark_resolver.get_issues() == {
         QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK
@@ -2362,7 +2317,7 @@ def test_unpaired_quotation_mark_issue() -> None:
             ]
         )
     ) == [
-        QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Closing, text_segment, 13, 14),
+        QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.CLOSING, text_segment, 13, 14),
     ]
     assert standard_english_quotation_mark_resolver.get_issues() == {
         QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK
@@ -2393,10 +2348,10 @@ def test_too_deep_nesting_issue() -> None:
             ]
         )
     ) == [
-        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, text_segment, 0, 1),
-        QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.Opening, text_segment, 6, 7),
-        QuotationMarkMetadata("\u201c", 3, QuotationMarkDirection.Opening, text_segment, 10, 11),
-        QuotationMarkMetadata("\u2018", 4, QuotationMarkDirection.Opening, text_segment, 13, 14),
+        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.OPENING, text_segment, 0, 1),
+        QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.OPENING, text_segment, 6, 7),
+        QuotationMarkMetadata("\u201c", 3, QuotationMarkDirection.OPENING, text_segment, 10, 11),
+        QuotationMarkMetadata("\u2018", 4, QuotationMarkDirection.OPENING, text_segment, 13, 14),
         # QuotationMarkMetadata("\u201c", 5, QuotationMarkDirection.Opening, text_segment, 20, 21),
     ]
     assert standard_english_quotation_mark_resolver.get_issues() == {
@@ -2426,10 +2381,10 @@ def test_incompatible_quotation_mark_issue() -> None:
             ]
         )
     ) == [
-        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, text_segment, 0, 1),
-        QuotationMarkMetadata("\u201c", 2, QuotationMarkDirection.Opening, text_segment, 11, 12),
-        QuotationMarkMetadata("\u201d", 2, QuotationMarkDirection.Closing, text_segment, 17, 18),
-        QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Closing, text_segment, 18, 19),
+        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.OPENING, text_segment, 0, 1),
+        QuotationMarkMetadata("\u201c", 2, QuotationMarkDirection.OPENING, text_segment, 11, 12),
+        QuotationMarkMetadata("\u201d", 2, QuotationMarkDirection.CLOSING, text_segment, 17, 18),
+        QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.CLOSING, text_segment, 18, 19),
     ]
     assert standard_english_quotation_mark_resolver.get_issues() == {
         QuotationMarkResolutionIssue.INCOMPATIBLE_QUOTATION_MARK
@@ -2487,10 +2442,7 @@ def test_typewriter_english_quotation_mark_recognition() -> None:
     typewriter_english_quotation_mark_resolver = DepthBasedQuotationMarkResolver(typewriter_english_resolver_settings)
 
     text_segment = (
-        TextSegment.Builder()
-        .set_text("\"This is a 'quote'\"")
-        .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
-        .build()
+        TextSegment.Builder().set_text("\"This is a 'quote'\"").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build()
     )
     assert list(
         typewriter_english_quotation_mark_resolver.resolve_quotation_marks(
@@ -2502,10 +2454,10 @@ def test_typewriter_english_quotation_mark_recognition() -> None:
             ]
         )
     ) == [
-        QuotationMarkMetadata('"', 1, QuotationMarkDirection.Opening, text_segment, 0, 1),
-        QuotationMarkMetadata("'", 2, QuotationMarkDirection.Opening, text_segment, 11, 12),
-        QuotationMarkMetadata("'", 2, QuotationMarkDirection.Closing, text_segment, 17, 18),
-        QuotationMarkMetadata('"', 1, QuotationMarkDirection.Closing, text_segment, 18, 19),
+        QuotationMarkMetadata('"', 1, QuotationMarkDirection.OPENING, text_segment, 0, 1),
+        QuotationMarkMetadata("'", 2, QuotationMarkDirection.OPENING, text_segment, 11, 12),
+        QuotationMarkMetadata("'", 2, QuotationMarkDirection.CLOSING, text_segment, 17, 18),
+        QuotationMarkMetadata('"', 1, QuotationMarkDirection.CLOSING, text_segment, 18, 19),
     ]
     assert typewriter_english_quotation_mark_resolver.get_issues() == set()
 
@@ -2531,10 +2483,10 @@ def test_typewriter_french_mark_recognition() -> None:
             ]
         )
     ) == [
-        QuotationMarkMetadata("<<", 1, QuotationMarkDirection.Opening, text_segment, 0, 2),
-        QuotationMarkMetadata("<", 2, QuotationMarkDirection.Opening, text_segment, 12, 13),
-        QuotationMarkMetadata(">", 2, QuotationMarkDirection.Closing, text_segment, 18, 19),
-        QuotationMarkMetadata(">>", 1, QuotationMarkDirection.Closing, text_segment, 19, 21),
+        QuotationMarkMetadata("<<", 1, QuotationMarkDirection.OPENING, text_segment, 0, 2),
+        QuotationMarkMetadata("<", 2, QuotationMarkDirection.OPENING, text_segment, 12, 13),
+        QuotationMarkMetadata(">", 2, QuotationMarkDirection.CLOSING, text_segment, 18, 19),
+        QuotationMarkMetadata(">>", 1, QuotationMarkDirection.CLOSING, text_segment, 19, 21),
     ]
     assert typewriter_french_quotation_mark_resolver.get_issues() == set()
 
@@ -2552,7 +2504,7 @@ def test_central_european_quotation_mark_recognition() -> None:
     text_segment = (
         TextSegment.Builder()
         .set_text("\u201eThis is a \u201aquote\u2018\u201c")
-        .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
+        .add_preceding_marker(UsfmMarkerType.PARAGRAPH)
         .build()
     )
     assert list(
@@ -2565,10 +2517,10 @@ def test_central_european_quotation_mark_recognition() -> None:
             ]
         )
     ) == [
-        QuotationMarkMetadata("\u201e", 1, QuotationMarkDirection.Opening, text_segment, 0, 1),
-        QuotationMarkMetadata("\u201a", 2, QuotationMarkDirection.Opening, text_segment, 11, 12),
-        QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.Closing, text_segment, 17, 18),
-        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Closing, text_segment, 18, 19),
+        QuotationMarkMetadata("\u201e", 1, QuotationMarkDirection.OPENING, text_segment, 0, 1),
+        QuotationMarkMetadata("\u201a", 2, QuotationMarkDirection.OPENING, text_segment, 11, 12),
+        QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.CLOSING, text_segment, 17, 18),
+        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.CLOSING, text_segment, 18, 19),
     ]
     assert central_european_quotation_mark_resolver.get_issues() == set()
 
@@ -2586,7 +2538,7 @@ def test_standard_swedish_quotation_mark_recognition() -> None:
     text_segment = (
         TextSegment.Builder()
         .set_text("\u201dThis is a \u2019quote\u2019\u201d")
-        .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
+        .add_preceding_marker(UsfmMarkerType.PARAGRAPH)
         .build()
     )
     assert list(
@@ -2599,10 +2551,10 @@ def test_standard_swedish_quotation_mark_recognition() -> None:
             ]
         )
     ) == [
-        QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Opening, text_segment, 0, 1),
-        QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.Opening, text_segment, 11, 12),
-        QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.Closing, text_segment, 17, 18),
-        QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Closing, text_segment, 18, 19),
+        QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.OPENING, text_segment, 0, 1),
+        QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.OPENING, text_segment, 11, 12),
+        QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.CLOSING, text_segment, 17, 18),
+        QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.CLOSING, text_segment, 18, 19),
     ]
     assert standard_swedish_quotation_mark_resolver.get_issues() == set()
 
@@ -2634,7 +2586,7 @@ def test_multiple_conventions_quotation_mark_recognition() -> None:
     text_segment = (
         TextSegment.Builder()
         .set_text("\u201eThis is a \u2019quote>\u201c")
-        .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
+        .add_preceding_marker(UsfmMarkerType.PARAGRAPH)
         .build()
     )
     assert list(
@@ -2647,9 +2599,9 @@ def test_multiple_conventions_quotation_mark_recognition() -> None:
             ]
         )
     ) == [
-        QuotationMarkMetadata("\u201e", 1, QuotationMarkDirection.Opening, text_segment, 0, 1),
-        QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.Opening, text_segment, 11, 12),
-        QuotationMarkMetadata(">", 2, QuotationMarkDirection.Closing, text_segment, 17, 18),
-        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Closing, text_segment, 18, 19),
+        QuotationMarkMetadata("\u201e", 1, QuotationMarkDirection.OPENING, text_segment, 0, 1),
+        QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.OPENING, text_segment, 11, 12),
+        QuotationMarkMetadata(">", 2, QuotationMarkDirection.CLOSING, text_segment, 17, 18),
+        QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.CLOSING, text_segment, 18, 19),
     ]
     assert multiple_conventions_quotation_mark_resolver.get_issues() == set()

@@ -18,6 +18,6 @@ def test_initialize_verse() -> None:
 
     chapter = Chapter([verse1, verse2])
 
-    assert len(chapter.get_verses()) == 2
-    assert chapter.get_verses()[0].get_text_segments() == text_segments1
-    assert chapter.get_verses()[1].get_text_segments() == text_segments2
+    assert len(chapter.verses) == 2
+    assert chapter.verses[0].text_segments == text_segments1
+    assert chapter.verses[1].text_segments == text_segments2

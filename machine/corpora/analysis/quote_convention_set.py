@@ -10,22 +10,22 @@ from .quote_convention import QuoteConvention
 
 class QuoteConventionSet:
     def __init__(self, conventions: List[QuoteConvention]):
-        self.conventions = conventions
+        self._conventions = conventions
         self._create_quote_regexes()
         self._create_quotation_mark_pair_map()
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, QuoteConventionSet):
             return False
-        return self.conventions == other.conventions
+        return self._conventions == other._conventions
 
     def _create_quote_regexes(self) -> None:
         opening_quotation_marks: Set[str] = set()
         closing_quotation_marks: Set[str] = set()
         all_quotation_marks: Set[str] = set()
 
-        if len(self.conventions) > 0:
-            for convention in self.conventions:
+        if len(self._conventions) > 0:
+            for convention in self._conventions:
                 for level in range(1, convention.get_num_levels() + 1):
                     opening_quote = convention.get_opening_quote_at_level(level)
                     closing_quote = convention.get_closing_quote_at_level(level)
@@ -35,27 +35,27 @@ class QuoteConventionSet:
                     all_quotation_marks.add(closing_quote)
 
             if len(all_quotation_marks) > 0:
-                self.opening_quotation_mark_regex: Pattern = regex.compile(
+                self._opening_quotation_mark_regex: Pattern = regex.compile(
                     r"[" + "".join(sorted(list(opening_quotation_marks))) + "]"
                 )
-                self.closing_quotation_mark_regex: Pattern = regex.compile(
+                self._closing_quotation_mark_regex: Pattern = regex.compile(
                     r"[" + "".join(sorted(list(closing_quotation_marks))) + "]"
                 )
-                self.all_quotation_mark_regex: Pattern = regex.compile(
+                self._all_quotation_mark_regex: Pattern = regex.compile(
                     r"[" + "".join(sorted(list(all_quotation_marks))) + "]"
                 )
 
         if len(opening_quotation_marks) == 0:
-            self.opening_quotation_mark_regex = regex.compile(r"")
+            self._opening_quotation_mark_regex = regex.compile(r"")
         if len(closing_quotation_marks) == 0:
-            self.closing_quotation_mark_regex = regex.compile(r"")
+            self._closing_quotation_mark_regex = regex.compile(r"")
         if len(all_quotation_marks) == 0:
-            self.all_quotation_mark_regex = regex.compile(r"")
+            self._all_quotation_mark_regex = regex.compile(r"")
 
     def _create_quotation_mark_pair_map(self) -> None:
         self.closing_marks_by_opening_mark: Dict[str, set[str]] = dict()
         self.opening_marks_by_closing_mark: Dict[str, set[str]] = dict()
-        for convention in self.conventions:
+        for convention in self._conventions:
             for level in range(1, convention.get_num_levels() + 1):
                 opening_quote = convention.get_opening_quote_at_level(level)
                 closing_quote = convention.get_closing_quote_at_level(level)
@@ -66,14 +66,26 @@ class QuoteConventionSet:
                     self.opening_marks_by_closing_mark[closing_quote] = set()
                 self.opening_marks_by_closing_mark[closing_quote].add(opening_quote)
 
+    @property
+    def opening_quotation_mark_regex(self) -> Pattern:
+        return self._opening_quotation_mark_regex
+
+    @property
+    def closing_quotation_mark_regex(self) -> Pattern:
+        return self._closing_quotation_mark_regex
+
+    @property
+    def quotation_mark_regex(self) -> Pattern:
+        return self._all_quotation_mark_regex
+
     def get_quote_convention_by_name(self, name: str) -> Union[QuoteConvention, None]:
-        for convention in self.conventions:
+        for convention in self._conventions:
             if convention.get_name() == name:
                 return convention
         return None
 
     def get_all_quote_convention_names(self) -> List[str]:
-        return sorted([qc.name for qc in self.conventions])
+        return sorted([qc.name for qc in self._conventions])
 
     def get_possible_opening_marks(self) -> list[str]:
         return sorted(list(self.closing_marks_by_opening_mark.keys()))
@@ -87,7 +99,7 @@ class QuoteConventionSet:
     def is_valid_closing_quotation_mark(self, quotation_mark: str) -> bool:
         return quotation_mark in self.opening_marks_by_closing_mark
 
-    def are_marks_a_valid_pair(self, opening_mark: str, closing_mark: str) -> bool:
+    def marks_are_a_valid_pair(self, opening_mark: str, closing_mark: str) -> bool:
         return (opening_mark in self.closing_marks_by_opening_mark) and (
             closing_mark in self.closing_marks_by_opening_mark[opening_mark]
         )
@@ -108,23 +120,14 @@ class QuoteConventionSet:
 
     def get_possible_depths(self, quotation_mark: str, direction: QuotationMarkDirection) -> Set[int]:
         depths: Set[int] = set()
-        for convention in self.conventions:
+        for convention in self._conventions:
             depths.update(convention.get_possible_depths(quotation_mark, direction))
         return depths
 
-    def get_opening_quotation_mark_regex(self) -> Pattern:
-        return self.opening_quotation_mark_regex
-
-    def get_closing_quotation_mark_regex(self) -> Pattern:
-        return self.closing_quotation_mark_regex
-
-    def get_quotation_mark_regex(self) -> Pattern:
-        return self.all_quotation_mark_regex
-
-    def does_metadata_match_quotation_mark(
+    def metadata_matches_quotation_mark(
         self, quotation_mark: str, depth: int, direction: QuotationMarkDirection
     ) -> bool:
-        for convention in self.conventions:
+        for convention in self._conventions:
             if convention.get_expected_quotation_mark(depth, direction) == quotation_mark:
                 return True
         return False
@@ -135,7 +138,7 @@ class QuoteConventionSet:
         return QuoteConventionSet(
             [
                 convention
-                for convention in self.conventions
+                for convention in self._conventions
                 if convention.is_compatible_with_observed_quotation_marks(
                     opening_quotation_marks, closing_quotation_marks
                 )
@@ -147,7 +150,7 @@ class QuoteConventionSet:
     ) -> Tuple[Union[QuoteConvention, None], float]:
         best_similarity: float = float("-inf")
         best_quote_convention: Union[QuoteConvention, None] = None
-        for quote_convention in self.conventions:
+        for quote_convention in self._conventions:
             similarity = tabulated_quotation_marks.calculate_similarity(quote_convention)
             if similarity > best_similarity:
                 best_similarity = similarity
