@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, TypedDict
+from typing import List, TypedDict, cast
 
 from ..translation.word_alignment_matrix import WordAlignmentMatrix
 from .usfm_token import UsfmToken, UsfmTokenType
@@ -8,9 +8,10 @@ from .usfm_update_block import UsfmUpdateBlock
 from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
 from .usfm_update_block_handler import UsfmUpdateBlockHandler
 
+PLACE_MARKERS_ALIGNMENT_INFO_KEY = "alignment_info"
+
 
 class PlaceMarkersAlignmentInfo(TypedDict):
-    # refs: List[str]
     source_tokens: List[str]
     translation_tokens: List[str]
     alignment: WordAlignmentMatrix
@@ -22,21 +23,14 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         elements = list(block.elements)
 
         # Nothing to do if there are no markers to place or no alignment to use
+        if PLACE_MARKERS_ALIGNMENT_INFO_KEY not in block.metadata:
+            return block
+
+        alignment_info = cast(PlaceMarkersAlignmentInfo, block.metadata[PLACE_MARKERS_ALIGNMENT_INFO_KEY])
         if (
             len(elements) == 0
-            or "alignment_info" not in block.metadata
-            or not isinstance(block.metadata["alignment_info"], dict)
-            or len(
-                set(block.metadata["alignment_info"].keys()).difference(
-                    ["source_tokens", "translation_tokens", "alignment"]
-                )
-            )
-            > 0
-            or not isinstance(block.metadata["alignment_info"]["alignment"], WordAlignmentMatrix)
-            or not isinstance(block.metadata["alignment_info"]["source_tokens"], List)
-            or not isinstance(block.metadata["alignment_info"]["translation_tokens"], List)
-            or block.metadata["alignment_info"]["alignment"].row_count == 0
-            or block.metadata["alignment_info"]["alignment"].column_count == 0
+            or alignment_info["alignment"].row_count == 0
+            or alignment_info["alignment"].column_count == 0
             or not any(
                 (
                     e.type in [UsfmUpdateBlockElementType.PARAGRAPH, UsfmUpdateBlockElementType.STYLE]
@@ -71,8 +65,8 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
             ):
                 eob_empty_paras = False
 
-        src_toks: List[str] = block.metadata["alignment_info"]["source_tokens"]
-        trg_toks: List[str] = block.metadata["alignment_info"]["translation_tokens"]
+        src_toks: List[str] = alignment_info["source_tokens"]
+        trg_toks: List[str] = alignment_info["translation_tokens"]
         src_tok_idx = 0
 
         src_sent = ""
@@ -118,9 +112,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         # Predict marker placements and get insertion order
         to_insert = []
         for element, adj_src_tok in zip(to_place, adj_src_toks):
-            adj_trg_tok = self._predict_marker_location(
-                block.metadata["alignment_info"]["alignment"], adj_src_tok, src_toks, trg_toks
-            )
+            adj_trg_tok = self._predict_marker_location(alignment_info["alignment"], adj_src_tok, src_toks, trg_toks)
 
             if (
                 adj_trg_tok > 0
