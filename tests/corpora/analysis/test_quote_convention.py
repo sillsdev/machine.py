@@ -5,83 +5,83 @@ from machine.corpora.analysis.quote_convention import QuoteConvention, SingleLev
 def test_single_level_quote_convention_normalize() -> None:
     english_level1_quote_convention = SingleLevelQuoteConvention("\u201c", "\u201d")
     normalized_english_level1_quote_convention = english_level1_quote_convention.normalize()
-    assert normalized_english_level1_quote_convention.get_opening_quote() == '"'
-    assert normalized_english_level1_quote_convention.get_closing_quote() == '"'
+    assert normalized_english_level1_quote_convention.opening_quote == '"'
+    assert normalized_english_level1_quote_convention.closing_quote == '"'
 
     english_level2_quote_convention = SingleLevelQuoteConvention("\u2018", "\u2019")
     normalized_english_level2_quote_convention = english_level2_quote_convention.normalize()
-    assert normalized_english_level2_quote_convention.get_opening_quote() == "'"
-    assert normalized_english_level2_quote_convention.get_closing_quote() == "'"
+    assert normalized_english_level2_quote_convention.opening_quote == "'"
+    assert normalized_english_level2_quote_convention.closing_quote == "'"
 
     already_normalized_english_level1_quote_convention = SingleLevelQuoteConvention('"', '"')
     doubly_normalized_english_level1_quote_convention = already_normalized_english_level1_quote_convention.normalize()
-    assert doubly_normalized_english_level1_quote_convention.get_opening_quote() == '"'
-    assert doubly_normalized_english_level1_quote_convention.get_closing_quote() == '"'
+    assert doubly_normalized_english_level1_quote_convention.opening_quote == '"'
+    assert doubly_normalized_english_level1_quote_convention.closing_quote == '"'
 
     already_normalized_english_level2_quote_convention = SingleLevelQuoteConvention("'", "'")
     doubly_normalized_english_level2_quote_convention = already_normalized_english_level2_quote_convention.normalize()
-    assert doubly_normalized_english_level2_quote_convention.get_opening_quote() == "'"
-    assert doubly_normalized_english_level2_quote_convention.get_closing_quote() == "'"
+    assert doubly_normalized_english_level2_quote_convention.opening_quote == "'"
+    assert doubly_normalized_english_level2_quote_convention.closing_quote == "'"
 
     french_level1_quote_convention = SingleLevelQuoteConvention("\u00ab", "\u00bb")
     normalized_french_level1_quote_convention = french_level1_quote_convention.normalize()
-    assert normalized_french_level1_quote_convention.get_opening_quote() == '"'
-    assert normalized_french_level1_quote_convention.get_closing_quote() == '"'
+    assert normalized_french_level1_quote_convention.opening_quote == '"'
+    assert normalized_french_level1_quote_convention.closing_quote == '"'
 
     french_level2_quote_convention = SingleLevelQuoteConvention("\u2039", "\u203a")
     normalized_french_level2_quote_convention = french_level2_quote_convention.normalize()
-    assert normalized_french_level2_quote_convention.get_opening_quote() == "\u2039"
-    assert normalized_french_level2_quote_convention.get_closing_quote() == "\u203a"
+    assert normalized_french_level2_quote_convention.opening_quote == "\u2039"
+    assert normalized_french_level2_quote_convention.closing_quote == "\u203a"
 
     typewriter_french_level1_quote_convention = SingleLevelQuoteConvention("<<", ">>")
     normalized_typewriter_french_level1_quote_convention = typewriter_french_level1_quote_convention.normalize()
-    assert normalized_typewriter_french_level1_quote_convention.get_opening_quote() == "<<"
-    assert normalized_typewriter_french_level1_quote_convention.get_closing_quote() == ">>"
+    assert normalized_typewriter_french_level1_quote_convention.opening_quote == "<<"
+    assert normalized_typewriter_french_level1_quote_convention.closing_quote == ">>"
 
     typewriter_french_level2_quote_convention = SingleLevelQuoteConvention("<", ">")
     normalized_typewriter_french_level2_quote_convention = typewriter_french_level2_quote_convention.normalize()
-    assert normalized_typewriter_french_level2_quote_convention.get_opening_quote() == "<"
-    assert normalized_typewriter_french_level2_quote_convention.get_closing_quote() == ">"
+    assert normalized_typewriter_french_level2_quote_convention.opening_quote == "<"
+    assert normalized_typewriter_french_level2_quote_convention.closing_quote == ">"
 
     central_european_level1_quote_convention = SingleLevelQuoteConvention("\u201e", "\u201c")
     normalized_central_european_level1_quote_convention = central_european_level1_quote_convention.normalize()
-    assert normalized_central_european_level1_quote_convention.get_opening_quote() == '"'
-    assert normalized_central_european_level1_quote_convention.get_closing_quote() == '"'
+    assert normalized_central_european_level1_quote_convention.opening_quote == '"'
+    assert normalized_central_european_level1_quote_convention.closing_quote == '"'
 
     central_european_level2_quote_convention = SingleLevelQuoteConvention("\u201a", "\u2018")
     normalized_central_european_level2_quote_convention = central_european_level2_quote_convention.normalize()
-    assert normalized_central_european_level2_quote_convention.get_opening_quote() == "'"
-    assert normalized_central_european_level2_quote_convention.get_closing_quote() == "'"
+    assert normalized_central_european_level2_quote_convention.opening_quote == "'"
+    assert normalized_central_european_level2_quote_convention.closing_quote == "'"
 
     central_european_guillemets_quote_convention = SingleLevelQuoteConvention("\u00bb", "\u00ab")
     normalized_central_european_guillemets_quote_convention = central_european_guillemets_quote_convention.normalize()
-    assert normalized_central_european_guillemets_quote_convention.get_opening_quote() == '"'
-    assert normalized_central_european_guillemets_quote_convention.get_closing_quote() == '"'
+    assert normalized_central_european_guillemets_quote_convention.opening_quote == '"'
+    assert normalized_central_european_guillemets_quote_convention.closing_quote == '"'
 
     swedish_level1_quote_convention = SingleLevelQuoteConvention("\u201d", "\u201d")
     normalized_swedish_level1_quote_convention = swedish_level1_quote_convention.normalize()
-    assert normalized_swedish_level1_quote_convention.get_opening_quote() == '"'
-    assert normalized_swedish_level1_quote_convention.get_closing_quote() == '"'
+    assert normalized_swedish_level1_quote_convention.opening_quote == '"'
+    assert normalized_swedish_level1_quote_convention.closing_quote == '"'
 
     swedish_level2_quote_convention = SingleLevelQuoteConvention("\u2019", "\u2019")
     normalized_swedish_level2_quote_convention = swedish_level2_quote_convention.normalize()
-    assert normalized_swedish_level2_quote_convention.get_opening_quote() == "'"
-    assert normalized_swedish_level2_quote_convention.get_closing_quote() == "'"
+    assert normalized_swedish_level2_quote_convention.opening_quote == "'"
+    assert normalized_swedish_level2_quote_convention.closing_quote == "'"
 
     finnish_level1_quote_convention = SingleLevelQuoteConvention("\u00bb", "\u00bb")
     normalized_finnish_level1_quote_convention = finnish_level1_quote_convention.normalize()
-    assert normalized_finnish_level1_quote_convention.get_opening_quote() == '"'
-    assert normalized_finnish_level1_quote_convention.get_closing_quote() == '"'
+    assert normalized_finnish_level1_quote_convention.opening_quote == '"'
+    assert normalized_finnish_level1_quote_convention.closing_quote == '"'
 
     arabic_level1_quote_convention = SingleLevelQuoteConvention("\u201d", "\u201c")
     normalized_arabic_level1_quote_convention = arabic_level1_quote_convention.normalize()
-    assert normalized_arabic_level1_quote_convention.get_opening_quote() == '"'
-    assert normalized_arabic_level1_quote_convention.get_closing_quote() == '"'
+    assert normalized_arabic_level1_quote_convention.opening_quote == '"'
+    assert normalized_arabic_level1_quote_convention.closing_quote == '"'
 
     arabic_level2_quote_convention = SingleLevelQuoteConvention("\u2019", "\u2018")
     normalized_arabic_level2_quote_convention = arabic_level2_quote_convention.normalize()
-    assert normalized_arabic_level2_quote_convention.get_opening_quote() == "'"
-    assert normalized_arabic_level2_quote_convention.get_closing_quote() == "'"
+    assert normalized_arabic_level2_quote_convention.opening_quote == "'"
+    assert normalized_arabic_level2_quote_convention.closing_quote == "'"
 
 
 def test_get_num_levels() -> None:
@@ -151,16 +151,16 @@ def test_get_expected_quotation_mark() -> None:
             SingleLevelQuoteConvention("\u00ab", "\u00bb"),
         ],
     )
-    assert quote_convention.get_expected_quotation_mark(1, QuotationMarkDirection.Opening) == "\u201c"
-    assert quote_convention.get_expected_quotation_mark(1, QuotationMarkDirection.Closing) == "\u201d"
-    assert quote_convention.get_expected_quotation_mark(2, QuotationMarkDirection.Opening) == "\u2018"
-    assert quote_convention.get_expected_quotation_mark(2, QuotationMarkDirection.Closing) == "\u2019"
-    assert quote_convention.get_expected_quotation_mark(3, QuotationMarkDirection.Opening) == "\u00ab"
-    assert quote_convention.get_expected_quotation_mark(3, QuotationMarkDirection.Closing) == "\u00bb"
-    assert quote_convention.get_expected_quotation_mark(4, QuotationMarkDirection.Opening) == ""
-    assert quote_convention.get_expected_quotation_mark(4, QuotationMarkDirection.Closing) == ""
-    assert quote_convention.get_expected_quotation_mark(0, QuotationMarkDirection.Opening) == ""
-    assert quote_convention.get_expected_quotation_mark(0, QuotationMarkDirection.Closing) == ""
+    assert quote_convention.get_expected_quotation_mark(1, QuotationMarkDirection.OPENING) == "\u201c"
+    assert quote_convention.get_expected_quotation_mark(1, QuotationMarkDirection.CLOSING) == "\u201d"
+    assert quote_convention.get_expected_quotation_mark(2, QuotationMarkDirection.OPENING) == "\u2018"
+    assert quote_convention.get_expected_quotation_mark(2, QuotationMarkDirection.CLOSING) == "\u2019"
+    assert quote_convention.get_expected_quotation_mark(3, QuotationMarkDirection.OPENING) == "\u00ab"
+    assert quote_convention.get_expected_quotation_mark(3, QuotationMarkDirection.CLOSING) == "\u00bb"
+    assert quote_convention.get_expected_quotation_mark(4, QuotationMarkDirection.OPENING) == ""
+    assert quote_convention.get_expected_quotation_mark(4, QuotationMarkDirection.CLOSING) == ""
+    assert quote_convention.get_expected_quotation_mark(0, QuotationMarkDirection.OPENING) == ""
+    assert quote_convention.get_expected_quotation_mark(0, QuotationMarkDirection.CLOSING) == ""
 
 
 def test_includes_opening_quotation_mark() -> None:
@@ -257,16 +257,16 @@ def test_get_possible_depths() -> None:
             SingleLevelQuoteConvention("\u2018", "\u2019"),
         ],
     )
-    assert quote_convention.get_possible_depths("\u201c", QuotationMarkDirection.Opening) == {1, 3}
-    assert quote_convention.get_possible_depths("\u201c", QuotationMarkDirection.Closing) == set()
-    assert quote_convention.get_possible_depths("\u2018", QuotationMarkDirection.Opening) == {2, 4}
-    assert quote_convention.get_possible_depths("\u2018", QuotationMarkDirection.Closing) == set()
-    assert quote_convention.get_possible_depths("\u201d", QuotationMarkDirection.Opening) == set()
-    assert quote_convention.get_possible_depths("\u201d", QuotationMarkDirection.Closing) == {1, 3}
-    assert quote_convention.get_possible_depths("\u2019", QuotationMarkDirection.Opening) == set()
-    assert quote_convention.get_possible_depths("\u2019", QuotationMarkDirection.Closing) == {2, 4}
-    assert quote_convention.get_possible_depths("\u00ab", QuotationMarkDirection.Opening) == set()
-    assert quote_convention.get_possible_depths("\u00ab", QuotationMarkDirection.Closing) == set()
+    assert quote_convention.get_possible_depths("\u201c", QuotationMarkDirection.OPENING) == {1, 3}
+    assert quote_convention.get_possible_depths("\u201c", QuotationMarkDirection.CLOSING) == set()
+    assert quote_convention.get_possible_depths("\u2018", QuotationMarkDirection.OPENING) == {2, 4}
+    assert quote_convention.get_possible_depths("\u2018", QuotationMarkDirection.CLOSING) == set()
+    assert quote_convention.get_possible_depths("\u201d", QuotationMarkDirection.OPENING) == set()
+    assert quote_convention.get_possible_depths("\u201d", QuotationMarkDirection.CLOSING) == {1, 3}
+    assert quote_convention.get_possible_depths("\u2019", QuotationMarkDirection.OPENING) == set()
+    assert quote_convention.get_possible_depths("\u2019", QuotationMarkDirection.CLOSING) == {2, 4}
+    assert quote_convention.get_possible_depths("\u00ab", QuotationMarkDirection.OPENING) == set()
+    assert quote_convention.get_possible_depths("\u00ab", QuotationMarkDirection.CLOSING) == set()
 
 
 def test_is_compatible_with_observed_quotation_marks() -> None:

@@ -1,6 +1,7 @@
-from typing import Generator, List, Union
+from typing import Generator, List, Set, Union
 
 from machine.corpora import (
+    QuotationMarkUpdateResolutionSettings,
     QuotationMarkUpdateSettings,
     QuotationMarkUpdateStrategy,
     QuoteConventionChangingUsfmUpdateBlockHandler,
@@ -18,9 +19,9 @@ from machine.corpora.analysis import (
     QuotationMarkFinder,
     QuotationMarkMetadata,
     QuotationMarkResolutionIssue,
-    QuotationMarkResolutionSettings,
     QuotationMarkResolver,
     QuotationMarkStringMatch,
+    QuoteConvention,
     QuoteConventionSet,
     TextSegment,
     UsfmMarkerType,
@@ -439,9 +440,10 @@ def test_process_scripture_element() -> None:
 
     assert quote_convention_changer._quotation_mark_finder.num_times_called == 1
     assert mock_quotation_mark_resolver.num_times_called == 1
-    assert quote_convention_changer._quotation_mark_finder.matches_to_return[0].text_segment.text == "this is a ‘test"
+    assert quote_convention_changer._quotation_mark_finder.matches_to_return[0]._text_segment._text == "this is a ‘test"
     assert (
-        quote_convention_changer._quotation_mark_finder.matches_to_return[1].text_segment.text == "the test ends” here"
+        quote_convention_changer._quotation_mark_finder.matches_to_return[1]._text_segment._text
+        == "the test ends” here"
     )
 
 
@@ -456,11 +458,11 @@ def test_create_text_segments_basic() -> None:
     text_segments: List[TextSegment] = quote_convention_changer._create_text_segments(update_element)
 
     assert len(text_segments) == 1
-    assert text_segments[0].text == "test segment"
-    assert text_segments[0].immediate_preceding_marker is UsfmMarkerType.NoMarker
-    assert text_segments[0].markers_in_preceding_context == set()
-    assert text_segments[0].previous_segment is None
-    assert text_segments[0].next_segment is None
+    assert text_segments[0]._text == "test segment"
+    assert text_segments[0]._immediate_preceding_marker is UsfmMarkerType.NO_MARKER
+    assert text_segments[0]._markers_in_preceding_context == set()
+    assert text_segments[0]._previous_segment is None
+    assert text_segments[0]._next_segment is None
 
 
 def test_create_text_segments_with_preceding_markers() -> None:
@@ -479,14 +481,14 @@ def test_create_text_segments_with_preceding_markers() -> None:
     text_segments: List[TextSegment] = quote_convention_changer._create_text_segments(update_element)
 
     assert len(text_segments) == 1
-    assert text_segments[0].text == "test segment"
-    assert text_segments[0].immediate_preceding_marker == UsfmMarkerType.ParagraphMarker
-    assert text_segments[0].markers_in_preceding_context == {
-        UsfmMarkerType.VerseMarker,
-        UsfmMarkerType.ParagraphMarker,
+    assert text_segments[0]._text == "test segment"
+    assert text_segments[0]._immediate_preceding_marker == UsfmMarkerType.PARAGRAPH
+    assert text_segments[0]._markers_in_preceding_context == {
+        UsfmMarkerType.VERSE,
+        UsfmMarkerType.PARAGRAPH,
     }
-    assert text_segments[0].previous_segment is None
-    assert text_segments[0].next_segment is None
+    assert text_segments[0]._previous_segment is None
+    assert text_segments[0]._next_segment is None
 
 
 def test_create_text_segments_with_multiple_text_tokens() -> None:
@@ -509,16 +511,22 @@ def test_create_text_segments_with_multiple_text_tokens() -> None:
     text_segments: List[TextSegment] = quote_convention_changer._create_text_segments(update_element)
 
     assert len(text_segments) == 2
-    assert text_segments[0].text == "test segment1"
-    assert text_segments[0].immediate_preceding_marker == UsfmMarkerType.ParagraphMarker
-    assert text_segments[0].markers_in_preceding_context == {UsfmMarkerType.VerseMarker, UsfmMarkerType.ParagraphMarker}
-    assert text_segments[0].previous_segment is None
-    assert text_segments[0].next_segment == text_segments[1]
-    assert text_segments[1].text == "test segment2"
-    assert text_segments[1].immediate_preceding_marker == UsfmMarkerType.CharacterMarker
-    assert text_segments[1].markers_in_preceding_context == {UsfmMarkerType.VerseMarker, UsfmMarkerType.CharacterMarker}
-    assert text_segments[1].previous_segment == text_segments[0]
-    assert text_segments[1].next_segment is None
+    assert text_segments[0]._text == "test segment1"
+    assert text_segments[0]._immediate_preceding_marker == UsfmMarkerType.PARAGRAPH
+    assert text_segments[0]._markers_in_preceding_context == {
+        UsfmMarkerType.VERSE,
+        UsfmMarkerType.PARAGRAPH,
+    }
+    assert text_segments[0]._previous_segment is None
+    assert text_segments[0]._next_segment == text_segments[1]
+    assert text_segments[1]._text == "test segment2"
+    assert text_segments[1]._immediate_preceding_marker == UsfmMarkerType.CHARACTER
+    assert text_segments[1]._markers_in_preceding_context == {
+        UsfmMarkerType.VERSE,
+        UsfmMarkerType.CHARACTER,
+    }
+    assert text_segments[1]._previous_segment == text_segments[0]
+    assert text_segments[1]._next_segment is None
 
 
 def test_create_text_segment() -> None:
@@ -530,10 +538,10 @@ def test_create_text_segment() -> None:
     segment: Union[TextSegment, None] = quote_convention_changer._create_text_segment(usfm_token)
 
     assert segment is not None
-    assert segment.text == "test segment"
-    assert segment.immediate_preceding_marker is UsfmMarkerType.NoMarker
-    assert segment.markers_in_preceding_context == set()
-    assert segment.usfm_token == usfm_token
+    assert segment._text == "test segment"
+    assert segment._immediate_preceding_marker is UsfmMarkerType.NO_MARKER
+    assert segment._markers_in_preceding_context == set()
+    assert segment._usfm_token == usfm_token
 
 
 def test_set_previous_and_next_for_segments() -> None:
@@ -549,12 +557,12 @@ def test_set_previous_and_next_for_segments() -> None:
 
     quote_convention_changer._set_previous_and_next_for_segments(segments)
 
-    assert segments[0].previous_segment is None
-    assert segments[0].next_segment == segments[1]
-    assert segments[1].previous_segment == segments[0]
-    assert segments[1].next_segment == segments[2]
-    assert segments[2].previous_segment == segments[1]
-    assert segments[2].next_segment is None
+    assert segments[0]._previous_segment is None
+    assert segments[0]._next_segment == segments[1]
+    assert segments[1]._previous_segment == segments[0]
+    assert segments[1]._next_segment == segments[2]
+    assert segments[2]._previous_segment == segments[1]
+    assert segments[2]._next_segment is None
 
 
 def test_check_for_chapter_change() -> None:
@@ -588,9 +596,9 @@ def test_start_new_chapter() -> None:
         )
     )
 
-    quote_convention_changer._next_scripture_text_segment_builder.add_preceding_marker(
-        UsfmMarkerType.EmbedMarker
-    ).set_text("this text should be erased")
+    quote_convention_changer._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.EMBED).set_text(
+        "this text should be erased"
+    )
     quote_convention_changer._verse_text_quotation_mark_resolver._issues.add(
         QuotationMarkResolutionIssue.INCOMPATIBLE_QUOTATION_MARK
     )
@@ -598,9 +606,9 @@ def test_start_new_chapter() -> None:
     quote_convention_changer._start_new_chapter(1)
     segment = quote_convention_changer._next_scripture_text_segment_builder.build()
     assert quote_convention_changer._current_strategy == QuotationMarkUpdateStrategy.SKIP
-    assert segment.immediate_preceding_marker == UsfmMarkerType.ChapterMarker
-    assert segment.text == ""
-    assert UsfmMarkerType.EmbedMarker not in segment.markers_in_preceding_context
+    assert segment._immediate_preceding_marker == UsfmMarkerType.CHAPTER
+    assert segment._text == ""
+    assert UsfmMarkerType.EMBED not in segment._markers_in_preceding_context
     assert quote_convention_changer._verse_text_quotation_mark_resolver._issues == set()
 
     quote_convention_changer._start_new_chapter(2)
@@ -673,7 +681,7 @@ class MockQuotationMarkFinder(QuotationMarkFinder):
 
 class MockQuotationMarkResolver(QuotationMarkResolver):
     def __init__(self):
-        super().__init__(QuotationMarkResolutionSettings())
+        super().__init__(QuotationMarkUpdateResolutionSettings(QuoteConvention("", []), QuoteConvention("", [])))
         self.num_times_called = 0
 
     def resolve_quotation_marks(
@@ -681,12 +689,15 @@ class MockQuotationMarkResolver(QuotationMarkResolver):
     ) -> Generator[QuotationMarkMetadata, None, None]:
         self.num_times_called += 1
         current_depth = 1
-        current_direction = QuotationMarkDirection.Opening
+        current_direction = QuotationMarkDirection.OPENING
         for quote_match in quote_matches:
             yield quote_match.resolve(current_depth, current_direction)
             current_depth += 1
             current_direction = (
-                QuotationMarkDirection.Closing
-                if current_direction == QuotationMarkDirection.Opening
-                else QuotationMarkDirection.Opening
+                QuotationMarkDirection.CLOSING
+                if current_direction == QuotationMarkDirection.OPENING
+                else QuotationMarkDirection.OPENING
             )
+
+    def get_issues(self) -> Set[QuotationMarkResolutionIssue]:
+        return set()

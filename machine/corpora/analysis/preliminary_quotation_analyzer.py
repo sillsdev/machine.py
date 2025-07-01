@@ -15,19 +15,19 @@ class ApostropheProportionStatistics:
         self.reset()
 
     def reset(self) -> None:
-        self.num_characters = 0
-        self.num_apostrophes = 0
+        self._num_characters = 0
+        self._num_apostrophes = 0
 
     def count_characters(self, text_segment: TextSegment) -> None:
-        self.num_characters += len(text_segment.get_text())
+        self._num_characters += text_segment.length
 
     def add_apostrophe(self) -> None:
-        self.num_apostrophes += 1
+        self._num_apostrophes += 1
 
     def is_apostrophe_proportion_greater_than(self, threshold: float) -> bool:
-        if self.num_characters == 0:
+        if self._num_characters == 0:
             return False
-        return self.num_apostrophes / self.num_characters > threshold
+        return self._num_apostrophes / self._num_characters > threshold
 
 
 class QuotationMarkWordPositions:
@@ -35,33 +35,33 @@ class QuotationMarkWordPositions:
         self.reset()
 
     def reset(self) -> None:
-        self.word_initial_occurrences: Dict[str, int] = dict()
-        self.mid_word_occurrences: Dict[str, int] = dict()
-        self.word_final_occurrences: Dict[str, int] = dict()
+        self._word_initial_occurrences: Dict[str, int] = dict()
+        self._mid_word_occurrences: Dict[str, int] = dict()
+        self._word_final_occurrences: Dict[str, int] = dict()
 
     def count_word_initial_apostrophe(self, quotation_mark: str) -> None:
-        if quotation_mark not in self.word_initial_occurrences:
-            self.word_initial_occurrences[quotation_mark] = 0
-        self.word_initial_occurrences[quotation_mark] += 1
+        if quotation_mark not in self._word_initial_occurrences:
+            self._word_initial_occurrences[quotation_mark] = 0
+        self._word_initial_occurrences[quotation_mark] += 1
 
     def count_mid_word_apostrophe(self, quotation_mark: str) -> None:
-        if quotation_mark not in self.mid_word_occurrences:
-            self.mid_word_occurrences[quotation_mark] = 0
-        self.mid_word_occurrences[quotation_mark] += 1
+        if quotation_mark not in self._mid_word_occurrences:
+            self._mid_word_occurrences[quotation_mark] = 0
+        self._mid_word_occurrences[quotation_mark] += 1
 
     def count_word_final_apostrophe(self, quotation_mark: str) -> None:
-        if quotation_mark not in self.word_final_occurrences:
-            self.word_final_occurrences[quotation_mark] = 0
-        self.word_final_occurrences[quotation_mark] += 1
+        if quotation_mark not in self._word_final_occurrences:
+            self._word_final_occurrences[quotation_mark] = 0
+        self._word_final_occurrences[quotation_mark] += 1
 
     def _get_word_initial_occurrences(self, quotation_mark: str) -> int:
-        return self.word_initial_occurrences[quotation_mark] if quotation_mark in self.word_initial_occurrences else 0
+        return self._word_initial_occurrences[quotation_mark] if quotation_mark in self._word_initial_occurrences else 0
 
     def _get_mid_word_occurrences(self, quotation_mark: str) -> int:
-        return self.mid_word_occurrences[quotation_mark] if quotation_mark in self.mid_word_occurrences else 0
+        return self._mid_word_occurrences[quotation_mark] if quotation_mark in self._mid_word_occurrences else 0
 
     def _get_word_final_occurrences(self, quotation_mark: str) -> int:
-        return self.word_final_occurrences[quotation_mark] if quotation_mark in self.word_final_occurrences else 0
+        return self._word_final_occurrences[quotation_mark] if quotation_mark in self._word_final_occurrences else 0
 
     def _get_total_occurrences(self, quotation_mark: str) -> int:
         return (
@@ -97,30 +97,30 @@ class QuotationMarkSequences:
         self.reset()
 
     def reset(self) -> None:
-        self.earlier_quotation_mark_counts: Dict[str, int] = dict()
-        self.later_quotation_mark_counts: Dict[str, int] = dict()
+        self._earlier_quotation_mark_counts: Dict[str, int] = dict()
+        self._later_quotation_mark_counts: Dict[str, int] = dict()
 
     def record_earlier_quotation_mark(self, quotation_mark: str) -> None:
-        if quotation_mark not in self.earlier_quotation_mark_counts:
-            self.earlier_quotation_mark_counts[quotation_mark] = 0
-        self.earlier_quotation_mark_counts[quotation_mark] += 1
+        if quotation_mark not in self._earlier_quotation_mark_counts:
+            self._earlier_quotation_mark_counts[quotation_mark] = 0
+        self._earlier_quotation_mark_counts[quotation_mark] += 1
 
     def record_later_quotation_mark(self, quotation_mark: str) -> None:
-        if quotation_mark not in self.later_quotation_mark_counts:
-            self.later_quotation_mark_counts[quotation_mark] = 0
-        self.later_quotation_mark_counts[quotation_mark] += 1
+        if quotation_mark not in self._later_quotation_mark_counts:
+            self._later_quotation_mark_counts[quotation_mark] = 0
+        self._later_quotation_mark_counts[quotation_mark] += 1
 
     def _get_earlier_occurrences(self, quotation_mark: str) -> int:
         return (
-            self.earlier_quotation_mark_counts[quotation_mark]
-            if quotation_mark in self.earlier_quotation_mark_counts
+            self._earlier_quotation_mark_counts[quotation_mark]
+            if quotation_mark in self._earlier_quotation_mark_counts
             else 0
         )
 
     def _get_later_occurrences(self, quotation_mark: str) -> int:
         return (
-            self.later_quotation_mark_counts[quotation_mark]
-            if quotation_mark in self.later_quotation_mark_counts
+            self._later_quotation_mark_counts[quotation_mark]
+            if quotation_mark in self._later_quotation_mark_counts
             else 0
         )
 
@@ -149,22 +149,22 @@ class QuotationMarkSequences:
 
 class QuotationMarkGrouper:
     def __init__(self, quotation_marks: List[QuotationMarkStringMatch], quote_convention_set: QuoteConventionSet):
-        self.quote_convention_set = quote_convention_set
+        self._quote_convention_set = quote_convention_set
         self._group_quotation_marks(quotation_marks)
 
     def _group_quotation_marks(self, quotation_marks: List[QuotationMarkStringMatch]) -> None:
-        self.grouped_quotation_marks: Dict[str, List[QuotationMarkStringMatch]] = dict()
+        self._grouped_quotation_marks: Dict[str, List[QuotationMarkStringMatch]] = dict()
         for quotation_mark_match in quotation_marks:
-            if quotation_mark_match.get_quotation_mark() not in self.grouped_quotation_marks:
-                self.grouped_quotation_marks[quotation_mark_match.get_quotation_mark()] = []
-            self.grouped_quotation_marks[quotation_mark_match.get_quotation_mark()].append(quotation_mark_match)
+            if quotation_mark_match.quotation_mark not in self._grouped_quotation_marks:
+                self._grouped_quotation_marks[quotation_mark_match.quotation_mark] = []
+            self._grouped_quotation_marks[quotation_mark_match.quotation_mark].append(quotation_mark_match)
 
     def get_quotation_mark_pairs(self) -> Generator[Tuple[str, str], None, None]:
-        for mark1, matches1 in self.grouped_quotation_marks.items():
+        for mark1, matches1 in self._grouped_quotation_marks.items():
             # handle cases of identical opening/closing marks
             if (
                 len(matches1) == 2
-                and self.quote_convention_set.is_quotation_mark_direction_ambiguous(mark1)
+                and self._quote_convention_set.is_quotation_mark_direction_ambiguous(mark1)
                 and not self.has_distinct_paired_quotation_mark(mark1)
             ):
                 yield (mark1, mark1)
@@ -175,10 +175,10 @@ class QuotationMarkGrouper:
                 continue
 
             # find matching closing marks
-            for mark2, matches2 in self.grouped_quotation_marks.items():
+            for mark2, matches2 in self._grouped_quotation_marks.items():
                 if (
                     len(matches2) == 1
-                    and self.quote_convention_set.are_marks_a_valid_pair(mark1, mark2)
+                    and self._quote_convention_set.marks_are_a_valid_pair(mark1, mark2)
                     and matches1[0].precedes(matches2[0])
                 ):
                     yield (mark1, mark2)
@@ -186,8 +186,8 @@ class QuotationMarkGrouper:
     def has_distinct_paired_quotation_mark(self, quotation_mark: str) -> bool:
         return any(
             [
-                mark != quotation_mark and mark in self.grouped_quotation_marks
-                for mark in self.quote_convention_set.get_possible_paired_quotation_marks(quotation_mark)
+                mark != quotation_mark and mark in self._grouped_quotation_marks
+                for mark in self._quote_convention_set.get_possible_paired_quotation_marks(quotation_mark)
             ]
         )
 
@@ -213,11 +213,11 @@ class PreliminaryApostropheAnalyzer:
             self._process_quotation_mark(quotation_mark_match)
 
     def _process_quotation_mark(self, quotation_mark_match: QuotationMarkStringMatch) -> None:
-        if quotation_mark_match.does_quotation_mark_match(self.apostrophe_pattern):
+        if quotation_mark_match.quotation_mark_matches(self.apostrophe_pattern):
             self._count_apostrophe(quotation_mark_match)
 
     def _count_apostrophe(self, apostrophe_match: QuotationMarkStringMatch) -> None:
-        apostrophe: str = apostrophe_match.get_quotation_mark()
+        apostrophe: str = apostrophe_match.quotation_mark
         self._apostrophe_proportion_statistics.add_apostrophe()
         if self._is_match_word_initial(apostrophe_match):
             self._word_position_statistics.count_word_initial_apostrophe(apostrophe)
@@ -285,7 +285,7 @@ class PreliminaryQuotationAnalyzer:
         return self._select_compatible_quote_conventions()
 
     def _analyze_quotation_marks_for_chapter(self, chapter: Chapter) -> None:
-        for verse in chapter.get_verses():
+        for verse in chapter.verses:
             self._analyze_quotation_marks_for_verse(verse)
 
     def _analyze_quotation_marks_for_verse(self, verse: Verse) -> None:
@@ -293,7 +293,7 @@ class PreliminaryQuotationAnalyzer:
             self._quote_conventions
         ).find_all_potential_quotation_marks_in_verse(verse)
         self._analyze_quotation_mark_sequence(quotation_marks)
-        self._apostrophe_analyzer.process_quotation_marks(verse.get_text_segments(), quotation_marks)
+        self._apostrophe_analyzer.process_quotation_marks(verse.text_segments, quotation_marks)
 
     def _analyze_quotation_mark_sequence(self, quotation_marks: List[QuotationMarkStringMatch]) -> None:
         quotation_mark_grouper: QuotationMarkGrouper = QuotationMarkGrouper(quotation_marks, self._quote_conventions)

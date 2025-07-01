@@ -20,8 +20,8 @@ def test_chapter_and_verse_markers():
                     [
                         TextSegment.Builder()
                         .set_text("test")
-                        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-                        .add_preceding_marker(UsfmMarkerType.VerseMarker)
+                        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+                        .add_preceding_marker(UsfmMarkerType.VERSE)
                         .build()
                     ]
                 )
@@ -31,8 +31,8 @@ def test_chapter_and_verse_markers():
 
     actual_chapters = usfm_structure_extractor.get_chapters()
     assert_chapter_equal(expected_chapters, actual_chapters)
-    assert actual_chapters[0].verses[0].text_segments[0].get_previous_segment() is None
-    assert actual_chapters[0].verses[0].text_segments[0].get_next_segment() is None
+    assert actual_chapters[0].verses[0]._text_segments[0].previous_segment is None
+    assert actual_chapters[0].verses[0]._text_segments[0].next_segment is None
 
 
 def test_start_paragraph_marker():
@@ -49,9 +49,9 @@ def test_start_paragraph_marker():
                     [
                         TextSegment.Builder()
                         .set_text("test")
-                        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-                        .add_preceding_marker(UsfmMarkerType.VerseMarker)
-                        .add_preceding_marker(UsfmMarkerType.ParagraphMarker)
+                        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+                        .add_preceding_marker(UsfmMarkerType.VERSE)
+                        .add_preceding_marker(UsfmMarkerType.PARAGRAPH)
                         .build()
                     ]
                 )
@@ -61,8 +61,8 @@ def test_start_paragraph_marker():
 
     actual_chapters = usfm_structure_extractor.get_chapters()
     assert_chapter_equal(expected_chapters, actual_chapters)
-    assert actual_chapters[0].verses[0].text_segments[0].get_previous_segment() is None
-    assert actual_chapters[0].verses[0].text_segments[0].get_next_segment() is None
+    assert actual_chapters[0].verses[0]._text_segments[0].previous_segment is None
+    assert actual_chapters[0].verses[0]._text_segments[0].next_segment is None
 
 
 def test_start_character_marker():
@@ -79,9 +79,9 @@ def test_start_character_marker():
                     [
                         TextSegment.Builder()
                         .set_text("test")
-                        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-                        .add_preceding_marker(UsfmMarkerType.VerseMarker)
-                        .add_preceding_marker(UsfmMarkerType.CharacterMarker)
+                        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+                        .add_preceding_marker(UsfmMarkerType.VERSE)
+                        .add_preceding_marker(UsfmMarkerType.CHARACTER)
                         .build()
                     ]
                 )
@@ -91,8 +91,8 @@ def test_start_character_marker():
 
     actual_chapters = usfm_structure_extractor.get_chapters()
     assert_chapter_equal(expected_chapters, actual_chapters)
-    assert actual_chapters[0].verses[0].text_segments[0].get_previous_segment() is None
-    assert actual_chapters[0].verses[0].text_segments[0].get_next_segment() is None
+    assert actual_chapters[0].verses[0]._text_segments[0].previous_segment is None
+    assert actual_chapters[0].verses[0]._text_segments[0].next_segment is None
 
 
 def test_end_character_marker():
@@ -109,9 +109,9 @@ def test_end_character_marker():
                     [
                         TextSegment.Builder()
                         .set_text("test")
-                        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-                        .add_preceding_marker(UsfmMarkerType.VerseMarker)
-                        .add_preceding_marker(UsfmMarkerType.CharacterMarker)
+                        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+                        .add_preceding_marker(UsfmMarkerType.VERSE)
+                        .add_preceding_marker(UsfmMarkerType.CHARACTER)
                         .build()
                     ]
                 )
@@ -121,8 +121,8 @@ def test_end_character_marker():
 
     actual_chapters = usfm_structure_extractor.get_chapters()
     assert_chapter_equal(expected_chapters, actual_chapters)
-    assert actual_chapters[0].verses[0].text_segments[0].get_previous_segment() is None
-    assert actual_chapters[0].verses[0].text_segments[0].get_next_segment() is None
+    assert actual_chapters[0].verses[0]._text_segments[0].previous_segment is None
+    assert actual_chapters[0].verses[0]._text_segments[0].next_segment is None
 
 
 def test_end_note_marker():
@@ -139,9 +139,9 @@ def test_end_note_marker():
                     [
                         TextSegment.Builder()
                         .set_text("test")
-                        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-                        .add_preceding_marker(UsfmMarkerType.VerseMarker)
-                        .add_preceding_marker(UsfmMarkerType.EmbedMarker)
+                        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+                        .add_preceding_marker(UsfmMarkerType.VERSE)
+                        .add_preceding_marker(UsfmMarkerType.EMBED)
                         .build()
                     ]
                 )
@@ -151,8 +151,8 @@ def test_end_note_marker():
 
     actual_chapters = usfm_structure_extractor.get_chapters()
     assert_chapter_equal(expected_chapters, actual_chapters)
-    assert actual_chapters[0].verses[0].text_segments[0].get_previous_segment() is None
-    assert actual_chapters[0].verses[0].text_segments[0].get_next_segment() is None
+    assert actual_chapters[0].verses[0]._text_segments[0].previous_segment is None
+    assert actual_chapters[0].verses[0]._text_segments[0].next_segment is None
 
 
 def test_end_table_marker():
@@ -169,9 +169,9 @@ def test_end_table_marker():
                     [
                         TextSegment.Builder()
                         .set_text("test")
-                        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-                        .add_preceding_marker(UsfmMarkerType.VerseMarker)
-                        .add_preceding_marker(UsfmMarkerType.EmbedMarker)
+                        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+                        .add_preceding_marker(UsfmMarkerType.VERSE)
+                        .add_preceding_marker(UsfmMarkerType.EMBED)
                         .build()
                     ]
                 )
@@ -181,8 +181,8 @@ def test_end_table_marker():
 
     actual_chapters = usfm_structure_extractor.get_chapters()
     assert_chapter_equal(expected_chapters, actual_chapters)
-    assert actual_chapters[0].verses[0].text_segments[0].get_previous_segment() is None
-    assert actual_chapters[0].verses[0].text_segments[0].get_next_segment() is None
+    assert actual_chapters[0].verses[0]._text_segments[0].previous_segment is None
+    assert actual_chapters[0].verses[0]._text_segments[0].next_segment is None
 
 
 def test_ref_marker():
@@ -199,9 +199,9 @@ def test_ref_marker():
                     [
                         TextSegment.Builder()
                         .set_text("test")
-                        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-                        .add_preceding_marker(UsfmMarkerType.VerseMarker)
-                        .add_preceding_marker(UsfmMarkerType.EmbedMarker)
+                        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+                        .add_preceding_marker(UsfmMarkerType.VERSE)
+                        .add_preceding_marker(UsfmMarkerType.EMBED)
                         .build()
                     ]
                 )
@@ -211,8 +211,8 @@ def test_ref_marker():
 
     actual_chapters = usfm_structure_extractor.get_chapters()
     assert_chapter_equal(expected_chapters, actual_chapters)
-    assert actual_chapters[0].verses[0].text_segments[0].get_previous_segment() is None
-    assert actual_chapters[0].verses[0].text_segments[0].get_next_segment() is None
+    assert actual_chapters[0].verses[0]._text_segments[0].previous_segment is None
+    assert actual_chapters[0].verses[0]._text_segments[0].next_segment is None
 
 
 def test_sidebar_marker():
@@ -229,9 +229,9 @@ def test_sidebar_marker():
                     [
                         TextSegment.Builder()
                         .set_text("test")
-                        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-                        .add_preceding_marker(UsfmMarkerType.VerseMarker)
-                        .add_preceding_marker(UsfmMarkerType.EmbedMarker)
+                        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+                        .add_preceding_marker(UsfmMarkerType.VERSE)
+                        .add_preceding_marker(UsfmMarkerType.EMBED)
                         .build()
                     ]
                 )
@@ -241,8 +241,8 @@ def test_sidebar_marker():
 
     actual_chapters = usfm_structure_extractor.get_chapters()
     assert_chapter_equal(expected_chapters, actual_chapters)
-    assert actual_chapters[0].verses[0].text_segments[0].get_previous_segment() is None
-    assert actual_chapters[0].verses[0].text_segments[0].get_next_segment() is None
+    assert actual_chapters[0].verses[0]._text_segments[0].previous_segment is None
+    assert actual_chapters[0].verses[0]._text_segments[0].next_segment is None
 
 
 def test_multiple_verses():
@@ -260,8 +260,8 @@ def test_multiple_verses():
                     [
                         TextSegment.Builder()
                         .set_text("test")
-                        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-                        .add_preceding_marker(UsfmMarkerType.VerseMarker)
+                        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+                        .add_preceding_marker(UsfmMarkerType.VERSE)
                         .build()
                     ]
                 ),
@@ -269,8 +269,8 @@ def test_multiple_verses():
                     [
                         TextSegment.Builder()
                         .set_text("test2")
-                        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-                        .add_preceding_marker(UsfmMarkerType.VerseMarker)
+                        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+                        .add_preceding_marker(UsfmMarkerType.VERSE)
                         .build()
                     ]
                 ),
@@ -280,10 +280,10 @@ def test_multiple_verses():
 
     actual_chapters = usfm_structure_extractor.get_chapters()
     assert_chapter_equal(expected_chapters, actual_chapters)
-    assert actual_chapters[0].verses[0].text_segments[0].get_previous_segment() is None
-    assert actual_chapters[0].verses[0].text_segments[0].get_next_segment() is None
-    assert actual_chapters[0].verses[1].text_segments[0].get_previous_segment() is None
-    assert actual_chapters[0].verses[1].text_segments[0].get_next_segment() is None
+    assert actual_chapters[0].verses[0]._text_segments[0].previous_segment is None
+    assert actual_chapters[0].verses[0]._text_segments[0].next_segment is None
+    assert actual_chapters[0].verses[1]._text_segments[0].previous_segment is None
+    assert actual_chapters[0].verses[1]._text_segments[0].next_segment is None
 
 
 def test_multiple_chapters():
@@ -302,8 +302,8 @@ def test_multiple_chapters():
                     [
                         TextSegment.Builder()
                         .set_text("test")
-                        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-                        .add_preceding_marker(UsfmMarkerType.VerseMarker)
+                        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+                        .add_preceding_marker(UsfmMarkerType.VERSE)
                         .build()
                     ]
                 ),
@@ -315,8 +315,8 @@ def test_multiple_chapters():
                     [
                         TextSegment.Builder()
                         .set_text("test2")
-                        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-                        .add_preceding_marker(UsfmMarkerType.VerseMarker)
+                        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+                        .add_preceding_marker(UsfmMarkerType.VERSE)
                         .build()
                     ]
                 ),
@@ -326,10 +326,10 @@ def test_multiple_chapters():
 
     actual_chapters = usfm_structure_extractor.get_chapters()
     assert_chapter_equal(expected_chapters, actual_chapters)
-    assert actual_chapters[0].verses[0].text_segments[0].get_previous_segment() is None
-    assert actual_chapters[0].verses[0].text_segments[0].get_next_segment() is None
-    assert actual_chapters[1].verses[0].text_segments[0].get_previous_segment() is None
-    assert actual_chapters[1].verses[0].text_segments[0].get_next_segment() is None
+    assert actual_chapters[0].verses[0]._text_segments[0].previous_segment is None
+    assert actual_chapters[0].verses[0]._text_segments[0].next_segment is None
+    assert actual_chapters[1].verses[0]._text_segments[0].previous_segment is None
+    assert actual_chapters[1].verses[0]._text_segments[0].next_segment is None
 
 
 def test_character_marker_in_text():
@@ -347,14 +347,14 @@ def test_character_marker_in_text():
                     [
                         TextSegment.Builder()
                         .set_text("test")
-                        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-                        .add_preceding_marker(UsfmMarkerType.VerseMarker)
+                        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+                        .add_preceding_marker(UsfmMarkerType.VERSE)
                         .build(),
                         TextSegment.Builder()
                         .set_text("test2")
-                        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-                        .add_preceding_marker(UsfmMarkerType.VerseMarker)
-                        .add_preceding_marker(UsfmMarkerType.CharacterMarker)
+                        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+                        .add_preceding_marker(UsfmMarkerType.VERSE)
+                        .add_preceding_marker(UsfmMarkerType.CHARACTER)
                         .build(),
                     ]
                 ),
@@ -365,12 +365,11 @@ def test_character_marker_in_text():
     actual_chapters = usfm_structure_extractor.get_chapters()
     assert_chapter_equal(expected_chapters, actual_chapters)
     assert (
-        actual_chapters[0].verses[0].text_segments[1].get_previous_segment()
-        == expected_chapters[0].verses[0].text_segments[0]
+        actual_chapters[0].verses[0]._text_segments[1].previous_segment
+        == expected_chapters[0].verses[0]._text_segments[0]
     )
     assert (
-        actual_chapters[0].verses[0].text_segments[0].get_next_segment()
-        == expected_chapters[0].verses[0].text_segments[1]
+        actual_chapters[0].verses[0]._text_segments[0].next_segment == expected_chapters[0].verses[0]._text_segments[1]
     )
 
 
@@ -391,14 +390,14 @@ def test_empty_text():
                     [
                         TextSegment.Builder()
                         .set_text("test")
-                        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-                        .add_preceding_marker(UsfmMarkerType.VerseMarker)
+                        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+                        .add_preceding_marker(UsfmMarkerType.VERSE)
                         .build(),
                         TextSegment.Builder()
                         .set_text("test2")
-                        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-                        .add_preceding_marker(UsfmMarkerType.VerseMarker)
-                        .add_preceding_marker(UsfmMarkerType.CharacterMarker)
+                        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+                        .add_preceding_marker(UsfmMarkerType.VERSE)
+                        .add_preceding_marker(UsfmMarkerType.CHARACTER)
                         .build(),
                     ]
                 ),
@@ -409,12 +408,11 @@ def test_empty_text():
     actual_chapters = usfm_structure_extractor.get_chapters()
     assert_chapter_equal(expected_chapters, actual_chapters)
     assert (
-        actual_chapters[0].verses[0].text_segments[1].get_previous_segment()
-        == expected_chapters[0].verses[0].text_segments[0]
+        actual_chapters[0].verses[0]._text_segments[1].previous_segment
+        == expected_chapters[0].verses[0]._text_segments[0]
     )
     assert (
-        actual_chapters[0].verses[0].text_segments[0].get_next_segment()
-        == expected_chapters[0].verses[0].text_segments[1]
+        actual_chapters[0].verses[0]._text_segments[0].next_segment == expected_chapters[0].verses[0]._text_segments[1]
     )
 
 
@@ -436,6 +434,6 @@ def assert_chapter_equal(expected_chapters: List[Chapter], actual_chapters: List
     for expected_chapter, actual_chapter in zip(expected_chapters, actual_chapters):
         assert len(expected_chapter.verses) == len(actual_chapter.verses)
         for expected_verse, actual_verse in zip(expected_chapter.verses, actual_chapter.verses):
-            assert len(expected_verse.text_segments) == len(actual_verse.text_segments)
-            for expected_segment, actual_segment in zip(expected_verse.text_segments, actual_verse.text_segments):
+            assert len(expected_verse._text_segments) == len(actual_verse._text_segments)
+            for expected_segment, actual_segment in zip(expected_verse._text_segments, actual_verse._text_segments):
                 assert expected_segment == actual_segment

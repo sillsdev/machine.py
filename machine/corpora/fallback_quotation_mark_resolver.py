@@ -69,13 +69,13 @@ class FallbackQuotationMarkResolver(QuotationMarkResolver):
     ) -> bool:
         if (
             self._last_quotation_mark is None
-            or self._last_quotation_mark.get_direction() is not QuotationMarkDirection.Opening
+            or self._last_quotation_mark.direction is not QuotationMarkDirection.OPENING
         ):
             return False
 
         return (
-            self._last_quotation_mark.get_text_segment() == match.get_text_segment()
-            and self._last_quotation_mark.get_end_index() == match.get_start_index()
+            self._last_quotation_mark.text_segment == match.text_segment
+            and self._last_quotation_mark.end_index == match.start_index
         )
 
     def _is_closing_quote(
@@ -96,23 +96,23 @@ class FallbackQuotationMarkResolver(QuotationMarkResolver):
 
     def _resolve_opening_mark(self, quote_match: QuotationMarkStringMatch) -> Union[QuotationMarkMetadata, None]:
         possible_depths: Set[int] = self._settings.get_possible_depths(
-            quote_match.get_quotation_mark(), QuotationMarkDirection.Opening
+            quote_match.quotation_mark, QuotationMarkDirection.OPENING
         )
         if len(possible_depths) == 0:
             return None
 
-        quote = quote_match.resolve(min(possible_depths), QuotationMarkDirection.Opening)
+        quote = quote_match.resolve(min(possible_depths), QuotationMarkDirection.OPENING)
         self._last_quotation_mark = quote
         return quote
 
     def _resolve_closing_mark(self, quote_match: QuotationMarkStringMatch) -> Union[QuotationMarkMetadata, None]:
         possible_depths: Set[int] = self._settings.get_possible_depths(
-            quote_match.get_quotation_mark(), QuotationMarkDirection.Closing
+            quote_match.quotation_mark, QuotationMarkDirection.CLOSING
         )
         if len(possible_depths) == 0:
             return None
 
-        quote = quote_match.resolve(min(possible_depths), QuotationMarkDirection.Closing)
+        quote = quote_match.resolve(min(possible_depths), QuotationMarkDirection.CLOSING)
         self._last_quotation_mark = quote
         return quote
 

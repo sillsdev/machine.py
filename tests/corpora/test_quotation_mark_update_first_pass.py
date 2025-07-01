@@ -334,24 +334,24 @@ def test_choose_best_action_based_on_observed_issues() -> None:
     first_pass_analyzer._will_fallback_mode_work = False
 
     # Test with no issues
-    best_action = first_pass_analyzer._choose_best_action_based_on_observed_issues([])
+    best_action = first_pass_analyzer._choose_best_strategy_based_on_observed_issues([])
     assert best_action == QuotationMarkUpdateStrategy.APPLY_FULL
 
     # Test with one issue
     assert (
-        first_pass_analyzer._choose_best_action_based_on_observed_issues(
+        first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
             [QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK]
         )
         == QuotationMarkUpdateStrategy.SKIP
     )
     assert (
-        first_pass_analyzer._choose_best_action_based_on_observed_issues(
+        first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
             [QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK]
         )
         == QuotationMarkUpdateStrategy.SKIP
     )
     assert (
-        first_pass_analyzer._choose_best_action_based_on_observed_issues(
+        first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
             [QuotationMarkResolutionIssue.TOO_DEEP_NESTING]
         )
         == QuotationMarkUpdateStrategy.SKIP
@@ -359,7 +359,7 @@ def test_choose_best_action_based_on_observed_issues() -> None:
 
     # Test with multiple issues
     assert (
-        first_pass_analyzer._choose_best_action_based_on_observed_issues(
+        first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
             [
                 QuotationMarkResolutionIssue.TOO_DEEP_NESTING,
                 QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK,
@@ -368,7 +368,7 @@ def test_choose_best_action_based_on_observed_issues() -> None:
         == QuotationMarkUpdateStrategy.SKIP
     )
     assert (
-        first_pass_analyzer._choose_best_action_based_on_observed_issues(
+        first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
             [
                 QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK,
                 QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK,
@@ -377,7 +377,7 @@ def test_choose_best_action_based_on_observed_issues() -> None:
         == QuotationMarkUpdateStrategy.SKIP
     )
     assert (
-        first_pass_analyzer._choose_best_action_based_on_observed_issues(
+        first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
             [
                 QuotationMarkResolutionIssue.TOO_DEEP_NESTING,
                 QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK,
@@ -392,24 +392,24 @@ def test_choose_best_action_based_on_observed_issues_with_basic_fallback() -> No
     first_pass_analyzer._will_fallback_mode_work = True
 
     # Test with no issues
-    best_action = first_pass_analyzer._choose_best_action_based_on_observed_issues([])
+    best_action = first_pass_analyzer._choose_best_strategy_based_on_observed_issues([])
     assert best_action == QuotationMarkUpdateStrategy.APPLY_FULL
 
     # Test with one issue
     assert (
-        first_pass_analyzer._choose_best_action_based_on_observed_issues(
+        first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
             [QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK]
         )
         == QuotationMarkUpdateStrategy.APPLY_FALLBACK
     )
     assert (
-        first_pass_analyzer._choose_best_action_based_on_observed_issues(
+        first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
             [QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK]
         )
         == QuotationMarkUpdateStrategy.SKIP
     )
     assert (
-        first_pass_analyzer._choose_best_action_based_on_observed_issues(
+        first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
             [QuotationMarkResolutionIssue.TOO_DEEP_NESTING]
         )
         == QuotationMarkUpdateStrategy.APPLY_FALLBACK
@@ -417,7 +417,7 @@ def test_choose_best_action_based_on_observed_issues_with_basic_fallback() -> No
 
     # Test with multiple issues
     assert (
-        first_pass_analyzer._choose_best_action_based_on_observed_issues(
+        first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
             [
                 QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK,
                 QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK,
@@ -426,7 +426,7 @@ def test_choose_best_action_based_on_observed_issues_with_basic_fallback() -> No
         == QuotationMarkUpdateStrategy.SKIP
     )
     assert (
-        first_pass_analyzer._choose_best_action_based_on_observed_issues(
+        first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
             [
                 QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK,
                 QuotationMarkResolutionIssue.TOO_DEEP_NESTING,
@@ -435,7 +435,7 @@ def test_choose_best_action_based_on_observed_issues_with_basic_fallback() -> No
         == QuotationMarkUpdateStrategy.SKIP
     )
     assert (
-        first_pass_analyzer._choose_best_action_based_on_observed_issues(
+        first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
             [
                 QuotationMarkResolutionIssue.TOO_DEEP_NESTING,
                 QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK,
@@ -644,7 +644,7 @@ def run_first_pass(
     first_pass_analyzer = QuotationMarkUpdateFirstPass(source_quote_convention, target_quote_convention)
     parse_usfm(normalized_usfm, first_pass_analyzer)
 
-    return first_pass_analyzer.get_best_actions_by_chapter()
+    return first_pass_analyzer.find_best_chapter_strategies()
 
 
 def run_first_pass_on_chapter(
@@ -664,7 +664,7 @@ def run_first_pass_on_chapter(
 
     chapter = Chapter([Verse([TextSegment.Builder().set_text(verse_text).build() for verse_text in verse_texts])])
 
-    return first_pass_analyzer._find_best_action_for_chapter(chapter)
+    return first_pass_analyzer._find_best_strategy_for_chapter(chapter)
 
 
 def get_quote_convention_by_name(name: str) -> QuoteConvention:

@@ -2,5 +2,5 @@ from enum import Enum, auto
 
 
 class QuotationMarkDirection(Enum):
-    Opening = auto()
-    Closing = auto()
+    OPENING = auto()
+    CLOSING = auto()

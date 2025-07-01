@@ -16,15 +16,15 @@ def test_get_quotation_mark() -> None:
     quotation_mark_string_match = QuotationMarkStringMatch(
         TextSegment.Builder().set_text("quick brown fox").build(), 6, 7
     )
-    assert quotation_mark_string_match.get_quotation_mark() == "b"
+    assert quotation_mark_string_match.quotation_mark == "b"
 
     quotation_mark_string_match = QuotationMarkStringMatch(
         TextSegment.Builder().set_text("quick brown fox").build(), 6, 10
     )
-    assert quotation_mark_string_match.get_quotation_mark() == "brow"
+    assert quotation_mark_string_match.quotation_mark == "brow"
 
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("q").build(), 0, 1)
-    assert quotation_mark_string_match.get_quotation_mark() == "q"
+    assert quotation_mark_string_match.quotation_mark == "q"
 
 
 def test_is_valid_opening_quotation_mark() -> None:
@@ -79,120 +79,120 @@ def test_is_valid_closing_quotation_mark() -> None:
 
 def test_does_quotation_mark_match() -> None:
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("sample text").build(), 0, 1)
-    assert quotation_mark_string_match.does_quotation_mark_match(regex.compile(r"^s$"))
-    assert not quotation_mark_string_match.does_quotation_mark_match(regex.compile(r"a"))
-    assert not quotation_mark_string_match.does_quotation_mark_match(regex.compile(r"sa"))
+    assert quotation_mark_string_match.quotation_mark_matches(regex.compile(r"^s$"))
+    assert not quotation_mark_string_match.quotation_mark_matches(regex.compile(r"a"))
+    assert not quotation_mark_string_match.quotation_mark_matches(regex.compile(r"sa"))
 
 
 def test_does_next_character_match() -> None:
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("sample text").build(), 0, 1)
-    assert not quotation_mark_string_match.does_next_character_match(regex.compile(r"^s$"))
-    assert quotation_mark_string_match.does_next_character_match(regex.compile(r"a"))
-    assert not quotation_mark_string_match.does_next_character_match(regex.compile(r"sa"))
+    assert not quotation_mark_string_match.next_character_matches(regex.compile(r"^s$"))
+    assert quotation_mark_string_match.next_character_matches(regex.compile(r"a"))
+    assert not quotation_mark_string_match.next_character_matches(regex.compile(r"sa"))
 
     quotation_mark_string_match = QuotationMarkStringMatch(
         TextSegment.Builder().set_text("sample text").build(), 10, 11
     )
-    assert not quotation_mark_string_match.does_next_character_match(regex.compile(r".*"))
+    assert not quotation_mark_string_match.next_character_matches(regex.compile(r".*"))
 
 
 def test_does_previous_character_match() -> None:
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("sample text").build(), 1, 2)
-    assert quotation_mark_string_match.does_previous_character_match(regex.compile(r"^s$"))
-    assert not quotation_mark_string_match.does_previous_character_match(regex.compile(r"a"))
-    assert not quotation_mark_string_match.does_previous_character_match(regex.compile(r"sa"))
+    assert quotation_mark_string_match.previous_character_matches(regex.compile(r"^s$"))
+    assert not quotation_mark_string_match.previous_character_matches(regex.compile(r"a"))
+    assert not quotation_mark_string_match.previous_character_matches(regex.compile(r"sa"))
 
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("sample text").build(), 0, 1)
-    assert not quotation_mark_string_match.does_previous_character_match(regex.compile(r".*"))
+    assert not quotation_mark_string_match.previous_character_matches(regex.compile(r".*"))
 
 
 def test_get_previous_character() -> None:
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("sample text").build(), 1, 2)
-    assert quotation_mark_string_match.get_previous_character() == "s"
+    assert quotation_mark_string_match.previous_character == "s"
 
     quotation_mark_string_match = QuotationMarkStringMatch(
         TextSegment.Builder().set_text("sample text").build(), 10, 11
     )
-    assert quotation_mark_string_match.get_previous_character() == "x"
+    assert quotation_mark_string_match.previous_character == "x"
 
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("sample text").build(), 0, 1)
-    assert quotation_mark_string_match.get_previous_character() is None
+    assert quotation_mark_string_match.previous_character is None
 
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c\u201d").build(), 1, 2)
-    assert quotation_mark_string_match.get_previous_character() == "“"
+    assert quotation_mark_string_match.previous_character == "“"
 
 
 def test_get_next_character() -> None:
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("sample text").build(), 1, 2)
-    assert quotation_mark_string_match.get_next_character() == "m"
+    assert quotation_mark_string_match.next_character == "m"
 
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("sample text").build(), 0, 1)
-    assert quotation_mark_string_match.get_next_character() == "a"
+    assert quotation_mark_string_match.next_character == "a"
 
     quotation_mark_string_match = QuotationMarkStringMatch(
         TextSegment.Builder().set_text("sample text").build(), 10, 11
     )
-    assert quotation_mark_string_match.get_next_character() is None
+    assert quotation_mark_string_match.next_character is None
 
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c\u201d").build(), 0, 1)
-    assert quotation_mark_string_match.get_next_character() == "”"
+    assert quotation_mark_string_match.next_character == "”"
 
 
 def test_does_leading_substring_match() -> None:
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("sample text").build(), 5, 6)
-    assert quotation_mark_string_match.does_leading_substring_match(regex.compile(r"^sampl$"))
+    assert quotation_mark_string_match.leading_substring_matches(regex.compile(r"^sampl$"))
 
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("sample text").build(), 0, 1)
-    assert not quotation_mark_string_match.does_leading_substring_match(regex.compile(r".+"))
+    assert not quotation_mark_string_match.leading_substring_matches(regex.compile(r".+"))
 
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c\u201d").build(), 1, 2)
-    assert quotation_mark_string_match.does_leading_substring_match(regex.compile(r"\u201c"))
+    assert quotation_mark_string_match.leading_substring_matches(regex.compile(r"\u201c"))
 
 
 def test_does_trailing_substring_match() -> None:
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("sample text").build(), 5, 6)
-    assert quotation_mark_string_match.does_trailing_substring_match(regex.compile(r"^ text$"))
+    assert quotation_mark_string_match.trailing_substring_matches(regex.compile(r"^ text$"))
 
     quotation_mark_string_match = QuotationMarkStringMatch(
         TextSegment.Builder().set_text("sample text").build(), 11, 12
     )
-    assert not quotation_mark_string_match.does_trailing_substring_match(regex.compile(r".+"))
+    assert not quotation_mark_string_match.trailing_substring_matches(regex.compile(r".+"))
 
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c\u201d").build(), 0, 1)
-    assert quotation_mark_string_match.does_trailing_substring_match(regex.compile(r"\u201d"))
+    assert quotation_mark_string_match.trailing_substring_matches(regex.compile(r"\u201d"))
 
 
 def test_get_context() -> None:
     quotation_mark_string_match = QuotationMarkStringMatch(
         TextSegment.Builder().set_text("this is a bunch' of sample text").build(), 15, 16
     )
-    assert quotation_mark_string_match.get_context() == "is a bunch' of sample"
+    assert quotation_mark_string_match.context == "is a bunch' of sample"
 
     quotation_mark_string_match = QuotationMarkStringMatch(
         TextSegment.Builder().set_text("this is a bunch' of sample text").build(), 5, 6
     )
-    assert quotation_mark_string_match.get_context() == "this is a bunch'"
+    assert quotation_mark_string_match.context == "this is a bunch'"
 
     quotation_mark_string_match = QuotationMarkStringMatch(
         TextSegment.Builder().set_text("this is a bunch' of sample text").build(), 25, 26
     )
-    assert quotation_mark_string_match.get_context() == "' of sample text"
+    assert quotation_mark_string_match.context == "' of sample text"
 
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("short").build(), 3, 4)
-    assert quotation_mark_string_match.get_context() == "short"
+    assert quotation_mark_string_match.context == "short"
 
 
 def test_resolve() -> None:
     text_segment = TextSegment.Builder().set_text("'").build()
     quotation_mark_string_match = QuotationMarkStringMatch(text_segment, 0, 1)
-    assert quotation_mark_string_match.resolve(2, QuotationMarkDirection.Opening) == QuotationMarkMetadata(
-        "'", 2, QuotationMarkDirection.Opening, text_segment, 0, 1
+    assert quotation_mark_string_match.resolve(2, QuotationMarkDirection.OPENING) == QuotationMarkMetadata(
+        "'", 2, QuotationMarkDirection.OPENING, text_segment, 0, 1
     )
-    assert quotation_mark_string_match.resolve(1, QuotationMarkDirection.Opening) == QuotationMarkMetadata(
-        "'", 1, QuotationMarkDirection.Opening, text_segment, 0, 1
+    assert quotation_mark_string_match.resolve(1, QuotationMarkDirection.OPENING) == QuotationMarkMetadata(
+        "'", 1, QuotationMarkDirection.OPENING, text_segment, 0, 1
     )
-    assert quotation_mark_string_match.resolve(1, QuotationMarkDirection.Closing) == QuotationMarkMetadata(
-        "'", 1, QuotationMarkDirection.Closing, text_segment, 0, 1
+    assert quotation_mark_string_match.resolve(1, QuotationMarkDirection.CLOSING) == QuotationMarkMetadata(
+        "'", 1, QuotationMarkDirection.CLOSING, text_segment, 0, 1
     )
 
 
@@ -245,32 +245,34 @@ def test_has_leading_whitespace() -> None:
     assert not quotation_mark_string_match.has_leading_whitespace()
 
     quotation_mark_string_match = QuotationMarkStringMatch(
-        TextSegment.Builder().set_text("sample text").add_preceding_marker(UsfmMarkerType.ParagraphMarker).build(), 0, 1
+        TextSegment.Builder().set_text("sample text").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
+        0,
+        1,
     )
     assert quotation_mark_string_match.has_leading_whitespace()
 
     quotation_mark_string_match = QuotationMarkStringMatch(
-        TextSegment.Builder().set_text("sample text").add_preceding_marker(UsfmMarkerType.EmbedMarker).build(), 0, 1
+        TextSegment.Builder().set_text("sample text").add_preceding_marker(UsfmMarkerType.EMBED).build(), 0, 1
     )
     assert quotation_mark_string_match.has_leading_whitespace()
 
     quotation_mark_string_match = QuotationMarkStringMatch(
-        TextSegment.Builder().set_text("sample text").add_preceding_marker(UsfmMarkerType.VerseMarker).build(), 0, 1
+        TextSegment.Builder().set_text("sample text").add_preceding_marker(UsfmMarkerType.VERSE).build(), 0, 1
     )
     assert quotation_mark_string_match.has_leading_whitespace()
 
     quotation_mark_string_match = QuotationMarkStringMatch(
-        TextSegment.Builder().set_text("sample text").add_preceding_marker(UsfmMarkerType.ChapterMarker).build(), 0, 1
+        TextSegment.Builder().set_text("sample text").add_preceding_marker(UsfmMarkerType.CHAPTER).build(), 0, 1
     )
     assert not quotation_mark_string_match.has_leading_whitespace()
 
     quotation_mark_string_match = QuotationMarkStringMatch(
-        TextSegment.Builder().set_text("sample text").add_preceding_marker(UsfmMarkerType.CharacterMarker).build(), 0, 1
+        TextSegment.Builder().set_text("sample text").add_preceding_marker(UsfmMarkerType.CHARACTER).build(), 0, 1
     )
     assert not quotation_mark_string_match.has_leading_whitespace()
 
     quotation_mark_string_match = QuotationMarkStringMatch(
-        TextSegment.Builder().set_text("\u201csample text").add_preceding_marker(UsfmMarkerType.VerseMarker).build(),
+        TextSegment.Builder().set_text("\u201csample text").add_preceding_marker(UsfmMarkerType.VERSE).build(),
         0,
         1,
     )
@@ -290,19 +292,19 @@ def test_has_trailing_whitespace() -> None:
     assert not quotation_mark_string_match.has_trailing_whitespace()
 
     quotation_mark_string_match = QuotationMarkStringMatch(
-        TextSegment.Builder().set_text("sample text").add_preceding_marker(UsfmMarkerType.ParagraphMarker).build(),
+        TextSegment.Builder().set_text("sample text").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
         10,
         11,
     )
     assert not quotation_mark_string_match.has_trailing_whitespace()
 
     quotation_mark_string_match = QuotationMarkStringMatch(
-        TextSegment.Builder().set_text("sample text").add_preceding_marker(UsfmMarkerType.EmbedMarker).build(), 10, 11
+        TextSegment.Builder().set_text("sample text").add_preceding_marker(UsfmMarkerType.EMBED).build(), 10, 11
     )
     assert not quotation_mark_string_match.has_trailing_whitespace()
 
     quotation_mark_string_match = QuotationMarkStringMatch(
-        TextSegment.Builder().set_text("sample text").add_preceding_marker(UsfmMarkerType.VerseMarker).build(), 10, 11
+        TextSegment.Builder().set_text("sample text").add_preceding_marker(UsfmMarkerType.VERSE).build(), 10, 11
     )
     assert not quotation_mark_string_match.has_trailing_whitespace()
 

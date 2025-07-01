@@ -3,6 +3,7 @@ from .quotation_mark_update_settings import QuotationMarkUpdateSettings
 from .quote_convention_changing_usfm_update_block_handler import QuoteConventionChangingUsfmUpdateBlockHandler
 
 
+# This is a convenience class so that users don't have to know to normalize the source quote convention
 class QuotationDenormalizationUsfmUpdateBlockHandler(QuoteConventionChangingUsfmUpdateBlockHandler):
 
     def __init__(

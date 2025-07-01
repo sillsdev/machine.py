@@ -13,16 +13,16 @@ from machine.corpora.analysis import (
 
 def test_quote_regexes() -> None:
     empty_quote_convention_set = QuoteConventionSet([])
-    assert empty_quote_convention_set.opening_quotation_mark_regex.pattern == r""
-    assert empty_quote_convention_set.closing_quotation_mark_regex.pattern == r""
-    assert empty_quote_convention_set.all_quotation_mark_regex.pattern == r""
+    assert empty_quote_convention_set._opening_quotation_mark_regex.pattern == r""
+    assert empty_quote_convention_set._closing_quotation_mark_regex.pattern == r""
+    assert empty_quote_convention_set._all_quotation_mark_regex.pattern == r""
 
     quote_convention_set_with_empty_conventions = QuoteConventionSet(
         [QuoteConvention("empty convention 1", []), QuoteConvention("empty convention 2", [])]
     )
-    assert quote_convention_set_with_empty_conventions.opening_quotation_mark_regex.pattern == r""
-    assert quote_convention_set_with_empty_conventions.closing_quotation_mark_regex.pattern == r""
-    assert quote_convention_set_with_empty_conventions.all_quotation_mark_regex.pattern == r""
+    assert quote_convention_set_with_empty_conventions._opening_quotation_mark_regex.pattern == r""
+    assert quote_convention_set_with_empty_conventions._closing_quotation_mark_regex.pattern == r""
+    assert quote_convention_set_with_empty_conventions._all_quotation_mark_regex.pattern == r""
 
     standard_english_quote_convention_set = QuoteConventionSet(
         [
@@ -37,9 +37,9 @@ def test_quote_regexes() -> None:
             )
         ]
     )
-    assert standard_english_quote_convention_set.opening_quotation_mark_regex.pattern == r"[‘“]"
-    assert standard_english_quote_convention_set.closing_quotation_mark_regex.pattern == r"[’”]"
-    assert standard_english_quote_convention_set.all_quotation_mark_regex.pattern == r"[‘’“”]"
+    assert standard_english_quote_convention_set._opening_quotation_mark_regex.pattern == r"[‘“]"
+    assert standard_english_quote_convention_set._closing_quotation_mark_regex.pattern == r"[’”]"
+    assert standard_english_quote_convention_set._all_quotation_mark_regex.pattern == r"[‘’“”]"
 
     western_european_quote_convention_set = QuoteConventionSet(
         [
@@ -53,9 +53,9 @@ def test_quote_regexes() -> None:
             ),
         ]
     )
-    assert western_european_quote_convention_set.opening_quotation_mark_regex.pattern == r"[«‘“]"
-    assert western_european_quote_convention_set.closing_quotation_mark_regex.pattern == r"[»’”]"
-    assert western_european_quote_convention_set.all_quotation_mark_regex.pattern == r"[«»‘’“”]"
+    assert western_european_quote_convention_set._opening_quotation_mark_regex.pattern == r"[«‘“]"
+    assert western_european_quote_convention_set._closing_quotation_mark_regex.pattern == r"[»’”]"
+    assert western_european_quote_convention_set._all_quotation_mark_regex.pattern == r"[«»‘’“”]"
 
     multiple_quote_convention_set = QuoteConventionSet(
         [
@@ -88,9 +88,9 @@ def test_quote_regexes() -> None:
             ),
         ]
     )
-    assert multiple_quote_convention_set.opening_quotation_mark_regex.pattern == r"[<<<«‘“‹]"
-    assert multiple_quote_convention_set.closing_quotation_mark_regex.pattern == r"[>>>»’”›]"
-    assert multiple_quote_convention_set.all_quotation_mark_regex.pattern == r"[<<<>>>«»‘’“”‹›]"
+    assert multiple_quote_convention_set._opening_quotation_mark_regex.pattern == r"[<<<«‘“‹]"
+    assert multiple_quote_convention_set._closing_quotation_mark_regex.pattern == r"[>>>»’”›]"
+    assert multiple_quote_convention_set._all_quotation_mark_regex.pattern == r"[<<<>>>«»‘’“”‹›]"
 
 
 def test_quotation_mark_pair_map() -> None:
@@ -546,34 +546,34 @@ def test_are_marks_a_valid_pair() -> None:
     )
 
     standard_english_quote_convention_set = QuoteConventionSet([standard_english_quote_convention])
-    assert standard_english_quote_convention_set.are_marks_a_valid_pair("“", "”")
-    assert not standard_english_quote_convention_set.are_marks_a_valid_pair("”", "“")
-    assert standard_english_quote_convention_set.are_marks_a_valid_pair("‘", "’")
-    assert not standard_english_quote_convention_set.are_marks_a_valid_pair("’", "‘")
-    assert not standard_english_quote_convention_set.are_marks_a_valid_pair("‘", "”")
-    assert not standard_english_quote_convention_set.are_marks_a_valid_pair("‘", "”")
-    assert not standard_english_quote_convention_set.are_marks_a_valid_pair("‘", "")
-    assert not standard_english_quote_convention_set.are_marks_a_valid_pair("", "")
+    assert standard_english_quote_convention_set.marks_are_a_valid_pair("“", "”")
+    assert not standard_english_quote_convention_set.marks_are_a_valid_pair("”", "“")
+    assert standard_english_quote_convention_set.marks_are_a_valid_pair("‘", "’")
+    assert not standard_english_quote_convention_set.marks_are_a_valid_pair("’", "‘")
+    assert not standard_english_quote_convention_set.marks_are_a_valid_pair("‘", "”")
+    assert not standard_english_quote_convention_set.marks_are_a_valid_pair("‘", "”")
+    assert not standard_english_quote_convention_set.marks_are_a_valid_pair("‘", "")
+    assert not standard_english_quote_convention_set.marks_are_a_valid_pair("", "")
 
     central_european_quote_convention_set = QuoteConventionSet([central_european_quote_convention])
-    assert central_european_quote_convention_set.are_marks_a_valid_pair("„", "“")
-    assert central_european_quote_convention_set.are_marks_a_valid_pair("‚", "‘")
-    assert not central_european_quote_convention_set.are_marks_a_valid_pair("“", "„")
-    assert not central_european_quote_convention_set.are_marks_a_valid_pair("’", "‚")
-    assert not central_european_quote_convention_set.are_marks_a_valid_pair("‚", "“")
-    assert not central_european_quote_convention_set.are_marks_a_valid_pair("‚", "’")
+    assert central_european_quote_convention_set.marks_are_a_valid_pair("„", "“")
+    assert central_european_quote_convention_set.marks_are_a_valid_pair("‚", "‘")
+    assert not central_european_quote_convention_set.marks_are_a_valid_pair("“", "„")
+    assert not central_european_quote_convention_set.marks_are_a_valid_pair("’", "‚")
+    assert not central_european_quote_convention_set.marks_are_a_valid_pair("‚", "“")
+    assert not central_european_quote_convention_set.marks_are_a_valid_pair("‚", "’")
 
     standard_swedish_quote_convention_set = QuoteConventionSet([standard_swedish_quote_convention])
-    assert standard_swedish_quote_convention_set.are_marks_a_valid_pair("”", "”")
-    assert standard_swedish_quote_convention_set.are_marks_a_valid_pair("’", "’")
-    assert not standard_swedish_quote_convention_set.are_marks_a_valid_pair("”", "’")
-    assert not standard_swedish_quote_convention_set.are_marks_a_valid_pair("’", "”")
+    assert standard_swedish_quote_convention_set.marks_are_a_valid_pair("”", "”")
+    assert standard_swedish_quote_convention_set.marks_are_a_valid_pair("’", "’")
+    assert not standard_swedish_quote_convention_set.marks_are_a_valid_pair("”", "’")
+    assert not standard_swedish_quote_convention_set.marks_are_a_valid_pair("’", "”")
 
     standard_french_quote_convention_set = QuoteConventionSet([standard_french_quote_convention])
-    assert standard_french_quote_convention_set.are_marks_a_valid_pair("«", "»")
-    assert standard_french_quote_convention_set.are_marks_a_valid_pair("‹", "›")
-    assert not standard_french_quote_convention_set.are_marks_a_valid_pair("«", "›")
-    assert not standard_french_quote_convention_set.are_marks_a_valid_pair("‹", "»")
+    assert standard_french_quote_convention_set.marks_are_a_valid_pair("«", "»")
+    assert standard_french_quote_convention_set.marks_are_a_valid_pair("‹", "›")
+    assert not standard_french_quote_convention_set.marks_are_a_valid_pair("«", "›")
+    assert not standard_french_quote_convention_set.marks_are_a_valid_pair("‹", "»")
 
     multiple_quote_convention_set = QuoteConventionSet(
         [
@@ -583,18 +583,18 @@ def test_are_marks_a_valid_pair() -> None:
             standard_french_quote_convention,
         ]
     )
-    assert multiple_quote_convention_set.are_marks_a_valid_pair("“", "”")
-    assert multiple_quote_convention_set.are_marks_a_valid_pair("‘", "’")
-    assert multiple_quote_convention_set.are_marks_a_valid_pair("„", "“")
-    assert multiple_quote_convention_set.are_marks_a_valid_pair("‚", "‘")
-    assert multiple_quote_convention_set.are_marks_a_valid_pair("”", "”")
-    assert multiple_quote_convention_set.are_marks_a_valid_pair("’", "’")
-    assert multiple_quote_convention_set.are_marks_a_valid_pair("«", "»")
-    assert multiple_quote_convention_set.are_marks_a_valid_pair("‹", "›")
-    assert not multiple_quote_convention_set.are_marks_a_valid_pair("‹", "»")
-    assert not multiple_quote_convention_set.are_marks_a_valid_pair("‹", "”")
-    assert not multiple_quote_convention_set.are_marks_a_valid_pair("„", "”")
-    assert not multiple_quote_convention_set.are_marks_a_valid_pair("’", "‘")
+    assert multiple_quote_convention_set.marks_are_a_valid_pair("“", "”")
+    assert multiple_quote_convention_set.marks_are_a_valid_pair("‘", "’")
+    assert multiple_quote_convention_set.marks_are_a_valid_pair("„", "“")
+    assert multiple_quote_convention_set.marks_are_a_valid_pair("‚", "‘")
+    assert multiple_quote_convention_set.marks_are_a_valid_pair("”", "”")
+    assert multiple_quote_convention_set.marks_are_a_valid_pair("’", "’")
+    assert multiple_quote_convention_set.marks_are_a_valid_pair("«", "»")
+    assert multiple_quote_convention_set.marks_are_a_valid_pair("‹", "›")
+    assert not multiple_quote_convention_set.marks_are_a_valid_pair("‹", "»")
+    assert not multiple_quote_convention_set.marks_are_a_valid_pair("‹", "”")
+    assert not multiple_quote_convention_set.marks_are_a_valid_pair("„", "”")
+    assert not multiple_quote_convention_set.marks_are_a_valid_pair("’", "‘")
 
 
 def test_is_quotation_mark_direction_ambiguous() -> None:
@@ -809,54 +809,54 @@ def test_get_possible_depths() -> None:
     )
 
     standard_english_quote_convention_set = QuoteConventionSet([standard_english_quote_convention])
-    assert standard_english_quote_convention_set.get_possible_depths("\u201c", QuotationMarkDirection.Opening) == {1, 3}
-    assert standard_english_quote_convention_set.get_possible_depths("\u201c", QuotationMarkDirection.Closing) == set()
-    assert standard_english_quote_convention_set.get_possible_depths("\u201d", QuotationMarkDirection.Closing) == {1, 3}
-    assert standard_english_quote_convention_set.get_possible_depths("\u201d", QuotationMarkDirection.Opening) == set()
-    assert standard_english_quote_convention_set.get_possible_depths("\u2018", QuotationMarkDirection.Opening) == {2, 4}
-    assert standard_english_quote_convention_set.get_possible_depths("\u2018", QuotationMarkDirection.Closing) == set()
-    assert standard_english_quote_convention_set.get_possible_depths("\u2019", QuotationMarkDirection.Closing) == {2, 4}
-    assert standard_english_quote_convention_set.get_possible_depths("\u2019", QuotationMarkDirection.Opening) == set()
-    assert standard_english_quote_convention_set.get_possible_depths("\u201e", QuotationMarkDirection.Opening) == set()
-    assert standard_english_quote_convention_set.get_possible_depths("\u201e", QuotationMarkDirection.Closing) == set()
-    assert standard_english_quote_convention_set.get_possible_depths('"', QuotationMarkDirection.Opening) == set()
-    assert standard_english_quote_convention_set.get_possible_depths('"', QuotationMarkDirection.Closing) == set()
+    assert standard_english_quote_convention_set.get_possible_depths("\u201c", QuotationMarkDirection.OPENING) == {1, 3}
+    assert standard_english_quote_convention_set.get_possible_depths("\u201c", QuotationMarkDirection.CLOSING) == set()
+    assert standard_english_quote_convention_set.get_possible_depths("\u201d", QuotationMarkDirection.CLOSING) == {1, 3}
+    assert standard_english_quote_convention_set.get_possible_depths("\u201d", QuotationMarkDirection.OPENING) == set()
+    assert standard_english_quote_convention_set.get_possible_depths("\u2018", QuotationMarkDirection.OPENING) == {2, 4}
+    assert standard_english_quote_convention_set.get_possible_depths("\u2018", QuotationMarkDirection.CLOSING) == set()
+    assert standard_english_quote_convention_set.get_possible_depths("\u2019", QuotationMarkDirection.CLOSING) == {2, 4}
+    assert standard_english_quote_convention_set.get_possible_depths("\u2019", QuotationMarkDirection.OPENING) == set()
+    assert standard_english_quote_convention_set.get_possible_depths("\u201e", QuotationMarkDirection.OPENING) == set()
+    assert standard_english_quote_convention_set.get_possible_depths("\u201e", QuotationMarkDirection.CLOSING) == set()
+    assert standard_english_quote_convention_set.get_possible_depths('"', QuotationMarkDirection.OPENING) == set()
+    assert standard_english_quote_convention_set.get_possible_depths('"', QuotationMarkDirection.CLOSING) == set()
 
     british_english_quote_convention_set = QuoteConventionSet([british_english_quote_convention])
-    assert british_english_quote_convention_set.get_possible_depths("\u2018", QuotationMarkDirection.Opening) == {1, 3}
-    assert british_english_quote_convention_set.get_possible_depths("\u2018", QuotationMarkDirection.Closing) == set()
-    assert british_english_quote_convention_set.get_possible_depths("\u2019", QuotationMarkDirection.Closing) == {1, 3}
-    assert british_english_quote_convention_set.get_possible_depths("\u2019", QuotationMarkDirection.Opening) == set()
-    assert british_english_quote_convention_set.get_possible_depths("\u201c", QuotationMarkDirection.Opening) == {2, 4}
-    assert british_english_quote_convention_set.get_possible_depths("\u201c", QuotationMarkDirection.Closing) == set()
-    assert british_english_quote_convention_set.get_possible_depths("\u201d", QuotationMarkDirection.Closing) == {2, 4}
-    assert british_english_quote_convention_set.get_possible_depths("\u201d", QuotationMarkDirection.Opening) == set()
-    assert british_english_quote_convention_set.get_possible_depths("\u201e", QuotationMarkDirection.Opening) == set()
-    assert british_english_quote_convention_set.get_possible_depths("\u201e", QuotationMarkDirection.Closing) == set()
-    assert british_english_quote_convention_set.get_possible_depths("'", QuotationMarkDirection.Opening) == set()
-    assert british_english_quote_convention_set.get_possible_depths("'", QuotationMarkDirection.Closing) == set()
+    assert british_english_quote_convention_set.get_possible_depths("\u2018", QuotationMarkDirection.OPENING) == {1, 3}
+    assert british_english_quote_convention_set.get_possible_depths("\u2018", QuotationMarkDirection.CLOSING) == set()
+    assert british_english_quote_convention_set.get_possible_depths("\u2019", QuotationMarkDirection.CLOSING) == {1, 3}
+    assert british_english_quote_convention_set.get_possible_depths("\u2019", QuotationMarkDirection.OPENING) == set()
+    assert british_english_quote_convention_set.get_possible_depths("\u201c", QuotationMarkDirection.OPENING) == {2, 4}
+    assert british_english_quote_convention_set.get_possible_depths("\u201c", QuotationMarkDirection.CLOSING) == set()
+    assert british_english_quote_convention_set.get_possible_depths("\u201d", QuotationMarkDirection.CLOSING) == {2, 4}
+    assert british_english_quote_convention_set.get_possible_depths("\u201d", QuotationMarkDirection.OPENING) == set()
+    assert british_english_quote_convention_set.get_possible_depths("\u201e", QuotationMarkDirection.OPENING) == set()
+    assert british_english_quote_convention_set.get_possible_depths("\u201e", QuotationMarkDirection.CLOSING) == set()
+    assert british_english_quote_convention_set.get_possible_depths("'", QuotationMarkDirection.OPENING) == set()
+    assert british_english_quote_convention_set.get_possible_depths("'", QuotationMarkDirection.CLOSING) == set()
 
     normalized_western_european_quote_convention_set = QuoteConventionSet(
         [normalized_western_european_quote_convention]
     )
     assert normalized_western_european_quote_convention_set.get_possible_depths(
-        '"', QuotationMarkDirection.Opening
+        '"', QuotationMarkDirection.OPENING
     ) == {1, 2}
     assert normalized_western_european_quote_convention_set.get_possible_depths(
-        '"', QuotationMarkDirection.Closing
+        '"', QuotationMarkDirection.CLOSING
     ) == {1, 2}
     assert normalized_western_european_quote_convention_set.get_possible_depths(
-        "'", QuotationMarkDirection.Opening
+        "'", QuotationMarkDirection.OPENING
     ) == {3}
     assert normalized_western_european_quote_convention_set.get_possible_depths(
-        "'", QuotationMarkDirection.Closing
+        "'", QuotationMarkDirection.CLOSING
     ) == {3}
     assert (
-        normalized_western_european_quote_convention_set.get_possible_depths("\u201c", QuotationMarkDirection.Opening)
+        normalized_western_european_quote_convention_set.get_possible_depths("\u201c", QuotationMarkDirection.OPENING)
         == set()
     )
     assert (
-        normalized_western_european_quote_convention_set.get_possible_depths("\u201c", QuotationMarkDirection.Closing)
+        normalized_western_european_quote_convention_set.get_possible_depths("\u201c", QuotationMarkDirection.CLOSING)
         == set()
     )
 
@@ -867,20 +867,20 @@ def test_get_possible_depths() -> None:
             normalized_western_european_quote_convention,
         ]
     )
-    assert multiple_quote_convention_set.get_possible_depths("\u201c", QuotationMarkDirection.Opening) == {1, 2, 3, 4}
-    assert multiple_quote_convention_set.get_possible_depths("\u201c", QuotationMarkDirection.Closing) == set()
-    assert multiple_quote_convention_set.get_possible_depths("\u201d", QuotationMarkDirection.Closing) == {1, 2, 3, 4}
-    assert multiple_quote_convention_set.get_possible_depths("\u201d", QuotationMarkDirection.Opening) == set()
-    assert multiple_quote_convention_set.get_possible_depths("\u2018", QuotationMarkDirection.Opening) == {1, 2, 3, 4}
-    assert multiple_quote_convention_set.get_possible_depths("\u2018", QuotationMarkDirection.Closing) == set()
-    assert multiple_quote_convention_set.get_possible_depths("\u2019", QuotationMarkDirection.Closing) == {1, 2, 3, 4}
-    assert multiple_quote_convention_set.get_possible_depths("\u2019", QuotationMarkDirection.Opening) == set()
-    assert multiple_quote_convention_set.get_possible_depths("\u201e", QuotationMarkDirection.Opening) == set()
-    assert multiple_quote_convention_set.get_possible_depths("\u201e", QuotationMarkDirection.Closing) == set()
-    assert multiple_quote_convention_set.get_possible_depths('"', QuotationMarkDirection.Opening) == {1, 2}
-    assert multiple_quote_convention_set.get_possible_depths('"', QuotationMarkDirection.Closing) == {1, 2}
-    assert multiple_quote_convention_set.get_possible_depths("'", QuotationMarkDirection.Opening) == {3}
-    assert multiple_quote_convention_set.get_possible_depths("'", QuotationMarkDirection.Closing) == {3}
+    assert multiple_quote_convention_set.get_possible_depths("\u201c", QuotationMarkDirection.OPENING) == {1, 2, 3, 4}
+    assert multiple_quote_convention_set.get_possible_depths("\u201c", QuotationMarkDirection.CLOSING) == set()
+    assert multiple_quote_convention_set.get_possible_depths("\u201d", QuotationMarkDirection.CLOSING) == {1, 2, 3, 4}
+    assert multiple_quote_convention_set.get_possible_depths("\u201d", QuotationMarkDirection.OPENING) == set()
+    assert multiple_quote_convention_set.get_possible_depths("\u2018", QuotationMarkDirection.OPENING) == {1, 2, 3, 4}
+    assert multiple_quote_convention_set.get_possible_depths("\u2018", QuotationMarkDirection.CLOSING) == set()
+    assert multiple_quote_convention_set.get_possible_depths("\u2019", QuotationMarkDirection.CLOSING) == {1, 2, 3, 4}
+    assert multiple_quote_convention_set.get_possible_depths("\u2019", QuotationMarkDirection.OPENING) == set()
+    assert multiple_quote_convention_set.get_possible_depths("\u201e", QuotationMarkDirection.OPENING) == set()
+    assert multiple_quote_convention_set.get_possible_depths("\u201e", QuotationMarkDirection.CLOSING) == set()
+    assert multiple_quote_convention_set.get_possible_depths('"', QuotationMarkDirection.OPENING) == {1, 2}
+    assert multiple_quote_convention_set.get_possible_depths('"', QuotationMarkDirection.CLOSING) == {1, 2}
+    assert multiple_quote_convention_set.get_possible_depths("'", QuotationMarkDirection.OPENING) == {3}
+    assert multiple_quote_convention_set.get_possible_depths("'", QuotationMarkDirection.CLOSING) == {3}
 
 
 def test_does_metadata_match_quotation_mark() -> None:
@@ -895,125 +895,125 @@ def test_does_metadata_match_quotation_mark() -> None:
     )
 
     standard_english_quote_convention_set = QuoteConventionSet([standard_english_quote_convention])
-    assert standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201c", 1, QuotationMarkDirection.Opening
+    assert standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201c", 1, QuotationMarkDirection.OPENING
     )
-    assert standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201c", 3, QuotationMarkDirection.Opening
+    assert standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201c", 3, QuotationMarkDirection.OPENING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201c", 2, QuotationMarkDirection.Opening
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201c", 2, QuotationMarkDirection.OPENING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201c", 4, QuotationMarkDirection.Opening
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201c", 4, QuotationMarkDirection.OPENING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201c", 1, QuotationMarkDirection.Closing
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201c", 1, QuotationMarkDirection.CLOSING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201c", 2, QuotationMarkDirection.Closing
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201c", 2, QuotationMarkDirection.CLOSING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201c", 3, QuotationMarkDirection.Closing
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201c", 3, QuotationMarkDirection.CLOSING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201c", 4, QuotationMarkDirection.Closing
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201c", 4, QuotationMarkDirection.CLOSING
     )
-    assert standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201d", 1, QuotationMarkDirection.Closing
+    assert standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201d", 1, QuotationMarkDirection.CLOSING
     )
-    assert standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201d", 3, QuotationMarkDirection.Closing
+    assert standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201d", 3, QuotationMarkDirection.CLOSING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201d", 2, QuotationMarkDirection.Closing
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201d", 2, QuotationMarkDirection.CLOSING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201d", 4, QuotationMarkDirection.Closing
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201d", 4, QuotationMarkDirection.CLOSING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201d", 1, QuotationMarkDirection.Opening
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201d", 1, QuotationMarkDirection.OPENING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201d", 2, QuotationMarkDirection.Opening
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201d", 2, QuotationMarkDirection.OPENING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201d", 3, QuotationMarkDirection.Opening
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201d", 3, QuotationMarkDirection.OPENING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201d", 4, QuotationMarkDirection.Opening
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201d", 4, QuotationMarkDirection.OPENING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u2018", 1, QuotationMarkDirection.Opening
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u2018", 1, QuotationMarkDirection.OPENING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u2018", 3, QuotationMarkDirection.Opening
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u2018", 3, QuotationMarkDirection.OPENING
     )
-    assert standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u2018", 2, QuotationMarkDirection.Opening
+    assert standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u2018", 2, QuotationMarkDirection.OPENING
     )
-    assert standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u2018", 4, QuotationMarkDirection.Opening
+    assert standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u2018", 4, QuotationMarkDirection.OPENING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u2018", 1, QuotationMarkDirection.Closing
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u2018", 1, QuotationMarkDirection.CLOSING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u2018", 2, QuotationMarkDirection.Closing
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u2018", 2, QuotationMarkDirection.CLOSING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u2018", 3, QuotationMarkDirection.Closing
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u2018", 3, QuotationMarkDirection.CLOSING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u2018", 4, QuotationMarkDirection.Closing
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u2018", 4, QuotationMarkDirection.CLOSING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u2019", 1, QuotationMarkDirection.Closing
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u2019", 1, QuotationMarkDirection.CLOSING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u2019", 3, QuotationMarkDirection.Closing
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u2019", 3, QuotationMarkDirection.CLOSING
     )
-    assert standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u2019", 2, QuotationMarkDirection.Closing
+    assert standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u2019", 2, QuotationMarkDirection.CLOSING
     )
-    assert standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u2019", 4, QuotationMarkDirection.Closing
+    assert standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u2019", 4, QuotationMarkDirection.CLOSING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u2019", 1, QuotationMarkDirection.Opening
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u2019", 1, QuotationMarkDirection.OPENING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u2019", 2, QuotationMarkDirection.Opening
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u2019", 2, QuotationMarkDirection.OPENING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u2019", 3, QuotationMarkDirection.Opening
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u2019", 3, QuotationMarkDirection.OPENING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u2019", 4, QuotationMarkDirection.Opening
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u2019", 4, QuotationMarkDirection.OPENING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201e", 1, QuotationMarkDirection.Opening
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201e", 1, QuotationMarkDirection.OPENING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201e", 1, QuotationMarkDirection.Closing
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201e", 1, QuotationMarkDirection.CLOSING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201e", 2, QuotationMarkDirection.Opening
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201e", 2, QuotationMarkDirection.OPENING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201e", 2, QuotationMarkDirection.Closing
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201e", 2, QuotationMarkDirection.CLOSING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201e", 3, QuotationMarkDirection.Opening
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201e", 3, QuotationMarkDirection.OPENING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201e", 3, QuotationMarkDirection.Closing
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201e", 3, QuotationMarkDirection.CLOSING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201e", 4, QuotationMarkDirection.Opening
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201e", 4, QuotationMarkDirection.OPENING
     )
-    assert not standard_english_quote_convention_set.does_metadata_match_quotation_mark(
-        "\u201e", 4, QuotationMarkDirection.Closing
+    assert not standard_english_quote_convention_set.metadata_matches_quotation_mark(
+        "\u201e", 4, QuotationMarkDirection.CLOSING
     )
 
 
@@ -1189,12 +1189,12 @@ def test_find_most_similar_convention() -> None:
     multiple_english_quotes_tabulator = QuotationMarkTabulator()
     multiple_english_quotes_tabulator.tabulate(
         [
-            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1),
-            QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 5, 6),
-            QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 13, 14),
-            QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 14, 15),
-            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 28, 29),
-            QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 42, 43),
+            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 0, 1),
+            QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 5, 6),
+            QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 13, 14),
+            QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 14, 15),
+            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 28, 29),
+            QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 42, 43),
         ]
     )
     assert all_three_quote_convention_set.find_most_similar_convention(multiple_english_quotes_tabulator) == (
@@ -1205,12 +1205,12 @@ def test_find_most_similar_convention() -> None:
     multiple_western_european_quotes_tabulator = QuotationMarkTabulator()
     multiple_western_european_quotes_tabulator.tabulate(
         [
-            QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1),
-            QuotationMarkMetadata("\u201c", 2, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 5, 6),
-            QuotationMarkMetadata("\u201d", 2, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 13, 14),
-            QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 14, 15),
-            QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 28, 29),
-            QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 42, 43),
+            QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 0, 1),
+            QuotationMarkMetadata("\u201c", 2, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 5, 6),
+            QuotationMarkMetadata("\u201d", 2, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 13, 14),
+            QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 14, 15),
+            QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 28, 29),
+            QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 42, 43),
         ]
     )
     assert all_three_quote_convention_set.find_most_similar_convention(multiple_western_european_quotes_tabulator) == (
@@ -1221,12 +1221,12 @@ def test_find_most_similar_convention() -> None:
     multiple_french_quotes_tabulator = QuotationMarkTabulator()
     multiple_french_quotes_tabulator.tabulate(
         [
-            QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1),
-            QuotationMarkMetadata("\u2039", 2, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 5, 6),
-            QuotationMarkMetadata("\u203a", 2, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 13, 14),
-            QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 14, 15),
-            QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 28, 29),
-            QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 42, 43),
+            QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 0, 1),
+            QuotationMarkMetadata("\u2039", 2, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 5, 6),
+            QuotationMarkMetadata("\u203a", 2, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 13, 14),
+            QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 14, 15),
+            QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 28, 29),
+            QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 42, 43),
         ]
     )
     assert all_three_quote_convention_set.find_most_similar_convention(multiple_french_quotes_tabulator) == (
@@ -1241,12 +1241,12 @@ def test_find_most_similar_convention() -> None:
     noisy_multiple_english_quotes_tabulator = QuotationMarkTabulator()
     noisy_multiple_english_quotes_tabulator.tabulate(
         [
-            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1),
-            QuotationMarkMetadata("\u201c", 2, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 5, 6),
-            QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 13, 14),
-            QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 14, 15),
-            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 28, 29),
-            QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 42, 43),
+            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 0, 1),
+            QuotationMarkMetadata("\u201c", 2, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 5, 6),
+            QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 13, 14),
+            QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 14, 15),
+            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 28, 29),
+            QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 42, 43),
         ]
     )
     assert all_three_quote_convention_set.find_most_similar_convention(noisy_multiple_english_quotes_tabulator) == (
@@ -1261,14 +1261,14 @@ def test_find_most_similar_convention() -> None:
     noisy_multiple_french_quotes_tabulator = QuotationMarkTabulator()
     noisy_multiple_french_quotes_tabulator.tabulate(
         [
-            QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1),
-            QuotationMarkMetadata("\u2039", 2, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 5, 6),
-            QuotationMarkMetadata("\u203a", 2, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 13, 14),
-            QuotationMarkMetadata("\u2039", 2, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 5, 6),
-            QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 13, 14),
-            QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 14, 15),
-            QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 28, 29),
-            QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 42, 43),
+            QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 0, 1),
+            QuotationMarkMetadata("\u2039", 2, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 5, 6),
+            QuotationMarkMetadata("\u203a", 2, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 13, 14),
+            QuotationMarkMetadata("\u2039", 2, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 5, 6),
+            QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 13, 14),
+            QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 14, 15),
+            QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 28, 29),
+            QuotationMarkMetadata("\u00bb", 1, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 42, 43),
         ]
     )
     assert all_three_quote_convention_set.find_most_similar_convention(noisy_multiple_french_quotes_tabulator) == (
@@ -1279,11 +1279,11 @@ def test_find_most_similar_convention() -> None:
     too_deep_english_quotes_tabulator = QuotationMarkTabulator()
     too_deep_english_quotes_tabulator.tabulate(
         [
-            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1),
-            QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 5, 6),
-            QuotationMarkMetadata("\u201c", 3, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 13, 14),
-            QuotationMarkMetadata("\u2018", 4, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 15, 16),
-            QuotationMarkMetadata("\u201c", 5, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 17, 18),
+            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 0, 1),
+            QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 5, 6),
+            QuotationMarkMetadata("\u201c", 3, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 13, 14),
+            QuotationMarkMetadata("\u2018", 4, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 15, 16),
+            QuotationMarkMetadata("\u201c", 5, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 17, 18),
         ]
     )
     assert all_three_quote_convention_set.find_most_similar_convention(too_deep_english_quotes_tabulator) == (
@@ -1294,7 +1294,7 @@ def test_find_most_similar_convention() -> None:
     # in case of ties, the earlier convention in the list should be returned
     unknown_quote_tabulator = QuotationMarkTabulator()
     unknown_quote_tabulator.tabulate(
-        [QuotationMarkMetadata("\u201a", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1)]
+        [QuotationMarkMetadata("\u201a", 1, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 0, 1)]
     )
     assert all_three_quote_convention_set.find_most_similar_convention(unknown_quote_tabulator) == (
         standard_english_quote_convention,
@@ -1303,7 +1303,7 @@ def test_find_most_similar_convention() -> None:
 
     single_french_opening_quote_tabulator = QuotationMarkTabulator()
     single_french_opening_quote_tabulator.tabulate(
-        [QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1)]
+        [QuotationMarkMetadata("\u00ab", 1, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 0, 1)]
     )
     assert all_three_quote_convention_set.find_most_similar_convention(single_french_opening_quote_tabulator) == (
         standard_french_quote_convention,
@@ -1317,7 +1317,7 @@ def test_find_most_similar_convention() -> None:
     # Default values should be returned when the QuoteConventionSet is empty
     single_english_opening_quote_tabulator = QuotationMarkTabulator()
     single_english_opening_quote_tabulator.tabulate(
-        [QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1)]
+        [QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 0, 1)]
     )
     empty_quote_convention_set = QuoteConventionSet([])
     assert empty_quote_convention_set.find_most_similar_convention(single_english_opening_quote_tabulator) == (

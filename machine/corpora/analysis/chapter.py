@@ -1,9 +1,8 @@
+from dataclasses import dataclass
+
 from .verse import Verse
 
 
+@dataclass
 class Chapter:
-    def __init__(self, verses: list[Verse]):
-        self.verses = verses
-
-    def get_verses(self) -> list[Verse]:
-        return self.verses
+    verses: list[Verse]

@@ -5,14 +5,14 @@ from machine.corpora.analysis import TextSegment, UsfmMarkerType
 def test_builder_initialization() -> None:
     builder = TextSegment.Builder()
 
-    assert builder.text_segment.text == ""
-    assert builder.text_segment.previous_segment is None
-    assert builder.text_segment.next_segment is None
-    assert builder.text_segment.immediate_preceding_marker is UsfmMarkerType.NoMarker
-    assert builder.text_segment.markers_in_preceding_context == set()
-    assert builder.text_segment.index_in_verse == 0
-    assert builder.text_segment.num_segments_in_verse == 0
-    assert builder.text_segment.usfm_token is None
+    assert builder._text_segment._text == ""
+    assert builder._text_segment._previous_segment is None
+    assert builder._text_segment._next_segment is None
+    assert builder._text_segment._immediate_preceding_marker is UsfmMarkerType.NO_MARKER
+    assert builder._text_segment._markers_in_preceding_context == set()
+    assert builder._text_segment._index_in_verse == 0
+    assert builder._text_segment._num_segments_in_verse == 0
+    assert builder._text_segment._usfm_token is None
 
 
 def test_builder_set_text() -> None:
@@ -20,7 +20,7 @@ def test_builder_set_text() -> None:
     text = "Example text"
     builder.set_text(text)
 
-    assert builder.text_segment.text == text
+    assert builder._text_segment._text == text
 
 
 def test_builder_set_previous_segment() -> None:
@@ -28,43 +28,43 @@ def test_builder_set_previous_segment() -> None:
     previous_segment = TextSegment.Builder().set_text("previous segment text").build()
     builder.set_previous_segment(previous_segment)
 
-    assert builder.text_segment.previous_segment == previous_segment
-    assert builder.text_segment.next_segment is None
-    assert builder.text_segment.immediate_preceding_marker is UsfmMarkerType.NoMarker
-    assert builder.text_segment.markers_in_preceding_context == set()
-    assert builder.text_segment.index_in_verse == 0
-    assert builder.text_segment.num_segments_in_verse == 0
+    assert builder._text_segment._previous_segment == previous_segment
+    assert builder._text_segment._next_segment is None
+    assert builder._text_segment._immediate_preceding_marker is UsfmMarkerType.NO_MARKER
+    assert builder._text_segment._markers_in_preceding_context == set()
+    assert builder._text_segment._index_in_verse == 0
+    assert builder._text_segment._num_segments_in_verse == 0
 
 
 def test_builder_add_preceding_marker() -> None:
     builder = TextSegment.Builder()
-    builder.add_preceding_marker(UsfmMarkerType.ChapterMarker)
+    builder.add_preceding_marker(UsfmMarkerType.CHAPTER)
 
-    assert builder.text_segment.immediate_preceding_marker is UsfmMarkerType.ChapterMarker
-    assert builder.text_segment.markers_in_preceding_context == {UsfmMarkerType.ChapterMarker}
-    assert builder.text_segment.previous_segment is None
-    assert builder.text_segment.next_segment is None
+    assert builder._text_segment._immediate_preceding_marker is UsfmMarkerType.CHAPTER
+    assert builder._text_segment._markers_in_preceding_context == {UsfmMarkerType.CHAPTER}
+    assert builder._text_segment._previous_segment is None
+    assert builder._text_segment._next_segment is None
 
-    builder.add_preceding_marker(UsfmMarkerType.VerseMarker)
-    assert builder.text_segment.immediate_preceding_marker == UsfmMarkerType.VerseMarker
-    assert builder.text_segment.markers_in_preceding_context == {
-        UsfmMarkerType.ChapterMarker,
-        UsfmMarkerType.VerseMarker,
+    builder.add_preceding_marker(UsfmMarkerType.VERSE)
+    assert builder._text_segment._immediate_preceding_marker == UsfmMarkerType.VERSE
+    assert builder._text_segment._markers_in_preceding_context == {
+        UsfmMarkerType.CHAPTER,
+        UsfmMarkerType.VERSE,
     }
-    assert builder.text_segment.previous_segment is None
-    assert builder.text_segment.next_segment is None
+    assert builder._text_segment._previous_segment is None
+    assert builder._text_segment._next_segment is None
 
 
 def test_builder_set_usfm_token() -> None:
     builder = TextSegment.Builder()
     builder.set_usfm_token(UsfmToken(type=UsfmTokenType.TEXT, text="USFM token text"))
 
-    assert builder.text_segment.usfm_token is not None
-    assert builder.text_segment.usfm_token.type == UsfmTokenType.TEXT
-    assert builder.text_segment.usfm_token.text == "USFM token text"
-    assert builder.text_segment.text == ""
-    assert builder.text_segment.previous_segment is None
-    assert builder.text_segment.next_segment is None
+    assert builder._text_segment._usfm_token is not None
+    assert builder._text_segment._usfm_token.type == UsfmTokenType.TEXT
+    assert builder._text_segment._usfm_token.text == "USFM token text"
+    assert builder._text_segment._text == ""
+    assert builder._text_segment._previous_segment is None
+    assert builder._text_segment._next_segment is None
 
 
 def test_set_previous_segment() -> None:
@@ -72,12 +72,12 @@ def test_set_previous_segment() -> None:
     previous_segment = TextSegment.Builder().set_text("previous segment text").build()
     text_segment.set_previous_segment(previous_segment)
 
-    assert text_segment.previous_segment == previous_segment
-    assert text_segment.next_segment is None
-    assert text_segment.immediate_preceding_marker is UsfmMarkerType.NoMarker
-    assert text_segment.markers_in_preceding_context == set()
-    assert text_segment.index_in_verse == 0
-    assert text_segment.num_segments_in_verse == 0
+    assert text_segment._previous_segment == previous_segment
+    assert text_segment._next_segment is None
+    assert text_segment._immediate_preceding_marker is UsfmMarkerType.NO_MARKER
+    assert text_segment._markers_in_preceding_context == set()
+    assert text_segment._index_in_verse == 0
+    assert text_segment._num_segments_in_verse == 0
 
 
 def test_set_next_segment() -> None:
@@ -85,36 +85,36 @@ def test_set_next_segment() -> None:
     next_segment = TextSegment.Builder().set_text("next segment text").build()
     text_segment.set_next_segment(next_segment)
 
-    assert text_segment.previous_segment is None
-    assert text_segment.next_segment == next_segment
-    assert text_segment.immediate_preceding_marker is UsfmMarkerType.NoMarker
-    assert text_segment.markers_in_preceding_context == set()
-    assert text_segment.index_in_verse == 0
-    assert text_segment.num_segments_in_verse == 0
+    assert text_segment._previous_segment is None
+    assert text_segment._next_segment == next_segment
+    assert text_segment._immediate_preceding_marker is UsfmMarkerType.NO_MARKER
+    assert text_segment._markers_in_preceding_context == set()
+    assert text_segment._index_in_verse == 0
+    assert text_segment._num_segments_in_verse == 0
 
 
 def test_set_index_in_verse() -> None:
     text_segment = TextSegment.Builder().set_text("example text").build()
     text_segment.set_index_in_verse(2)
 
-    assert text_segment.index_in_verse == 2
-    assert text_segment.previous_segment is None
-    assert text_segment.next_segment is None
-    assert text_segment.immediate_preceding_marker is UsfmMarkerType.NoMarker
-    assert text_segment.markers_in_preceding_context == set()
-    assert text_segment.num_segments_in_verse == 0
+    assert text_segment._index_in_verse == 2
+    assert text_segment._previous_segment is None
+    assert text_segment._next_segment is None
+    assert text_segment._immediate_preceding_marker is UsfmMarkerType.NO_MARKER
+    assert text_segment._markers_in_preceding_context == set()
+    assert text_segment._num_segments_in_verse == 0
 
 
 def test_set_num_segments_in_verse() -> None:
     text_segment = TextSegment.Builder().set_text("example text").build()
     text_segment.set_num_segments_in_verse(5)
 
-    assert text_segment.num_segments_in_verse == 5
-    assert text_segment.previous_segment is None
-    assert text_segment.next_segment is None
-    assert text_segment.immediate_preceding_marker is UsfmMarkerType.NoMarker
-    assert text_segment.markers_in_preceding_context == set()
-    assert text_segment.index_in_verse == 0
+    assert text_segment._num_segments_in_verse == 5
+    assert text_segment._previous_segment is None
+    assert text_segment._next_segment is None
+    assert text_segment._immediate_preceding_marker is UsfmMarkerType.NO_MARKER
+    assert text_segment._markers_in_preceding_context == set()
+    assert text_segment._index_in_verse == 0
 
 
 def test_equals() -> None:
@@ -139,19 +139,19 @@ def test_equals() -> None:
     assert segment_with_index != basic_segment
 
     segment_with_preceding_marker = (
-        TextSegment.Builder().set_text("text1").add_preceding_marker(UsfmMarkerType.VerseMarker).build()
+        TextSegment.Builder().set_text("text1").add_preceding_marker(UsfmMarkerType.VERSE).build()
     )
     segment_with_same_preceding_marker = (
-        TextSegment.Builder().set_text("text1").add_preceding_marker(UsfmMarkerType.VerseMarker).build()
+        TextSegment.Builder().set_text("text1").add_preceding_marker(UsfmMarkerType.VERSE).build()
     )
     segment_with_different_preceding_marker = (
-        TextSegment.Builder().set_text("text1").add_preceding_marker(UsfmMarkerType.ChapterMarker).build()
+        TextSegment.Builder().set_text("text1").add_preceding_marker(UsfmMarkerType.CHAPTER).build()
     )
     segment_with_multiple_preceding_markers = (
         TextSegment.Builder()
         .set_text("text1")
-        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-        .add_preceding_marker(UsfmMarkerType.VerseMarker)
+        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+        .add_preceding_marker(UsfmMarkerType.VERSE)
         .build()
     )
 
@@ -198,18 +198,18 @@ def test_equals() -> None:
 
 def test_get_text() -> None:
     text_segment = TextSegment.Builder().set_text("example text").build()
-    assert text_segment.get_text() == "example text"
+    assert text_segment.text == "example text"
 
     text_segment = TextSegment.Builder().set_text("new example text").build()
-    assert text_segment.get_text() == "new example text"
+    assert text_segment.text == "new example text"
 
 
 def test_length() -> None:
     text_segment = TextSegment.Builder().set_text("example text").build()
-    assert text_segment.length() == len("example text")
+    assert text_segment.length == len("example text")
 
     text_segment = TextSegment.Builder().set_text("new example text").build()
-    assert text_segment.length() == len("new example text")
+    assert text_segment.length == len("new example text")
 
 
 def test_substring_before() -> None:
@@ -231,40 +231,40 @@ def test_substring_after() -> None:
 
 def test_is_marker_in_preceding_context() -> None:
     no_preceding_marker_segment = TextSegment.Builder().set_text("example text").build()
-    assert no_preceding_marker_segment.is_marker_in_preceding_context(UsfmMarkerType.ChapterMarker) is False
-    assert no_preceding_marker_segment.is_marker_in_preceding_context(UsfmMarkerType.VerseMarker) is False
-    assert no_preceding_marker_segment.is_marker_in_preceding_context(UsfmMarkerType.CharacterMarker) is False
+    assert no_preceding_marker_segment.marker_is_in_preceding_context(UsfmMarkerType.CHAPTER) is False
+    assert no_preceding_marker_segment.marker_is_in_preceding_context(UsfmMarkerType.VERSE) is False
+    assert no_preceding_marker_segment.marker_is_in_preceding_context(UsfmMarkerType.CHARACTER) is False
 
     one_preceding_marker_text_segment = (
-        TextSegment.Builder().set_text("example text").add_preceding_marker(UsfmMarkerType.CharacterMarker).build()
+        TextSegment.Builder().set_text("example text").add_preceding_marker(UsfmMarkerType.CHARACTER).build()
     )
 
-    assert one_preceding_marker_text_segment.is_marker_in_preceding_context(UsfmMarkerType.CharacterMarker) is True
-    assert one_preceding_marker_text_segment.is_marker_in_preceding_context(UsfmMarkerType.VerseMarker) is False
-    assert one_preceding_marker_text_segment.is_marker_in_preceding_context(UsfmMarkerType.ChapterMarker) is False
+    assert one_preceding_marker_text_segment.marker_is_in_preceding_context(UsfmMarkerType.CHARACTER) is True
+    assert one_preceding_marker_text_segment.marker_is_in_preceding_context(UsfmMarkerType.VERSE) is False
+    assert one_preceding_marker_text_segment.marker_is_in_preceding_context(UsfmMarkerType.CHAPTER) is False
 
     two_preceding_markers_text_segment = (
         TextSegment.Builder()
         .set_text("example text")
-        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-        .add_preceding_marker(UsfmMarkerType.VerseMarker)
+        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+        .add_preceding_marker(UsfmMarkerType.VERSE)
         .build()
     )
-    assert two_preceding_markers_text_segment.is_marker_in_preceding_context(UsfmMarkerType.ChapterMarker) is True
-    assert two_preceding_markers_text_segment.is_marker_in_preceding_context(UsfmMarkerType.VerseMarker) is True
-    assert two_preceding_markers_text_segment.is_marker_in_preceding_context(UsfmMarkerType.CharacterMarker) is False
+    assert two_preceding_markers_text_segment.marker_is_in_preceding_context(UsfmMarkerType.CHAPTER) is True
+    assert two_preceding_markers_text_segment.marker_is_in_preceding_context(UsfmMarkerType.VERSE) is True
+    assert two_preceding_markers_text_segment.marker_is_in_preceding_context(UsfmMarkerType.CHARACTER) is False
 
     three_preceding_markers_text_segment = (
         TextSegment.Builder()
         .set_text("example text")
-        .add_preceding_marker(UsfmMarkerType.ChapterMarker)
-        .add_preceding_marker(UsfmMarkerType.VerseMarker)
-        .add_preceding_marker(UsfmMarkerType.CharacterMarker)
+        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+        .add_preceding_marker(UsfmMarkerType.VERSE)
+        .add_preceding_marker(UsfmMarkerType.CHARACTER)
         .build()
     )
-    assert three_preceding_markers_text_segment.is_marker_in_preceding_context(UsfmMarkerType.ChapterMarker) is True
-    assert three_preceding_markers_text_segment.is_marker_in_preceding_context(UsfmMarkerType.VerseMarker) is True
-    assert three_preceding_markers_text_segment.is_marker_in_preceding_context(UsfmMarkerType.CharacterMarker) is True
+    assert three_preceding_markers_text_segment.marker_is_in_preceding_context(UsfmMarkerType.CHAPTER) is True
+    assert three_preceding_markers_text_segment.marker_is_in_preceding_context(UsfmMarkerType.VERSE) is True
+    assert three_preceding_markers_text_segment.marker_is_in_preceding_context(UsfmMarkerType.CHARACTER) is True
 
 
 def test_is_first_segment_in_verse() -> None:
@@ -293,28 +293,28 @@ def test_is_last_segment_in_verse() -> None:
 def test_replace_substring() -> None:
     text_segment = TextSegment.Builder().set_text("example text").build()
     text_segment.replace_substring(0, 7, "sample")
-    assert text_segment.get_text() == "sample text"
+    assert text_segment.text == "sample text"
 
     text_segment.replace_substring(7, 11, "text")
-    assert text_segment.get_text() == "sample text"
+    assert text_segment.text == "sample text"
 
     text_segment.replace_substring(0, 7, "")
-    assert text_segment.get_text() == "text"
+    assert text_segment.text == "text"
 
     text_segment.replace_substring(0, 4, "new'")
-    assert text_segment.get_text() == "new'"
+    assert text_segment.text == "new'"
 
     text_segment.replace_substring(3, 4, "\u2019")
-    assert text_segment.get_text() == "new\u2019"
+    assert text_segment.text == "new\u2019"
 
     text_segment.replace_substring(0, 0, "prefix ")
-    assert text_segment.get_text() == "prefix new\u2019"
+    assert text_segment.text == "prefix new\u2019"
 
     text_segment.replace_substring(0, 0, "")
-    assert text_segment.get_text() == "prefix new\u2019"
+    assert text_segment.text == "prefix new\u2019"
 
     text_segment.replace_substring(11, 11, " suffix")
-    assert text_segment.get_text() == "prefix new\u2019 suffix"
+    assert text_segment.text == "prefix new\u2019 suffix"
 
     text_segment.replace_substring(6, 6, "-")
-    assert text_segment.get_text() == "prefix- new\u2019 suffix"
+    assert text_segment.text == "prefix- new\u2019 suffix"

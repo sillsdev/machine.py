@@ -16,7 +16,7 @@ def test_standard_english() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "standard_english"
+    assert analysis.best_quote_convention.get_name() == "standard_english"
 
 
 def test_typewriter_english() -> None:
@@ -29,7 +29,7 @@ def test_typewriter_english() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "typewriter_english"
+    assert analysis.best_quote_convention.get_name() == "typewriter_english"
 
 
 def test_british_english() -> None:
@@ -42,7 +42,7 @@ def test_british_english() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "british_english"
+    assert analysis.best_quote_convention.get_name() == "british_english"
 
 
 def test_british_typewriter_english() -> None:
@@ -55,7 +55,7 @@ def test_british_typewriter_english() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "british_typewriter_english"
+    assert analysis.best_quote_convention.get_name() == "british_typewriter_english"
 
 
 def test_hybrid_typewriter_english() -> None:
@@ -68,7 +68,7 @@ def test_hybrid_typewriter_english() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "hybrid_typewriter_english"
+    assert analysis.best_quote_convention.get_name() == "hybrid_typewriter_english"
 
 
 def test_standard_french() -> None:
@@ -81,7 +81,7 @@ def test_standard_french() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "standard_french"
+    assert analysis.best_quote_convention.get_name() == "standard_french"
 
 
 def test_typewriter_french() -> None:
@@ -94,7 +94,7 @@ def test_typewriter_french() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "typewriter_french"
+    assert analysis.best_quote_convention.get_name() == "typewriter_french"
 
 
 # french_variant requires a 3rd-level of quotes to differentiate from standard_french
@@ -110,7 +110,7 @@ def test_western_european() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "western_european"
+    assert analysis.best_quote_convention.get_name() == "western_european"
 
 
 def test_british_inspired_western_european() -> None:
@@ -123,7 +123,7 @@ def test_british_inspired_western_european() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "british_inspired_western_european"
+    assert analysis.best_quote_convention.get_name() == "british_inspired_western_european"
 
 
 def test_typewriter_western_european() -> None:
@@ -136,7 +136,7 @@ def test_typewriter_western_european() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "typewriter_western_european"
+    assert analysis.best_quote_convention.get_name() == "typewriter_western_european"
 
 
 def test_typewriter_western_european_variant() -> None:
@@ -149,7 +149,7 @@ def test_typewriter_western_european_variant() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "typewriter_western_european_variant"
+    assert analysis.best_quote_convention.get_name() == "typewriter_western_european_variant"
 
 
 def test_hybrid_typewriter_western_european() -> None:
@@ -162,7 +162,7 @@ def test_hybrid_typewriter_western_european() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "hybrid_typewriter_western_european"
+    assert analysis.best_quote_convention.get_name() == "hybrid_typewriter_western_european"
 
 
 def test_hybrid_british_typewriter_western_european() -> None:
@@ -175,7 +175,7 @@ def test_hybrid_british_typewriter_western_european() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "hybrid_british_typewriter_western_european"
+    assert analysis.best_quote_convention.get_name() == "hybrid_british_typewriter_western_european"
 
 
 def test_central_european() -> None:
@@ -188,7 +188,7 @@ def test_central_european() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "central_european"
+    assert analysis.best_quote_convention.get_name() == "central_european"
 
 
 def test_central_european_guillemets() -> None:
@@ -201,7 +201,7 @@ def test_central_european_guillemets() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "central_european_guillemets"
+    assert analysis.best_quote_convention.get_name() == "central_european_guillemets"
 
 
 def test_standard_swedish() -> None:
@@ -214,7 +214,7 @@ def test_standard_swedish() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "standard_swedish"
+    assert analysis.best_quote_convention.get_name() == "standard_swedish"
 
 
 def test_standard_finnish() -> None:
@@ -227,7 +227,7 @@ def test_standard_finnish() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "standard_finnish"
+    assert analysis.best_quote_convention.get_name() == "standard_finnish"
 
 
 def test_eastern_european() -> None:
@@ -240,7 +240,7 @@ def test_eastern_european() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "eastern_european"
+    assert analysis.best_quote_convention.get_name() == "eastern_european"
 
 
 def test_standard_russian() -> None:
@@ -253,7 +253,7 @@ def test_standard_russian() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "standard_russian"
+    assert analysis.best_quote_convention.get_name() == "standard_russian"
 
 
 def test_standard_arabic() -> None:
@@ -266,7 +266,7 @@ def test_standard_arabic() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "standard_arabic"
+    assert analysis.best_quote_convention.get_name() == "standard_arabic"
 
 
 def test_non_standard_arabic() -> None:
@@ -279,7 +279,7 @@ def test_non_standard_arabic() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "non-standard_arabic"
+    assert analysis.best_quote_convention.get_name() == "non-standard_arabic"
 
 
 def test_mismatched_quotation_marks() -> None:
@@ -296,7 +296,7 @@ def test_mismatched_quotation_marks() -> None:
     """
     analysis = detect_quote_convention(usfm)
     assert analysis is not None
-    assert analysis.get_best_quote_convention().get_name() == "standard_english"
+    assert analysis.best_quote_convention.get_name() == "standard_english"
 
 
 def detect_quote_convention(usfm: str) -> Union[QuoteConventionAnalysis, None]:

@@ -32,7 +32,7 @@ def test_get_best_proportion() -> None:
     counts.count_quotation_mark('"')
     counts.count_quotation_mark("'")
 
-    best_str, best_count, total_count = counts.get_best_proportion()
+    best_str, best_count, total_count = counts.find_best_quotation_mark_proportion()
     assert best_str == '"'
     assert best_count == 2
     assert total_count == 3
@@ -40,7 +40,7 @@ def test_get_best_proportion() -> None:
     counts.count_quotation_mark("'")
     counts.count_quotation_mark("'")
 
-    best_str, best_count, total_count = counts.get_best_proportion()
+    best_str, best_count, total_count = counts.find_best_quotation_mark_proportion()
     assert best_str == "'"
     assert best_count == 3
     assert total_count == 5
@@ -67,8 +67,8 @@ def test_calculate_similarity() -> None:
     single_level_quotation_mark_tabulator = QuotationMarkTabulator()
     single_level_quotation_mark_tabulator.tabulate(
         [
-            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1),
-            QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 0, 1),
+            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 0, 1),
+            QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 0, 1),
         ]
     )
 
@@ -110,10 +110,10 @@ def test_calculate_similarity() -> None:
     two_level_quotation_mark_tabulator = QuotationMarkTabulator()
     two_level_quotation_mark_tabulator.tabulate(
         [
-            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 1),
-            QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 0, 1),
-            QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.Opening, TextSegment.Builder().build(), 0, 2),
-            QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.Closing, TextSegment.Builder().build(), 0, 2),
+            QuotationMarkMetadata("\u201c", 1, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 0, 1),
+            QuotationMarkMetadata("\u201d", 1, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 0, 1),
+            QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.OPENING, TextSegment.Builder().build(), 0, 2),
+            QuotationMarkMetadata("\u2019", 2, QuotationMarkDirection.CLOSING, TextSegment.Builder().build(), 0, 2),
         ]
     )
     assert two_level_quotation_mark_tabulator.calculate_similarity(

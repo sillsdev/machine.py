@@ -13,6 +13,7 @@ from .quotation_mark_update_resolution_settings import QuotationMarkUpdateResolu
 from .quotation_mark_update_strategy import QuotationMarkUpdateStrategy
 
 
+# Determines the best strategy to take for each chapter
 class QuotationMarkUpdateFirstPass(UsfmStructureExtractor):
 
     def __init__(self, source_quote_convention: QuoteConvention, target_quote_convention: QuoteConvention):
@@ -47,15 +48,15 @@ class QuotationMarkUpdateFirstPass(UsfmStructureExtractor):
                 return False
         return True
 
-    def get_best_actions_by_chapter(self) -> List[QuotationMarkUpdateStrategy]:
+    def find_best_chapter_strategies(self) -> List[QuotationMarkUpdateStrategy]:
         best_actions_by_chapter: List[QuotationMarkUpdateStrategy] = []
 
         for chapter in self.get_chapters():
-            best_actions_by_chapter.append(self._find_best_action_for_chapter(chapter))
+            best_actions_by_chapter.append(self._find_best_strategy_for_chapter(chapter))
 
         return best_actions_by_chapter
 
-    def _find_best_action_for_chapter(self, chapter: Chapter) -> QuotationMarkUpdateStrategy:
+    def _find_best_strategy_for_chapter(self, chapter: Chapter) -> QuotationMarkUpdateStrategy:
         quotation_mark_matches: List[QuotationMarkStringMatch] = (
             self._quotation_mark_finder.find_all_potential_quotation_marks_in_chapter(chapter)
         )
@@ -65,9 +66,9 @@ class QuotationMarkUpdateFirstPass(UsfmStructureExtractor):
         # use list() to force evaluation of the generator
         list(self._quotation_mark_resolver.resolve_quotation_marks(quotation_mark_matches))
 
-        return self._choose_best_action_based_on_observed_issues(self._quotation_mark_resolver.get_issues())
+        return self._choose_best_strategy_based_on_observed_issues(self._quotation_mark_resolver.get_issues())
 
-    def _choose_best_action_based_on_observed_issues(self, issues) -> QuotationMarkUpdateStrategy:
+    def _choose_best_strategy_based_on_observed_issues(self, issues) -> QuotationMarkUpdateStrategy:
         if QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK in issues:
             return QuotationMarkUpdateStrategy.SKIP
 
