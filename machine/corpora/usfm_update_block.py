@@ -8,9 +8,15 @@ from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockEl
 
 
 class UsfmUpdateBlock:
-    def __init__(self, refs: Iterable[ScriptureRef] = [], elements: Iterable[UsfmUpdateBlockElement] = []) -> None:
+    def __init__(
+        self,
+        refs: Iterable[ScriptureRef] = [],
+        elements: Iterable[UsfmUpdateBlockElement] = [],
+        metadata: dict[str, object] = {},
+    ) -> None:
         self._refs: list[ScriptureRef] = list(refs)
         self._elements: list[UsfmUpdateBlockElement] = list(elements)
+        self._metadata: dict[str, object] = metadata
 
     @property
     def refs(self) -> Sequence[ScriptureRef]:
@@ -19,6 +25,10 @@ class UsfmUpdateBlock:
     @property
     def elements(self) -> Sequence[UsfmUpdateBlockElement]:
         return self._elements
+
+    @property
+    def metadata(self) -> dict[str, object]:
+        return self._metadata
 
     def add_text(self, tokens: Iterable[UsfmToken]) -> None:
         self._elements.append(UsfmUpdateBlockElement(UsfmUpdateBlockElementType.TEXT, list(tokens)))
@@ -58,7 +68,7 @@ class UsfmUpdateBlock:
         return [token for element in self._elements for token in element.get_tokens()]
 
     def __eq__(self, other: UsfmUpdateBlock) -> bool:
-        return self._refs == other._refs and self._elements == other._elements
+        return self._refs == other._refs and self._elements == other._elements and self._metadata == other._metadata
 
     def copy(self) -> UsfmUpdateBlock:
-        return UsfmUpdateBlock(self._refs, self._elements)
+        return UsfmUpdateBlock(self._refs, self._elements, self._metadata)
