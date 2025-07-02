@@ -24,10 +24,17 @@ class UpdateUsfmMarkerBehavior(Enum):
     STRIP = auto()
 
 
+class UpdateUsfmRow:
+    def __init__(self, refs: Sequence[ScriptureRef], text: str, metadata: Optional[dict[str, object]] = None):
+        self.refs = refs
+        self.text = text
+        self.metadata = metadata
+
+
 class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
     def __init__(
         self,
-        rows: Optional[Sequence[Tuple[Sequence[ScriptureRef], str]]] = None,
+        rows: Optional[Sequence[UpdateUsfmRow]] = None,
         id_text: Optional[str] = None,
         text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_EXISTING,
         paragraph_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
@@ -284,12 +291,14 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         tokenizer = UsfmTokenizer(stylesheet)
         return tokenizer.detokenize(self._tokens)
 
-    def _advance_rows(self, seg_scr_refs: Sequence[ScriptureRef]) -> List[str]:
+    def _advance_rows(self, seg_scr_refs: Sequence[ScriptureRef]) -> Tuple[List[str], Optional[dict[str, object]]]:
         row_texts: List[str] = []
+        row_metadata = None
         source_index: int = 0
         while self._row_index < len(self._rows) and source_index < len(seg_scr_refs):
             compare: int = 0
-            row_scr_refs, text = self._rows[self._row_index]
+            row = self._rows[self._row_index]
+            row_scr_refs, text, metadata = row.refs, row.text, row.metadata
             for row_scr_ref in row_scr_refs:
                 while source_index < len(seg_scr_refs):
                     compare = row_scr_ref.compare_to(seg_scr_refs[source_index], compare_segments=False)
@@ -302,11 +311,12 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
                     # source and row match
                     # grab the text - both source and row will be incremented in due time...
                     row_texts.append(text)
+                    row_metadata = metadata
                     break
             if compare <= 0:
                 # source is ahead of row, increment row
                 self._row_index += 1
-        return row_texts
+        return row_texts, row_metadata
 
     def _collect_updatable_tokens(self, state: UsfmParserState) -> None:
         self._use_updated_text()
@@ -377,8 +387,10 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         return any(self._replace_stack) and self._replace_stack[-1]
 
     def _start_update_block(self, scripture_refs: Sequence[ScriptureRef]) -> None:
-        self._update_block_stack.append(UsfmUpdateBlock(scripture_refs))
-        row_texts: List[str] = self._advance_rows(scripture_refs)
+        row_texts, metadata = self._advance_rows(scripture_refs)
+        self._update_block_stack.append(
+            UsfmUpdateBlock(scripture_refs, metadata=metadata if metadata is not None else {})
+        )
         self._push_updated_text([UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in row_texts])
 
     def _end_update_block(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:

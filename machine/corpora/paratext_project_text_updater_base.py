@@ -1,11 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import BinaryIO, Iterable, Optional, Sequence, Tuple, Union
+from typing import BinaryIO, Iterable, Optional, Sequence, Union
 
 from ..utils.typeshed import StrPath
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
-from .scripture_ref import ScriptureRef
-from .update_usfm_parser_handler import UpdateUsfmMarkerBehavior, UpdateUsfmParserHandler, UpdateUsfmTextBehavior
+from .update_usfm_parser_handler import (
+    UpdateUsfmMarkerBehavior,
+    UpdateUsfmParserHandler,
+    UpdateUsfmRow,
+    UpdateUsfmTextBehavior,
+)
 from .usfm_parser import parse_usfm
 from .usfm_update_block_handler import UsfmUpdateBlockHandler
 
@@ -20,7 +24,7 @@ class ParatextProjectTextUpdaterBase(ABC):
     def update_usfm(
         self,
         book_id: str,
-        rows: Optional[Sequence[Tuple[Sequence[ScriptureRef], str]]] = None,
+        rows: Optional[Sequence[UpdateUsfmRow]] = None,
         full_name: Optional[str] = None,
         text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_EXISTING,
         paragraph_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
