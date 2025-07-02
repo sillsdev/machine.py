@@ -178,8 +178,8 @@ def test_equals() -> None:
     segment_with_different_num_verses.set_num_segments_in_verse(4)
 
     assert segment_with_num_verses == segment_with_same_num_verses
-    assert segment_with_num_verses == segment_with_different_num_verses
-    assert segment_with_num_verses == basic_segment
+    assert segment_with_num_verses != segment_with_different_num_verses
+    assert segment_with_num_verses != basic_segment
 
     assert segment_with_preceding_marker == segment_with_same_preceding_marker
     assert segment_with_preceding_marker != segment_with_different_preceding_marker

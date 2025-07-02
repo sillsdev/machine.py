@@ -22,7 +22,7 @@ class TextSegment:
             return False
         if self._index_in_verse != value._index_in_verse:
             return False
-        if self._index_in_verse != value._index_in_verse:
+        if self._num_segments_in_verse != value._num_segments_in_verse:
             return False
         if self._usfm_token != value._usfm_token:
             return False
