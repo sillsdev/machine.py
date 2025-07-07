@@ -5,14 +5,11 @@ from typing import Callable, Optional
 from clearml import Task
 
 from ..utils.progress_status import ProgressStatus
-from .async_scheduler import AsyncScheduler
 from .build_clearml_helper import (
     ProgressInfo,
-    create_runtime_properties,
     get_clearml_check_canceled,
     get_clearml_progress_caller,
     get_local_progress_caller,
-    update_runtime_properties,
     update_settings,
 )
 from .config import SETTINGS
@@ -35,17 +32,15 @@ def run(args: dict):
     progress: Callable[[ProgressStatus], None]
     check_canceled: Optional[Callable[[], None]] = None
     task = None
-    scheduler: Optional[AsyncScheduler] = None
     progress_info = ProgressInfo()
     if args["clearml"]:
         task = Task.init()
-        scheduler = AsyncScheduler()
 
         check_canceled = get_clearml_check_canceled(progress_info, task)
 
         task.reload()
 
-        progress = get_clearml_progress_caller(progress_info, task, scheduler, logger)
+        progress = get_clearml_progress_caller(progress_info, task, logger)
 
     else:
         progress = get_local_progress_caller(ProgressInfo(), logger)
@@ -67,12 +62,10 @@ def run(args: dict):
             SETTINGS, word_alignment_model_factory, word_alignment_file_service
         )
         train_corpus_size = word_alignment_build_job.run(progress, check_canceled)
-        if scheduler is not None and task is not None:
-            scheduler.schedule(
-                update_runtime_properties(
-                    task,
-                    create_runtime_properties(task, 100, "Completed", None),
-                )
+        if task is not None:
+            task.set_progress(100)
+            task.set_user_properties(
+                {"type": str, "name": "message", "description": "Build Message", "value": "Completed"}
             )
             task.get_logger().report_single_value(name="train_corpus_size", value=train_corpus_size)
         logger.info("Finished")
@@ -83,9 +76,6 @@ def run(args: dict):
             else:
                 task.mark_failed(status_reason=type(e).__name__, status_message=str(e))
         raise e
-    finally:
-        if scheduler is not None:
-            scheduler.stop()
     return
 
 
