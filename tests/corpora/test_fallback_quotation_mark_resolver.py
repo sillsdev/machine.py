@@ -1,5 +1,5 @@
 from machine.corpora import FallbackQuotationMarkResolver, QuotationMarkUpdateResolutionSettings
-from machine.corpora.analysis import (
+from machine.corpora.punctuation_analysis import (
     QuotationMarkDirection,
     QuotationMarkMetadata,
     QuotationMarkResolutionIssue,
@@ -12,7 +12,7 @@ from machine.corpora.analysis import (
 
 
 def test_reset():
-    english_quote_convention = standard_quote_conventions.standard_quote_conventions.get_quote_convention_by_name(
+    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
         "standard_english"
     )
     assert english_quote_convention is not None
@@ -32,7 +32,7 @@ def test_reset():
 
 
 def test_simple_quotation_mark_resolution():
-    english_quote_convention = standard_quote_conventions.standard_quote_conventions.get_quote_convention_by_name(
+    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
         "standard_english"
     )
     assert english_quote_convention is not None
@@ -65,7 +65,7 @@ def test_simple_quotation_mark_resolution():
 
 
 def test_is_opening_quote():
-    english_quote_convention = standard_quote_conventions.standard_quote_conventions.get_quote_convention_by_name(
+    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
         "standard_english"
     )
     assert english_quote_convention is not None
@@ -108,7 +108,7 @@ def test_is_opening_quote():
 
 
 def test_is_opening_quote_with_unambiguous_quote_convention():
-    english_quote_convention = standard_quote_conventions.standard_quote_conventions.get_quote_convention_by_name(
+    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
         "standard_english"
     )
     assert english_quote_convention is not None
@@ -135,7 +135,7 @@ def test_is_opening_quote_with_unambiguous_quote_convention():
 
 
 def test_is_opening_quote_stateful():
-    english_quote_convention = standard_quote_conventions.standard_quote_conventions.get_quote_convention_by_name(
+    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
         "standard_english"
     )
     assert english_quote_convention is not None
@@ -156,7 +156,7 @@ def test_is_opening_quote_stateful():
 
 
 def test_does_most_recent_opening_mark_immediately_precede():
-    english_quote_convention = standard_quote_conventions.standard_quote_conventions.get_quote_convention_by_name(
+    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
         "standard_english"
     )
     assert english_quote_convention is not None
@@ -196,7 +196,7 @@ def test_does_most_recent_opening_mark_immediately_precede():
 
 
 def test_is_closing_quote():
-    english_quote_convention = standard_quote_conventions.standard_quote_conventions.get_quote_convention_by_name(
+    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
         "standard_english"
     )
     assert english_quote_convention is not None
@@ -239,7 +239,7 @@ def test_is_closing_quote():
 
 
 def test_is_closing_quote_with_unambiguous_quote_convention():
-    english_quote_convention = standard_quote_conventions.standard_quote_conventions.get_quote_convention_by_name(
+    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
         "standard_english"
     )
     assert english_quote_convention is not None
@@ -266,7 +266,7 @@ def test_is_closing_quote_with_unambiguous_quote_convention():
 
 
 def test_resolve_opening_quote():
-    english_quote_convention = standard_quote_conventions.standard_quote_conventions.get_quote_convention_by_name(
+    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
         "standard_english"
     )
     assert english_quote_convention is not None
@@ -286,7 +286,7 @@ def test_resolve_opening_quote():
 
 
 def test_resolve_closing_quote():
-    english_quote_convention = standard_quote_conventions.standard_quote_conventions.get_quote_convention_by_name(
+    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
         "standard_english"
     )
     assert english_quote_convention is not None

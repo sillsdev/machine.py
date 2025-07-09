@@ -7,7 +7,7 @@ from machine.corpora import (
     UpdateUsfmParserHandler,
     parse_usfm,
 )
-from machine.corpora.analysis import QuoteConvention, standard_quote_conventions
+from machine.corpora.punctuation_analysis import QuoteConvention, standard_quote_conventions
 
 simple_normalized_usfm = """\\c 1
     \\v 1 Now the serpent was more subtle than any animal
@@ -413,7 +413,7 @@ def assert_usfm_equal(observed_usfm: str, expected_usfm: str) -> None:
 
 def get_quote_convention_by_name(name: str) -> QuoteConvention:
     quote_convention: Union[QuoteConvention, None] = (
-        standard_quote_conventions.standard_quote_conventions.get_quote_convention_by_name(name)
+        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(name)
     )
     assert quote_convention is not None
     return quote_convention

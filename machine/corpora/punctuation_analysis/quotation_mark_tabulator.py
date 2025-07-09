@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 
 from .quotation_mark_direction import QuotationMarkDirection
 from .quotation_mark_metadata import QuotationMarkMetadata
@@ -73,7 +73,8 @@ class QuotationMarkTabulator:
             return 0
         return 1 - (num_differences / num_total_quotation_marks)
 
-    def print_summary(self) -> None:
+    def get_summary_message(self) -> str:
+        message_lines: List[str] = []
         for depth in range(1, 5):
             if self._depth_and_direction_observed(
                 depth, QuotationMarkDirection.OPENING
@@ -88,7 +89,7 @@ class QuotationMarkTabulator:
                         depth, QuotationMarkDirection.CLOSING
                     )
                 )
-                print(
+                message_lines.append(
                     "The most common level %i quotes are %s (%i of %i opening quotes) and %s (%i of %i closing quotes)"
                     % (
                         depth,
@@ -100,3 +101,4 @@ class QuotationMarkTabulator:
                         total_closing_count,
                     )
                 )
+        return "\n".join(message_lines)

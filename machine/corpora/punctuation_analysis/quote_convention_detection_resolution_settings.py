@@ -19,15 +19,18 @@ class QuoteConventionDetectionResolutionSettings(QuotationMarkResolutionSettings
     def is_valid_closing_quotation_mark(self, quotation_mark_match: QuotationMarkStringMatch) -> bool:
         return quotation_mark_match.is_valid_closing_quotation_mark(self._quote_convention_set)
 
-    def get_opening_quotation_mark_regex(self) -> regex.Pattern:
+    @property
+    def opening_quotation_mark_regex(self) -> regex.Pattern:
         return self._quote_convention_set.opening_quotation_mark_regex
 
-    def get_closing_quotation_mark_regex(self) -> regex.Pattern:
+    @property
+    def closing_quotation_mark_regex(self) -> regex.Pattern:
         return self._quote_convention_set.closing_quotation_mark_regex
 
     def are_marks_a_valid_pair(self, opening_mark: str, closing_mark: str) -> bool:
         return self._quote_convention_set.marks_are_a_valid_pair(opening_mark, closing_mark)
 
+    @property
     def should_rely_on_paragraph_markers(self):
         return True
 

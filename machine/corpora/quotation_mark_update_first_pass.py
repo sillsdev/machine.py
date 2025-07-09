@@ -1,14 +1,14 @@
 from typing import Dict, List, Set
 
-from .analysis.chapter import Chapter
-from .analysis.depth_based_quotation_mark_resolver import DepthBasedQuotationMarkResolver
-from .analysis.quotation_mark_finder import QuotationMarkFinder
-from .analysis.quotation_mark_resolution_issue import QuotationMarkResolutionIssue
-from .analysis.quotation_mark_resolver import QuotationMarkResolver
-from .analysis.quotation_mark_string_match import QuotationMarkStringMatch
-from .analysis.quote_convention import QuoteConvention
-from .analysis.quote_convention_set import QuoteConventionSet
-from .analysis.usfm_structure_extractor import UsfmStructureExtractor
+from .punctuation_analysis.chapter import Chapter
+from .punctuation_analysis.depth_based_quotation_mark_resolver import DepthBasedQuotationMarkResolver
+from .punctuation_analysis.quotation_mark_finder import QuotationMarkFinder
+from .punctuation_analysis.quotation_mark_resolution_issue import QuotationMarkResolutionIssue
+from .punctuation_analysis.quotation_mark_resolver import QuotationMarkResolver
+from .punctuation_analysis.quotation_mark_string_match import QuotationMarkStringMatch
+from .punctuation_analysis.quote_convention import QuoteConvention
+from .punctuation_analysis.quote_convention_set import QuoteConventionSet
+from .punctuation_analysis.usfm_structure_extractor import UsfmStructureExtractor
 from .quotation_mark_update_resolution_settings import QuotationMarkUpdateResolutionSettings
 from .quotation_mark_update_strategy import QuotationMarkUpdateStrategy
 
@@ -34,11 +34,11 @@ class QuotationMarkUpdateFirstPass(UsfmStructureExtractor):
         self, source_quote_convention: QuoteConvention, target_quote_convention: QuoteConvention
     ) -> bool:
         target_marks_by_source_marks: Dict[str, Set[str]] = {}
-        for level in range(1, source_quote_convention.get_num_levels() + 1):
+        for level in range(1, source_quote_convention.num_levels + 1):
             opening_quotation_mark = source_quote_convention.get_opening_quote_at_level(level)
             if opening_quotation_mark not in target_marks_by_source_marks:
                 target_marks_by_source_marks[opening_quotation_mark] = set()
-            if level <= target_quote_convention.get_num_levels():
+            if level <= target_quote_convention.num_levels:
                 target_marks_by_source_marks[opening_quotation_mark].add(
                     target_quote_convention.get_closing_quote_at_level(level)
                 )

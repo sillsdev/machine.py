@@ -1,6 +1,6 @@
 from typing import Union
 
-from machine.corpora.analysis import (
+from machine.corpora.punctuation_analysis import (
     QuotationMarkDirection,
     QuotationMarkMetadata,
     QuoteConvention,
@@ -46,7 +46,7 @@ def test_update_quotation_mark() -> None:
 
 def get_quote_convention_by_name(name: str) -> QuoteConvention:
     quote_convention: Union[QuoteConvention, None] = (
-        standard_quote_conventions.standard_quote_conventions.get_quote_convention_by_name(name)
+        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(name)
     )
     assert quote_convention is not None
     return quote_convention

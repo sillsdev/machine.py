@@ -1,4 +1,4 @@
-from machine.corpora.analysis import (
+from machine.corpora.punctuation_analysis import (
     ApostropheProportionStatistics,
     Chapter,
     PreliminaryApostropheAnalyzer,

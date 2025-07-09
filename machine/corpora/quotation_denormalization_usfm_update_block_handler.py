@@ -1,4 +1,4 @@
-from .analysis.quote_convention import QuoteConvention
+from .punctuation_analysis.quote_convention import QuoteConvention
 from .quotation_mark_update_settings import QuotationMarkUpdateSettings
 from .quote_convention_changing_usfm_update_block_handler import QuoteConventionChangingUsfmUpdateBlockHandler
 

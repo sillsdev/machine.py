@@ -14,7 +14,7 @@ from machine.corpora import (
     UsfmUpdateBlockElementType,
     parse_usfm,
 )
-from machine.corpora.analysis import (
+from machine.corpora.punctuation_analysis import (
     QuotationMarkDirection,
     QuotationMarkFinder,
     QuotationMarkMetadata,
@@ -641,12 +641,12 @@ def create_quote_convention_changing_usfm_update_block_handler(
     target_quote_convention_name: str,
     quotation_mark_update_settings: QuotationMarkUpdateSettings = QuotationMarkUpdateSettings(),
 ) -> QuoteConventionChangingUsfmUpdateBlockHandler:
-    source_quote_convention = standard_quote_conventions.standard_quote_conventions.get_quote_convention_by_name(
+    source_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
         source_quote_convention_name
     )
     assert source_quote_convention is not None
 
-    target_quote_convention = standard_quote_conventions.standard_quote_conventions.get_quote_convention_by_name(
+    target_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
         target_quote_convention_name
     )
     assert target_quote_convention is not None

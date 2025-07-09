@@ -101,7 +101,7 @@ class QuotationContinuerState:
 
 
 class QuotationMarkCategorizer:
-    apostrophe_pattern = regex.compile(r"[\'\u2019\u2018]", regex.U)
+    _APOSTROPHE_PATTERN = regex.compile(r"[\'\u2019\u2018]", regex.U)
 
     def __init__(
         self,
@@ -188,7 +188,7 @@ class QuotationMarkCategorizer:
         next_match: Union[QuotationMarkStringMatch, None],
     ) -> bool:
         if (
-            self._settings.should_rely_on_paragraph_markers()
+            self._settings.should_rely_on_paragraph_markers
             and not quote_match._text_segment.marker_is_in_preceding_context(UsfmMarkerType.PARAGRAPH)
         ):
             return False
@@ -228,7 +228,7 @@ class QuotationMarkCategorizer:
                 match.has_trailing_whitespace()
                 or match.has_trailing_punctuation()
                 or match.is_at_end_of_segment()
-                or match.next_character_matches(self._settings.get_closing_quotation_mark_regex())
+                or match.next_character_matches(self._settings.closing_quotation_mark_regex)
             ) and not match.has_leading_whitespace()
         return True
 
@@ -293,7 +293,7 @@ class QuotationMarkCategorizer:
         match: QuotationMarkStringMatch,
         next_match: Union[QuotationMarkStringMatch, None],
     ) -> bool:
-        if not match.quotation_mark_matches(self.apostrophe_pattern):
+        if not match.quotation_mark_matches(self._APOSTROPHE_PATTERN):
             return False
 
         # Latin letters on both sides of punctuation mark

@@ -1,5 +1,5 @@
 from machine.corpora import UsfmToken, UsfmTokenType
-from machine.corpora.analysis import TextSegment, UsfmMarkerType
+from machine.corpora.punctuation_analysis import TextSegment, UsfmMarkerType
 
 
 def test_builder_initialization() -> None:

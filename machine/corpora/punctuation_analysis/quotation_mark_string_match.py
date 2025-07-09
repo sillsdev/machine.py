@@ -13,11 +13,11 @@ from .usfm_marker_type import UsfmMarkerType
 class QuotationMarkStringMatch:
 
     # extra stuff in the regex to handle Western Cham
-    letter_pattern: Pattern = regex.compile(r"[\p{L}\U0001E200-\U0001E28F]", regex.U)
-    latin_letter_pattern: Pattern = regex.compile(r"^\p{script=Latin}$", regex.U)
-    whitespace_pattern: Pattern = regex.compile(r"[\s~]", regex.U)
-    punctuation_pattern: Pattern = regex.compile(r"[\.,;\?!\)\]\-—۔،؛]", regex.U)
-    quote_introducer_pattern: Pattern = regex.compile(r"[:,]\s*$", regex.U)
+    _LETTER_PATTERN: Pattern = regex.compile(r"[\p{L}\U0001E200-\U0001E28F]", regex.U)
+    _LATIN_LETTER_PATTERN: Pattern = regex.compile(r"^\p{script=Latin}$", regex.U)
+    _WHITESPACE_PATTERN: Pattern = regex.compile(r"[\s~]", regex.U)
+    _PUNCTUATION_PATTERN: Pattern = regex.compile(r"[\.,;\?!\)\]\-—۔،؛]", regex.U)
+    _QUOTE_INTRODUCER_PATTERN: Pattern = regex.compile(r"[:,]\s*$", regex.U)
 
     def __init__(self, text_segment: TextSegment, start_index: int, end_index: int):
         self._text_segment = text_segment
@@ -123,28 +123,28 @@ class QuotationMarkStringMatch:
                 or self._text_segment.marker_is_in_preceding_context(UsfmMarkerType.VERSE)
             )
 
-        return self.previous_character_matches(self.whitespace_pattern)
+        return self.previous_character_matches(self._WHITESPACE_PATTERN)
 
     def has_trailing_whitespace(self) -> bool:
-        return self.next_character_matches(self.whitespace_pattern)
+        return self.next_character_matches(self._WHITESPACE_PATTERN)
 
     def has_leading_punctuation(self) -> bool:
-        return self.previous_character_matches(self.punctuation_pattern)
+        return self.previous_character_matches(self._PUNCTUATION_PATTERN)
 
     def has_trailing_punctuation(self) -> bool:
-        return self.next_character_matches(self.punctuation_pattern)
+        return self.next_character_matches(self._PUNCTUATION_PATTERN)
 
     def has_letter_in_leading_substring(self) -> bool:
-        return self.leading_substring_matches(self.letter_pattern)
+        return self.leading_substring_matches(self._LETTER_PATTERN)
 
     def has_letter_in_trailing_substring(self) -> bool:
-        return self.trailing_substring_matches(self.letter_pattern)
+        return self.trailing_substring_matches(self._LETTER_PATTERN)
 
     def has_leading_latin_letter(self) -> bool:
-        return self.previous_character_matches(self.latin_letter_pattern)
+        return self.previous_character_matches(self._LATIN_LETTER_PATTERN)
 
     def has_trailing_latin_letter(self) -> bool:
-        return self.next_character_matches(self.latin_letter_pattern)
+        return self.next_character_matches(self._LATIN_LETTER_PATTERN)
 
     def has_quote_introducer_in_leading_substring(self) -> bool:
-        return self.leading_substring_matches(self.quote_introducer_pattern)
+        return self.leading_substring_matches(self._QUOTE_INTRODUCER_PATTERN)
