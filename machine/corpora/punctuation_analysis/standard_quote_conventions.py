@@ -1,7 +1,7 @@
 from .quote_convention import QuoteConvention, SingleLevelQuoteConvention
 from .quote_convention_set import QuoteConventionSet
 
-standard_quote_conventions: QuoteConventionSet = QuoteConventionSet(
+STANDARD_QUOTE_CONVENTIONS: QuoteConventionSet = QuoteConventionSet(
     [
         QuoteConvention(
             "standard_english",

@@ -1,4 +1,4 @@
-from machine.corpora.analysis import TextSegment, Verse
+from machine.corpora.punctuation_analysis import TextSegment, Verse
 
 
 def test_initialize_verse() -> None:

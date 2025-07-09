@@ -3,7 +3,7 @@ from typing import Dict, Set
 
 from .quotation_mark_direction import QuotationMarkDirection
 
-quote_normalization_map: Dict[str, str] = {
+_QUOTATION_MARK_NORMALIZATION_MAP: Dict[str, str] = {
     "\u00ab": '"',
     "\u00bb": '"',
     "\u2018": "'",
@@ -19,20 +19,20 @@ quote_normalization_map: Dict[str, str] = {
 }
 
 
-@dataclass
+@dataclass(frozen=True)
 class SingleLevelQuoteConvention:
     opening_quote: str
     closing_quote: str
 
     def normalize(self) -> "SingleLevelQuoteConvention":
         normalized_opening_quote = (
-            quote_normalization_map[self.opening_quote]
-            if self.opening_quote in quote_normalization_map
+            _QUOTATION_MARK_NORMALIZATION_MAP[self.opening_quote]
+            if self.opening_quote in _QUOTATION_MARK_NORMALIZATION_MAP
             else self.opening_quote
         )
         normalized_closing_quote = (
-            quote_normalization_map[self.closing_quote]
-            if self.closing_quote in quote_normalization_map
+            _QUOTATION_MARK_NORMALIZATION_MAP[self.closing_quote]
+            if self.closing_quote in _QUOTATION_MARK_NORMALIZATION_MAP
             else self.closing_quote
         )
         return SingleLevelQuoteConvention(normalized_opening_quote, normalized_closing_quote)
@@ -40,13 +40,13 @@ class SingleLevelQuoteConvention:
 
 class QuoteConvention:
     def __init__(self, name: str, levels: list[SingleLevelQuoteConvention]):
-        self.name = name
+        self._name = name
         self.levels = levels
 
     def __eq__(self, value):
         if not isinstance(value, QuoteConvention):
             return False
-        if self.name != value.name:
+        if self._name != value._name:
             return False
         if len(self.levels) != len(value.levels):
             return False
@@ -57,10 +57,12 @@ class QuoteConvention:
                 return False
         return True
 
-    def get_name(self) -> str:
-        return self.name
+    @property
+    def name(self) -> str:
+        return self._name
 
-    def get_num_levels(self) -> int:
+    @property
+    def num_levels(self) -> int:
         return len(self.levels)
 
     def get_opening_quote_at_level(self, level: int) -> str:
@@ -70,7 +72,7 @@ class QuoteConvention:
         return self.levels[level - 1].closing_quote
 
     def get_expected_quotation_mark(self, depth: int, direction: QuotationMarkDirection) -> str:
-        if depth > len(self.levels) or depth < 1:
+        if depth > self.num_levels or depth < 1:
             return ""
         return (
             self.get_opening_quote_at_level(depth)
@@ -117,13 +119,10 @@ class QuoteConvention:
         return True
 
     def normalize(self) -> "QuoteConvention":
-        return QuoteConvention(self.get_name() + "_normalized", [level.normalize() for level in self.levels])
+        return QuoteConvention(self.name + "_normalized", [level.normalize() for level in self.levels])
 
-    def print_summary(self) -> None:
-        print(self._get_summary_message())
-
-    def _get_summary_message(self) -> str:
-        summary = self.get_name() + "\n"
+    def __str__(self) -> str:
+        summary = self.name + "\n"
         for level, convention in enumerate(self.levels):
             ordinal_name = self._get_ordinal_name(level + 1)
             summary += "%s%s-level quote%s\n" % (

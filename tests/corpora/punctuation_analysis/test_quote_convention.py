@@ -1,5 +1,5 @@
-from machine.corpora.analysis import QuotationMarkDirection
-from machine.corpora.analysis.quote_convention import QuoteConvention, SingleLevelQuoteConvention
+from machine.corpora.punctuation_analysis import QuotationMarkDirection
+from machine.corpora.punctuation_analysis.quote_convention import QuoteConvention, SingleLevelQuoteConvention
 
 
 def test_single_level_quote_convention_normalize() -> None:
@@ -86,13 +86,13 @@ def test_single_level_quote_convention_normalize() -> None:
 
 def test_get_num_levels() -> None:
     empty_quote_convention = QuoteConvention("empty-quote-convention", [])
-    assert empty_quote_convention.get_num_levels() == 0
+    assert empty_quote_convention.num_levels == 0
 
     one_level_quote_convention = QuoteConvention(
         "one-level-quote-convention",
         [SingleLevelQuoteConvention("\u201c", "\u201d")],
     )
-    assert one_level_quote_convention.get_num_levels() == 1
+    assert one_level_quote_convention.num_levels == 1
 
     two_level_quote_convention = QuoteConvention(
         "two-level-quote-convention",
@@ -101,7 +101,7 @@ def test_get_num_levels() -> None:
             SingleLevelQuoteConvention("\u2018", "\u2019"),
         ],
     )
-    assert two_level_quote_convention.get_num_levels() == 2
+    assert two_level_quote_convention.num_levels == 2
 
     three_level_quote_convention = QuoteConvention(
         "three-level-quote-convention",
@@ -111,7 +111,7 @@ def test_get_num_levels() -> None:
             SingleLevelQuoteConvention("\u201D", "\u201D"),
         ],
     )
-    assert three_level_quote_convention.get_num_levels() == 3
+    assert three_level_quote_convention.num_levels == 3
 
 
 def test_get_opening_quote_at_level() -> None:
@@ -298,8 +298,8 @@ def test_is_compatible_with_observed_quotation_marks() -> None:
 def test_normalize() -> None:
     empty_quote_convention = QuoteConvention("empty-quote-convention", [])
     normalized_empty_quote_convention = empty_quote_convention.normalize()
-    assert normalized_empty_quote_convention.get_name() == "empty-quote-convention_normalized"
-    assert normalized_empty_quote_convention.get_num_levels() == 0
+    assert normalized_empty_quote_convention.name == "empty-quote-convention_normalized"
+    assert normalized_empty_quote_convention.num_levels == 0
 
     standard_english_quote_convention = QuoteConvention(
         "standard-english-quote-convention",
@@ -311,8 +311,8 @@ def test_normalize() -> None:
         ],
     )
     normalized_standard_english_quote_convention = standard_english_quote_convention.normalize()
-    assert normalized_standard_english_quote_convention.get_name() == "standard-english-quote-convention_normalized"
-    assert normalized_standard_english_quote_convention.get_num_levels() == 4
+    assert normalized_standard_english_quote_convention.name == "standard-english-quote-convention_normalized"
+    assert normalized_standard_english_quote_convention.num_levels == 4
     assert normalized_standard_english_quote_convention.get_opening_quote_at_level(1) == '"'
     assert normalized_standard_english_quote_convention.get_closing_quote_at_level(1) == '"'
     assert normalized_standard_english_quote_convention.get_opening_quote_at_level(2) == "'"
@@ -331,8 +331,8 @@ def test_normalize() -> None:
         ],
     )
     normalized_western_european_quote_convention = western_european_quote_convention.normalize()
-    assert normalized_western_european_quote_convention.get_name() == "test-quote-convention_normalized"
-    assert normalized_western_european_quote_convention.get_num_levels() == 3
+    assert normalized_western_european_quote_convention.name == "test-quote-convention_normalized"
+    assert normalized_western_european_quote_convention.num_levels == 3
     assert normalized_western_european_quote_convention.get_opening_quote_at_level(1) == '"'
     assert normalized_western_european_quote_convention.get_closing_quote_at_level(1) == '"'
     assert normalized_western_european_quote_convention.get_opening_quote_at_level(2) == '"'
@@ -353,10 +353,10 @@ def test_normalize() -> None:
         hybrid_british_typewriter_english_quote_convention.normalize()
     )
     assert (
-        normalized_hybrid_british_typewriter_english_quote_convention.get_name()
+        normalized_hybrid_british_typewriter_english_quote_convention.name
         == "hybrid-british-typewriter-english-quote-convention_normalized"
     )
-    assert normalized_hybrid_british_typewriter_english_quote_convention.get_num_levels() == 3
+    assert normalized_hybrid_british_typewriter_english_quote_convention.num_levels == 3
     assert normalized_hybrid_british_typewriter_english_quote_convention.get_opening_quote_at_level(1) == '"'
     assert normalized_hybrid_british_typewriter_english_quote_convention.get_closing_quote_at_level(1) == '"'
     assert normalized_hybrid_british_typewriter_english_quote_convention.get_opening_quote_at_level(2) == "'"
@@ -380,4 +380,4 @@ def test_print_summary() -> None:
         + "\u2018Second-level quote\u2019\n"
         + "\u201DThird-level quote\u201D\n"
     )
-    assert quote_convention._get_summary_message() == expected_summary_message
+    assert str(quote_convention) == expected_summary_message

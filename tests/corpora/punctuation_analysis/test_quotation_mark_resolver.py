@@ -1,6 +1,6 @@
 from typing import List
 
-from machine.corpora.analysis import (
+from machine.corpora.punctuation_analysis import (
     DepthBasedQuotationMarkResolver,
     QuotationMarkResolver,
     QuotationMarkStringMatch,
@@ -13,7 +13,7 @@ from machine.corpora.analysis import (
 
 def test_reset() -> None:
     quotation_mark_resolver: QuotationMarkResolver = DepthBasedQuotationMarkResolver(
-        QuoteConventionDetectionResolutionSettings(standard_quote_conventions.standard_quote_conventions)
+        QuoteConventionDetectionResolutionSettings(standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS)
     )
 
     assert quotation_mark_resolver._quotation_mark_resolver_state._quotation_stack == []

@@ -193,7 +193,7 @@ class QuotationMarkGrouper:
 
 
 class PreliminaryApostropheAnalyzer:
-    apostrophe_pattern = regex.compile(r"[\'\u2019]", regex.U)
+    _APOSTROPHE_PATTERN = regex.compile(r"[\'\u2019]", regex.U)
 
     def __init__(self):
         self._apostrophe_proportion_statistics = ApostropheProportionStatistics()
@@ -213,7 +213,7 @@ class PreliminaryApostropheAnalyzer:
             self._process_quotation_mark(quotation_mark_match)
 
     def _process_quotation_mark(self, quotation_mark_match: QuotationMarkStringMatch) -> None:
-        if quotation_mark_match.quotation_mark_matches(self.apostrophe_pattern):
+        if quotation_mark_match.quotation_mark_matches(self._APOSTROPHE_PATTERN):
             self._count_apostrophe(quotation_mark_match)
 
     def _count_apostrophe(self, apostrophe_match: QuotationMarkStringMatch) -> None:
@@ -248,7 +248,7 @@ class PreliminaryApostropheAnalyzer:
         return True
 
     def is_apostrophe_only(self, mark: str) -> bool:
-        if not self.apostrophe_pattern.search(mark):
+        if not self._APOSTROPHE_PATTERN.search(mark):
             return False
 
         if self._word_position_statistics.is_mark_rarely_initial(

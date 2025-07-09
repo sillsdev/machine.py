@@ -1,14 +1,14 @@
 from typing import List, Union
 
-from .analysis.depth_based_quotation_mark_resolver import DepthBasedQuotationMarkResolver
-from .analysis.quotation_mark_finder import QuotationMarkFinder
-from .analysis.quotation_mark_resolver import QuotationMarkResolver
-from .analysis.quotation_mark_string_match import QuotationMarkStringMatch
-from .analysis.quote_convention import QuoteConvention
-from .analysis.quote_convention_set import QuoteConventionSet
-from .analysis.text_segment import TextSegment
-from .analysis.usfm_marker_type import UsfmMarkerType
 from .fallback_quotation_mark_resolver import FallbackQuotationMarkResolver
+from .punctuation_analysis.depth_based_quotation_mark_resolver import DepthBasedQuotationMarkResolver
+from .punctuation_analysis.quotation_mark_finder import QuotationMarkFinder
+from .punctuation_analysis.quotation_mark_resolver import QuotationMarkResolver
+from .punctuation_analysis.quotation_mark_string_match import QuotationMarkStringMatch
+from .punctuation_analysis.quote_convention import QuoteConvention
+from .punctuation_analysis.quote_convention_set import QuoteConventionSet
+from .punctuation_analysis.text_segment import TextSegment
+from .punctuation_analysis.usfm_marker_type import UsfmMarkerType
 from .quotation_mark_update_resolution_settings import QuotationMarkUpdateResolutionSettings
 from .quotation_mark_update_settings import QuotationMarkUpdateSettings
 from .quotation_mark_update_strategy import QuotationMarkUpdateStrategy

@@ -26,7 +26,7 @@ class QuoteConventionSet:
 
         if len(self._conventions) > 0:
             for convention in self._conventions:
-                for level in range(1, convention.get_num_levels() + 1):
+                for level in range(1, convention.num_levels + 1):
                     opening_quote = convention.get_opening_quote_at_level(level)
                     closing_quote = convention.get_closing_quote_at_level(level)
                     opening_quotation_marks.add(opening_quote)
@@ -56,7 +56,7 @@ class QuoteConventionSet:
         self.closing_marks_by_opening_mark: Dict[str, set[str]] = dict()
         self.opening_marks_by_closing_mark: Dict[str, set[str]] = dict()
         for convention in self._conventions:
-            for level in range(1, convention.get_num_levels() + 1):
+            for level in range(1, convention.num_levels + 1):
                 opening_quote = convention.get_opening_quote_at_level(level)
                 closing_quote = convention.get_closing_quote_at_level(level)
                 if opening_quote not in self.closing_marks_by_opening_mark:
@@ -80,12 +80,12 @@ class QuoteConventionSet:
 
     def get_quote_convention_by_name(self, name: str) -> Union[QuoteConvention, None]:
         for convention in self._conventions:
-            if convention.get_name() == name:
+            if convention.name == name:
                 return convention
         return None
 
     def get_all_quote_convention_names(self) -> List[str]:
-        return sorted([qc.name for qc in self._conventions])
+        return sorted([qc._name for qc in self._conventions])
 
     def get_possible_opening_marks(self) -> list[str]:
         return sorted(list(self.closing_marks_by_opening_mark.keys()))
@@ -157,7 +157,3 @@ class QuoteConventionSet:
                 best_quote_convention = quote_convention
 
         return (best_quote_convention, best_similarity)
-
-    def print_summary(self) -> None:
-        print("Opening quotation marks must be one of the following: ", self.get_possible_opening_marks())
-        print("Closing quotation marks must be one of the following: ", self.get_possible_closing_marks())

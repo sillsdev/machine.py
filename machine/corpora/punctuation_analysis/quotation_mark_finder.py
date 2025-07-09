@@ -10,7 +10,7 @@ from .verse import Verse
 
 
 class QuotationMarkFinder:
-    quote_pattern = regex.compile(r"(\p{Quotation_Mark}|<<|>>|<|>)", regex.U)
+    _QUOTE_PATTERN = regex.compile(r"(\p{Quotation_Mark}|<<|>>|<|>)", regex.U)
 
     def __init__(self, quote_convention_set: QuoteConventionSet):
         self._quote_convention_set = quote_convention_set
@@ -36,7 +36,7 @@ class QuotationMarkFinder:
         self, text_segment: TextSegment
     ) -> List[QuotationMarkStringMatch]:
         quotation_matches: List[QuotationMarkStringMatch] = []
-        for quote_match in self.quote_pattern.finditer(text_segment.text):
+        for quote_match in self._QUOTE_PATTERN.finditer(text_segment.text):
             if self._quote_convention_set.is_valid_opening_quotation_mark(
                 quote_match.group()
             ) or self._quote_convention_set.is_valid_closing_quotation_mark(quote_match.group()):
