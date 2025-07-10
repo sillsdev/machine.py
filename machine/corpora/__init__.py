@@ -25,8 +25,8 @@ from .paratext_project_terms_parser_base import ParatextProjectTermsParserBase
 from .paratext_project_text_updater_base import ParatextProjectTextUpdaterBase
 from .paratext_text_corpus import ParatextTextCorpus
 from .place_markers_usfm_update_block_handler import PlaceMarkersAlignmentInfo, PlaceMarkersUsfmUpdateBlockHandler
-from .quotation_denormalization_first_pass import QuotationDenormalizationFirstPass
-from .quotation_denormalization_usfm_update_block_handler import QuotationDenormalizationUsfmUpdateBlockHandler
+from .quotation_mark_denormalization_first_pass import QuotationMarkDenormalizationFirstPass
+from .quotation_mark_denormalization_usfm_update_block_handler import QuotationMarkDenormalizationUsfmUpdateBlockHandler
 from .quotation_mark_update_first_pass import QuotationMarkUpdateFirstPass
 from .quotation_mark_update_resolution_settings import QuotationMarkUpdateResolutionSettings
 from .quotation_mark_update_settings import QuotationMarkUpdateSettings
@@ -129,8 +129,8 @@ __all__ = [
     "QuotationMarkUpdateResolutionSettings",
     "QuotationMarkUpdateStrategy",
     "QuotationMarkUpdateFirstPass",
-    "QuotationDenormalizationFirstPass",
-    "QuotationDenormalizationUsfmUpdateBlockHandler",
+    "QuotationMarkDenormalizationFirstPass",
+    "QuotationMarkDenormalizationUsfmUpdateBlockHandler",
     "QuotationMarkUpdateSettings",
     "RtlReferenceOrder",
     "ScriptureElement",

@@ -20,31 +20,31 @@ class FallbackQuotationMarkResolver(QuotationMarkResolver):
         self._issues = set()
 
     def resolve_quotation_marks(
-        self, quote_matches: list[QuotationMarkStringMatch]
+        self, quotation_mark_matches: list[QuotationMarkStringMatch]
     ) -> Generator[QuotationMarkMetadata, None, None]:
-        for quote_match in quote_matches:
-            yield from self._resolve_quotation_mark(quote_match)
+        for quotation_mark_match in quotation_mark_matches:
+            yield from self._resolve_quotation_mark(quotation_mark_match)
 
     def _resolve_quotation_mark(
         self,
-        quote_match: QuotationMarkStringMatch,
+        quotation_mark_match: QuotationMarkStringMatch,
     ) -> Generator[QuotationMarkMetadata, None, None]:
-        if self._is_opening_quote(quote_match):
-            quote: Union[QuotationMarkMetadata, None] = self._resolve_opening_mark(quote_match)
-            if quote is not None:
-                yield quote
+        if self._is_opening_quotation_mark(quotation_mark_match):
+            quotation_mark: Union[QuotationMarkMetadata, None] = self._resolve_opening_mark(quotation_mark_match)
+            if quotation_mark is not None:
+                yield quotation_mark
             else:
                 self._issues.add(QuotationMarkResolutionIssue.UNEXPECTED_QUOTATION_MARK)
-        elif self._is_closing_quote(quote_match):
-            quote: Union[QuotationMarkMetadata, None] = self._resolve_closing_mark(quote_match)
-            if quote is not None:
-                yield quote
+        elif self._is_closing_quotation_mark(quotation_mark_match):
+            quotation_mark: Union[QuotationMarkMetadata, None] = self._resolve_closing_mark(quotation_mark_match)
+            if quotation_mark is not None:
+                yield quotation_mark
             else:
                 self._issues.add(QuotationMarkResolutionIssue.UNEXPECTED_QUOTATION_MARK)
         else:
             self._issues.add(QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK)
 
-    def _is_opening_quote(
+    def _is_opening_quotation_mark(
         self,
         match: QuotationMarkStringMatch,
     ) -> bool:
@@ -78,7 +78,7 @@ class FallbackQuotationMarkResolver(QuotationMarkResolver):
             and self._last_quotation_mark.end_index == match.start_index
         )
 
-    def _is_closing_quote(
+    def _is_closing_quotation_mark(
         self,
         match: QuotationMarkStringMatch,
     ) -> bool:
@@ -94,27 +94,31 @@ class FallbackQuotationMarkResolver(QuotationMarkResolver):
 
         return False
 
-    def _resolve_opening_mark(self, quote_match: QuotationMarkStringMatch) -> Union[QuotationMarkMetadata, None]:
+    def _resolve_opening_mark(
+        self, quotation_mark_match: QuotationMarkStringMatch
+    ) -> Union[QuotationMarkMetadata, None]:
         possible_depths: Set[int] = self._settings.get_possible_depths(
-            quote_match.quotation_mark, QuotationMarkDirection.OPENING
+            quotation_mark_match.quotation_mark, QuotationMarkDirection.OPENING
         )
         if len(possible_depths) == 0:
             return None
 
-        quote = quote_match.resolve(min(possible_depths), QuotationMarkDirection.OPENING)
-        self._last_quotation_mark = quote
-        return quote
+        quotation_mark = quotation_mark_match.resolve(min(possible_depths), QuotationMarkDirection.OPENING)
+        self._last_quotation_mark = quotation_mark
+        return quotation_mark
 
-    def _resolve_closing_mark(self, quote_match: QuotationMarkStringMatch) -> Union[QuotationMarkMetadata, None]:
+    def _resolve_closing_mark(
+        self, quotation_mark_match: QuotationMarkStringMatch
+    ) -> Union[QuotationMarkMetadata, None]:
         possible_depths: Set[int] = self._settings.get_possible_depths(
-            quote_match.quotation_mark, QuotationMarkDirection.CLOSING
+            quotation_mark_match.quotation_mark, QuotationMarkDirection.CLOSING
         )
         if len(possible_depths) == 0:
             return None
 
-        quote = quote_match.resolve(min(possible_depths), QuotationMarkDirection.CLOSING)
-        self._last_quotation_mark = quote
-        return quote
+        quotation_mark = quotation_mark_match.resolve(min(possible_depths), QuotationMarkDirection.CLOSING)
+        self._last_quotation_mark = quotation_mark
+        return quotation_mark
 
     def get_issues(self) -> Set[QuotationMarkResolutionIssue]:
         return self._issues

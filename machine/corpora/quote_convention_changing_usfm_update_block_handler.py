@@ -120,9 +120,9 @@ class QuoteConventionChangingUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
     def _set_previous_and_next_for_segments(self, text_segments: List[TextSegment]) -> List[TextSegment]:
         for i in range(len(text_segments)):
             if i > 0:
-                text_segments[i].set_previous_segment(text_segments[i - 1])
+                text_segments[i].previous_segment = text_segments[i - 1]
             if i < len(text_segments) - 1:
-                text_segments[i].set_next_segment(text_segments[i + 1])
+                text_segments[i].next_segment = text_segments[i + 1]
         return text_segments
 
     def _check_for_chapter_change(self, block: UsfmUpdateBlock) -> None:

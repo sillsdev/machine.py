@@ -11,9 +11,6 @@ from .verse import Verse
 
 class UsfmStructureExtractor(UsfmParserHandler):
     def __init__(self):
-        self._reset()
-
-    def _reset(self):
         self._text_segments: list[TextSegment] = []
         self._next_text_segment_builder: TextSegment.Builder = TextSegment.Builder()
 
@@ -74,11 +71,11 @@ class UsfmStructureExtractor(UsfmParserHandler):
             self._next_text_segment_builder.set_text(text)
             text_segment: TextSegment = self._next_text_segment_builder.build()
             # don't look past verse boundaries, to enable identical functionality in the
-            # online one-verse-at-a-time (QuotationDenormalizationScriptureUpdateBlockHandler)
+            # online one-verse-at-a-time (QuotationMarkDenormalizationScriptureUpdateBlockHandler)
             # and offline whole-book-at-once settings (QuoteConventionDetector)
             if len(self._text_segments) > 0 and not text_segment.marker_is_in_preceding_context(UsfmMarkerType.VERSE):
-                self._text_segments[-1].set_next_segment(text_segment)
-                text_segment.set_previous_segment(self._text_segments[-1])
+                self._text_segments[-1].next_segment = text_segment
+                text_segment.previous_segment = self._text_segments[-1]
             self._text_segments.append(text_segment)
         self._next_text_segment_builder = TextSegment.Builder()
 

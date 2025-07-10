@@ -2,7 +2,7 @@ from machine.corpora.punctuation_analysis import (
     ApostropheProportionStatistics,
     Chapter,
     PreliminaryApostropheAnalyzer,
-    PreliminaryQuotationAnalyzer,
+    PreliminaryQuotationMarkAnalyzer,
     QuotationMarkGrouper,
     QuotationMarkSequences,
     QuotationMarkStringMatch,
@@ -181,25 +181,25 @@ def test_is_mark_much_more_common_earlier() -> None:
     quotation_mark_sequences = QuotationMarkSequences()
     assert not quotation_mark_sequences.is_mark_much_more_common_earlier('"')
 
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
     assert quotation_mark_sequences.is_mark_much_more_common_earlier('"')
 
-    quotation_mark_sequences.record_later_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
     assert not quotation_mark_sequences.is_mark_much_more_common_earlier('"')
 
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
     assert quotation_mark_sequences.is_mark_much_more_common_earlier('"')
 
-    quotation_mark_sequences.record_later_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
     assert not quotation_mark_sequences.is_mark_much_more_common_earlier('"')
 
 
@@ -207,53 +207,54 @@ def test_is_mark_much_more_common_later() -> None:
     quotation_mark_sequences = QuotationMarkSequences()
     assert not quotation_mark_sequences.is_mark_much_more_common_later('"')
 
-    quotation_mark_sequences.record_later_quotation_mark('"')
-    quotation_mark_sequences.record_later_quotation_mark('"')
-    quotation_mark_sequences.record_later_quotation_mark('"')
-    quotation_mark_sequences.record_later_quotation_mark('"')
-    quotation_mark_sequences.record_later_quotation_mark('"')
-    quotation_mark_sequences.record_later_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
     assert quotation_mark_sequences.is_mark_much_more_common_later('"')
 
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
     assert not quotation_mark_sequences.is_mark_much_more_common_later('"')
 
-    quotation_mark_sequences.record_later_quotation_mark('"')
-    quotation_mark_sequences.record_later_quotation_mark('"')
-    quotation_mark_sequences.record_later_quotation_mark('"')
-    quotation_mark_sequences.record_later_quotation_mark('"')
-    quotation_mark_sequences.record_later_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
     assert quotation_mark_sequences.is_mark_much_more_common_later('"')
 
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
     assert not quotation_mark_sequences.is_mark_much_more_common_later('"')
 
 
 def test_is_mark_common_early_and_late() -> None:
     quotation_mark_sequences = QuotationMarkSequences()
-    assert not quotation_mark_sequences.is_mark_common_early_and_late('"')
+    assert not quotation_mark_sequences.are_early_and_late_mark_rates_similar('"')
 
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
-    quotation_mark_sequences.record_later_quotation_mark('"')
-    assert quotation_mark_sequences.is_mark_common_early_and_late('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
+    assert quotation_mark_sequences.are_early_and_late_mark_rates_similar('"')
 
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
-    quotation_mark_sequences.record_later_quotation_mark('"')
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
-    quotation_mark_sequences.record_later_quotation_mark('"')
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
-    quotation_mark_sequences.record_later_quotation_mark('"')
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
-    quotation_mark_sequences.record_later_quotation_mark('"')
-    quotation_mark_sequences.record_earlier_quotation_mark('"')
-    quotation_mark_sequences.record_later_quotation_mark('"')
-    assert quotation_mark_sequences.is_mark_common_early_and_late('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
+    quotation_mark_sequences.count_earlier_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
+    assert quotation_mark_sequences.are_early_and_late_mark_rates_similar('"')
 
-    quotation_mark_sequences.record_later_quotation_mark('"')
-    assert quotation_mark_sequences.is_mark_common_early_and_late('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
+    assert quotation_mark_sequences.are_early_and_late_mark_rates_similar('"')
 
-    quotation_mark_sequences.record_later_quotation_mark('"')
-    assert not quotation_mark_sequences.is_mark_common_early_and_late('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
+    quotation_mark_sequences.count_later_quotation_mark('"')
+    assert not quotation_mark_sequences.are_early_and_late_mark_rates_similar('"')
 
 
 # QuotationMarkGrouper tests
@@ -740,7 +741,7 @@ def test_that_a_frequently_occurring_character_is_an_apostrophe() -> None:
     assert positive_preliminary_apostrophe_analyzer.is_apostrophe_only("'")
 
 
-# PreliminaryQuotationAnalyzer tests
+# PreliminaryQuotationMarkAnalyzer tests
 def test_that_quotation_mark_sequence_is_used_to_determine_opening_and_closing_quotes() -> None:
     standard_english_quote_convention = QuoteConvention(
         "standard_english",
@@ -788,7 +789,7 @@ def test_that_quotation_mark_sequence_is_used_to_determine_opening_and_closing_q
         ],
     )
 
-    preliminary_quotation_analyzer = PreliminaryQuotationAnalyzer(
+    preliminary_quotation_analyzer = PreliminaryQuotationMarkAnalyzer(
         QuoteConventionSet(
             [
                 standard_english_quote_convention,
@@ -961,7 +962,7 @@ def test_that_apostrophes_not_considered_as_quotation_marks() -> None:
         ],
     )
 
-    preliminary_quotation_analyzer = PreliminaryQuotationAnalyzer(
+    preliminary_quotation_analyzer = PreliminaryQuotationMarkAnalyzer(
         QuoteConventionSet(
             [
                 standard_english_quote_convention,

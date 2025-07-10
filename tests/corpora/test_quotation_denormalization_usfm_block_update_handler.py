@@ -1,7 +1,7 @@
 from typing import Union
 
 from machine.corpora import (
-    QuotationDenormalizationUsfmUpdateBlockHandler,
+    QuotationMarkDenormalizationUsfmUpdateBlockHandler,
     QuotationMarkUpdateSettings,
     QuotationMarkUpdateStrategy,
     UpdateUsfmParserHandler,
@@ -379,7 +379,7 @@ def denormalize_quotation_marks(
     target_quote_convention_name: str,
     quotation_denormalization_settings: QuotationMarkUpdateSettings = QuotationMarkUpdateSettings(),
 ) -> str:
-    quotation_denormalizer: QuotationDenormalizationUsfmUpdateBlockHandler = (
+    quotation_denormalizer: QuotationMarkDenormalizationUsfmUpdateBlockHandler = (
         create_quotation_denormalization_usfm_update_block_handler(
             source_quote_convention_name, target_quote_convention_name, quotation_denormalization_settings
         )
@@ -395,11 +395,11 @@ def create_quotation_denormalization_usfm_update_block_handler(
     source_quote_convention_name: str,
     target_quote_convention_name: str,
     quotation_denormalization_settings: QuotationMarkUpdateSettings = QuotationMarkUpdateSettings(),
-) -> QuotationDenormalizationUsfmUpdateBlockHandler:
+) -> QuotationMarkDenormalizationUsfmUpdateBlockHandler:
     source_quote_convention = get_quote_convention_by_name(source_quote_convention_name)
     target_quote_convention = get_quote_convention_by_name(target_quote_convention_name)
 
-    return QuotationDenormalizationUsfmUpdateBlockHandler(
+    return QuotationMarkDenormalizationUsfmUpdateBlockHandler(
         source_quote_convention,
         target_quote_convention,
         quotation_denormalization_settings,

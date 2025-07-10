@@ -70,7 +70,7 @@ def test_builder_set_usfm_token() -> None:
 def test_set_previous_segment() -> None:
     text_segment = TextSegment.Builder().set_text("example text").build()
     previous_segment = TextSegment.Builder().set_text("previous segment text").build()
-    text_segment.set_previous_segment(previous_segment)
+    text_segment.previous_segment = previous_segment
 
     assert text_segment._previous_segment == previous_segment
     assert text_segment._next_segment is None
@@ -83,7 +83,7 @@ def test_set_previous_segment() -> None:
 def test_set_next_segment() -> None:
     text_segment = TextSegment.Builder().set_text("example text").build()
     next_segment = TextSegment.Builder().set_text("next segment text").build()
-    text_segment.set_next_segment(next_segment)
+    text_segment.next_segment = next_segment
 
     assert text_segment._previous_segment is None
     assert text_segment._next_segment == next_segment
@@ -187,10 +187,10 @@ def test_equals() -> None:
     assert segment_with_preceding_marker != basic_segment
 
     segment_with_previous_segment = TextSegment.Builder().set_text("text1").build()
-    segment_with_previous_segment.set_previous_segment(segment_with_num_verses)
+    segment_with_previous_segment.previous_segment = segment_with_num_verses
 
     segment_with_next_segment = TextSegment.Builder().set_text("text1").build()
-    segment_with_next_segment.set_next_segment(segment_with_num_verses)
+    segment_with_next_segment.next_segment = segment_with_num_verses
 
     assert basic_segment == segment_with_previous_segment
     assert basic_segment == segment_with_next_segment

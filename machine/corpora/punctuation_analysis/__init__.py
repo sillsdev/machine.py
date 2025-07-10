@@ -1,15 +1,15 @@
 from .chapter import Chapter
 from .depth_based_quotation_mark_resolver import (
     DepthBasedQuotationMarkResolver,
-    QuotationContinuerState,
-    QuotationContinuerStyle,
     QuotationMarkCategorizer,
     QuotationMarkResolverState,
+    QuoteContinuerState,
+    QuoteContinuerStyle,
 )
-from .preliminary_quotation_analyzer import (
+from .preliminary_quotation_mark_analyzer import (
     ApostropheProportionStatistics,
     PreliminaryApostropheAnalyzer,
-    PreliminaryQuotationAnalyzer,
+    PreliminaryQuotationMarkAnalyzer,
     QuotationMarkGrouper,
     QuotationMarkSequences,
     QuotationMarkWordPositions,
@@ -36,10 +36,10 @@ __all__ = [
     "Chapter",
     "DepthBasedQuotationMarkResolver",
     "PreliminaryApostropheAnalyzer",
-    "PreliminaryQuotationAnalyzer",
+    "PreliminaryQuotationMarkAnalyzer",
     "SingleLevelQuoteConvention",
-    "QuotationContinuerState",
-    "QuotationContinuerStyle",
+    "QuoteContinuerState",
+    "QuoteContinuerStyle",
     "QuotationMarkCategorizer",
     "QuotationMarkCounts",
     "QuotationMarkDirection",

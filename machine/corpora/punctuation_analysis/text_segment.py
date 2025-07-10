@@ -67,10 +67,12 @@ class TextSegment:
             self._usfm_token.text = self._text
 
     # These setters need to be implemented outside the builder to avoid circular dependencies
-    def set_previous_segment(self, previous_segment: "TextSegment") -> None:
+    @previous_segment.setter
+    def previous_segment(self, previous_segment: "TextSegment") -> None:
         self._previous_segment = previous_segment
 
-    def set_next_segment(self, next_segment: "TextSegment") -> None:
+    @next_segment.setter
+    def next_segment(self, next_segment: "TextSegment") -> None:
         self._next_segment = next_segment
 
     def set_index_in_verse(self, index_in_verse: int) -> None:

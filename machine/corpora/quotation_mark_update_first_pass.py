@@ -35,12 +35,12 @@ class QuotationMarkUpdateFirstPass(UsfmStructureExtractor):
     ) -> bool:
         target_marks_by_source_marks: Dict[str, Set[str]] = {}
         for level in range(1, source_quote_convention.num_levels + 1):
-            opening_quotation_mark = source_quote_convention.get_opening_quote_at_level(level)
+            opening_quotation_mark = source_quote_convention.get_opening_quotation_mark_at_level(level)
             if opening_quotation_mark not in target_marks_by_source_marks:
                 target_marks_by_source_marks[opening_quotation_mark] = set()
             if level <= target_quote_convention.num_levels:
                 target_marks_by_source_marks[opening_quotation_mark].add(
-                    target_quote_convention.get_closing_quote_at_level(level)
+                    target_quote_convention.get_closing_quotation_mark_at_level(level)
                 )
 
         for source_mark in target_marks_by_source_marks:

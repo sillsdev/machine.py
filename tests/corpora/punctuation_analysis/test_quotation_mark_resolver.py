@@ -17,16 +17,16 @@ def test_reset() -> None:
     )
 
     assert quotation_mark_resolver._quotation_mark_resolver_state._quotation_stack == []
-    assert quotation_mark_resolver._quotation_continuer_state._quotation_continuer_stack == []
-    assert quotation_mark_resolver._quotation_mark_resolver_state._current_depth == 0
-    assert quotation_mark_resolver._quotation_continuer_state._current_depth == 0
+    assert quotation_mark_resolver._quote_continuer_state._quote_continuer_mark_stack == []
+    assert quotation_mark_resolver._quotation_mark_resolver_state.current_depth == 0
+    assert quotation_mark_resolver._quote_continuer_state.current_depth == 0
 
     quotation_mark_resolver.reset()
 
     assert quotation_mark_resolver._quotation_mark_resolver_state._quotation_stack == []
-    assert quotation_mark_resolver._quotation_continuer_state._quotation_continuer_stack == []
-    assert quotation_mark_resolver._quotation_mark_resolver_state._current_depth == 0
-    assert quotation_mark_resolver._quotation_continuer_state._current_depth == 0
+    assert quotation_mark_resolver._quote_continuer_state._quote_continuer_mark_stack == []
+    assert quotation_mark_resolver._quotation_mark_resolver_state.current_depth == 0
+    assert quotation_mark_resolver._quote_continuer_state.current_depth == 0
 
     quotation_mark_string_matches: List[QuotationMarkStringMatch] = [
         QuotationMarkStringMatch(TextSegment.Builder().set_text("Opening “quote").build(), 8, 9),
@@ -40,11 +40,11 @@ def test_reset() -> None:
 
     list(quotation_mark_resolver.resolve_quotation_marks(quotation_mark_string_matches))
     assert len(quotation_mark_resolver._quotation_mark_resolver_state._quotation_stack) > 0
-    assert quotation_mark_resolver._quotation_mark_resolver_state._current_depth > 0
+    assert quotation_mark_resolver._quotation_mark_resolver_state.current_depth > 0
 
     quotation_mark_resolver.reset()
 
     assert quotation_mark_resolver._quotation_mark_resolver_state._quotation_stack == []
-    assert quotation_mark_resolver._quotation_continuer_state._quotation_continuer_stack == []
-    assert quotation_mark_resolver._quotation_mark_resolver_state._current_depth == 0
-    assert quotation_mark_resolver._quotation_continuer_state._current_depth == 0
+    assert quotation_mark_resolver._quote_continuer_state._quote_continuer_mark_stack == []
+    assert quotation_mark_resolver._quotation_mark_resolver_state.current_depth == 0
+    assert quotation_mark_resolver._quote_continuer_state.current_depth == 0
