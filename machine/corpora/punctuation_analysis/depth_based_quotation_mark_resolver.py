@@ -116,7 +116,7 @@ class QuotationMarkCategorizer:
     ) -> bool:
         if self._quote_continuer_state.continuer_style == QuoteContinuerStyle.SPANISH:
             return False
-        if not self._meets_quote_continuer_prerequisites(quotation_mark_match, previous_match, next_match):
+        if not self._meets_quote_continuer_prerequisites(quotation_mark_match):
             return False
 
         if (
@@ -146,7 +146,7 @@ class QuotationMarkCategorizer:
     ) -> bool:
         if self._quote_continuer_state.continuer_style == QuoteContinuerStyle.ENGLISH:
             return False
-        if not self._meets_quote_continuer_prerequisites(quotation_mark_match, previous_match, next_match):
+        if not self._meets_quote_continuer_prerequisites(quotation_mark_match):
             return False
 
         if not self._settings.are_marks_a_valid_pair(
@@ -175,8 +175,6 @@ class QuotationMarkCategorizer:
     def _meets_quote_continuer_prerequisites(
         self,
         quotation_mark_match: QuotationMarkStringMatch,
-        previous_match: Union[QuotationMarkStringMatch, None],
-        next_match: Union[QuotationMarkStringMatch, None],
     ) -> bool:
         if (
             self._settings.should_rely_on_paragraph_markers
