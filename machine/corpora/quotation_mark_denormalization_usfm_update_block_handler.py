@@ -4,7 +4,7 @@ from .quote_convention_changing_usfm_update_block_handler import QuoteConvention
 
 
 # This is a convenience class so that users don't have to know to normalize the source quote convention
-class QuotationDenormalizationUsfmUpdateBlockHandler(QuoteConventionChangingUsfmUpdateBlockHandler):
+class QuotationMarkDenormalizationUsfmUpdateBlockHandler(QuoteConventionChangingUsfmUpdateBlockHandler):
 
     def __init__(
         self,

@@ -3,7 +3,7 @@ from typing import List, Union
 
 from .chapter import Chapter
 from .depth_based_quotation_mark_resolver import DepthBasedQuotationMarkResolver
-from .preliminary_quotation_analyzer import PreliminaryQuotationAnalyzer
+from .preliminary_quotation_mark_analyzer import PreliminaryQuotationMarkAnalyzer
 from .quotation_mark_finder import QuotationMarkFinder
 from .quotation_mark_metadata import QuotationMarkMetadata
 from .quotation_mark_string_match import QuotationMarkStringMatch
@@ -28,7 +28,7 @@ class QuoteConventionDetector(UsfmStructureExtractor):
         self._quotation_mark_tabulator = QuotationMarkTabulator()
 
     def _count_quotation_marks_in_chapters(self, chapters: list[Chapter]) -> None:
-        possible_quote_conventions: QuoteConventionSet = PreliminaryQuotationAnalyzer(
+        possible_quote_conventions: QuoteConventionSet = PreliminaryQuotationMarkAnalyzer(
             STANDARD_QUOTE_CONVENTIONS
         ).narrow_down_possible_quote_conventions(chapters)
 
@@ -50,7 +50,7 @@ class QuoteConventionDetector(UsfmStructureExtractor):
 
         self._quotation_mark_tabulator.tabulate(resolved_quotation_marks)
 
-    def detect_quotation_convention(self, print_summary: bool) -> Union[QuoteConventionAnalysis, None]:
+    def detect_quote_convention(self, print_summary: bool) -> Union[QuoteConventionAnalysis, None]:
         self._count_quotation_marks_in_chapters(self.get_chapters())
 
         (best_quote_convention, score) = STANDARD_QUOTE_CONVENTIONS.find_most_similar_convention(

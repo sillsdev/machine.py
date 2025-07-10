@@ -1,3 +1,4 @@
+from collections import defaultdict
 from re import Pattern
 from typing import Dict, List, Set, Tuple, Union
 
@@ -11,7 +12,7 @@ from .quote_convention import QuoteConvention
 class QuoteConventionSet:
     def __init__(self, conventions: List[QuoteConvention]):
         self._conventions = conventions
-        self._create_quote_regexes()
+        self._create_quotation_mark_regexes()
         self._create_quotation_mark_pair_map()
 
     def __eq__(self, other: object) -> bool:
@@ -19,52 +20,43 @@ class QuoteConventionSet:
             return False
         return self._conventions == other._conventions
 
-    def _create_quote_regexes(self) -> None:
+    def _create_quotation_mark_regexes(self) -> None:
+        self._opening_quotation_mark_regex = regex.compile(r"")
+        self._closing_quotation_mark_regex = regex.compile(r"")
+        self._all_quotation_mark_regex = regex.compile(r"")
+
         opening_quotation_marks: Set[str] = set()
         closing_quotation_marks: Set[str] = set()
-        all_quotation_marks: Set[str] = set()
 
-        if len(self._conventions) > 0:
-            for convention in self._conventions:
-                for level in range(1, convention.num_levels + 1):
-                    opening_quote = convention.get_opening_quote_at_level(level)
-                    closing_quote = convention.get_closing_quote_at_level(level)
-                    opening_quotation_marks.add(opening_quote)
-                    closing_quotation_marks.add(closing_quote)
-                    all_quotation_marks.add(opening_quote)
-                    all_quotation_marks.add(closing_quote)
-
-            if len(all_quotation_marks) > 0:
-                self._opening_quotation_mark_regex: Pattern = regex.compile(
-                    r"[" + "".join(sorted(list(opening_quotation_marks))) + "]"
-                )
-                self._closing_quotation_mark_regex: Pattern = regex.compile(
-                    r"[" + "".join(sorted(list(closing_quotation_marks))) + "]"
-                )
-                self._all_quotation_mark_regex: Pattern = regex.compile(
-                    r"[" + "".join(sorted(list(all_quotation_marks))) + "]"
-                )
-
-        if len(opening_quotation_marks) == 0:
-            self._opening_quotation_mark_regex = regex.compile(r"")
-        if len(closing_quotation_marks) == 0:
-            self._closing_quotation_mark_regex = regex.compile(r"")
-        if len(all_quotation_marks) == 0:
-            self._all_quotation_mark_regex = regex.compile(r"")
-
-    def _create_quotation_mark_pair_map(self) -> None:
-        self.closing_marks_by_opening_mark: Dict[str, set[str]] = dict()
-        self.opening_marks_by_closing_mark: Dict[str, set[str]] = dict()
         for convention in self._conventions:
             for level in range(1, convention.num_levels + 1):
-                opening_quote = convention.get_opening_quote_at_level(level)
-                closing_quote = convention.get_closing_quote_at_level(level)
-                if opening_quote not in self.closing_marks_by_opening_mark:
-                    self.closing_marks_by_opening_mark[opening_quote] = set()
-                self.closing_marks_by_opening_mark[opening_quote].add(closing_quote)
-                if closing_quote not in self.opening_marks_by_closing_mark:
-                    self.opening_marks_by_closing_mark[closing_quote] = set()
-                self.opening_marks_by_closing_mark[closing_quote].add(opening_quote)
+                opening_quotation_mark = convention.get_opening_quotation_mark_at_level(level)
+                closing_quotation_mark = convention.get_closing_quotation_mark_at_level(level)
+                opening_quotation_marks.add(opening_quotation_mark)
+                closing_quotation_marks.add(closing_quotation_mark)
+
+        all_quotation_marks = opening_quotation_marks.union(closing_quotation_marks)
+
+        if len(all_quotation_marks) > 0:
+            self._opening_quotation_mark_regex: Pattern = regex.compile(
+                r"[" + "".join(sorted(list(opening_quotation_marks))) + "]"
+            )
+            self._closing_quotation_mark_regex: Pattern = regex.compile(
+                r"[" + "".join(sorted(list(closing_quotation_marks))) + "]"
+            )
+            self._all_quotation_mark_regex: Pattern = regex.compile(
+                r"[" + "".join(sorted(list(all_quotation_marks))) + "]"
+            )
+
+    def _create_quotation_mark_pair_map(self) -> None:
+        self.closing_marks_by_opening_mark: Dict[str, set[str]] = defaultdict(set)
+        self.opening_marks_by_closing_mark: Dict[str, set[str]] = defaultdict(set)
+        for convention in self._conventions:
+            for level in range(1, convention.num_levels + 1):
+                opening_quotation_mark = convention.get_opening_quotation_mark_at_level(level)
+                closing_quotation_mark = convention.get_closing_quotation_mark_at_level(level)
+                self.closing_marks_by_opening_mark[opening_quotation_mark].add(closing_quotation_mark)
+                self.opening_marks_by_closing_mark[closing_quotation_mark].add(opening_quotation_mark)
 
     @property
     def opening_quotation_mark_regex(self) -> Pattern:

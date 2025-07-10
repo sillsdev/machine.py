@@ -302,4 +302,4 @@ def test_mismatched_quotation_marks() -> None:
 def detect_quote_convention(usfm: str) -> Union[QuoteConventionAnalysis, None]:
     quote_convention_detector = QuoteConventionDetector()
     parse_usfm(usfm, quote_convention_detector)
-    return quote_convention_detector.detect_quotation_convention(print_summary=False)
+    return quote_convention_detector.detect_quote_convention(print_summary=False)

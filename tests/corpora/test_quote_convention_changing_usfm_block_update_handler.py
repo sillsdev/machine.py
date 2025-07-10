@@ -1,7 +1,6 @@
 from typing import Generator, List, Set, Union
 
 from machine.corpora import (
-    QuotationMarkUpdateResolutionSettings,
     QuotationMarkUpdateSettings,
     QuotationMarkUpdateStrategy,
     QuoteConventionChangingUsfmUpdateBlockHandler,
@@ -21,7 +20,6 @@ from machine.corpora.punctuation_analysis import (
     QuotationMarkResolutionIssue,
     QuotationMarkResolver,
     QuotationMarkStringMatch,
-    QuoteConvention,
     QuoteConventionSet,
     TextSegment,
     UsfmMarkerType,
@@ -681,7 +679,9 @@ class MockQuotationMarkFinder(QuotationMarkFinder):
 
 class MockQuotationMarkResolver(QuotationMarkResolver):
     def __init__(self):
-        super().__init__(QuotationMarkUpdateResolutionSettings(QuoteConvention("", []), QuoteConvention("", [])))
+        self.num_times_called = 0
+
+    def reset(self) -> None:
         self.num_times_called = 0
 
     def resolve_quotation_marks(

@@ -3,14 +3,14 @@ from pytest import raises
 from machine.corpora import QuotationMarkUpdateResolutionSettings
 from machine.corpora.punctuation_analysis import (
     DepthBasedQuotationMarkResolver,
-    QuotationContinuerState,
-    QuotationContinuerStyle,
     QuotationMarkCategorizer,
     QuotationMarkDirection,
     QuotationMarkMetadata,
     QuotationMarkResolutionIssue,
     QuotationMarkResolverState,
     QuotationMarkStringMatch,
+    QuoteContinuerState,
+    QuoteContinuerStyle,
     QuoteConventionDetectionResolutionSettings,
     QuoteConventionSet,
     TextSegment,
@@ -20,29 +20,29 @@ from machine.corpora.punctuation_analysis import (
 
 
 # QuotationMarkResolverState tests
-def test_get_current_depth_quotation_mark_resolver_state() -> None:
+def test_current_depth_quotation_mark_resolver_state() -> None:
     quotation_mark_resolver_state = QuotationMarkResolverState()
-    assert quotation_mark_resolver_state.current_depth == 1
+    assert quotation_mark_resolver_state.current_depth == 0
 
     quotation_mark_resolver_state.add_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert quotation_mark_resolver_state.current_depth == 2
+    assert quotation_mark_resolver_state.current_depth == 1
 
     quotation_mark_resolver_state.add_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1)
     )
-    assert quotation_mark_resolver_state.current_depth == 3
+    assert quotation_mark_resolver_state.current_depth == 2
 
     quotation_mark_resolver_state.add_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 0, 1)
     )
-    assert quotation_mark_resolver_state.current_depth == 2
+    assert quotation_mark_resolver_state.current_depth == 1
 
     quotation_mark_resolver_state.add_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert quotation_mark_resolver_state.current_depth == 1
+    assert quotation_mark_resolver_state.current_depth == 0
 
 
 def test_has_open_quotation_mark() -> None:
@@ -172,27 +172,27 @@ def test_get_current_depth_quotation_continuer_state() -> None:
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
 
-    quotation_continuer_state = QuotationContinuerState()
+    quotation_continuer_state = QuoteContinuerState()
     assert quotation_continuer_state.current_depth == 0
 
-    quotation_continuer_state.add_quotation_continuer(
+    quotation_continuer_state.add_quote_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1),
         quotation_mark_resolver_state,
-        QuotationContinuerStyle.ENGLISH,
+        QuoteContinuerStyle.ENGLISH,
     )
     assert quotation_continuer_state.current_depth == 1
 
-    quotation_continuer_state.add_quotation_continuer(
+    quotation_continuer_state.add_quote_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1),
         quotation_mark_resolver_state,
-        QuotationContinuerStyle.ENGLISH,
+        QuoteContinuerStyle.ENGLISH,
     )
     assert quotation_continuer_state.current_depth == 2
 
-    quotation_continuer_state.add_quotation_continuer(
+    quotation_continuer_state.add_quote_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1),
         quotation_mark_resolver_state,
-        QuotationContinuerStyle.ENGLISH,
+        QuoteContinuerStyle.ENGLISH,
     )
     assert quotation_continuer_state.current_depth == 0
 
@@ -209,27 +209,27 @@ def test_has_continuer_been_observed() -> None:
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
 
-    quotation_continuer_state = QuotationContinuerState()
+    quotation_continuer_state = QuoteContinuerState()
     assert not quotation_continuer_state.continuer_has_been_observed()
 
-    quotation_continuer_state.add_quotation_continuer(
+    quotation_continuer_state.add_quote_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1),
         quotation_mark_resolver_state,
-        QuotationContinuerStyle.ENGLISH,
+        QuoteContinuerStyle.ENGLISH,
     )
     assert quotation_continuer_state.continuer_has_been_observed()
 
-    quotation_continuer_state.add_quotation_continuer(
+    quotation_continuer_state.add_quote_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1),
         quotation_mark_resolver_state,
-        QuotationContinuerStyle.ENGLISH,
+        QuoteContinuerStyle.ENGLISH,
     )
     assert quotation_continuer_state.continuer_has_been_observed()
 
-    quotation_continuer_state.add_quotation_continuer(
+    quotation_continuer_state.add_quote_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1),
         quotation_mark_resolver_state,
-        QuotationContinuerStyle.ENGLISH,
+        QuoteContinuerStyle.ENGLISH,
     )
     assert not quotation_continuer_state.continuer_has_been_observed()
 
@@ -246,29 +246,29 @@ def test_get_continuer_style() -> None:
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
 
-    quotation_continuer_state = QuotationContinuerState()
-    assert quotation_continuer_state.continuer_style is QuotationContinuerStyle.UNDETERMINED
+    quotation_continuer_state = QuoteContinuerState()
+    assert quotation_continuer_state.continuer_style is QuoteContinuerStyle.UNDETERMINED
 
-    quotation_continuer_state.add_quotation_continuer(
+    quotation_continuer_state.add_quote_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1),
         quotation_mark_resolver_state,
-        QuotationContinuerStyle.ENGLISH,
+        QuoteContinuerStyle.ENGLISH,
     )
-    assert quotation_continuer_state.continuer_style is QuotationContinuerStyle.ENGLISH
+    assert quotation_continuer_state.continuer_style is QuoteContinuerStyle.ENGLISH
 
-    quotation_continuer_state.add_quotation_continuer(
+    quotation_continuer_state.add_quote_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1),
         quotation_mark_resolver_state,
-        QuotationContinuerStyle.SPANISH,
+        QuoteContinuerStyle.SPANISH,
     )
-    assert quotation_continuer_state.continuer_style is QuotationContinuerStyle.SPANISH
+    assert quotation_continuer_state.continuer_style is QuoteContinuerStyle.SPANISH
 
-    quotation_continuer_state.add_quotation_continuer(
+    quotation_continuer_state.add_quote_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1),
         quotation_mark_resolver_state,
-        QuotationContinuerStyle.ENGLISH,
+        QuoteContinuerStyle.ENGLISH,
     )
-    assert quotation_continuer_state.continuer_style is QuotationContinuerStyle.ENGLISH
+    assert quotation_continuer_state.continuer_style is QuoteContinuerStyle.ENGLISH
 
 
 def test_add_quotation_continuer() -> None:
@@ -283,29 +283,29 @@ def test_add_quotation_continuer() -> None:
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
 
-    quotation_continuer_state = QuotationContinuerState()
+    quotation_continuer_state = QuoteContinuerState()
 
-    assert quotation_continuer_state.add_quotation_continuer(
+    assert quotation_continuer_state.add_quote_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1),
         quotation_mark_resolver_state,
-        QuotationContinuerStyle.ENGLISH,
+        QuoteContinuerStyle.ENGLISH,
     ) == QuotationMarkMetadata(
         "\u201c", 1, QuotationMarkDirection.OPENING, TextSegment.Builder().set_text("\u201c").build(), 0, 1
     )
 
-    assert quotation_continuer_state.add_quotation_continuer(
+    assert quotation_continuer_state.add_quote_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1),
         quotation_mark_resolver_state,
-        QuotationContinuerStyle.SPANISH,
+        QuoteContinuerStyle.SPANISH,
     ) == QuotationMarkMetadata(
         "\u2018", 2, QuotationMarkDirection.OPENING, TextSegment.Builder().set_text("\u2018").build(), 0, 1
     )
-    assert quotation_continuer_state.continuer_style == QuotationContinuerStyle.SPANISH
+    assert quotation_continuer_state.continuer_style == QuoteContinuerStyle.SPANISH
 
-    assert quotation_continuer_state.add_quotation_continuer(
+    assert quotation_continuer_state.add_quote_continuer(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1),
         quotation_mark_resolver_state,
-        QuotationContinuerStyle.ENGLISH,
+        QuoteContinuerStyle.ENGLISH,
     ) == QuotationMarkMetadata(
         "\u201c", 3, QuotationMarkDirection.OPENING, TextSegment.Builder().set_text("\u201c").build(), 0, 1
     )
@@ -324,7 +324,7 @@ def test_is_english_quotation_continuer() -> None:
         QuoteConventionSet([standard_english_quote_convention])
     )
     quotation_mark_resolver_state = QuotationMarkResolverState()
-    quotation_continuer_state = QuotationContinuerState()
+    quotation_continuer_state = QuoteContinuerState()
 
     quotation_mark_categorizer = QuotationMarkCategorizer(
         english_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
@@ -335,8 +335,8 @@ def test_is_english_quotation_continuer() -> None:
     )
 
     # Should always be false if the continuer style is Spanish
-    quotation_continuer_state._continuer_style = QuotationContinuerStyle.ENGLISH
-    assert quotation_mark_categorizer.is_english_quotation_continuer(
+    quotation_continuer_state._continuer_style = QuoteContinuerStyle.ENGLISH
+    assert quotation_mark_categorizer.is_english_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
@@ -346,8 +346,8 @@ def test_is_english_quotation_continuer() -> None:
         None,
     )
 
-    quotation_continuer_state._continuer_style = QuotationContinuerStyle.SPANISH
-    assert not quotation_mark_categorizer.is_english_quotation_continuer(
+    quotation_continuer_state._continuer_style = QuoteContinuerStyle.SPANISH
+    assert not quotation_mark_categorizer.is_english_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
@@ -356,10 +356,10 @@ def test_is_english_quotation_continuer() -> None:
         None,
         None,
     )
-    quotation_continuer_state._continuer_style = QuotationContinuerStyle.ENGLISH
+    quotation_continuer_state._continuer_style = QuoteContinuerStyle.ENGLISH
 
     # Should be false if there's no preceding paragraph marker (and the settings say to rely on markers)
-    assert not quotation_mark_categorizer.is_english_quotation_continuer(
+    assert not quotation_mark_categorizer.is_english_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u201ctest").build(),
             0,
@@ -369,7 +369,7 @@ def test_is_english_quotation_continuer() -> None:
         None,
     )
 
-    assert quotation_mark_categorizer.is_english_quotation_continuer(
+    assert quotation_mark_categorizer.is_english_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
@@ -384,7 +384,7 @@ def test_is_english_quotation_continuer() -> None:
         quotation_mark_resolver_state,
         quotation_continuer_state,
     )
-    assert quotation_mark_categorizer_for_denormalization.is_english_quotation_continuer(
+    assert quotation_mark_categorizer_for_denormalization.is_english_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u201ctest").build(),
             0,
@@ -399,7 +399,7 @@ def test_is_english_quotation_continuer() -> None:
     empty_quotation_mark_categorizer = QuotationMarkCategorizer(
         english_resolver_settings, empty_quotation_mark_resolver_state, quotation_continuer_state
     )
-    assert not empty_quotation_mark_categorizer.is_english_quotation_continuer(
+    assert not empty_quotation_mark_categorizer.is_english_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
@@ -410,7 +410,7 @@ def test_is_english_quotation_continuer() -> None:
     )
 
     # Should be false if the starting index of the quotation mark is greater than 0
-    assert not quotation_mark_categorizer.is_english_quotation_continuer(
+    assert not quotation_mark_categorizer.is_english_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text(" \u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             1,
@@ -421,7 +421,7 @@ def test_is_english_quotation_continuer() -> None:
     )
 
     # Should be false if the mark does not match the already opened mark
-    assert not quotation_mark_categorizer.is_english_quotation_continuer(
+    assert not quotation_mark_categorizer.is_english_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u2018test").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
@@ -436,7 +436,7 @@ def test_is_english_quotation_continuer() -> None:
     quotation_mark_resolver_state.add_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1)
     )
-    assert not quotation_mark_categorizer.is_english_quotation_continuer(
+    assert not quotation_mark_categorizer.is_english_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
@@ -445,7 +445,7 @@ def test_is_english_quotation_continuer() -> None:
         None,
         None,
     )
-    assert quotation_mark_categorizer.is_english_quotation_continuer(
+    assert quotation_mark_categorizer.is_english_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u201c\u2018test").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
@@ -458,7 +458,7 @@ def test_is_english_quotation_continuer() -> None:
             2,
         ),
     )
-    assert quotation_mark_categorizer.is_english_quotation_continuer(
+    assert quotation_mark_categorizer.is_english_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u201c\u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
@@ -473,17 +473,17 @@ def test_is_english_quotation_continuer() -> None:
     )
 
     # When there are multiple open quotes, the continuer must match the deepest observed mark
-    quotation_continuer_state.add_quotation_continuer(
+    quotation_continuer_state.add_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u201c\u2018test").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
         quotation_mark_resolver_state,
-        QuotationContinuerStyle.ENGLISH,
+        QuoteContinuerStyle.ENGLISH,
     )
 
-    assert not quotation_mark_categorizer.is_english_quotation_continuer(
+    assert not quotation_mark_categorizer.is_english_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u201c\u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             1,
@@ -493,7 +493,7 @@ def test_is_english_quotation_continuer() -> None:
         None,
     )
 
-    assert quotation_mark_categorizer.is_english_quotation_continuer(
+    assert quotation_mark_categorizer.is_english_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u201c\u2018test").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             1,
@@ -511,7 +511,7 @@ def test_is_english_quotation_continuer() -> None:
         )
     )
 
-    assert quotation_mark_categorizer.is_english_quotation_continuer(
+    assert quotation_mark_categorizer.is_english_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder()
             .set_text("\u201c\u2018\u201ctest")
@@ -524,7 +524,7 @@ def test_is_english_quotation_continuer() -> None:
         None,
     )
 
-    quotation_continuer_state.add_quotation_continuer(
+    quotation_continuer_state.add_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder()
             .set_text("\u201c\u2018\u201ctest")
@@ -534,9 +534,9 @@ def test_is_english_quotation_continuer() -> None:
             2,
         ),
         quotation_mark_resolver_state,
-        QuotationContinuerStyle.ENGLISH,
+        QuoteContinuerStyle.ENGLISH,
     )
-    assert not quotation_mark_categorizer.is_english_quotation_continuer(
+    assert not quotation_mark_categorizer.is_english_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder()
             .set_text("\u201c\u2018\u2018test")
@@ -548,7 +548,7 @@ def test_is_english_quotation_continuer() -> None:
         None,
         None,
     )
-    assert quotation_mark_categorizer.is_english_quotation_continuer(
+    assert quotation_mark_categorizer.is_english_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder()
             .set_text("\u201c\u2018\u201ctest")
@@ -572,7 +572,7 @@ def test_is_spanish_quotation_continuer() -> None:
         QuoteConventionSet([western_european_quote_convention])
     )
     quotation_mark_resolver_state = QuotationMarkResolverState()
-    quotation_continuer_state = QuotationContinuerState()
+    quotation_continuer_state = QuoteContinuerState()
 
     quotation_mark_categorizer = QuotationMarkCategorizer(
         spanish_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
@@ -583,8 +583,8 @@ def test_is_spanish_quotation_continuer() -> None:
     )
 
     # Should always be false if the continuer style is English
-    quotation_continuer_state._continuer_style = QuotationContinuerStyle.SPANISH
-    assert quotation_mark_categorizer.is_spanish_quotation_continuer(
+    quotation_continuer_state._continuer_style = QuoteContinuerStyle.SPANISH
+    assert quotation_mark_categorizer.is_spanish_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u00bbtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
@@ -594,8 +594,8 @@ def test_is_spanish_quotation_continuer() -> None:
         None,
     )
 
-    quotation_continuer_state._continuer_style = QuotationContinuerStyle.ENGLISH
-    assert not quotation_mark_categorizer.is_spanish_quotation_continuer(
+    quotation_continuer_state._continuer_style = QuoteContinuerStyle.ENGLISH
+    assert not quotation_mark_categorizer.is_spanish_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u00bbtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
@@ -604,10 +604,10 @@ def test_is_spanish_quotation_continuer() -> None:
         None,
         None,
     )
-    quotation_continuer_state._continuer_style = QuotationContinuerStyle.SPANISH
+    quotation_continuer_state._continuer_style = QuoteContinuerStyle.SPANISH
 
     # Should be false if there's no preceding paragraph marker (and the settings say to rely on markers)
-    assert not quotation_mark_categorizer.is_spanish_quotation_continuer(
+    assert not quotation_mark_categorizer.is_spanish_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u00bbtest").build(),
             0,
@@ -617,7 +617,7 @@ def test_is_spanish_quotation_continuer() -> None:
         None,
     )
 
-    assert quotation_mark_categorizer.is_spanish_quotation_continuer(
+    assert quotation_mark_categorizer.is_spanish_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u00bbtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
@@ -632,7 +632,7 @@ def test_is_spanish_quotation_continuer() -> None:
         quotation_mark_resolver_state,
         quotation_continuer_state,
     )
-    assert quotation_mark_categorizer_for_denormalization.is_spanish_quotation_continuer(
+    assert quotation_mark_categorizer_for_denormalization.is_spanish_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u00bbtest").build(),
             0,
@@ -647,7 +647,7 @@ def test_is_spanish_quotation_continuer() -> None:
     empty_quotation_mark_categorizer = QuotationMarkCategorizer(
         spanish_resolver_settings, empty_quotation_mark_resolver_state, quotation_continuer_state
     )
-    assert not empty_quotation_mark_categorizer.is_spanish_quotation_continuer(
+    assert not empty_quotation_mark_categorizer.is_spanish_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u00bbtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
@@ -658,7 +658,7 @@ def test_is_spanish_quotation_continuer() -> None:
     )
 
     # Should be false if the starting index of the quotation mark is greater than 0
-    assert not quotation_mark_categorizer.is_spanish_quotation_continuer(
+    assert not quotation_mark_categorizer.is_spanish_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text(" \u00bbtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             1,
@@ -669,7 +669,7 @@ def test_is_spanish_quotation_continuer() -> None:
     )
 
     # Should be false if the mark does not match the already opened mark
-    assert not quotation_mark_categorizer.is_spanish_quotation_continuer(
+    assert not quotation_mark_categorizer.is_spanish_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u201dtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
@@ -684,7 +684,7 @@ def test_is_spanish_quotation_continuer() -> None:
     quotation_mark_resolver_state.add_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert not quotation_mark_categorizer.is_spanish_quotation_continuer(
+    assert not quotation_mark_categorizer.is_spanish_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u00bbtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
@@ -693,7 +693,7 @@ def test_is_spanish_quotation_continuer() -> None:
         None,
         None,
     )
-    assert quotation_mark_categorizer.is_spanish_quotation_continuer(
+    assert quotation_mark_categorizer.is_spanish_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u00bb\u201dtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
@@ -706,7 +706,7 @@ def test_is_spanish_quotation_continuer() -> None:
             2,
         ),
     )
-    assert quotation_mark_categorizer.is_spanish_quotation_continuer(
+    assert quotation_mark_categorizer.is_spanish_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u00bb\u00bbtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
@@ -721,17 +721,17 @@ def test_is_spanish_quotation_continuer() -> None:
     )
 
     # When there are multiple open quotes, the continuer must match the deepest observed mark
-    quotation_continuer_state.add_quotation_continuer(
+    quotation_continuer_state.add_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u00bb\u201dtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             0,
             1,
         ),
         quotation_mark_resolver_state,
-        QuotationContinuerStyle.SPANISH,
+        QuoteContinuerStyle.SPANISH,
     )
 
-    assert not quotation_mark_categorizer.is_spanish_quotation_continuer(
+    assert not quotation_mark_categorizer.is_spanish_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u00bb\u201ctest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             1,
@@ -741,7 +741,7 @@ def test_is_spanish_quotation_continuer() -> None:
         None,
     )
 
-    assert quotation_mark_categorizer.is_spanish_quotation_continuer(
+    assert quotation_mark_categorizer.is_spanish_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder().set_text("\u00bb\u201dtest").add_preceding_marker(UsfmMarkerType.PARAGRAPH).build(),
             1,
@@ -759,7 +759,7 @@ def test_is_spanish_quotation_continuer() -> None:
         )
     )
 
-    assert quotation_mark_categorizer.is_spanish_quotation_continuer(
+    assert quotation_mark_categorizer.is_spanish_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder()
             .set_text("\u00bb\u201d\u2019test")
@@ -772,7 +772,7 @@ def test_is_spanish_quotation_continuer() -> None:
         None,
     )
 
-    quotation_continuer_state.add_quotation_continuer(
+    quotation_continuer_state.add_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder()
             .set_text("\u00bb\u201d\u2019test")
@@ -782,9 +782,9 @@ def test_is_spanish_quotation_continuer() -> None:
             2,
         ),
         quotation_mark_resolver_state,
-        QuotationContinuerStyle.SPANISH,
+        QuoteContinuerStyle.SPANISH,
     )
-    assert not quotation_mark_categorizer.is_spanish_quotation_continuer(
+    assert not quotation_mark_categorizer.is_spanish_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder()
             .set_text("\u00bb\u201d\u201dtest")
@@ -796,7 +796,7 @@ def test_is_spanish_quotation_continuer() -> None:
         None,
         None,
     )
-    assert quotation_mark_categorizer.is_spanish_quotation_continuer(
+    assert quotation_mark_categorizer.is_spanish_quote_continuer(
         QuotationMarkStringMatch(
             TextSegment.Builder()
             .set_text("\u00bb\u201d\u2019test")
@@ -819,7 +819,7 @@ def test_is_opening_quote() -> None:
         QuoteConventionSet([central_european_quote_convention])
     )
     quotation_mark_resolver_state = QuotationMarkResolverState()
-    quotation_continuer_state = QuotationContinuerState()
+    quotation_continuer_state = QuoteContinuerState()
     central_european_quotation_mark_categorizer = QuotationMarkCategorizer(
         central_european_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
     )
@@ -856,144 +856,144 @@ def test_is_opening_quote() -> None:
     )
 
     # It should only accept valid opening marks under the quote convention
-    assert central_european_quotation_mark_categorizer.is_opening_quote(
+    assert central_european_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201e").build(), 1, 2)
     )
-    assert central_european_quotation_mark_categorizer.is_opening_quote(
+    assert central_european_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201a").build(), 1, 2)
     )
-    assert not central_european_quotation_mark_categorizer.is_opening_quote(
+    assert not central_european_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201c").build(), 1, 2)
     )
-    assert not central_european_quotation_mark_categorizer.is_opening_quote(
+    assert not central_european_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u2018").build(), 1, 2)
     )
-    assert not central_european_quotation_mark_categorizer.is_opening_quote(
+    assert not central_european_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201d").build(), 1, 2)
     )
-    assert not central_european_quotation_mark_categorizer.is_opening_quote(
+    assert not central_european_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u2019").build(), 1, 2)
     )
-    assert not central_european_quotation_mark_categorizer.is_opening_quote(
+    assert not central_european_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u00ab").build(), 1, 2)
     )
-    assert not central_european_quotation_mark_categorizer.is_opening_quote(
+    assert not central_european_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(' "').build(), 1, 2)
     )
 
-    assert not british_english_quotation_mark_categorizer.is_opening_quote(
+    assert not british_english_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201e").build(), 1, 2)
     )
-    assert not british_english_quotation_mark_categorizer.is_opening_quote(
+    assert not british_english_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201a").build(), 1, 2)
     )
-    assert british_english_quotation_mark_categorizer.is_opening_quote(
+    assert british_english_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201c").build(), 1, 2)
     )
-    assert british_english_quotation_mark_categorizer.is_opening_quote(
+    assert british_english_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u2018").build(), 1, 2)
     )
-    assert not british_english_quotation_mark_categorizer.is_opening_quote(
+    assert not british_english_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201d").build(), 1, 2)
     )
-    assert not british_english_quotation_mark_categorizer.is_opening_quote(
+    assert not british_english_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u2019").build(), 1, 2)
     )
-    assert not british_english_quotation_mark_categorizer.is_opening_quote(
+    assert not british_english_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u00ab").build(), 1, 2)
     )
-    assert not british_english_quotation_mark_categorizer.is_opening_quote(
+    assert not british_english_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(' "').build(), 1, 2)
     )
 
-    assert not standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201e").build(), 1, 2)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201a").build(), 1, 2)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201c").build(), 1, 2)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u2018").build(), 1, 2)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201d").build(), 1, 2)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u2019").build(), 1, 2)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u00ab").build(), 1, 2)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(' "').build(), 1, 2)
     )
 
-    assert three_conventions_quotation_mark_categorizer.is_opening_quote(
+    assert three_conventions_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201e").build(), 1, 2)
     )
-    assert three_conventions_quotation_mark_categorizer.is_opening_quote(
+    assert three_conventions_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201a").build(), 1, 2)
     )
-    assert three_conventions_quotation_mark_categorizer.is_opening_quote(
+    assert three_conventions_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201c").build(), 1, 2)
     )
-    assert three_conventions_quotation_mark_categorizer.is_opening_quote(
+    assert three_conventions_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u2018").build(), 1, 2)
     )
-    assert three_conventions_quotation_mark_categorizer.is_opening_quote(
+    assert three_conventions_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201d").build(), 1, 2)
     )
-    assert three_conventions_quotation_mark_categorizer.is_opening_quote(
+    assert three_conventions_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u2019").build(), 1, 2)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_opening_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u00ab").build(), 1, 2)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_opening_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(' "').build(), 1, 2)
     )
 
     # Leading whitespace is not necessary for unambiguous opening quotes
-    assert central_european_quotation_mark_categorizer.is_opening_quote(
+    assert central_european_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("text\u201e").build(), 4, 5)
     )
-    assert central_european_quotation_mark_categorizer.is_opening_quote(
+    assert central_european_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("text\u201a").build(), 4, 5)
     )
-    assert british_english_quotation_mark_categorizer.is_opening_quote(
+    assert british_english_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("text\u201c").build(), 4, 5)
     )
-    assert british_english_quotation_mark_categorizer.is_opening_quote(
+    assert british_english_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("text\u2018").build(), 4, 5)
     )
-    assert three_conventions_quotation_mark_categorizer.is_opening_quote(
+    assert three_conventions_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("text\u201e").build(), 4, 5)
     )
-    assert three_conventions_quotation_mark_categorizer.is_opening_quote(
+    assert three_conventions_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("text\u201a").build(), 4, 5)
     )
 
     # An ambiguous quotation mark (opening/closing) is recognized as opening if
     # it has a quote introducer beforehand
-    assert not standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(",\u201d").build(), 1, 2)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 0, 1)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(":\u2019").build(), 1, 2)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_opening_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert three_conventions_quotation_mark_categorizer.is_opening_quote(
+    assert three_conventions_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(",\u201c").build(), 1, 2)
     )
 
@@ -1002,37 +1002,37 @@ def test_is_opening_quote() -> None:
     quotation_mark_resolver_state.add_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 1, 2)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c\u201d").build(), 1, 2)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 1, 2)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c\u2019").build(), 1, 2)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_opening_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 1, 2)
     )
-    assert three_conventions_quotation_mark_categorizer.is_opening_quote(
+    assert three_conventions_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c\u201c").build(), 1, 2)
     )
 
     # An ambiguous quotation mark (opening/closing) is not recognized as opening if
     # it has trailing whitespace or punctuation
-    assert not standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201d.").build(), 1, 2)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(",\u201d ").build(), 1, 2)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c\u2019 ").build(), 1, 2)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c\u2019?").build(), 1, 2)
     )
 
@@ -1046,7 +1046,7 @@ def test_is_closing_quote() -> None:
         QuoteConventionSet([central_european_quote_convention])
     )
     quotation_mark_resolver_state = QuotationMarkResolverState()
-    quotation_continuer_state = QuotationContinuerState()
+    quotation_continuer_state = QuoteContinuerState()
     central_european_quotation_mark_categorizer = QuotationMarkCategorizer(
         central_european_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
     )
@@ -1094,129 +1094,129 @@ def test_is_closing_quote() -> None:
     )
 
     # It should only accept valid closing marks under the quote convention
-    assert central_european_quotation_mark_categorizer.is_closing_quote(
+    assert central_european_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c ").build(), 0, 1)
     )
-    assert central_european_quotation_mark_categorizer.is_closing_quote(
+    assert central_european_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018 ").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201e ").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201a ").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d ").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019 ").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u00bb ").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text('" ').build(), 0, 1)
     )
 
-    assert not british_english_quotation_mark_categorizer.is_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c ").build(), 0, 1)
     )
-    assert not british_english_quotation_mark_categorizer.is_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018 ").build(), 0, 1)
     )
-    assert british_english_quotation_mark_categorizer.is_closing_quote(
+    assert british_english_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d ").build(), 0, 1)
     )
-    assert british_english_quotation_mark_categorizer.is_closing_quote(
+    assert british_english_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019 ").build(), 0, 1)
     )
-    assert not british_english_quotation_mark_categorizer.is_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u00bb ").build(), 0, 1)
     )
-    assert not british_english_quotation_mark_categorizer.is_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text('" ').build(), 0, 1)
     )
 
-    assert not standard_swedish_quotation_mark_categorizer.is_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c ").build(), 0, 1)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018 ").build(), 0, 1)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_closing_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d ").build(), 0, 1)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_closing_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019 ").build(), 0, 1)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u00bb ").build(), 0, 1)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text('" ').build(), 0, 1)
     )
 
-    assert three_conventions_quotation_mark_categorizer.is_closing_quote(
+    assert three_conventions_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c ").build(), 0, 1)
     )
-    assert three_conventions_quotation_mark_categorizer.is_closing_quote(
+    assert three_conventions_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018 ").build(), 0, 1)
     )
-    assert three_conventions_quotation_mark_categorizer.is_closing_quote(
+    assert three_conventions_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d ").build(), 0, 1)
     )
-    assert three_conventions_quotation_mark_categorizer.is_closing_quote(
+    assert three_conventions_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019 ").build(), 0, 1)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_closing_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u00bb ").build(), 0, 1)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_closing_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text('" ').build(), 0, 1)
     )
 
     # Trailing whitespace is not necessary for unambiguous closing quotes
-    assert standard_french_quotation_mark_categorizer.is_closing_quote(
+    assert standard_french_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u00bbtext").build(), 0, 1)
     )
-    assert standard_french_quotation_mark_categorizer.is_closing_quote(
+    assert standard_french_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u203atext").build(), 0, 1)
     )
 
     # An ambiguous quotation mark (opening/closing) is recognized as closing if
     # followed by whitespace, punctuation or the end of the segment
-    assert not standard_swedish_quotation_mark_categorizer.is_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201dtext").build(), 0, 1)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_closing_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d ").build(), 0, 1)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019text").build(), 0, 1)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_closing_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019?").build(), 0, 1)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_closing_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_closing_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019\u201d").build(), 0, 1)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_closing_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201ctext").build(), 0, 1)
     )
-    assert three_conventions_quotation_mark_categorizer.is_closing_quote(
+    assert three_conventions_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c?").build(), 0, 1)
     )
 
     # An ambiguous quotation mark (opening/closing) is not recognized as opening if
     # it has leading whitespace
-    assert not standard_swedish_quotation_mark_categorizer.is_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201d").build(), 1, 2)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_closing_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\t\u201c?").build(), 1, 2)
     )
 
@@ -1230,7 +1230,7 @@ def test_is_malformed_opening_quote() -> None:
         QuoteConventionSet([central_european_quote_convention])
     )
     quotation_mark_resolver_state = QuotationMarkResolverState()
-    quotation_continuer_state = QuotationContinuerState()
+    quotation_continuer_state = QuoteContinuerState()
     central_european_quotation_mark_categorizer = QuotationMarkCategorizer(
         central_european_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
     )
@@ -1267,134 +1267,134 @@ def test_is_malformed_opening_quote() -> None:
     )
 
     # It should only accept valid opening marks under the quote convention
-    assert central_european_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert central_european_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201e ").build(), 1, 2)
     )
-    assert central_european_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert central_european_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201a ").build(), 1, 2)
     )
-    assert not central_european_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not central_european_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201c ").build(), 1, 2)
     )
-    assert not central_european_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not central_european_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u2018 ").build(), 1, 2)
     )
-    assert not central_european_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not central_european_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201d ").build(), 1, 2)
     )
-    assert not central_european_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not central_european_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u2019 ").build(), 1, 2)
     )
-    assert not central_european_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not central_european_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u00ab ").build(), 1, 2)
     )
-    assert not central_european_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not central_european_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(' " ').build(), 1, 2)
     )
 
-    assert not british_english_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not british_english_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201e ").build(), 1, 2)
     )
-    assert not british_english_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not british_english_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201a ").build(), 1, 2)
     )
-    assert british_english_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert british_english_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201c ").build(), 1, 2)
     )
-    assert british_english_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert british_english_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u2018 ").build(), 1, 2)
     )
-    assert not british_english_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not british_english_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201d ").build(), 1, 2)
     )
-    assert not british_english_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not british_english_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u2019 ").build(), 1, 2)
     )
-    assert not british_english_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not british_english_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u00ab ").build(), 1, 2)
     )
-    assert not british_english_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not british_english_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(' " ').build(), 1, 2)
     )
 
-    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201e ").build(), 1, 2)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201a ").build(), 1, 2)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201c ").build(), 1, 2)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u2018 ").build(), 1, 2)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201d ").build(), 1, 2)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u2019 ").build(), 1, 2)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u00ab ").build(), 1, 2)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(' " ').build(), 1, 2)
     )
 
-    assert three_conventions_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert three_conventions_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201e ").build(), 1, 2)
     )
-    assert three_conventions_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert three_conventions_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201a ").build(), 1, 2)
     )
-    assert three_conventions_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert three_conventions_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201c ").build(), 1, 2)
     )
-    assert three_conventions_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert three_conventions_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u2018 ").build(), 1, 2)
     )
-    assert three_conventions_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert three_conventions_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201d ").build(), 1, 2)
     )
-    assert three_conventions_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert three_conventions_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u2019 ").build(), 1, 2)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u00ab ").build(), 1, 2)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(' " ').build(), 1, 2)
     )
 
     # Should return true if there is a leading quote introducer
-    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d ").build(), 0, 1)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(",\u201d ").build(), 1, 2)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019 ").build(), 0, 1)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(":\u2019 ").build(), 1, 2)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c ").build(), 0, 1)
     )
-    assert three_conventions_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert three_conventions_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(",\u201c ").build(), 1, 2)
     )
 
     # Should return false unless the mark has leading and trailing whitespace
-    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d ").build(), 0, 1)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201d").build(), 1, 2)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201d ").build(), 1, 2)
     )
 
@@ -1402,22 +1402,22 @@ def test_is_malformed_opening_quote() -> None:
     quotation_mark_resolver_state.add_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201d ").build(), 1, 2)
     )
-    assert not british_english_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not british_english_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u2019 ").build(), 1, 2)
     )
-    assert not central_european_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not central_european_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201c ").build(), 1, 2)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201d ").build(), 1, 2)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u2019 ").build(), 1, 2)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_malformed_opening_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_malformed_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201c ").build(), 1, 2)
     )
 
@@ -1431,7 +1431,7 @@ def test_is_malformed_closing_quote() -> None:
         QuoteConventionSet([central_european_quote_convention])
     )
     quotation_mark_resolver_state = QuotationMarkResolverState()
-    quotation_continuer_state = QuotationContinuerState()
+    quotation_continuer_state = QuoteContinuerState()
     central_european_quotation_mark_categorizer = QuotationMarkCategorizer(
         central_european_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
     )
@@ -1471,28 +1471,28 @@ def test_is_malformed_closing_quote() -> None:
     quotation_mark_resolver_state.add_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201e").build(), 0, 1)
     )
-    assert central_european_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert central_european_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201e").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201a").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u00bb").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text('"').build(), 0, 1)
     )
 
@@ -1502,22 +1502,22 @@ def test_is_malformed_closing_quote() -> None:
     quotation_mark_resolver_state.add_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1)
     )
-    assert not british_english_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert not british_english_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1)
     )
-    assert not british_english_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert british_english_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert british_english_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 0, 1)
     )
-    assert not british_english_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u00bb").build(), 0, 1)
     )
-    assert not british_english_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text('"').build(), 0, 1)
     )
 
@@ -1527,62 +1527,62 @@ def test_is_malformed_closing_quote() -> None:
     quotation_mark_resolver_state.add_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 0, 1)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u00bb").build(), 0, 1)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text('"').build(), 0, 1)
     )
 
-    assert not three_conventions_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1)
     )
-    assert three_conventions_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert three_conventions_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 0, 1)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u00bb").build(), 0, 1)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text('"').build(), 0, 1)
     )
 
     # Returns true if it's at the end of the segment
-    assert not standard_swedish_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d ").build(), 0, 1)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
 
     # Returns true if it does not have trailing whitespace
-    assert standard_swedish_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d-").build(), 0, 1)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201dtext").build(), 0, 1)
     )
 
     # Returns true if it has trailing and leading whitespace
-    assert standard_swedish_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201d ").build(), 1, 2)
     )
 
@@ -1590,7 +1590,7 @@ def test_is_malformed_closing_quote() -> None:
     quotation_mark_resolver_state.add_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d ").build(), 0, 1)
     )
 
@@ -1599,23 +1599,23 @@ def test_is_malformed_closing_quote() -> None:
     quotation_mark_resolver_state.add_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert british_english_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert british_english_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert not british_english_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert not british_english_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 0, 1)
     )
 
     quotation_mark_resolver_state.add_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1)
     )
-    assert not british_english_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert british_english_quotation_mark_categorizer.is_malformed_closing_quote(
+    assert british_english_quotation_mark_categorizer.is_malformed_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 0, 1)
     )
 
@@ -1629,7 +1629,7 @@ def test_is_unpaired_closing_quote() -> None:
         QuoteConventionSet([central_european_quote_convention])
     )
     quotation_mark_resolver_state = QuotationMarkResolverState()
-    quotation_continuer_state = QuotationContinuerState()
+    quotation_continuer_state = QuoteContinuerState()
     central_european_quotation_mark_categorizer = QuotationMarkCategorizer(
         central_european_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
     )
@@ -1666,85 +1666,85 @@ def test_is_unpaired_closing_quote() -> None:
     )
 
     # It should only accept valid closing marks under the quote convention
-    assert central_european_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert central_european_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert central_european_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert central_european_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201e").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201a").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u00bb").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text('"').build(), 0, 1)
     )
 
-    assert not british_english_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert not british_english_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1)
     )
-    assert british_english_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert british_english_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert british_english_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert british_english_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 0, 1)
     )
-    assert not british_english_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u00bb").build(), 0, 1)
     )
-    assert not british_english_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text('"').build(), 0, 1)
     )
 
-    assert not standard_swedish_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert standard_swedish_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert standard_swedish_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 0, 1)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u00bb").build(), 0, 1)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text('"').build(), 0, 1)
     )
 
-    assert three_conventions_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert three_conventions_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert three_conventions_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert three_conventions_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1)
     )
-    assert three_conventions_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert three_conventions_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert three_conventions_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert three_conventions_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 0, 1)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u00bb").build(), 0, 1)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text('"').build(), 0, 1)
     )
 
@@ -1752,34 +1752,34 @@ def test_is_unpaired_closing_quote() -> None:
     quotation_mark_resolver_state.add_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert not central_european_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not central_european_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1)
     )
-    assert not british_english_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert not british_english_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 0, 1)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert not standard_swedish_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not standard_swedish_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 0, 1)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2018").build(), 0, 1)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert not three_conventions_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not three_conventions_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 0, 1)
     )
 
@@ -1787,22 +1787,22 @@ def test_is_unpaired_closing_quote() -> None:
     quotation_mark_resolver_state.add_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert not british_english_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text(" \u201d").build(), 1, 2)
     )
-    assert not british_english_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\t\u2019").build(), 1, 2)
     )
 
     # The quotation mark must be either at the end of the segment
     # or have trailing whitespace
-    assert british_english_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert british_english_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
-    assert british_english_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert british_english_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d ").build(), 0, 1)
     )
-    assert not british_english_quotation_mark_categorizer.is_unpaired_closing_quote(
+    assert not british_english_quotation_mark_categorizer.is_unpaired_closing_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d?").build(), 0, 1)
     )
 
@@ -1816,7 +1816,7 @@ def test_is_apostrophe() -> None:
         QuoteConventionSet([standard_english_quote_convention])
     )
     quotation_mark_resolver_state = QuotationMarkResolverState()
-    quotation_continuer_state = QuotationContinuerState()
+    quotation_continuer_state = QuoteContinuerState()
     standard_english_quotation_mark_categorizer = QuotationMarkCategorizer(
         standard_english_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
     )

@@ -76,35 +76,35 @@ def test_is_opening_quote():
 
     # valid opening quote at start of segment
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text('"test text"').build(), 0, 1)
-    assert basic_quotation_mark_resolver._is_opening_quote(quote_match) is True
+    assert basic_quotation_mark_resolver._is_opening_quotation_mark(quote_match) is True
 
     # opening quote with leading whitespace
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text('test "text"').build(), 5, 6)
-    assert basic_quotation_mark_resolver._is_opening_quote(quote_match) is True
+    assert basic_quotation_mark_resolver._is_opening_quotation_mark(quote_match) is True
 
     # opening quote with quote introducer
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text('test:"text"').build(), 5, 6)
-    assert basic_quotation_mark_resolver._is_opening_quote(quote_match) is True
+    assert basic_quotation_mark_resolver._is_opening_quotation_mark(quote_match) is True
 
     # QuotationMarkStringMatch indices don't indicate a quotation mark
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text('test "text"').build(), 0, 1)
-    assert basic_quotation_mark_resolver._is_opening_quote(quote_match) is False
+    assert basic_quotation_mark_resolver._is_opening_quotation_mark(quote_match) is False
 
     # the quotation mark is not valid under the current quote convention
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text('<test "text"').build(), 0, 1)
-    assert basic_quotation_mark_resolver._is_opening_quote(quote_match) is False
+    assert basic_quotation_mark_resolver._is_opening_quotation_mark(quote_match) is False
 
     # no leading whitespace before quotation mark
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text('test"text"').build(), 4, 5)
-    assert basic_quotation_mark_resolver._is_opening_quote(quote_match) is False
+    assert basic_quotation_mark_resolver._is_opening_quotation_mark(quote_match) is False
 
     # closing quote at the end of the segment
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text('"test text"').build(), 10, 11)
-    assert basic_quotation_mark_resolver._is_opening_quote(quote_match) is False
+    assert basic_quotation_mark_resolver._is_opening_quotation_mark(quote_match) is False
 
     # closing quote with trailing whitespace
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text('"test text" ').build(), 10, 11)
-    assert basic_quotation_mark_resolver._is_opening_quote(quote_match) is False
+    assert basic_quotation_mark_resolver._is_opening_quotation_mark(quote_match) is False
 
 
 def test_is_opening_quote_with_unambiguous_quote_convention():
@@ -119,19 +119,19 @@ def test_is_opening_quote_with_unambiguous_quote_convention():
 
     # unambiguous opening quote at start of segment
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("“test text”").build(), 0, 1)
-    assert basic_quotation_mark_resolver._is_opening_quote(quote_match) is True
+    assert basic_quotation_mark_resolver._is_opening_quotation_mark(quote_match) is True
 
     # unambiguous opening quote with leading whitespace
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("test “text”").build(), 5, 6)
-    assert basic_quotation_mark_resolver._is_opening_quote(quote_match) is True
+    assert basic_quotation_mark_resolver._is_opening_quotation_mark(quote_match) is True
 
     # unambiguous opening quote without the "correct" context
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("test“text”").build(), 4, 5)
-    assert basic_quotation_mark_resolver._is_opening_quote(quote_match) is True
+    assert basic_quotation_mark_resolver._is_opening_quotation_mark(quote_match) is True
 
     # unambiguous closing quote
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("“test” text").build(), 5, 6)
-    assert basic_quotation_mark_resolver._is_opening_quote(quote_match) is False
+    assert basic_quotation_mark_resolver._is_opening_quotation_mark(quote_match) is False
 
 
 def test_is_opening_quote_stateful():
@@ -146,13 +146,13 @@ def test_is_opening_quote_stateful():
 
     # no preceding quote
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text('"\'test text"').build(), 1, 2)
-    assert basic_quotation_mark_resolver._is_opening_quote(quote_match) is False
+    assert basic_quotation_mark_resolver._is_opening_quotation_mark(quote_match) is False
 
     # immediately preceding quote
     basic_quotation_mark_resolver._last_quotation_mark = QuotationMarkMetadata(
         '"', 1, QuotationMarkDirection.OPENING, TextSegment.Builder().set_text('"\'test text"').build(), 0, 1
     )
-    assert basic_quotation_mark_resolver._is_opening_quote(quote_match) is True
+    assert basic_quotation_mark_resolver._is_opening_quotation_mark(quote_match) is True
 
 
 def test_does_most_recent_opening_mark_immediately_precede():
@@ -207,35 +207,35 @@ def test_is_closing_quote():
 
     # valid closing quote at end of segment
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text('"test text"').build(), 10, 11)
-    assert basic_quotation_mark_resolver._is_closing_quote(quote_match) is True
+    assert basic_quotation_mark_resolver._is_closing_quotation_mark(quote_match) is True
 
     # closing quote with trailing whitespace
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text('"test" text').build(), 5, 6)
-    assert basic_quotation_mark_resolver._is_closing_quote(quote_match) is True
+    assert basic_quotation_mark_resolver._is_closing_quotation_mark(quote_match) is True
 
     # closing quote with trailing punctuation
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text('"test text".').build(), 10, 11)
-    assert basic_quotation_mark_resolver._is_closing_quote(quote_match) is True
+    assert basic_quotation_mark_resolver._is_closing_quotation_mark(quote_match) is True
 
     # QuotationMarkStringMatch indices don't indicate a quotation mark
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text('"test text"').build(), 9, 10)
-    assert basic_quotation_mark_resolver._is_closing_quote(quote_match) is False
+    assert basic_quotation_mark_resolver._is_closing_quotation_mark(quote_match) is False
 
     # the quotation mark is not valid under the current quote convention
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text('test "text>').build(), 10, 11)
-    assert basic_quotation_mark_resolver._is_closing_quote(quote_match) is False
+    assert basic_quotation_mark_resolver._is_closing_quotation_mark(quote_match) is False
 
     # no trailing whitespace after quotation mark
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text('"test"text').build(), 5, 6)
-    assert basic_quotation_mark_resolver._is_closing_quote(quote_match) is False
+    assert basic_quotation_mark_resolver._is_closing_quotation_mark(quote_match) is False
 
     # opening quote at the start of the segment
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text('"test text"').build(), 0, 1)
-    assert basic_quotation_mark_resolver._is_closing_quote(quote_match) is False
+    assert basic_quotation_mark_resolver._is_closing_quotation_mark(quote_match) is False
 
     # opening quote with leading whitespace
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text('test "text"').build(), 5, 6)
-    assert basic_quotation_mark_resolver._is_closing_quote(quote_match) is False
+    assert basic_quotation_mark_resolver._is_closing_quotation_mark(quote_match) is False
 
 
 def test_is_closing_quote_with_unambiguous_quote_convention():
@@ -250,19 +250,19 @@ def test_is_closing_quote_with_unambiguous_quote_convention():
 
     # unambiguous closing quote at end of segment
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("“test text”").build(), 10, 11)
-    assert basic_quotation_mark_resolver._is_closing_quote(quote_match) is True
+    assert basic_quotation_mark_resolver._is_closing_quotation_mark(quote_match) is True
 
     # unambiguous closing quote with trailing whitespace
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("“test” text").build(), 5, 6)
-    assert basic_quotation_mark_resolver._is_closing_quote(quote_match) is True
+    assert basic_quotation_mark_resolver._is_closing_quotation_mark(quote_match) is True
 
     # unambiguous closing quote without the "correct" context
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("“test”text").build(), 5, 6)
-    assert basic_quotation_mark_resolver._is_closing_quote(quote_match) is True
+    assert basic_quotation_mark_resolver._is_closing_quotation_mark(quote_match) is True
 
     # unambiguous opening quote
     quote_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("test “text”").build(), 5, 6)
-    assert basic_quotation_mark_resolver._is_closing_quote(quote_match) is False
+    assert basic_quotation_mark_resolver._is_closing_quotation_mark(quote_match) is False
 
 
 def test_resolve_opening_quote():

@@ -416,19 +416,6 @@ def test_empty_text():
     )
 
 
-def test_reset():
-    usfm_structure_extractor = UsfmStructureExtractor()
-    usfm_structure_extractor.chapter(verse_text_parser_state, "1", "c", None, None)
-    usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
-    usfm_structure_extractor.text(verse_text_parser_state, "test")
-    usfm_structure_extractor._reset()
-
-    expected_chapters = []
-
-    actual_chapters = usfm_structure_extractor.get_chapters()
-    assert_chapter_equal(expected_chapters, actual_chapters)
-
-
 def assert_chapter_equal(expected_chapters: List[Chapter], actual_chapters: List[Chapter]):
     assert len(expected_chapters) == len(actual_chapters)
     for expected_chapter, actual_chapter in zip(expected_chapters, actual_chapters):

@@ -37,11 +37,11 @@ class QuotationMarkStringMatch:
     def quotation_mark(self) -> str:
         return self._text_segment.text[self._start_index : self._end_index]
 
-    def is_valid_opening_quotation_mark(self, quote_convention_set: QuoteConventionSet) -> bool:
-        return quote_convention_set.is_valid_opening_quotation_mark(self.quotation_mark)
+    def is_valid_opening_quotation_mark(self, quote_conventions: QuoteConventionSet) -> bool:
+        return quote_conventions.is_valid_opening_quotation_mark(self.quotation_mark)
 
-    def is_valid_closing_quotation_mark(self, quote_convention_set: QuoteConventionSet) -> bool:
-        return quote_convention_set.is_valid_closing_quotation_mark(self.quotation_mark)
+    def is_valid_closing_quotation_mark(self, quote_conventions: QuoteConventionSet) -> bool:
+        return quote_conventions.is_valid_closing_quotation_mark(self.quotation_mark)
 
     def quotation_mark_matches(self, regex_pattern: regex.Pattern) -> bool:
         return regex_pattern.search(self.quotation_mark) is not None
