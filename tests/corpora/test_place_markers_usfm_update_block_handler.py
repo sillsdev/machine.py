@@ -27,6 +27,8 @@ def test_paragraph_markers() -> None:
         alignment=to_word_alignment_matrix(
             "0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10 12-11 13-12 14-13 15-14 16-15 17-18 18-16 19-19"
         ),
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.STRIP,
     )
     rows = [UpdateUsfmRow(scr_ref("MAT 1:1"), str(pretranslation), {"alignment_info": align_info})]
     usfm = r"""\id MAT
@@ -60,6 +62,8 @@ def test_style_markers() -> None:
         alignment=to_word_alignment_matrix(
             "0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10 12-11 13-12 14-13 15-14 16-15 17-18 18-16 19-19"
         ),
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
     )
     rows = [UpdateUsfmRow(scr_ref("MAT 1:1"), str(pretranslation), metadata={"alignment_info": align_info})]
     usfm = r"""\id MAT
@@ -79,6 +83,16 @@ def test_style_markers() -> None:
 """
     assess(target, result)
 
+    align_info = PlaceMarkersAlignmentInfo(
+        source_tokens=[t for t in TOKENIZER.tokenize(source)],
+        translation_tokens=[t for t in TOKENIZER.tokenize(pretranslation)],
+        alignment=to_word_alignment_matrix(
+            "0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10 12-11 13-12 14-13 15-14 16-15 17-18 18-16 19-19"
+        ),
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.STRIP,
+    )
+    rows = [UpdateUsfmRow(scr_ref("MAT 1:1"), str(pretranslation), metadata={"alignment_info": align_info})]
     target = update_usfm(
         rows,
         usfm,
@@ -159,6 +173,8 @@ def test_trailing_empty_paragraphs() -> None:
                     source_tokens=["Verse", "1"],
                     translation_tokens=["New", "verse", "1"],
                     alignment=to_word_alignment_matrix("0-1 1-2"),
+                    paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+                    style_behavior=UpdateUsfmMarkerBehavior.STRIP,
                 )
             },
         )
@@ -197,6 +213,8 @@ def test_headers() -> None:
                     source_tokens=["A", "B", "C"],
                     translation_tokens=["X", "Y", "Z"],
                     alignment=to_word_alignment_matrix("0-0 1-1 2-2"),
+                    paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+                    style_behavior=UpdateUsfmMarkerBehavior.STRIP,
                 )
             },
         ),
@@ -208,6 +226,8 @@ def test_headers() -> None:
                     source_tokens=["A"],
                     translation_tokens=["X"],
                     alignment=to_word_alignment_matrix("0-0"),
+                    paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+                    style_behavior=UpdateUsfmMarkerBehavior.STRIP,
                 )
             },
         ),
@@ -276,6 +296,8 @@ def test_consecutive_markers() -> None:
                     source_tokens=["Old", "verse", "1", "word"],
                     translation_tokens=["New", "verse", "1", "WORD"],
                     alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3"),
+                    paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+                    style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
                 )
             },
         )
@@ -311,6 +333,8 @@ def test_verse_ranges() -> None:
                     source_tokens=["Verse", "range", "old", "paragraph", "2"],
                     translation_tokens=["New", "verse", "range", "text", "new", "paragraph", "2"],
                     alignment=to_word_alignment_matrix("0-1 1-2 2-4 3-5 4-6"),
+                    paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+                    style_behavior=UpdateUsfmMarkerBehavior.STRIP,
                 )
             },
         )
@@ -346,6 +370,8 @@ def test_no_update() -> None:
                     source_tokens=["Old", "paragraph", "1", "Old", "paragraph", "2"],
                     translation_tokens=["New", "paragraph", "1", "New", "paragraph", "2"],
                     alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3 4-4 5-5"),
+                    paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP,
+                    style_behavior=UpdateUsfmMarkerBehavior.STRIP,
                 )
             },
         )
@@ -378,6 +404,8 @@ def test_no_update() -> None:
                     source_tokens=[],
                     translation_tokens=[],
                     alignment=to_word_alignment_matrix(""),
+                    paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+                    style_behavior=UpdateUsfmMarkerBehavior.STRIP,
                 )
             },
         )
@@ -422,6 +450,8 @@ def test_split_tokens() -> None:
                     source_tokens=["words", "split", "words", "split", "words", "split"],
                     translation_tokens=["words", "split", "words", "split", "words", "split"],
                     alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3 4-4 5-5"),
+                    paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+                    style_behavior=UpdateUsfmMarkerBehavior.STRIP,
                 )
             },
         )
@@ -458,6 +488,8 @@ def test_no_text() -> None:
                     source_tokens=[],
                     translation_tokens=[],
                     alignment=to_word_alignment_matrix(""),
+                    paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+                    style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
                 )
             },
         )
@@ -491,6 +523,8 @@ def test_consecutive_substring() -> None:
                     source_tokens=["string", "ring"],
                     translation_tokens=["string", "ring"],
                     alignment=to_word_alignment_matrix("0-0 1-1"),
+                    paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+                    style_behavior=UpdateUsfmMarkerBehavior.STRIP,
                 )
             },
         )
@@ -525,6 +559,8 @@ def test_verses_out_of_order() -> None:
                     source_tokens=["verse", "1", "paragraph", "2"],
                     translation_tokens=["new", "verse", "1", "new", "paragraph", "2"],
                     alignment=to_word_alignment_matrix("0-1 1-2 2-4 3-5"),
+                    paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+                    style_behavior=UpdateUsfmMarkerBehavior.STRIP,
                 )
             },
         ),
@@ -536,6 +572,8 @@ def test_verses_out_of_order() -> None:
                     source_tokens=["verse", "2"],
                     translation_tokens=["new", "verse", "2"],
                     alignment=to_word_alignment_matrix("0-1 1-2"),
+                    paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+                    style_behavior=UpdateUsfmMarkerBehavior.STRIP,
                 )
             },
         ),
@@ -558,6 +596,47 @@ def test_verses_out_of_order() -> None:
 \v 2 new verse 2
 \v 1
 \p
+"""
+    assess(target, result)
+
+
+def test_strip_paragraphs_with_header() -> None:
+    rows = [
+        UpdateUsfmRow(
+            scr_ref("MAT 1:1"),
+            "new verse 1 new paragraph 2",
+            metadata={
+                "alignment_info": PlaceMarkersAlignmentInfo(
+                    source_tokens=["verse", "1", "paragraph", "2"],
+                    translation_tokens=["new", "verse", "1", "new", "paragraph", "2"],
+                    alignment=to_word_alignment_matrix("0-1 1-2 2-4 3-5"),
+                    paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP,
+                    style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+                )
+            },
+        )
+    ]
+    usfm = r"""\id MAT
+\c 1
+\v 1 verse 1
+\s header
+\p paragraph 2
+\v 2 verse 2
+"""
+
+    target = update_usfm(
+        rows,
+        usfm,
+        paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP,
+        style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
+    )
+    result = r"""\id MAT
+\c 1
+\v 1 new verse 1 new paragraph 2
+\s header
+\p
+\v 2 verse 2
 """
     assess(target, result)
 
