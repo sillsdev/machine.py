@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import List, TypedDict, cast
 
 from ..translation.word_alignment_matrix import WordAlignmentMatrix
+from .update_usfm_parser_handler import UpdateUsfmMarkerBehavior
 from .usfm_token import UsfmToken, UsfmTokenType
 from .usfm_update_block import UsfmUpdateBlock
 from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
@@ -15,6 +16,8 @@ class PlaceMarkersAlignmentInfo(TypedDict):
     source_tokens: List[str]
     translation_tokens: List[str]
     alignment: WordAlignmentMatrix
+    paragraph_behavior: UpdateUsfmMarkerBehavior
+    style_behavior: UpdateUsfmMarkerBehavior
 
 
 class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
@@ -33,9 +36,15 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
             or alignment_info["alignment"].column_count == 0
             or not any(
                 (
-                    e.type in [UsfmUpdateBlockElementType.PARAGRAPH, UsfmUpdateBlockElementType.STYLE]
-                    and not e.marked_for_removal
-                    and len(e.tokens) == 1
+                    (
+                        e.type == UsfmUpdateBlockElementType.PARAGRAPH
+                        and alignment_info["paragraph_behavior"] == UpdateUsfmMarkerBehavior.PRESERVE
+                        and len(e.tokens) == 1
+                    )
+                    or (
+                        e.type == UsfmUpdateBlockElementType.STYLE
+                        and alignment_info["style_behavior"] == UpdateUsfmMarkerBehavior.PRESERVE
+                    )
                 )
                 for e in elements
             )
@@ -92,7 +101,10 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                 else:
                     trg_sent += element.tokens[0].to_usfm()
 
-            if element.marked_for_removal:
+            if element.marked_for_removal or (
+                element.type == UsfmUpdateBlockElementType.PARAGRAPH
+                and alignment_info["paragraph_behavior"] == UpdateUsfmMarkerBehavior.STRIP
+            ):
                 ignored_elements.append(element)
             elif element.type == UsfmUpdateBlockElementType.EMBED:
                 embed_elements.append(element)
