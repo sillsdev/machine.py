@@ -1,14 +1,12 @@
 import argparse
-import json
 import logging
-import os
-from typing import Callable, Optional, cast
+from typing import Callable, Optional
 
 from clearml import Task
 
 from ..utils.canceled_error import CanceledError
 from ..utils.progress_status import ProgressStatus
-from .build_clearml_helper import report_clearml_progress
+from .build_clearml_helper import report_clearml_progress, update_settings
 from .config import SETTINGS
 from .nmt_engine_build_job import NmtEngineBuildJob
 from .nmt_model_factory import NmtModelFactory
@@ -47,26 +45,11 @@ def run(args: dict) -> None:
 
     try:
         logger.info("NMT Engine Build Job started")
-
-        SETTINGS.update(args)
-        model_type = cast(str, SETTINGS.model_type).lower()
-        if "build_options" in SETTINGS:
-            try:
-                build_options = json.loads(cast(str, SETTINGS.build_options))
-            except ValueError as e:
-                raise ValueError("Build options could not be parsed: Invalid JSON") from e
-            except TypeError as e:
-                raise TypeError(f"Build options could not be parsed: {e}") from e
-            SETTINGS.update({model_type: build_options})
-            if "align_pretranslations" in build_options:
-                SETTINGS.update({"align_pretranslations": build_options["align_pretranslations"]})
-        SETTINGS.data_dir = os.path.expanduser(cast(str, SETTINGS.data_dir))
-
-        logger.info(f"Config: {SETTINGS.as_dict()}")
+        update_settings(SETTINGS, args, task, logger)
 
         translation_file_service = TranslationFileService(SharedFileServiceType.CLEARML, SETTINGS)
         nmt_model_factory: NmtModelFactory
-        if model_type == "huggingface":
+        if SETTINGS.model_type == "huggingface":
             from .huggingface.hugging_face_nmt_model_factory import HuggingFaceNmtModelFactory
 
             nmt_model_factory = HuggingFaceNmtModelFactory(SETTINGS)

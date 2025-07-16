@@ -46,9 +46,7 @@ def run(args: dict) -> None:
 
     try:
         logger.info("SMT Engine Build Job started")
-        update_settings(SETTINGS, args)
-
-        logger.info(f"Config: {SETTINGS.as_dict()}")
+        update_settings(SETTINGS, args, task, logger)
 
         shared_file_service = TranslationFileService(SharedFileServiceType.CLEARML, SETTINGS)
         smt_model_factory: SmtModelFactory

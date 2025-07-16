@@ -110,7 +110,7 @@ def get_local_progress_caller(progress_info: ProgressInfo, logger: logging.Logge
     return local_progress
 
 
-def update_settings(settings: Settings, args: dict):
+def update_settings(settings: Settings, args: dict, task: Optional[Task], logger: logging.Logger):
     settings.update(args)
     settings.model_type = cast(str, settings.model_type).lower()
     if "build_options" in settings:
@@ -121,4 +121,11 @@ def update_settings(settings: Settings, args: dict):
         except TypeError as e:
             raise TypeError(f"Build options could not be parsed: {e}") from e
         settings.update({settings.model_type: build_options})
+        if "align_pretranslations" in build_options:
+            settings.update({"align_pretranslations": build_options["align_pretranslations"]})
+        if task is not None and "tags" in build_options:
+            tags = build_options["tags"]
+            if isinstance(tags, str) or (isinstance(tags, list) and all(isinstance(tag, str) for tag in tags)):
+                task.add_tags(tags)
     settings.data_dir = os.path.expanduser(cast(str, settings.data_dir))
+    logger.info(f"Config: {settings.as_dict()}")

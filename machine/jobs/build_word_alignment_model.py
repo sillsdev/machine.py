@@ -47,9 +47,7 @@ def run(args: dict):
 
     try:
         logger.info("Word Alignment Build Job started")
-        update_settings(SETTINGS, args)
-
-        logger.info(f"Config: {SETTINGS.as_dict()}")
+        update_settings(SETTINGS, args, task, logger)
 
         word_alignment_file_service = WordAlignmentFileService(SharedFileServiceType.CLEARML, SETTINGS)
         word_alignment_model_factory: WordAlignmentModelFactory
