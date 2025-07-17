@@ -334,25 +334,25 @@ def test_choose_best_action_based_on_observed_issues() -> None:
     first_pass_analyzer._will_fallback_mode_work = False
 
     # Test with no issues
-    best_action = first_pass_analyzer._choose_best_strategy_based_on_observed_issues([])
+    best_action = first_pass_analyzer._choose_best_strategy_based_on_observed_issues(set())
     assert best_action == QuotationMarkUpdateStrategy.APPLY_FULL
 
     # Test with one issue
     assert (
         first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
-            [QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK]
+            {QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK}
         )
         == QuotationMarkUpdateStrategy.SKIP
     )
     assert (
         first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
-            [QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK]
+            {QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK}
         )
         == QuotationMarkUpdateStrategy.SKIP
     )
     assert (
         first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
-            [QuotationMarkResolutionIssue.TOO_DEEP_NESTING]
+            {QuotationMarkResolutionIssue.TOO_DEEP_NESTING}
         )
         == QuotationMarkUpdateStrategy.SKIP
     )
@@ -360,28 +360,28 @@ def test_choose_best_action_based_on_observed_issues() -> None:
     # Test with multiple issues
     assert (
         first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
-            [
+            {
                 QuotationMarkResolutionIssue.TOO_DEEP_NESTING,
                 QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK,
-            ]
+            }
         )
         == QuotationMarkUpdateStrategy.SKIP
     )
     assert (
         first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
-            [
+            {
                 QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK,
                 QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK,
-            ]
+            }
         )
         == QuotationMarkUpdateStrategy.SKIP
     )
     assert (
         first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
-            [
+            {
                 QuotationMarkResolutionIssue.TOO_DEEP_NESTING,
                 QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK,
-            ]
+            }
         )
         == QuotationMarkUpdateStrategy.SKIP
     )
@@ -392,25 +392,25 @@ def test_choose_best_action_based_on_observed_issues_with_basic_fallback() -> No
     first_pass_analyzer._will_fallback_mode_work = True
 
     # Test with no issues
-    best_action = first_pass_analyzer._choose_best_strategy_based_on_observed_issues([])
+    best_action = first_pass_analyzer._choose_best_strategy_based_on_observed_issues(set())
     assert best_action == QuotationMarkUpdateStrategy.APPLY_FULL
 
     # Test with one issue
     assert (
         first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
-            [QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK]
+            {QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK}
         )
         == QuotationMarkUpdateStrategy.APPLY_FALLBACK
     )
     assert (
         first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
-            [QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK]
+            {QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK}
         )
         == QuotationMarkUpdateStrategy.SKIP
     )
     assert (
         first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
-            [QuotationMarkResolutionIssue.TOO_DEEP_NESTING]
+            {QuotationMarkResolutionIssue.TOO_DEEP_NESTING}
         )
         == QuotationMarkUpdateStrategy.APPLY_FALLBACK
     )
@@ -418,28 +418,28 @@ def test_choose_best_action_based_on_observed_issues_with_basic_fallback() -> No
     # Test with multiple issues
     assert (
         first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
-            [
+            {
                 QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK,
                 QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK,
-            ]
+            }
         )
         == QuotationMarkUpdateStrategy.SKIP
     )
     assert (
         first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
-            [
+            {
                 QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK,
                 QuotationMarkResolutionIssue.TOO_DEEP_NESTING,
-            ]
+            }
         )
         == QuotationMarkUpdateStrategy.SKIP
     )
     assert (
         first_pass_analyzer._choose_best_strategy_based_on_observed_issues(
-            [
+            {
                 QuotationMarkResolutionIssue.TOO_DEEP_NESTING,
                 QuotationMarkResolutionIssue.UNPAIRED_QUOTATION_MARK,
-            ]
+            }
         )
         == QuotationMarkUpdateStrategy.APPLY_FALLBACK
     )
