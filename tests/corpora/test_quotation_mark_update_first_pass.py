@@ -2,12 +2,12 @@ from typing import List, Union
 
 from machine.corpora import QuotationMarkUpdateFirstPass, QuotationMarkUpdateStrategy, parse_usfm
 from machine.corpora.punctuation_analysis import (
+    STANDARD_QUOTE_CONVENTIONS,
     Chapter,
     QuotationMarkResolutionIssue,
     QuoteConvention,
     TextSegment,
     Verse,
-    standard_quote_conventions,
 )
 
 
@@ -631,14 +631,10 @@ def test_ambiguous_in_first_unpaired_in_second() -> None:
 def run_first_pass(
     normalized_usfm: str, source_quote_convention_name: str, target_quote_convention_name: str
 ) -> List[QuotationMarkUpdateStrategy]:
-    source_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
-        source_quote_convention_name
-    )
+    source_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(source_quote_convention_name)
     assert source_quote_convention is not None
 
-    target_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
-        target_quote_convention_name
-    )
+    target_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(target_quote_convention_name)
     assert target_quote_convention is not None
 
     first_pass_analyzer = QuotationMarkUpdateFirstPass(source_quote_convention, target_quote_convention)
@@ -650,14 +646,10 @@ def run_first_pass(
 def run_first_pass_on_chapter(
     verse_texts: List[str], source_quote_convention_name: str, target_quote_convention_name: str
 ) -> QuotationMarkUpdateStrategy:
-    source_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
-        source_quote_convention_name
-    )
+    source_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(source_quote_convention_name)
     assert source_quote_convention is not None
 
-    target_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
-        target_quote_convention_name
-    )
+    target_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(target_quote_convention_name)
     assert target_quote_convention is not None
 
     first_pass_analyzer = QuotationMarkUpdateFirstPass(source_quote_convention, target_quote_convention)
@@ -668,8 +660,6 @@ def run_first_pass_on_chapter(
 
 
 def get_quote_convention_by_name(name: str) -> QuoteConvention:
-    quote_convention: Union[QuoteConvention, None] = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(name)
-    )
+    quote_convention: Union[QuoteConvention, None] = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(name)
     assert quote_convention is not None
     return quote_convention

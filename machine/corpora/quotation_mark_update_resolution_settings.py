@@ -10,10 +10,9 @@ from .punctuation_analysis.quote_convention_set import QuoteConventionSet
 
 
 class QuotationMarkUpdateResolutionSettings(QuotationMarkResolutionSettings):
-    def __init__(self, source_quote_convention: QuoteConvention, target_quote_convention: QuoteConvention):
+    def __init__(self, source_quote_convention: QuoteConvention):
         self._source_quote_convention = source_quote_convention
         self._quote_convention_singleton_set = QuoteConventionSet([self._source_quote_convention])
-        self._target_quote_convention = target_quote_convention
 
     def is_valid_opening_quotation_mark(self, quotation_mark_match: QuotationMarkStringMatch) -> bool:
         return quotation_mark_match.is_valid_opening_quotation_mark(self._quote_convention_singleton_set)

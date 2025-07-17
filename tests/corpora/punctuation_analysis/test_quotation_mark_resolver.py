@@ -1,19 +1,19 @@
 from typing import List
 
 from machine.corpora.punctuation_analysis import (
+    STANDARD_QUOTE_CONVENTIONS,
     DepthBasedQuotationMarkResolver,
     QuotationMarkResolver,
     QuotationMarkStringMatch,
     QuoteConventionDetectionResolutionSettings,
     TextSegment,
     UsfmMarkerType,
-    standard_quote_conventions,
 )
 
 
 def test_reset() -> None:
     quotation_mark_resolver: QuotationMarkResolver = DepthBasedQuotationMarkResolver(
-        QuoteConventionDetectionResolutionSettings(standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS)
+        QuoteConventionDetectionResolutionSettings(STANDARD_QUOTE_CONVENTIONS)
     )
 
     assert quotation_mark_resolver._quotation_mark_resolver_state._quotation_stack == []

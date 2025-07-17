@@ -54,7 +54,7 @@ class QuotationMarkTabulator:
         for depth, direction in self._quotation_counts_by_depth_and_direction:
             expected_quotation_mark: str = quote_convention.get_expected_quotation_mark(depth, direction)
 
-            # give higher weight to shallower depths, since deeper marks are more likely to be mistakes
+            # Give higher weight to shallower depths, since deeper marks are more likely to be mistakes
             weighted_difference += self._quotation_counts_by_depth_and_direction[
                 (depth, direction)
             ].calculate_num_differences(expected_quotation_mark) * 2 ** (-depth)

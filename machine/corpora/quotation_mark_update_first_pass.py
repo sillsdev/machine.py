@@ -24,7 +24,7 @@ class QuotationMarkUpdateFirstPass(UsfmStructureExtractor):
             QuoteConventionSet([source_quote_convention])
         )
         self._quotation_mark_resolver: QuotationMarkResolver = DepthBasedQuotationMarkResolver(
-            QuotationMarkUpdateResolutionSettings(source_quote_convention, target_quote_convention)
+            QuotationMarkUpdateResolutionSettings(source_quote_convention)
         )
         self._will_fallback_mode_work: bool = self._check_whether_fallback_mode_will_work(
             source_quote_convention, target_quote_convention
@@ -34,13 +34,13 @@ class QuotationMarkUpdateFirstPass(UsfmStructureExtractor):
         self, source_quote_convention: QuoteConvention, target_quote_convention: QuoteConvention
     ) -> bool:
         target_marks_by_source_marks: Dict[str, Set[str]] = {}
-        for level in range(1, source_quote_convention.num_levels + 1):
-            opening_quotation_mark = source_quote_convention.get_opening_quotation_mark_at_level(level)
+        for depth in range(1, source_quote_convention.num_levels + 1):
+            opening_quotation_mark = source_quote_convention.get_opening_quotation_mark_at_depth(depth)
             if opening_quotation_mark not in target_marks_by_source_marks:
                 target_marks_by_source_marks[opening_quotation_mark] = set()
-            if level <= target_quote_convention.num_levels:
+            if depth <= target_quote_convention.num_levels:
                 target_marks_by_source_marks[opening_quotation_mark].add(
-                    target_quote_convention.get_closing_quotation_mark_at_level(level)
+                    target_quote_convention.get_closing_quotation_mark_at_depth(depth)
                 )
 
         for source_mark in target_marks_by_source_marks:
@@ -63,12 +63,14 @@ class QuotationMarkUpdateFirstPass(UsfmStructureExtractor):
 
         self._quotation_mark_resolver.reset()
 
-        # use list() to force evaluation of the generator
+        # Use list() to force evaluation of the generator
         list(self._quotation_mark_resolver.resolve_quotation_marks(quotation_mark_matches))
 
         return self._choose_best_strategy_based_on_observed_issues(self._quotation_mark_resolver.get_issues())
 
-    def _choose_best_strategy_based_on_observed_issues(self, issues) -> QuotationMarkUpdateStrategy:
+    def _choose_best_strategy_based_on_observed_issues(
+        self, issues: Set[QuotationMarkResolutionIssue]
+    ) -> QuotationMarkUpdateStrategy:
         if QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK in issues:
             return QuotationMarkUpdateStrategy.SKIP
 

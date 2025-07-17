@@ -7,7 +7,7 @@ from machine.corpora import (
     UpdateUsfmParserHandler,
     parse_usfm,
 )
-from machine.corpora.punctuation_analysis import QuoteConvention, standard_quote_conventions
+from machine.corpora.punctuation_analysis import STANDARD_QUOTE_CONVENTIONS, QuoteConvention
 
 simple_normalized_usfm = """\\c 1
     \\v 1 Now the serpent was more subtle than any animal
@@ -302,7 +302,7 @@ def test_fallback_quotation_denormalization_same_as_full() -> None:
         normalized_usfm,
         "standard_english",
         "standard_english",
-        QuotationMarkUpdateSettings(default_chapter_action=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
+        QuotationMarkUpdateSettings(default_chapter_strategy=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
     )
     assert_usfm_equal(observed_usfm, expected_usfm)
 
@@ -324,7 +324,7 @@ def test_fallback_quotation_denormalization_incorrectly_nested() -> None:
         normalized_usfm,
         "standard_english",
         "standard_english",
-        QuotationMarkUpdateSettings(default_chapter_action=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
+        QuotationMarkUpdateSettings(default_chapter_strategy=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
     )
     assert_usfm_equal(observed_usfm, expected_usfm)
 
@@ -346,7 +346,7 @@ def test_fallback_quotation_denormalization_incorrectly_nested_second_case() -> 
         normalized_usfm,
         "standard_english",
         "standard_english",
-        QuotationMarkUpdateSettings(default_chapter_action=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
+        QuotationMarkUpdateSettings(default_chapter_strategy=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
     )
     assert_usfm_equal(observed_usfm, expected_usfm)
 
@@ -368,7 +368,7 @@ def test_fallback_quotation_denormalization_unclosed_quote() -> None:
         normalized_usfm,
         "standard_english",
         "standard_english",
-        QuotationMarkUpdateSettings(default_chapter_action=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
+        QuotationMarkUpdateSettings(default_chapter_strategy=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
     )
     assert_usfm_equal(observed_usfm, expected_usfm)
 
@@ -412,8 +412,6 @@ def assert_usfm_equal(observed_usfm: str, expected_usfm: str) -> None:
 
 
 def get_quote_convention_by_name(name: str) -> QuoteConvention:
-    quote_convention: Union[QuoteConvention, None] = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(name)
-    )
+    quote_convention: Union[QuoteConvention, None] = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(name)
     assert quote_convention is not None
     return quote_convention

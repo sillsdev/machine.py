@@ -1,4 +1,4 @@
-from typing import Generator, Set, Union
+from typing import Generator, Optional, Set
 
 from .punctuation_analysis.quotation_mark_direction import QuotationMarkDirection
 from .punctuation_analysis.quotation_mark_metadata import QuotationMarkMetadata
@@ -12,7 +12,7 @@ class FallbackQuotationMarkResolver(QuotationMarkResolver):
 
     def __init__(self, settings: QuotationMarkResolutionSettings):
         self._settings: QuotationMarkResolutionSettings = settings
-        self._last_quotation_mark: Union[QuotationMarkMetadata, None] = None
+        self._last_quotation_mark: Optional[QuotationMarkMetadata] = None
         self._issues: Set[QuotationMarkResolutionIssue] = set()
 
     def reset(self) -> None:
@@ -30,13 +30,13 @@ class FallbackQuotationMarkResolver(QuotationMarkResolver):
         quotation_mark_match: QuotationMarkStringMatch,
     ) -> Generator[QuotationMarkMetadata, None, None]:
         if self._is_opening_quotation_mark(quotation_mark_match):
-            quotation_mark: Union[QuotationMarkMetadata, None] = self._resolve_opening_mark(quotation_mark_match)
+            quotation_mark: Optional[QuotationMarkMetadata] = self._resolve_opening_mark(quotation_mark_match)
             if quotation_mark is not None:
                 yield quotation_mark
             else:
                 self._issues.add(QuotationMarkResolutionIssue.UNEXPECTED_QUOTATION_MARK)
         elif self._is_closing_quotation_mark(quotation_mark_match):
-            quotation_mark: Union[QuotationMarkMetadata, None] = self._resolve_closing_mark(quotation_mark_match)
+            quotation_mark: Optional[QuotationMarkMetadata] = self._resolve_closing_mark(quotation_mark_match)
             if quotation_mark is not None:
                 yield quotation_mark
             else:
@@ -94,9 +94,7 @@ class FallbackQuotationMarkResolver(QuotationMarkResolver):
 
         return False
 
-    def _resolve_opening_mark(
-        self, quotation_mark_match: QuotationMarkStringMatch
-    ) -> Union[QuotationMarkMetadata, None]:
+    def _resolve_opening_mark(self, quotation_mark_match: QuotationMarkStringMatch) -> Optional[QuotationMarkMetadata]:
         possible_depths: Set[int] = self._settings.get_possible_depths(
             quotation_mark_match.quotation_mark, QuotationMarkDirection.OPENING
         )
@@ -107,9 +105,7 @@ class FallbackQuotationMarkResolver(QuotationMarkResolver):
         self._last_quotation_mark = quotation_mark
         return quotation_mark
 
-    def _resolve_closing_mark(
-        self, quotation_mark_match: QuotationMarkStringMatch
-    ) -> Union[QuotationMarkMetadata, None]:
+    def _resolve_closing_mark(self, quotation_mark_match: QuotationMarkStringMatch) -> Optional[QuotationMarkMetadata]:
         possible_depths: Set[int] = self._settings.get_possible_depths(
             quotation_mark_match.quotation_mark, QuotationMarkDirection.CLOSING
         )

@@ -123,9 +123,9 @@ def test_get_opening_quote_at_level() -> None:
             SingleLevelQuoteConvention("\u00ab", "\u00bb"),
         ],
     )
-    assert quote_convention.get_opening_quotation_mark_at_level(1) == "\u201c"
-    assert quote_convention.get_opening_quotation_mark_at_level(2) == "\u2018"
-    assert quote_convention.get_opening_quotation_mark_at_level(3) == "\u00ab"
+    assert quote_convention.get_opening_quotation_mark_at_depth(1) == "\u201c"
+    assert quote_convention.get_opening_quotation_mark_at_depth(2) == "\u2018"
+    assert quote_convention.get_opening_quotation_mark_at_depth(3) == "\u00ab"
 
 
 def test_get_closing_quote_at_level() -> None:
@@ -137,9 +137,9 @@ def test_get_closing_quote_at_level() -> None:
             SingleLevelQuoteConvention("\u00ab", "\u00bb"),
         ],
     )
-    assert quote_convention.get_closing_quotation_mark_at_level(1) == "\u201d"
-    assert quote_convention.get_closing_quotation_mark_at_level(2) == "\u2019"
-    assert quote_convention.get_closing_quotation_mark_at_level(3) == "\u00bb"
+    assert quote_convention.get_closing_quotation_mark_at_depth(1) == "\u201d"
+    assert quote_convention.get_closing_quotation_mark_at_depth(2) == "\u2019"
+    assert quote_convention.get_closing_quotation_mark_at_depth(3) == "\u00bb"
 
 
 def test_get_expected_quotation_mark() -> None:
@@ -313,14 +313,14 @@ def test_normalize() -> None:
     normalized_standard_english_quote_convention = standard_english_quote_convention.normalize()
     assert normalized_standard_english_quote_convention.name == "standard-english-quote-convention_normalized"
     assert normalized_standard_english_quote_convention.num_levels == 4
-    assert normalized_standard_english_quote_convention.get_opening_quotation_mark_at_level(1) == '"'
-    assert normalized_standard_english_quote_convention.get_closing_quotation_mark_at_level(1) == '"'
-    assert normalized_standard_english_quote_convention.get_opening_quotation_mark_at_level(2) == "'"
-    assert normalized_standard_english_quote_convention.get_closing_quotation_mark_at_level(2) == "'"
-    assert normalized_standard_english_quote_convention.get_opening_quotation_mark_at_level(3) == '"'
-    assert normalized_standard_english_quote_convention.get_closing_quotation_mark_at_level(3) == '"'
-    assert normalized_standard_english_quote_convention.get_opening_quotation_mark_at_level(4) == "'"
-    assert normalized_standard_english_quote_convention.get_closing_quotation_mark_at_level(4) == "'"
+    assert normalized_standard_english_quote_convention.get_opening_quotation_mark_at_depth(1) == '"'
+    assert normalized_standard_english_quote_convention.get_closing_quotation_mark_at_depth(1) == '"'
+    assert normalized_standard_english_quote_convention.get_opening_quotation_mark_at_depth(2) == "'"
+    assert normalized_standard_english_quote_convention.get_closing_quotation_mark_at_depth(2) == "'"
+    assert normalized_standard_english_quote_convention.get_opening_quotation_mark_at_depth(3) == '"'
+    assert normalized_standard_english_quote_convention.get_closing_quotation_mark_at_depth(3) == '"'
+    assert normalized_standard_english_quote_convention.get_opening_quotation_mark_at_depth(4) == "'"
+    assert normalized_standard_english_quote_convention.get_closing_quotation_mark_at_depth(4) == "'"
 
     western_european_quote_convention = QuoteConvention(
         "test-quote-convention",
@@ -333,12 +333,12 @@ def test_normalize() -> None:
     normalized_western_european_quote_convention = western_european_quote_convention.normalize()
     assert normalized_western_european_quote_convention.name == "test-quote-convention_normalized"
     assert normalized_western_european_quote_convention.num_levels == 3
-    assert normalized_western_european_quote_convention.get_opening_quotation_mark_at_level(1) == '"'
-    assert normalized_western_european_quote_convention.get_closing_quotation_mark_at_level(1) == '"'
-    assert normalized_western_european_quote_convention.get_opening_quotation_mark_at_level(2) == '"'
-    assert normalized_western_european_quote_convention.get_closing_quotation_mark_at_level(2) == '"'
-    assert normalized_western_european_quote_convention.get_opening_quotation_mark_at_level(3) == "'"
-    assert normalized_western_european_quote_convention.get_closing_quotation_mark_at_level(3) == "'"
+    assert normalized_western_european_quote_convention.get_opening_quotation_mark_at_depth(1) == '"'
+    assert normalized_western_european_quote_convention.get_closing_quotation_mark_at_depth(1) == '"'
+    assert normalized_western_european_quote_convention.get_opening_quotation_mark_at_depth(2) == '"'
+    assert normalized_western_european_quote_convention.get_closing_quotation_mark_at_depth(2) == '"'
+    assert normalized_western_european_quote_convention.get_opening_quotation_mark_at_depth(3) == "'"
+    assert normalized_western_european_quote_convention.get_closing_quotation_mark_at_depth(3) == "'"
 
     hybrid_british_typewriter_english_quote_convention = QuoteConvention(
         "hybrid-british-typewriter-english-quote-convention",
@@ -357,12 +357,12 @@ def test_normalize() -> None:
         == "hybrid-british-typewriter-english-quote-convention_normalized"
     )
     assert normalized_hybrid_british_typewriter_english_quote_convention.num_levels == 3
-    assert normalized_hybrid_british_typewriter_english_quote_convention.get_opening_quotation_mark_at_level(1) == '"'
-    assert normalized_hybrid_british_typewriter_english_quote_convention.get_closing_quotation_mark_at_level(1) == '"'
-    assert normalized_hybrid_british_typewriter_english_quote_convention.get_opening_quotation_mark_at_level(2) == "'"
-    assert normalized_hybrid_british_typewriter_english_quote_convention.get_closing_quotation_mark_at_level(2) == "'"
-    assert normalized_hybrid_british_typewriter_english_quote_convention.get_opening_quotation_mark_at_level(3) == '"'
-    assert normalized_hybrid_british_typewriter_english_quote_convention.get_closing_quotation_mark_at_level(3) == '"'
+    assert normalized_hybrid_british_typewriter_english_quote_convention.get_opening_quotation_mark_at_depth(1) == '"'
+    assert normalized_hybrid_british_typewriter_english_quote_convention.get_closing_quotation_mark_at_depth(1) == '"'
+    assert normalized_hybrid_british_typewriter_english_quote_convention.get_opening_quotation_mark_at_depth(2) == "'"
+    assert normalized_hybrid_british_typewriter_english_quote_convention.get_closing_quotation_mark_at_depth(2) == "'"
+    assert normalized_hybrid_british_typewriter_english_quote_convention.get_opening_quotation_mark_at_depth(3) == '"'
+    assert normalized_hybrid_british_typewriter_english_quote_convention.get_closing_quotation_mark_at_depth(3) == '"'
 
 
 def test_print_summary() -> None:

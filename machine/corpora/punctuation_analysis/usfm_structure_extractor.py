@@ -70,7 +70,7 @@ class UsfmStructureExtractor(UsfmParserHandler):
         if len(text) > 0:
             self._next_text_segment_builder.set_text(text)
             text_segment: TextSegment = self._next_text_segment_builder.build()
-            # don't look past verse boundaries, to enable identical functionality in the
+            # Don't look past verse boundaries, to enable identical functionality in the
             # online one-verse-at-a-time (QuotationMarkDenormalizationScriptureUpdateBlockHandler)
             # and offline whole-book-at-once settings (QuoteConventionDetector)
             if len(self._text_segments) > 0 and not text_segment.marker_is_in_preceding_context(UsfmMarkerType.VERSE):

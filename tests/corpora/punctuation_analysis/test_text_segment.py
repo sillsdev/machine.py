@@ -6,12 +6,12 @@ def test_builder_initialization() -> None:
     builder = TextSegment.Builder()
 
     assert builder._text_segment._text == ""
-    assert builder._text_segment._previous_segment is None
-    assert builder._text_segment._next_segment is None
+    assert builder._text_segment.previous_segment is None
+    assert builder._text_segment.next_segment is None
     assert builder._text_segment._immediate_preceding_marker is UsfmMarkerType.NO_MARKER
     assert builder._text_segment._markers_in_preceding_context == set()
-    assert builder._text_segment._index_in_verse == 0
-    assert builder._text_segment._num_segments_in_verse == 0
+    assert builder._text_segment.index_in_verse == 0
+    assert builder._text_segment.num_segments_in_verse == 0
     assert builder._text_segment._usfm_token is None
 
 
@@ -28,12 +28,12 @@ def test_builder_set_previous_segment() -> None:
     previous_segment = TextSegment.Builder().set_text("previous segment text").build()
     builder.set_previous_segment(previous_segment)
 
-    assert builder._text_segment._previous_segment == previous_segment
-    assert builder._text_segment._next_segment is None
+    assert builder._text_segment.previous_segment == previous_segment
+    assert builder._text_segment.next_segment is None
     assert builder._text_segment._immediate_preceding_marker is UsfmMarkerType.NO_MARKER
     assert builder._text_segment._markers_in_preceding_context == set()
-    assert builder._text_segment._index_in_verse == 0
-    assert builder._text_segment._num_segments_in_verse == 0
+    assert builder._text_segment.index_in_verse == 0
+    assert builder._text_segment.num_segments_in_verse == 0
 
 
 def test_builder_add_preceding_marker() -> None:
@@ -42,8 +42,8 @@ def test_builder_add_preceding_marker() -> None:
 
     assert builder._text_segment._immediate_preceding_marker is UsfmMarkerType.CHAPTER
     assert builder._text_segment._markers_in_preceding_context == {UsfmMarkerType.CHAPTER}
-    assert builder._text_segment._previous_segment is None
-    assert builder._text_segment._next_segment is None
+    assert builder._text_segment.previous_segment is None
+    assert builder._text_segment.next_segment is None
 
     builder.add_preceding_marker(UsfmMarkerType.VERSE)
     assert builder._text_segment._immediate_preceding_marker == UsfmMarkerType.VERSE
@@ -51,8 +51,8 @@ def test_builder_add_preceding_marker() -> None:
         UsfmMarkerType.CHAPTER,
         UsfmMarkerType.VERSE,
     }
-    assert builder._text_segment._previous_segment is None
-    assert builder._text_segment._next_segment is None
+    assert builder._text_segment.previous_segment is None
+    assert builder._text_segment.next_segment is None
 
 
 def test_builder_set_usfm_token() -> None:
@@ -63,58 +63,8 @@ def test_builder_set_usfm_token() -> None:
     assert builder._text_segment._usfm_token.type == UsfmTokenType.TEXT
     assert builder._text_segment._usfm_token.text == "USFM token text"
     assert builder._text_segment._text == ""
-    assert builder._text_segment._previous_segment is None
-    assert builder._text_segment._next_segment is None
-
-
-def test_set_previous_segment() -> None:
-    text_segment = TextSegment.Builder().set_text("example text").build()
-    previous_segment = TextSegment.Builder().set_text("previous segment text").build()
-    text_segment.previous_segment = previous_segment
-
-    assert text_segment._previous_segment == previous_segment
-    assert text_segment._next_segment is None
-    assert text_segment._immediate_preceding_marker is UsfmMarkerType.NO_MARKER
-    assert text_segment._markers_in_preceding_context == set()
-    assert text_segment._index_in_verse == 0
-    assert text_segment._num_segments_in_verse == 0
-
-
-def test_set_next_segment() -> None:
-    text_segment = TextSegment.Builder().set_text("example text").build()
-    next_segment = TextSegment.Builder().set_text("next segment text").build()
-    text_segment.next_segment = next_segment
-
-    assert text_segment._previous_segment is None
-    assert text_segment._next_segment == next_segment
-    assert text_segment._immediate_preceding_marker is UsfmMarkerType.NO_MARKER
-    assert text_segment._markers_in_preceding_context == set()
-    assert text_segment._index_in_verse == 0
-    assert text_segment._num_segments_in_verse == 0
-
-
-def test_set_index_in_verse() -> None:
-    text_segment = TextSegment.Builder().set_text("example text").build()
-    text_segment.set_index_in_verse(2)
-
-    assert text_segment._index_in_verse == 2
-    assert text_segment._previous_segment is None
-    assert text_segment._next_segment is None
-    assert text_segment._immediate_preceding_marker is UsfmMarkerType.NO_MARKER
-    assert text_segment._markers_in_preceding_context == set()
-    assert text_segment._num_segments_in_verse == 0
-
-
-def test_set_num_segments_in_verse() -> None:
-    text_segment = TextSegment.Builder().set_text("example text").build()
-    text_segment.set_num_segments_in_verse(5)
-
-    assert text_segment._num_segments_in_verse == 5
-    assert text_segment._previous_segment is None
-    assert text_segment._next_segment is None
-    assert text_segment._immediate_preceding_marker is UsfmMarkerType.NO_MARKER
-    assert text_segment._markers_in_preceding_context == set()
-    assert text_segment._index_in_verse == 0
+    assert builder._text_segment.previous_segment is None
+    assert builder._text_segment.next_segment is None
 
 
 def test_equals() -> None:
@@ -128,11 +78,11 @@ def test_equals() -> None:
     assert basic_segment != different_text_segment
 
     segment_with_index = TextSegment.Builder().set_text("text1").build()
-    segment_with_index.set_index_in_verse(1)
+    segment_with_index.index_in_verse = 1
     segment_with_same_index = TextSegment.Builder().set_text("text1").build()
-    segment_with_same_index.set_index_in_verse(1)
+    segment_with_same_index.index_in_verse = 1
     segment_with_different_index = TextSegment.Builder().set_text("text1").build()
-    segment_with_different_index.set_index_in_verse(2)
+    segment_with_different_index.index_in_verse = 2
 
     assert segment_with_index == segment_with_same_index
     assert segment_with_index != segment_with_different_index
@@ -171,11 +121,11 @@ def test_equals() -> None:
 
     # attributes that are not used in equality checks
     segment_with_num_verses = TextSegment.Builder().set_text("text1").build()
-    segment_with_num_verses.set_num_segments_in_verse(3)
+    segment_with_num_verses.num_segments_in_verse = 3
     segment_with_same_num_verses = TextSegment.Builder().set_text("text1").build()
-    segment_with_same_num_verses.set_num_segments_in_verse(3)
+    segment_with_same_num_verses.num_segments_in_verse = 3
     segment_with_different_num_verses = TextSegment.Builder().set_text("text1").build()
-    segment_with_different_num_verses.set_num_segments_in_verse(4)
+    segment_with_different_num_verses.num_segments_in_verse = 4
 
     assert segment_with_num_verses == segment_with_same_num_verses
     assert segment_with_num_verses != segment_with_different_num_verses
@@ -269,24 +219,24 @@ def test_is_marker_in_preceding_context() -> None:
 
 def test_is_first_segment_in_verse() -> None:
     text_segment = TextSegment.Builder().set_text("example text").build()
-    text_segment.set_index_in_verse(0)
+    text_segment.index_in_verse = 0
     assert text_segment.is_first_segment_in_verse() is True
 
-    text_segment.set_index_in_verse(1)
+    text_segment.index_in_verse = 1
     assert text_segment.is_first_segment_in_verse() is False
 
 
 def test_is_last_segment_in_verse() -> None:
     text_segment = TextSegment.Builder().set_text("example text").build()
-    text_segment.set_index_in_verse(0)
-    text_segment.set_num_segments_in_verse(1)
+    text_segment.index_in_verse = 0
+    text_segment.num_segments_in_verse = 1
     assert text_segment.is_last_segment_in_verse() is True
 
-    text_segment.set_index_in_verse(0)
-    text_segment.set_num_segments_in_verse(2)
+    text_segment.index_in_verse = 0
+    text_segment.num_segments_in_verse = 2
     assert text_segment.is_last_segment_in_verse() is False
 
-    text_segment.set_index_in_verse(1)
+    text_segment.index_in_verse = 1
     assert text_segment.is_last_segment_in_verse() is True
 
 

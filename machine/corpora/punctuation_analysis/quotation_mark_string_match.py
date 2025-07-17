@@ -1,5 +1,5 @@
 from re import Pattern
-from typing import Union
+from typing import Optional
 
 import regex
 
@@ -12,7 +12,7 @@ from .usfm_marker_type import UsfmMarkerType
 
 class QuotationMarkStringMatch:
 
-    # extra stuff in the regex to handle Western Cham
+    # Extra stuff in the regex to handle Western Cham
     _LETTER_PATTERN: Pattern = regex.compile(r"[\p{L}\U0001E200-\U0001E28F]", regex.U)
     _LATIN_LETTER_PATTERN: Pattern = regex.compile(r"^\p{script=Latin}$", regex.U)
     _WHITESPACE_PATTERN: Pattern = regex.compile(r"[\s~]", regex.U)
@@ -53,7 +53,7 @@ class QuotationMarkStringMatch:
         return self.previous_character is not None and regex_pattern.search(self.previous_character) is not None
 
     @property
-    def previous_character(self) -> Union[str, None]:
+    def previous_character(self) -> Optional[str]:
         if self._start_index == 0:
             previous_segment = self._text_segment.previous_segment
             if previous_segment is not None and not self._text_segment.marker_is_in_preceding_context(
@@ -64,7 +64,7 @@ class QuotationMarkStringMatch:
         return self._text_segment.text[self._start_index - 1]
 
     @property
-    def next_character(self) -> Union[str, None]:
+    def next_character(self) -> Optional[str]:
         if self.is_at_end_of_segment():
             next_segment = self._text_segment.next_segment
             if next_segment is not None and not next_segment.marker_is_in_preceding_context(UsfmMarkerType.PARAGRAPH):
@@ -78,10 +78,10 @@ class QuotationMarkStringMatch:
     def trailing_substring_matches(self, regex_pattern: regex.Pattern) -> bool:
         return regex_pattern.search(self._text_segment.substring_after(self._end_index)) is not None
 
-    # this assumes that the two matches occur in the same verse
+    # This assumes that the two matches occur in the same verse
     def precedes(self, other: "QuotationMarkStringMatch") -> bool:
-        return self._text_segment._index_in_verse < other._text_segment._index_in_verse or (
-            self._text_segment._index_in_verse == other._text_segment._index_in_verse
+        return self._text_segment.index_in_verse < other._text_segment.index_in_verse or (
+            self._text_segment.index_in_verse == other._text_segment.index_in_verse
             and self._start_index < other._start_index
         )
 
@@ -97,7 +97,7 @@ class QuotationMarkStringMatch:
     def end_index(self) -> int:
         return self._end_index
 
-    # not used, but a useful method for debugging
+    # Not used, but a useful method for debugging
     @property
     def context(self) -> str:
         return self._text_segment.text[

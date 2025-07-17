@@ -145,7 +145,7 @@ class QuotationMarkGrouper:
 
     def get_quotation_mark_pairs(self) -> Generator[Tuple[str, str], None, None]:
         for mark1, matches1 in self._grouped_quotation_marks.items():
-            # handle cases of identical opening/closing marks
+            # Handle cases of identical opening/closing marks
             if (
                 len(matches1) == 2
                 and self._quote_conventions.is_quotation_mark_direction_ambiguous(mark1)
@@ -154,11 +154,11 @@ class QuotationMarkGrouper:
                 yield (mark1, mark1)
                 continue
 
-            # skip verses where quotation mark pairs are ambiguous
+            # Skip verses where quotation mark pairs are ambiguous
             if len(matches1) > 1:
                 continue
 
-            # find matching closing marks
+            # Find matching closing marks
             for mark2, matches2 in self._grouped_quotation_marks.items():
                 if (
                     len(matches2) == 1

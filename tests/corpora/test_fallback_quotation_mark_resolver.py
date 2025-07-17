@@ -1,5 +1,6 @@
 from machine.corpora import FallbackQuotationMarkResolver, QuotationMarkUpdateResolutionSettings
 from machine.corpora.punctuation_analysis import (
+    STANDARD_QUOTE_CONVENTIONS,
     QuotationMarkDirection,
     QuotationMarkMetadata,
     QuotationMarkResolutionIssue,
@@ -7,18 +8,15 @@ from machine.corpora.punctuation_analysis import (
     QuoteConventionDetectionResolutionSettings,
     QuoteConventionSet,
     TextSegment,
-    standard_quote_conventions,
 )
 
 
 def test_reset():
-    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
-        "standard_english"
-    )
+    english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert english_quote_convention is not None
 
     basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
-        QuotationMarkUpdateResolutionSettings(english_quote_convention, english_quote_convention)
+        QuotationMarkUpdateResolutionSettings(english_quote_convention)
     )
 
     basic_quotation_mark_resolver._last_quotation_mark = QuotationMarkMetadata(
@@ -32,13 +30,11 @@ def test_reset():
 
 
 def test_simple_quotation_mark_resolution():
-    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
-        "standard_english"
-    )
+    english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert english_quote_convention is not None
 
     basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
-        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize(), english_quote_convention)
+        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize())
     )
 
     actual_resolved_quotation_marks = list(
@@ -65,13 +61,11 @@ def test_simple_quotation_mark_resolution():
 
 
 def test_is_opening_quote():
-    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
-        "standard_english"
-    )
+    english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert english_quote_convention is not None
 
     basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
-        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize(), english_quote_convention)
+        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize())
     )
 
     # valid opening quote at start of segment
@@ -108,9 +102,7 @@ def test_is_opening_quote():
 
 
 def test_is_opening_quote_with_unambiguous_quote_convention():
-    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
-        "standard_english"
-    )
+    english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert english_quote_convention is not None
 
     basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
@@ -135,13 +127,11 @@ def test_is_opening_quote_with_unambiguous_quote_convention():
 
 
 def test_is_opening_quote_stateful():
-    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
-        "standard_english"
-    )
+    english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert english_quote_convention is not None
 
     basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
-        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize(), english_quote_convention)
+        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize())
     )
 
     # no preceding quote
@@ -156,13 +146,11 @@ def test_is_opening_quote_stateful():
 
 
 def test_does_most_recent_opening_mark_immediately_precede():
-    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
-        "standard_english"
-    )
+    english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert english_quote_convention is not None
 
     basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
-        QuotationMarkUpdateResolutionSettings(english_quote_convention, english_quote_convention)
+        QuotationMarkUpdateResolutionSettings(english_quote_convention)
     )
 
     # no preceding quote
@@ -196,13 +184,11 @@ def test_does_most_recent_opening_mark_immediately_precede():
 
 
 def test_is_closing_quote():
-    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
-        "standard_english"
-    )
+    english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert english_quote_convention is not None
 
     basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
-        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize(), english_quote_convention)
+        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize())
     )
 
     # valid closing quote at end of segment
@@ -239,9 +225,7 @@ def test_is_closing_quote():
 
 
 def test_is_closing_quote_with_unambiguous_quote_convention():
-    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
-        "standard_english"
-    )
+    english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert english_quote_convention is not None
 
     basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
@@ -266,13 +250,11 @@ def test_is_closing_quote_with_unambiguous_quote_convention():
 
 
 def test_resolve_opening_quote():
-    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
-        "standard_english"
-    )
+    english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert english_quote_convention is not None
 
     basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
-        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize(), english_quote_convention)
+        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize())
     )
 
     expected_resolved_quotation_mark = QuotationMarkMetadata(
@@ -286,13 +268,11 @@ def test_resolve_opening_quote():
 
 
 def test_resolve_closing_quote():
-    english_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
-        "standard_english"
-    )
+    english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert english_quote_convention is not None
 
     basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
-        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize(), english_quote_convention)
+        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize())
     )
 
     expected_resolved_quotation_mark = QuotationMarkMetadata(
