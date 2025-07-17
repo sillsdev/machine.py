@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Optional
 
 from .fallback_quotation_mark_resolver import FallbackQuotationMarkResolver
 from .punctuation_analysis.depth_based_quotation_mark_resolver import DepthBasedQuotationMarkResolver
@@ -36,9 +36,7 @@ class QuoteConventionChangingUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         )
         self._next_scripture_text_segment_builder: TextSegment.Builder = TextSegment.Builder()
 
-        resolution_settings = QuotationMarkUpdateResolutionSettings(
-            self._source_quote_convention, self._target_quote_convention
-        )
+        resolution_settings = QuotationMarkUpdateResolutionSettings(self._source_quote_convention)
 
         # Each embed represents a separate context for quotation marks
         # (i.e. you can't open a quote in one context and close it in another)
@@ -66,12 +64,12 @@ class QuoteConventionChangingUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         return self._apply_standard_updating(block)
 
     def _apply_fallback_updating(self, block: UsfmUpdateBlock) -> UsfmUpdateBlock:
-        for element in block._elements:
+        for element in block.elements:
             self._process_scripture_element(element, self._simple_quotation_mark_resolver)
         return block
 
     def _apply_standard_updating(self, block: UsfmUpdateBlock) -> UsfmUpdateBlock:
-        for element in block._elements:
+        for element in block.elements:
             if element.type == UsfmUpdateBlockElementType.EMBED:
                 self._embed_quotation_mark_resolver.reset()
                 self._process_scripture_element(element, self._embed_quotation_mark_resolver)
@@ -102,20 +100,19 @@ class QuoteConventionChangingUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
             elif token.type == UsfmTokenType.NOTE:
                 self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.EMBED)
             elif token.type == UsfmTokenType.TEXT:
-                text_segment: Union[TextSegment, None] = self._create_text_segment(token)
+                text_segment: Optional[TextSegment] = self._create_text_segment(token)
                 if text_segment is not None:
                     text_segments.append(text_segment)
         return self._set_previous_and_next_for_segments(text_segments)
 
-    def _create_text_segment(self, token: UsfmToken) -> Union[TextSegment, None]:
+    def _create_text_segment(self, token: UsfmToken) -> Optional[TextSegment]:
         self._next_scripture_text_segment_builder.set_usfm_token(token)
+        text_segment_to_return: Optional[TextSegment] = None
         if token.text is not None:
             self._next_scripture_text_segment_builder.set_text(token.text)
-            text_segment_to_return: TextSegment = self._next_scripture_text_segment_builder.build()
-            self._next_scripture_text_segment_builder = TextSegment.Builder()
-            return text_segment_to_return
-        else:
-            self._next_scripture_text_segment_builder = TextSegment.Builder()
+            text_segment_to_return = self._next_scripture_text_segment_builder.build()
+        self._next_scripture_text_segment_builder = TextSegment.Builder()
+        return text_segment_to_return
 
     def _set_previous_and_next_for_segments(self, text_segments: List[TextSegment]) -> List[TextSegment]:
         for i in range(len(text_segments)):
@@ -128,10 +125,10 @@ class QuoteConventionChangingUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
     def _check_for_chapter_change(self, block: UsfmUpdateBlock) -> None:
         for scripture_ref in block.refs:
             if scripture_ref.chapter_num != self._current_chapter_number:
-                self._current_chapter_number = scripture_ref.chapter_num
-                self._start_new_chapter(self._current_chapter_number)
+                self._start_new_chapter(scripture_ref.chapter_num)
 
     def _start_new_chapter(self, new_chapter_number: int) -> None:
+        self._current_chapter_number = new_chapter_number
         self._current_strategy = self._settings.get_action_for_chapter(new_chapter_number)
         self._verse_text_quotation_mark_resolver.reset()
         self._next_scripture_text_segment_builder = TextSegment.Builder()
@@ -143,8 +140,8 @@ class QuoteConventionChangingUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                 scripture_ref.chapter_num == self._current_chapter_number
                 and scripture_ref.verse_num != self._current_verse_number
             ):
-                self._current_verse_number = scripture_ref.verse_num
-                self._start_new_verse(self._current_verse_number)
+                self._start_new_verse(scripture_ref.verse_num)
 
-    def _start_new_verse(self, new_chapter_number: int) -> None:
+    def _start_new_verse(self, new_verse_number: int) -> None:
+        self._current_verse_number = new_verse_number
         self._next_scripture_text_segment_builder.add_preceding_marker(UsfmMarkerType.VERSE)

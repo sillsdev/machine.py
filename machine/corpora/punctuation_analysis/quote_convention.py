@@ -39,21 +39,21 @@ class SingleLevelQuoteConvention:
 
 
 class QuoteConvention:
-    def __init__(self, name: str, levels: list[SingleLevelQuoteConvention]):
+    def __init__(self, name: str, level_conventions: list[SingleLevelQuoteConvention]):
         self._name = name
-        self.levels = levels
+        self.level_conventions = level_conventions
 
     def __eq__(self, value):
         if not isinstance(value, QuoteConvention):
             return False
         if self._name != value._name:
             return False
-        if len(self.levels) != len(value.levels):
+        if len(self.level_conventions) != len(value.level_conventions):
             return False
-        for level, other_level in zip(self.levels, value.levels):
-            if level.opening_quotation_mark != other_level.opening_quotation_mark:
+        for level_convention, other_level_convention in zip(self.level_conventions, value.level_conventions):
+            if level_convention.opening_quotation_mark != other_level_convention.opening_quotation_mark:
                 return False
-            if level.closing_quotation_mark != other_level.closing_quotation_mark:
+            if level_convention.closing_quotation_mark != other_level_convention.closing_quotation_mark:
                 return False
         return True
 
@@ -63,41 +63,47 @@ class QuoteConvention:
 
     @property
     def num_levels(self) -> int:
-        return len(self.levels)
+        return len(self.level_conventions)
 
-    def get_opening_quotation_mark_at_level(self, level: int) -> str:
-        return self.levels[level - 1].opening_quotation_mark
+    def get_opening_quotation_mark_at_depth(self, depth: int) -> str:
+        return self.level_conventions[depth - 1].opening_quotation_mark
 
-    def get_closing_quotation_mark_at_level(self, level: int) -> str:
-        return self.levels[level - 1].closing_quotation_mark
+    def get_closing_quotation_mark_at_depth(self, depth: int) -> str:
+        return self.level_conventions[depth - 1].closing_quotation_mark
 
     def get_expected_quotation_mark(self, depth: int, direction: QuotationMarkDirection) -> str:
         if depth > self.num_levels or depth < 1:
             return ""
         return (
-            self.get_opening_quotation_mark_at_level(depth)
+            self.get_opening_quotation_mark_at_depth(depth)
             if direction is QuotationMarkDirection.OPENING
-            else self.get_closing_quotation_mark_at_level(depth)
+            else self.get_closing_quotation_mark_at_depth(depth)
         )
 
     def _includes_opening_quotation_mark(self, opening_quotation_mark: str) -> bool:
-        for level in self.levels:
-            if level.opening_quotation_mark == opening_quotation_mark:
+        for level_convention in self.level_conventions:
+            if level_convention.opening_quotation_mark == opening_quotation_mark:
                 return True
         return False
 
     def _includes_closing_quotation_mark(self, closing_quotation_mark: str) -> bool:
-        for level in self.levels:
-            if level.closing_quotation_mark == closing_quotation_mark:
+        for level_convention in self.level_conventions:
+            if level_convention.closing_quotation_mark == closing_quotation_mark:
                 return True
         return False
 
     def get_possible_depths(self, quotation_mark: str, direction: QuotationMarkDirection) -> Set[int]:
         depths: Set[int] = set()
-        for depth, level in enumerate(self.levels, start=1):
-            if direction is QuotationMarkDirection.OPENING and level.opening_quotation_mark == quotation_mark:
+        for depth, level_convention in enumerate(self.level_conventions, start=1):
+            if (
+                direction is QuotationMarkDirection.OPENING
+                and level_convention.opening_quotation_mark == quotation_mark
+            ):
                 depths.add(depth)
-            elif direction is QuotationMarkDirection.CLOSING and level.closing_quotation_mark == quotation_mark:
+            elif (
+                direction is QuotationMarkDirection.CLOSING
+                and level_convention.closing_quotation_mark == quotation_mark
+            ):
                 depths.add(depth)
         return depths
 
@@ -111,35 +117,37 @@ class QuoteConvention:
             if not self._includes_closing_quotation_mark(closing_quotation_mark):
                 return False
 
-        # we require the first-level quotation marks to have been observed
+        # We require the first-level quotation marks to have been observed
         if (
-            self.get_opening_quotation_mark_at_level(1) not in opening_quotation_marks
-            or self.get_closing_quotation_mark_at_level(1) not in closing_quotation_marks
+            self.get_opening_quotation_mark_at_depth(1) not in opening_quotation_marks
+            or self.get_closing_quotation_mark_at_depth(1) not in closing_quotation_marks
         ):
             return False
         return True
 
     def normalize(self) -> "QuoteConvention":
-        return QuoteConvention(self.name + "_normalized", [level.normalize() for level in self.levels])
+        return QuoteConvention(
+            self.name + "_normalized", [level_convention.normalize() for level_convention in self.level_conventions]
+        )
 
     def __str__(self) -> str:
         summary = self.name + "\n"
-        for level, convention in enumerate(self.levels):
-            ordinal_name = self._get_ordinal_name(level + 1)
+        for depth, level_convention in enumerate(self.level_conventions):
+            ordinal_name = self._get_ordinal_name(depth + 1)
             summary += "%s%s-level quote%s\n" % (
-                convention.opening_quotation_mark,
+                level_convention.opening_quotation_mark,
                 ordinal_name,
-                convention.closing_quotation_mark,
+                level_convention.closing_quotation_mark,
             )
         return summary
 
-    def _get_ordinal_name(self, level) -> str:
-        if level == 1:
+    def _get_ordinal_name(self, depth) -> str:
+        if depth == 1:
             return "First"
-        if level == 2:
+        if depth == 2:
             return "Second"
-        if level == 3:
+        if depth == 3:
             return "Third"
-        if level == 4:
+        if depth == 4:
             return "Fourth"
-        return str(level) + "th"
+        return str(depth) + "th"

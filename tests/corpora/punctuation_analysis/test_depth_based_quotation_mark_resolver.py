@@ -2,6 +2,7 @@ from pytest import raises
 
 from machine.corpora import QuotationMarkUpdateResolutionSettings
 from machine.corpora.punctuation_analysis import (
+    STANDARD_QUOTE_CONVENTIONS,
     DepthBasedQuotationMarkResolver,
     QuotationMarkCategorizer,
     QuotationMarkDirection,
@@ -15,7 +16,6 @@ from machine.corpora.punctuation_analysis import (
     QuoteConventionSet,
     TextSegment,
     UsfmMarkerType,
-    standard_quote_conventions,
 )
 
 
@@ -315,9 +315,7 @@ def test_add_quotation_continuer() -> None:
 
 
 def test_is_english_quotation_continuer() -> None:
-    standard_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
-    )
+    standard_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert standard_english_quote_convention is not None
 
     english_resolver_settings = QuoteConventionDetectionResolutionSettings(
@@ -380,7 +378,7 @@ def test_is_english_quotation_continuer() -> None:
     )
 
     quotation_mark_categorizer_for_denormalization = QuotationMarkCategorizer(
-        QuotationMarkUpdateResolutionSettings(standard_english_quote_convention, standard_english_quote_convention),
+        QuotationMarkUpdateResolutionSettings(standard_english_quote_convention),
         quotation_mark_resolver_state,
         quotation_continuer_state,
     )
@@ -563,9 +561,7 @@ def test_is_english_quotation_continuer() -> None:
 
 
 def test_is_spanish_quotation_continuer() -> None:
-    western_european_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("western_european")
-    )
+    western_european_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("western_european")
     assert western_european_quote_convention is not None
 
     spanish_resolver_settings = QuoteConventionDetectionResolutionSettings(
@@ -628,7 +624,7 @@ def test_is_spanish_quotation_continuer() -> None:
     )
 
     quotation_mark_categorizer_for_denormalization = QuotationMarkCategorizer(
-        QuotationMarkUpdateResolutionSettings(western_european_quote_convention, western_european_quote_convention),
+        QuotationMarkUpdateResolutionSettings(western_european_quote_convention),
         quotation_mark_resolver_state,
         quotation_continuer_state,
     )
@@ -811,9 +807,7 @@ def test_is_spanish_quotation_continuer() -> None:
 
 
 def test_is_opening_quote() -> None:
-    central_european_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("central_european")
-    )
+    central_european_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("central_european")
     assert central_european_quote_convention is not None
     central_european_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([central_european_quote_convention])
@@ -824,9 +818,7 @@ def test_is_opening_quote() -> None:
         central_european_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
     )
 
-    british_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("british_english")
-    )
+    british_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("british_english")
     assert british_english_quote_convention is not None
     british_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([british_english_quote_convention])
@@ -835,9 +827,7 @@ def test_is_opening_quote() -> None:
         british_english_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
     )
 
-    standard_swedish_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_swedish")
-    )
+    standard_swedish_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_swedish")
     assert standard_swedish_quote_convention is not None
     standard_swedish_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([standard_swedish_quote_convention])
@@ -1038,9 +1028,7 @@ def test_is_opening_quote() -> None:
 
 
 def test_is_closing_quote() -> None:
-    central_european_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("central_european")
-    )
+    central_european_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("central_european")
     assert central_european_quote_convention is not None
     central_european_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([central_european_quote_convention])
@@ -1051,9 +1039,7 @@ def test_is_closing_quote() -> None:
         central_european_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
     )
 
-    british_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("british_english")
-    )
+    british_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("british_english")
     assert british_english_quote_convention is not None
     british_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([british_english_quote_convention])
@@ -1062,9 +1048,7 @@ def test_is_closing_quote() -> None:
         british_english_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
     )
 
-    standard_swedish_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_swedish")
-    )
+    standard_swedish_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_swedish")
     assert standard_swedish_quote_convention is not None
     standard_swedish_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([standard_swedish_quote_convention])
@@ -1073,9 +1057,7 @@ def test_is_closing_quote() -> None:
         standard_swedish_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
     )
 
-    standard_french_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_french")
-    )
+    standard_french_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_french")
     assert standard_french_quote_convention is not None
     standard_french_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([standard_french_quote_convention])
@@ -1222,9 +1204,7 @@ def test_is_closing_quote() -> None:
 
 
 def test_is_malformed_opening_quote() -> None:
-    central_european_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("central_european")
-    )
+    central_european_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("central_european")
     assert central_european_quote_convention is not None
     central_european_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([central_european_quote_convention])
@@ -1235,9 +1215,7 @@ def test_is_malformed_opening_quote() -> None:
         central_european_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
     )
 
-    british_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("british_english")
-    )
+    british_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("british_english")
     assert british_english_quote_convention is not None
     british_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([british_english_quote_convention])
@@ -1246,9 +1224,7 @@ def test_is_malformed_opening_quote() -> None:
         british_english_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
     )
 
-    standard_swedish_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_swedish")
-    )
+    standard_swedish_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_swedish")
     assert standard_swedish_quote_convention is not None
     standard_swedish_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([standard_swedish_quote_convention])
@@ -1423,9 +1399,7 @@ def test_is_malformed_opening_quote() -> None:
 
 
 def test_is_malformed_closing_quote() -> None:
-    central_european_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("central_european")
-    )
+    central_european_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("central_european")
     assert central_european_quote_convention is not None
     central_european_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([central_european_quote_convention])
@@ -1436,9 +1410,7 @@ def test_is_malformed_closing_quote() -> None:
         central_european_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
     )
 
-    british_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("british_english")
-    )
+    british_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("british_english")
     assert british_english_quote_convention is not None
     british_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([british_english_quote_convention])
@@ -1447,9 +1419,7 @@ def test_is_malformed_closing_quote() -> None:
         british_english_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
     )
 
-    standard_swedish_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_swedish")
-    )
+    standard_swedish_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_swedish")
     assert standard_swedish_quote_convention is not None
     standard_swedish_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([standard_swedish_quote_convention])
@@ -1621,9 +1591,7 @@ def test_is_malformed_closing_quote() -> None:
 
 
 def test_is_unpaired_closing_quote() -> None:
-    central_european_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("central_european")
-    )
+    central_european_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("central_european")
     assert central_european_quote_convention is not None
     central_european_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([central_european_quote_convention])
@@ -1634,9 +1602,7 @@ def test_is_unpaired_closing_quote() -> None:
         central_european_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
     )
 
-    british_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("british_english")
-    )
+    british_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("british_english")
     assert british_english_quote_convention is not None
     british_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([british_english_quote_convention])
@@ -1645,9 +1611,7 @@ def test_is_unpaired_closing_quote() -> None:
         british_english_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
     )
 
-    standard_swedish_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_swedish")
-    )
+    standard_swedish_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_swedish")
     assert standard_swedish_quote_convention is not None
     standard_swedish_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([standard_swedish_quote_convention])
@@ -1808,9 +1772,7 @@ def test_is_unpaired_closing_quote() -> None:
 
 
 def test_is_apostrophe() -> None:
-    standard_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
-    )
+    standard_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert standard_english_quote_convention is not None
     standard_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([standard_english_quote_convention])
@@ -1821,9 +1783,7 @@ def test_is_apostrophe() -> None:
         standard_english_resolver_settings, quotation_mark_resolver_state, quotation_continuer_state
     )
 
-    typewriter_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("typewriter_english")
-    )
+    typewriter_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("typewriter_english")
     assert typewriter_english_quote_convention is not None
     typewriter_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([typewriter_english_quote_convention])
@@ -1973,9 +1933,7 @@ def test_is_apostrophe() -> None:
 
 # DepthBasedQuotationMarkResolver tests
 def test_depth_based_quotation_mark_resolver_reset() -> None:
-    standard_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
-    )
+    standard_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert standard_english_quote_convention is not None
     standard_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([standard_english_quote_convention])
@@ -2005,9 +1963,7 @@ def test_depth_based_quotation_mark_resolver_reset() -> None:
 
 
 def test_basic_quotation_mark_recognition() -> None:
-    standard_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
-    )
+    standard_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert standard_english_quote_convention is not None
     standard_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([standard_english_quote_convention])
@@ -2034,9 +1990,7 @@ def test_basic_quotation_mark_recognition() -> None:
 
 
 def test_resolution_only_of_passed_matches() -> None:
-    standard_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
-    )
+    standard_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert standard_english_quote_convention is not None
     standard_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([standard_english_quote_convention])
@@ -2074,9 +2028,7 @@ def test_resolution_only_of_passed_matches() -> None:
 
 
 def test_resolution_across_segments() -> None:
-    standard_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
-    )
+    standard_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert standard_english_quote_convention is not None
     standard_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([standard_english_quote_convention])
@@ -2104,9 +2056,7 @@ def test_resolution_across_segments() -> None:
 
 
 def test_resolution_with_apostrophes() -> None:
-    standard_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
-    )
+    standard_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert standard_english_quote_convention is not None
     standard_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([standard_english_quote_convention])
@@ -2137,9 +2087,7 @@ def test_resolution_with_apostrophes() -> None:
     ]
     assert standard_english_quotation_mark_resolver.get_issues() == set()
 
-    typewriter_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("typewriter_english")
-    )
+    typewriter_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("typewriter_english")
     assert typewriter_english_quote_convention is not None
     typewriter_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([typewriter_english_quote_convention])
@@ -2169,9 +2117,7 @@ def test_resolution_with_apostrophes() -> None:
 
 
 def test_english_quote_continuers() -> None:
-    standard_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
-    )
+    standard_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert standard_english_quote_convention is not None
     standard_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([standard_english_quote_convention])
@@ -2208,9 +2154,7 @@ def test_english_quote_continuers() -> None:
 
 
 def test_spanish_quote_continuers() -> None:
-    western_european_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("western_european")
-    )
+    western_european_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("western_european")
     assert western_european_quote_convention is not None
     western_european_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([western_european_quote_convention])
@@ -2247,9 +2191,7 @@ def test_spanish_quote_continuers() -> None:
 
 
 def test_malformed_quotation_marks() -> None:
-    standard_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
-    )
+    standard_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert standard_english_quote_convention is not None
     standard_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([standard_english_quote_convention])
@@ -2282,9 +2224,7 @@ def test_malformed_quotation_marks() -> None:
 
 
 def test_unpaired_quotation_mark_issue() -> None:
-    standard_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
-    )
+    standard_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert standard_english_quote_convention is not None
     standard_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([standard_english_quote_convention])
@@ -2325,9 +2265,7 @@ def test_unpaired_quotation_mark_issue() -> None:
 
 
 def test_too_deep_nesting_issue() -> None:
-    standard_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
-    )
+    standard_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert standard_english_quote_convention is not None
     standard_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([standard_english_quote_convention])
@@ -2361,9 +2299,7 @@ def test_too_deep_nesting_issue() -> None:
 
 
 def test_incompatible_quotation_mark_issue() -> None:
-    standard_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
-    )
+    standard_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert standard_english_quote_convention is not None
     standard_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([standard_english_quote_convention])
@@ -2392,9 +2328,7 @@ def test_incompatible_quotation_mark_issue() -> None:
 
 
 def test_ambiguous_quotation_mark_issue() -> None:
-    typewriter_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("typewriter_english")
-    )
+    typewriter_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("typewriter_english")
     assert typewriter_english_quote_convention is not None
     typewriter_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([typewriter_english_quote_convention])
@@ -2432,9 +2366,7 @@ def test_ambiguous_quotation_mark_issue() -> None:
 
 
 def test_typewriter_english_quotation_mark_recognition() -> None:
-    typewriter_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("typewriter_english")
-    )
+    typewriter_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("typewriter_english")
     assert typewriter_english_quote_convention is not None
     typewriter_english_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([typewriter_english_quote_convention])
@@ -2463,9 +2395,7 @@ def test_typewriter_english_quotation_mark_recognition() -> None:
 
 
 def test_typewriter_french_mark_recognition() -> None:
-    typewriter_french_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("typewriter_french")
-    )
+    typewriter_french_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("typewriter_french")
     assert typewriter_french_quote_convention is not None
     typewriter_french_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([typewriter_french_quote_convention])
@@ -2492,9 +2422,7 @@ def test_typewriter_french_mark_recognition() -> None:
 
 
 def test_central_european_quotation_mark_recognition() -> None:
-    central_european_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("central_european")
-    )
+    central_european_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("central_european")
     assert central_european_quote_convention is not None
     central_european_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([central_european_quote_convention])
@@ -2526,9 +2454,7 @@ def test_central_european_quotation_mark_recognition() -> None:
 
 
 def test_standard_swedish_quotation_mark_recognition() -> None:
-    standard_swedish_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_swedish")
-    )
+    standard_swedish_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_swedish")
     assert standard_swedish_quote_convention is not None
     standard_swedish_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet([standard_swedish_quote_convention])
@@ -2560,19 +2486,13 @@ def test_standard_swedish_quotation_mark_recognition() -> None:
 
 
 def test_multiple_conventions_quotation_mark_recognition() -> None:
-    typewriter_french_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("typewriter_french")
-    )
+    typewriter_french_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("typewriter_french")
     assert typewriter_french_quote_convention is not None
 
-    central_european_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("central_european")
-    )
+    central_european_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("central_european")
     assert central_european_quote_convention is not None
 
-    standard_swedish_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_swedish")
-    )
+    standard_swedish_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_swedish")
     assert standard_swedish_quote_convention is not None
     multiple_conventions_resolver_settings = QuoteConventionDetectionResolutionSettings(
         QuoteConventionSet(

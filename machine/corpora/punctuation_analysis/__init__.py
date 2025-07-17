@@ -26,6 +26,7 @@ from .quote_convention import QuoteConvention, SingleLevelQuoteConvention
 from .quote_convention_detection_resolution_settings import QuoteConventionDetectionResolutionSettings
 from .quote_convention_detector import QuoteConventionAnalysis, QuoteConventionDetector
 from .quote_convention_set import QuoteConventionSet
+from .standard_quote_conventions import STANDARD_QUOTE_CONVENTIONS
 from .text_segment import TextSegment
 from .usfm_marker_type import UsfmMarkerType
 from .usfm_structure_extractor import UsfmStructureExtractor
@@ -59,6 +60,7 @@ __all__ = [
     "QuotationMarkTabulator",
     "QuoteConventionDetector",
     "QuoteConventionSet",
+    "STANDARD_QUOTE_CONVENTIONS",
     "TextSegment",
     "UsfmMarkerType",
     "UsfmStructureExtractor",

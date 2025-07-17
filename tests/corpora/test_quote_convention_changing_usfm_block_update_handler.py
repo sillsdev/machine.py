@@ -14,6 +14,7 @@ from machine.corpora import (
     parse_usfm,
 )
 from machine.corpora.punctuation_analysis import (
+    STANDARD_QUOTE_CONVENTIONS,
     QuotationMarkDirection,
     QuotationMarkFinder,
     QuotationMarkMetadata,
@@ -23,7 +24,6 @@ from machine.corpora.punctuation_analysis import (
     QuoteConventionSet,
     TextSegment,
     UsfmMarkerType,
-    standard_quote_conventions,
 )
 
 
@@ -142,7 +142,7 @@ def test_fallback_strategy_same_as_full() -> None:
         normalized_usfm,
         "british_english",
         "standard_english",
-        QuotationMarkUpdateSettings(default_chapter_action=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
+        QuotationMarkUpdateSettings(default_chapter_strategy=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
     )
     assert_usfm_equal(observed_usfm, expected_usfm)
 
@@ -164,7 +164,7 @@ def test_fallback_strategy_incorrectly_nested() -> None:
         normalized_usfm,
         "british_english",
         "standard_english",
-        QuotationMarkUpdateSettings(default_chapter_action=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
+        QuotationMarkUpdateSettings(default_chapter_strategy=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
     )
     assert_usfm_equal(observed_usfm, expected_usfm)
 
@@ -186,7 +186,7 @@ def test_fallback_strategy_incorrectly_nested_second_case() -> None:
         normalized_usfm,
         "british_english",
         "standard_english",
-        QuotationMarkUpdateSettings(default_chapter_action=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
+        QuotationMarkUpdateSettings(default_chapter_strategy=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
     )
     assert_usfm_equal(observed_usfm, expected_usfm)
 
@@ -208,7 +208,7 @@ def test_fallback_strategy_unclosed_quote() -> None:
         normalized_usfm,
         "british_english",
         "standard_english",
-        QuotationMarkUpdateSettings(default_chapter_action=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
+        QuotationMarkUpdateSettings(default_chapter_strategy=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
     )
     assert_usfm_equal(observed_usfm, expected_usfm)
 
@@ -249,7 +249,7 @@ def test_default_quotation_mark_update_strategy() -> None:
         normalized_usfm,
         "typewriter_english",
         "standard_english",
-        QuotationMarkUpdateSettings(default_chapter_action=QuotationMarkUpdateStrategy.APPLY_FULL),
+        QuotationMarkUpdateSettings(default_chapter_strategy=QuotationMarkUpdateStrategy.APPLY_FULL),
     )
     assert_usfm_equal(observed_usfm, expected_full_usfm)
 
@@ -257,7 +257,7 @@ def test_default_quotation_mark_update_strategy() -> None:
         normalized_usfm,
         "typewriter_english",
         "standard_english",
-        QuotationMarkUpdateSettings(default_chapter_action=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
+        QuotationMarkUpdateSettings(default_chapter_strategy=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
     )
     assert_usfm_equal(observed_usfm, expected_basic_usfm)
 
@@ -265,7 +265,7 @@ def test_default_quotation_mark_update_strategy() -> None:
         normalized_usfm,
         "typewriter_english",
         "standard_english",
-        QuotationMarkUpdateSettings(default_chapter_action=QuotationMarkUpdateStrategy.SKIP),
+        QuotationMarkUpdateSettings(default_chapter_strategy=QuotationMarkUpdateStrategy.SKIP),
     )
     assert_usfm_equal(observed_usfm, expected_skipped_usfm)
 
@@ -299,7 +299,7 @@ def test_single_chapter_quotation_mark_update_strategy() -> None:
         normalized_usfm,
         "typewriter_english",
         "standard_english",
-        QuotationMarkUpdateSettings(chapter_actions=[QuotationMarkUpdateStrategy.APPLY_FULL]),
+        QuotationMarkUpdateSettings(chapter_strategies=[QuotationMarkUpdateStrategy.APPLY_FULL]),
     )
     assert_usfm_equal(observed_usfm, expected_full_usfm)
 
@@ -307,7 +307,7 @@ def test_single_chapter_quotation_mark_update_strategy() -> None:
         normalized_usfm,
         "typewriter_english",
         "standard_english",
-        QuotationMarkUpdateSettings(chapter_actions=[QuotationMarkUpdateStrategy.APPLY_FALLBACK]),
+        QuotationMarkUpdateSettings(chapter_strategies=[QuotationMarkUpdateStrategy.APPLY_FALLBACK]),
     )
     assert_usfm_equal(observed_usfm, expected_basic_usfm)
 
@@ -315,7 +315,7 @@ def test_single_chapter_quotation_mark_update_strategy() -> None:
         normalized_usfm,
         "typewriter_english",
         "standard_english",
-        QuotationMarkUpdateSettings(chapter_actions=[QuotationMarkUpdateStrategy.SKIP]),
+        QuotationMarkUpdateSettings(chapter_strategies=[QuotationMarkUpdateStrategy.SKIP]),
     )
     assert_usfm_equal(observed_usfm, expected_skipped_usfm)
 
@@ -347,7 +347,7 @@ def test_multiple_chapter_same_strategy() -> None:
         "typewriter_english",
         "standard_english",
         QuotationMarkUpdateSettings(
-            chapter_actions=[QuotationMarkUpdateStrategy.APPLY_FULL, QuotationMarkUpdateStrategy.APPLY_FULL]
+            chapter_strategies=[QuotationMarkUpdateStrategy.APPLY_FULL, QuotationMarkUpdateStrategy.APPLY_FULL]
         ),
     )
     assert_usfm_equal(observed_usfm, expected_full_usfm)
@@ -357,7 +357,7 @@ def test_multiple_chapter_same_strategy() -> None:
         "typewriter_english",
         "standard_english",
         QuotationMarkUpdateSettings(
-            chapter_actions=[QuotationMarkUpdateStrategy.APPLY_FALLBACK, QuotationMarkUpdateStrategy.APPLY_FALLBACK]
+            chapter_strategies=[QuotationMarkUpdateStrategy.APPLY_FALLBACK, QuotationMarkUpdateStrategy.APPLY_FALLBACK]
         ),
     )
     assert_usfm_equal(observed_usfm, expected_fallback_usfm)
@@ -397,7 +397,7 @@ def test_multiple_chapter_multiple_strategies() -> None:
         "typewriter_english",
         "standard_english",
         QuotationMarkUpdateSettings(
-            chapter_actions=[QuotationMarkUpdateStrategy.APPLY_FULL, QuotationMarkUpdateStrategy.APPLY_FALLBACK]
+            chapter_strategies=[QuotationMarkUpdateStrategy.APPLY_FULL, QuotationMarkUpdateStrategy.APPLY_FALLBACK]
         ),
     )
     assert_usfm_equal(observed_usfm, expected_full_then_fallback_usfm)
@@ -407,7 +407,7 @@ def test_multiple_chapter_multiple_strategies() -> None:
         "typewriter_english",
         "standard_english",
         QuotationMarkUpdateSettings(
-            chapter_actions=[QuotationMarkUpdateStrategy.APPLY_FALLBACK, QuotationMarkUpdateStrategy.APPLY_FULL]
+            chapter_strategies=[QuotationMarkUpdateStrategy.APPLY_FALLBACK, QuotationMarkUpdateStrategy.APPLY_FULL]
         ),
     )
     assert_usfm_equal(observed_usfm, expected_fallback_then_full_usfm)
@@ -417,7 +417,7 @@ def test_multiple_chapter_multiple_strategies() -> None:
         "typewriter_english",
         "standard_english",
         QuotationMarkUpdateSettings(
-            chapter_actions=[QuotationMarkUpdateStrategy.APPLY_FALLBACK, QuotationMarkUpdateStrategy.SKIP]
+            chapter_strategies=[QuotationMarkUpdateStrategy.APPLY_FALLBACK, QuotationMarkUpdateStrategy.SKIP]
         ),
     )
     assert_usfm_equal(observed_usfm, expected_fallback_then_skip_usfm)
@@ -459,8 +459,8 @@ def test_create_text_segments_basic() -> None:
     assert text_segments[0]._text == "test segment"
     assert text_segments[0]._immediate_preceding_marker is UsfmMarkerType.NO_MARKER
     assert text_segments[0]._markers_in_preceding_context == set()
-    assert text_segments[0]._previous_segment is None
-    assert text_segments[0]._next_segment is None
+    assert text_segments[0].previous_segment is None
+    assert text_segments[0].next_segment is None
 
 
 def test_create_text_segments_with_preceding_markers() -> None:
@@ -485,8 +485,8 @@ def test_create_text_segments_with_preceding_markers() -> None:
         UsfmMarkerType.VERSE,
         UsfmMarkerType.PARAGRAPH,
     }
-    assert text_segments[0]._previous_segment is None
-    assert text_segments[0]._next_segment is None
+    assert text_segments[0].previous_segment is None
+    assert text_segments[0].next_segment is None
 
 
 def test_create_text_segments_with_multiple_text_tokens() -> None:
@@ -515,16 +515,16 @@ def test_create_text_segments_with_multiple_text_tokens() -> None:
         UsfmMarkerType.VERSE,
         UsfmMarkerType.PARAGRAPH,
     }
-    assert text_segments[0]._previous_segment is None
-    assert text_segments[0]._next_segment == text_segments[1]
+    assert text_segments[0].previous_segment is None
+    assert text_segments[0].next_segment == text_segments[1]
     assert text_segments[1]._text == "test segment2"
     assert text_segments[1]._immediate_preceding_marker == UsfmMarkerType.CHARACTER
     assert text_segments[1]._markers_in_preceding_context == {
         UsfmMarkerType.VERSE,
         UsfmMarkerType.CHARACTER,
     }
-    assert text_segments[1]._previous_segment == text_segments[0]
-    assert text_segments[1]._next_segment is None
+    assert text_segments[1].previous_segment == text_segments[0]
+    assert text_segments[1].next_segment is None
 
 
 def test_create_text_segment() -> None:
@@ -555,12 +555,12 @@ def test_set_previous_and_next_for_segments() -> None:
 
     quote_convention_changer._set_previous_and_next_for_segments(segments)
 
-    assert segments[0]._previous_segment is None
-    assert segments[0]._next_segment == segments[1]
-    assert segments[1]._previous_segment == segments[0]
-    assert segments[1]._next_segment == segments[2]
-    assert segments[2]._previous_segment == segments[1]
-    assert segments[2]._next_segment is None
+    assert segments[0].previous_segment is None
+    assert segments[0].next_segment == segments[1]
+    assert segments[1].previous_segment == segments[0]
+    assert segments[1].next_segment == segments[2]
+    assert segments[2].previous_segment == segments[1]
+    assert segments[2].next_segment is None
 
 
 def test_check_for_chapter_change() -> None:
@@ -585,7 +585,7 @@ def test_start_new_chapter() -> None:
             "standard_english",
             "standard_english",
             QuotationMarkUpdateSettings(
-                chapter_actions=[
+                chapter_strategies=[
                     QuotationMarkUpdateStrategy.SKIP,
                     QuotationMarkUpdateStrategy.APPLY_FULL,
                     QuotationMarkUpdateStrategy.APPLY_FALLBACK,
@@ -639,14 +639,10 @@ def create_quote_convention_changing_usfm_update_block_handler(
     target_quote_convention_name: str,
     quotation_mark_update_settings: QuotationMarkUpdateSettings = QuotationMarkUpdateSettings(),
 ) -> QuoteConventionChangingUsfmUpdateBlockHandler:
-    source_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
-        source_quote_convention_name
-    )
+    source_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(source_quote_convention_name)
     assert source_quote_convention is not None
 
-    target_quote_convention = standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
-        target_quote_convention_name
-    )
+    target_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(target_quote_convention_name)
     assert target_quote_convention is not None
 
     return QuoteConventionChangingUsfmUpdateBlockHandler(

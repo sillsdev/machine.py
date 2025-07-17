@@ -1,14 +1,14 @@
 from machine.corpora.punctuation_analysis import (
+    STANDARD_QUOTE_CONVENTIONS,
     QuotationMarkFinder,
     QuotationMarkStringMatch,
     QuoteConventionSet,
     TextSegment,
-    standard_quote_conventions,
 )
 
 
 def test_that_all_possible_quotation_marks_are_identified() -> None:
-    quotation_mark_finder = QuotationMarkFinder(standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS)
+    quotation_mark_finder = QuotationMarkFinder(STANDARD_QUOTE_CONVENTIONS)
     assert quotation_mark_finder.find_all_potential_quotation_marks_in_text_segment(
         TextSegment.Builder().set_text("\u201cSample Text\u201d").build()
     ) == [
@@ -177,9 +177,7 @@ def test_that_all_possible_quotation_marks_are_identified() -> None:
 
 
 def test_that_it_uses_the_quote_convention_set() -> None:
-    standard_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
-    )
+    standard_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert standard_english_quote_convention is not None
 
     english_quotation_mark_finder = QuotationMarkFinder(QuoteConventionSet([standard_english_quote_convention]))
@@ -192,9 +190,7 @@ def test_that_it_uses_the_quote_convention_set() -> None:
         == []
     )
 
-    typewriter_english_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("typewriter_english")
-    )
+    typewriter_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("typewriter_english")
     assert typewriter_english_quote_convention is not None
 
     typewriter_english_quotation_mark_finder = QuotationMarkFinder(
@@ -214,9 +210,7 @@ def test_that_it_uses_the_quote_convention_set() -> None:
         )
     ]
 
-    western_european_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("western_european")
-    )
+    western_european_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("western_european")
     assert western_european_quote_convention is not None
 
     western_european_quotation_mark_finder = QuotationMarkFinder(
@@ -236,10 +230,8 @@ def test_that_it_uses_the_quote_convention_set() -> None:
         )
     ]
 
-    typewriter_western_european_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
-            "typewriter_western_european"
-        )
+    typewriter_western_european_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
+        "typewriter_western_european"
     )
     assert typewriter_western_european_quote_convention is not None
 
@@ -267,9 +259,7 @@ def test_that_it_uses_the_quote_convention_set() -> None:
         ),
     ]
 
-    central_european_quote_convention = (
-        standard_quote_conventions.STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("central_european")
-    )
+    central_european_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("central_european")
     assert central_european_quote_convention is not None
 
     central_european_quotation_mark_finder = QuotationMarkFinder(

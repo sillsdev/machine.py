@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Generator, Set, Union
+from typing import Generator, Optional, Set
 
 import regex
 
@@ -90,7 +90,7 @@ class QuoteContinuerState:
         )
         self._quote_continuer_mark_stack.append(quotation_mark)
         self._continuer_style = quote_continuer_style
-        if len(self._quote_continuer_mark_stack) == len(quotation_mark_resolver_state._quotation_stack):
+        if self.current_depth == quotation_mark_resolver_state.current_depth:
             self._quote_continuer_mark_stack.clear()
         return quotation_mark
 
@@ -111,8 +111,8 @@ class QuotationMarkCategorizer:
     def is_english_quote_continuer(
         self,
         quotation_mark_match: QuotationMarkStringMatch,
-        previous_match: Union[QuotationMarkStringMatch, None],
-        next_match: Union[QuotationMarkStringMatch, None],
+        previous_match: Optional[QuotationMarkStringMatch],
+        next_match: Optional[QuotationMarkStringMatch],
     ) -> bool:
         if self._quote_continuer_state.continuer_style == QuoteContinuerStyle.SPANISH:
             return False
@@ -141,8 +141,8 @@ class QuotationMarkCategorizer:
     def is_spanish_quote_continuer(
         self,
         quotation_mark_match: QuotationMarkStringMatch,
-        previous_match: Union[QuotationMarkStringMatch, None],
-        next_match: Union[QuotationMarkStringMatch, None],
+        previous_match: Optional[QuotationMarkStringMatch],
+        next_match: Optional[QuotationMarkStringMatch],
     ) -> bool:
         if self._quote_continuer_state.continuer_style == QuoteContinuerStyle.ENGLISH:
             return False
@@ -161,7 +161,7 @@ class QuotationMarkCategorizer:
             if quotation_mark_match._start_index > 0:
                 return False
 
-            # this has only been observed with guillemets so far
+            # This has only been observed with guillemets so far
             if quotation_mark_match.quotation_mark != "»":
                 return False
 
@@ -194,7 +194,7 @@ class QuotationMarkCategorizer:
         if not self._settings.is_valid_opening_quotation_mark(quotation_mark_match):
             return False
 
-        # if the quote convention is ambiguous, use whitespace as a clue
+        # If the quote convention is ambiguous, use whitespace as a clue
         if self._settings.is_valid_closing_quotation_mark(quotation_mark_match):
             return (
                 quotation_mark_match.has_leading_whitespace()
@@ -213,7 +213,7 @@ class QuotationMarkCategorizer:
         if not self._settings.is_valid_closing_quotation_mark(quotation_mark_match):
             return False
 
-        # if the quote convention is ambiguous, use whitespace as a clue
+        # If the quote convention is ambiguous, use whitespace as a clue
         if self._settings.is_valid_opening_quotation_mark(quotation_mark_match):
             return (
                 quotation_mark_match.has_trailing_whitespace()
@@ -285,7 +285,7 @@ class QuotationMarkCategorizer:
     def is_apostrophe(
         self,
         quotation_mark_match: QuotationMarkStringMatch,
-        next_match: Union[QuotationMarkStringMatch, None],
+        next_match: Optional[QuotationMarkStringMatch],
     ) -> bool:
         if not quotation_mark_match.quotation_mark_matches(self._APOSTROPHE_PATTERN):
             return False
@@ -299,11 +299,11 @@ class QuotationMarkCategorizer:
         ):
             return True
 
-        # potential final s possessive (e.g. Moses')
+        # Potential final s possessive (e.g. Moses')
         if quotation_mark_match.previous_character_matches(regex.compile(r"s")) and (
             quotation_mark_match.has_trailing_whitespace() or quotation_mark_match.has_trailing_punctuation()
         ):
-            # check whether it could be a closing quotation mark
+            # Check whether it could be a closing quotation mark
             if not self._quotation_mark_resolver_state.has_open_quotation_mark():
                 return True
             if not self._settings.are_marks_a_valid_pair(
@@ -317,7 +317,7 @@ class QuotationMarkCategorizer:
             ):
                 return True
 
-        # for languages that use apostrophes at the start and end of words
+        # For languages that use apostrophes at the start and end of words
         if (
             not self._quotation_mark_resolver_state.has_open_quotation_mark()
             and quotation_mark_match.quotation_mark == "'"
@@ -360,8 +360,8 @@ class DepthBasedQuotationMarkResolver(QuotationMarkResolver):
     def _resolve_quotation_mark(
         self,
         quotation_mark_match: QuotationMarkStringMatch,
-        previous_mark: Union[QuotationMarkStringMatch, None],
-        next_mark: Union[QuotationMarkStringMatch, None],
+        previous_mark: Optional[QuotationMarkStringMatch],
+        next_mark: Optional[QuotationMarkStringMatch],
     ) -> Generator[QuotationMarkMetadata, None, None]:
         if self._quotation_mark_categorizer.is_opening_quotation_mark(quotation_mark_match):
             if self._quotation_mark_categorizer.is_english_quote_continuer(
