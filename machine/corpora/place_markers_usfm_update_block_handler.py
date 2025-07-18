@@ -121,17 +121,37 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
             trg_tok_starts.append(trg_sent.index(tok, trg_tok_starts[-1] + prev_len if len(trg_tok_starts) > 0 else 0))
             prev_len = len(tok)
 
+        """
+        NOTE: This branch contains changes for two different things I wanted to experiment with.
+        The first is forcing end markers to be placed after their corresponding style marker (code that interacts with the style_stack and lower_bound variables)
+        The second is placing end markers relative to the tokens that precede them (the rest of the changes)
+        """
+
+        # NOTE: Stack of the insert locations of recently placed style markers
+        # Used to enforce end markers coming after start markers while accounting for nested style markers
+        style_stack = []
+
         # Predict marker placements and get insertion order
         to_insert = []
         for element, adj_src_tok in zip(to_place, adj_src_toks):
-            adj_trg_tok = self._predict_marker_location(alignment_info["alignment"], adj_src_tok, src_toks, trg_toks)
+            is_end_marker = element.tokens[0].marker[-1] == "*"
+            adj_trg_tok = self._predict_marker_location(
+                alignment_info["alignment"],
+                adj_src_tok,
+                src_toks,
+                trg_toks,
+                is_end_marker,
+                style_stack[-1] if is_end_marker else -1,
+            )
 
-            if (
-                adj_trg_tok > 0
-                and element.type == UsfmUpdateBlockElementType.STYLE
-                and element.tokens[0].marker[-1] == "*"
-            ):
-                # Insert end tokens directly after the token they follow
+            if element.type == UsfmUpdateBlockElementType.STYLE:
+                if is_end_marker:
+                    style_stack.pop()
+                else:
+                    style_stack.append(adj_trg_tok)
+
+            if adj_trg_tok > 0 and is_end_marker:
+                # Insert end tokens directly after the token they follow (no space)
                 trg_str_idx = trg_tok_starts[adj_trg_tok - 1] + len(trg_toks[adj_trg_tok - 1])
             elif adj_trg_tok < len(trg_tok_starts):
                 trg_str_idx = trg_tok_starts[adj_trg_tok]
@@ -175,6 +195,8 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         adj_src_tok: int,
         src_toks: List[str],
         trg_toks: List[str],
+        is_end_marker: bool,
+        lower_bound: int,
     ) -> int:
         # Gets the number of alignment pairs that "cross the line" between
         # the src marker position and the potential trg marker position, (src_idx - .5) and (trg_idx - .5)
@@ -203,7 +225,11 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                 # is the last token aligned to the src rather than the first
                 for trg_idx in reversed(aligned_trg_toks) if punct_hyp < 0 else aligned_trg_toks:
                     trg_tok = trg_toks[trg_idx]
-                    if len(trg_tok) > 0 and not any(c.isalpha() for c in trg_tok):
+                    if (
+                        trg_idx + (1 if punct_hyp == -1 else 0) > lower_bound
+                        and len(trg_tok) > 0
+                        and not any(c.isalpha() for c in trg_tok)
+                    ):
                         trg_hyp = trg_idx
                         break
             if trg_hyp != -1:
@@ -211,7 +237,10 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                 # adjust the index when aligning to punctuation that precedes the token
                 return trg_hyp + (1 if punct_hyp == -1 else 0)
 
-        hyps = [0, 1, 2]
+        # Evaluate hypotheses for the target location of the marker.
+        # If the marker is a paragraph or opening style marker, generate hypothesis tokens based on the source tokens that follow the marker.
+        # If the marker is an end marker, base off of preceding tokens.
+        hyps = [0, 1, 2] if not is_end_marker else [0, -1, -2]
         best_hyp = -1
         best_num_crossings = 200**2  # mostly meaningless, a big number
         checked = set()
@@ -220,15 +249,19 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
             if src_hyp in checked:
                 continue
             trg_hyp = -1
-            while trg_hyp == -1 and src_hyp >= 0 and src_hyp < alignment.row_count:
+            while trg_hyp == -1 and (
+                (not is_end_marker and src_hyp >= 0 and src_hyp < alignment.row_count)
+                or (is_end_marker and src_hyp > 0 and src_hyp <= alignment.row_count)
+            ):
                 checked.add(src_hyp)
-                aligned_trg_toks = list(alignment.get_row_aligned_indices(src_hyp))
+                aligned_trg_toks = list(alignment.get_row_aligned_indices(src_hyp - (1 if is_end_marker else 0)))
                 if len(aligned_trg_toks) > 0:
                     # If aligning with a source token that precedes the marker,
                     # the target token predicted to be closest to the marker is the last aligned token rather than the first
-                    trg_hyp = aligned_trg_toks[-1 if hyp < 0 else 0]
-                else:  # continue the search outwards
-                    src_hyp += -1 if hyp < 0 else 1
+                    trg_hyp = aligned_trg_toks[-1 if is_end_marker else 0] + (1 if is_end_marker else 0)
+                    trg_hyp = trg_hyp if trg_hyp > lower_bound else -1
+                if trg_hyp == -1:  # continue the search outwards
+                    src_hyp += -1 if is_end_marker else 1
             if trg_hyp != -1:
                 num_crossings = num_align_crossings(adj_src_tok, trg_hyp)
                 if num_crossings < best_num_crossings:

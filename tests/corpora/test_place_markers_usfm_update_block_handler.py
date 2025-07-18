@@ -440,6 +440,9 @@ def test_no_update() -> None:
     assess(target, result)
 
 
+# NOTE: this test is a bit misleading, the more likely scenario is that the paragraph splits in the source are in logical places (bc they were probably placed by hand)
+# and the tokenizer used for alignment (currently Latin tokenizer) creates a token that uses characters from either side of a paragraph marker,
+# since it does not have the context of the paragraph markers, e.g. "A B C \p D E F" --> ["A", "B", "C D", "E", "F"]
 def test_split_tokens() -> None:
     rows = [
         UpdateUsfmRow(
@@ -685,5 +688,8 @@ def update_usfm(
 
 def assess(target: Optional[str], truth: str) -> None:
     assert target is not None
+    for target_line, truth_line in zip(target.split("\n"), truth.split("\n")):
+        print(truth_line)
+        print(target_line)
     for target_line, truth_line in zip(target.split("\n"), truth.split("\n")):
         assert target_line.strip() == truth_line.strip()
