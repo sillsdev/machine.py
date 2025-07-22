@@ -19,6 +19,7 @@ from .usfm_structure_extractor import UsfmStructureExtractor
 class QuoteConventionAnalysis:
     best_quote_convention: QuoteConvention
     best_quote_convention_score: float
+    analysis_summary: str
 
 
 class QuoteConventionDetector(UsfmStructureExtractor):
@@ -50,16 +51,15 @@ class QuoteConventionDetector(UsfmStructureExtractor):
 
         self._quotation_mark_tabulator.tabulate(resolved_quotation_marks)
 
-    def detect_quote_convention(self, print_summary: bool) -> Optional[QuoteConventionAnalysis]:
+    def detect_quote_convention(self) -> Optional[QuoteConventionAnalysis]:
         self._count_quotation_marks_in_chapters(self.get_chapters())
 
         (best_quote_convention, score) = STANDARD_QUOTE_CONVENTIONS.find_most_similar_convention(
             self._quotation_mark_tabulator
         )
 
-        if print_summary:
-            print(self._quotation_mark_tabulator.get_summary_message())
-
         if score > 0 and best_quote_convention is not None:
-            return QuoteConventionAnalysis(best_quote_convention, score)
+            return QuoteConventionAnalysis(
+                best_quote_convention, score, self._quotation_mark_tabulator.get_summary_message()
+            )
         return None
