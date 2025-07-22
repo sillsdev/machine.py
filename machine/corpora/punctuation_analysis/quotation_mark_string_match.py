@@ -54,7 +54,7 @@ class QuotationMarkStringMatch:
 
     @property
     def previous_character(self) -> Optional[str]:
-        if self._start_index == 0:
+        if self.is_at_start_of_segment():
             previous_segment = self._text_segment.previous_segment
             if previous_segment is not None and not self._text_segment.marker_is_in_preceding_context(
                 UsfmMarkerType.PARAGRAPH
