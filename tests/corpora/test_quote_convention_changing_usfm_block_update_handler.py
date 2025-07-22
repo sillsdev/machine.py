@@ -423,6 +423,44 @@ def test_multiple_chapter_multiple_strategies() -> None:
     assert_usfm_equal(observed_usfm, expected_fallback_then_skip_usfm)
 
 
+def test_multi_character_quotation_marks_in_source_quote_convention() -> None:
+    input_usfm = """\\c 1
+    \\v 1 Now the serpent was more subtle than any animal
+    of the field which Yahweh God had made.
+    He said to the woman, <<Has God really said,
+    <You shall not eat of any tree of the garden>?>>
+    """
+
+    expected_usfm = (
+        "\\c 1\n"
+        + "\\v 1 Now the serpent was more subtle than any animal of the field which Yahweh God had made. He said to "
+        + "the woman, “Has God really said, "
+        + "‘You shall not eat of any tree of the garden’?”"
+    )
+
+    observed_usfm = change_quotation_marks(input_usfm, "typewriter_french", "standard_english")
+    assert_usfm_equal(observed_usfm, expected_usfm)
+
+
+def test_multi_character_quotation_marks_in_target_quote_convention() -> None:
+    input_usfm = """\\c 1
+    \\v 1 Now the serpent was more subtle than any animal
+    of the field which Yahweh God had made.
+    He said to the woman, “Has God really said,
+    ‘You shall not eat of any tree of the garden’?”
+    """
+
+    expected_usfm = (
+        "\\c 1\n"
+        + "\\v 1 Now the serpent was more subtle than any animal of the field which Yahweh God had made. He said to "
+        + "the woman, <<Has God really said, "
+        + "<You shall not eat of any tree of the garden>?>>"
+    )
+
+    observed_usfm = change_quotation_marks(input_usfm, "standard_english", "typewriter_french")
+    assert_usfm_equal(observed_usfm, expected_usfm)
+
+
 def test_process_scripture_element() -> None:
     quote_convention_changer: QuoteConventionChangingUsfmUpdateBlockHandler = (
         create_quote_convention_changing_usfm_update_block_handler("standard_english", "british_english")
@@ -561,6 +599,128 @@ def test_set_previous_and_next_for_segments() -> None:
     assert segments[1].next_segment == segments[2]
     assert segments[2].previous_segment == segments[1]
     assert segments[2].next_segment is None
+
+
+def test_update_quotation_marks() -> None:
+    multi_char_to_single_char_quote_convention_changer: QuoteConventionChangingUsfmUpdateBlockHandler = (
+        create_quote_convention_changing_usfm_update_block_handler("typewriter_french", "standard_english")
+    )
+
+    multi_character_text_segment: TextSegment = TextSegment.Builder().set_text("this <<is <a test segment> >>").build()
+    multi_character_quotation_marks: List[QuotationMarkMetadata] = [
+        QuotationMarkMetadata(
+            quotation_mark="<<",
+            depth=1,
+            direction=QuotationMarkDirection.OPENING,
+            text_segment=multi_character_text_segment,
+            start_index=5,
+            end_index=7,
+        ),
+        QuotationMarkMetadata(
+            quotation_mark="<",
+            depth=2,
+            direction=QuotationMarkDirection.OPENING,
+            text_segment=multi_character_text_segment,
+            start_index=10,
+            end_index=11,
+        ),
+        QuotationMarkMetadata(
+            quotation_mark=">",
+            depth=2,
+            direction=QuotationMarkDirection.CLOSING,
+            text_segment=multi_character_text_segment,
+            start_index=25,
+            end_index=26,
+        ),
+        QuotationMarkMetadata(
+            quotation_mark=">>",
+            depth=1,
+            direction=QuotationMarkDirection.CLOSING,
+            text_segment=multi_character_text_segment,
+            start_index=27,
+            end_index=29,
+        ),
+    ]
+
+    multi_char_to_single_char_quote_convention_changer._update_quotation_marks(multi_character_quotation_marks)
+
+    assert multi_character_text_segment.text == "this “is ‘a test segment’ ”"
+
+    assert multi_character_quotation_marks[0].start_index == 5
+    assert multi_character_quotation_marks[0].end_index == 6
+    assert multi_character_quotation_marks[0].text_segment == multi_character_text_segment
+
+    assert multi_character_quotation_marks[1].start_index == 9
+    assert multi_character_quotation_marks[1].end_index == 10
+    assert multi_character_quotation_marks[1].text_segment == multi_character_text_segment
+
+    assert multi_character_quotation_marks[2].start_index == 24
+    assert multi_character_quotation_marks[2].end_index == 25
+    assert multi_character_quotation_marks[2].text_segment == multi_character_text_segment
+
+    assert multi_character_quotation_marks[3].start_index == 26
+    assert multi_character_quotation_marks[3].end_index == 27
+    assert multi_character_quotation_marks[3].text_segment == multi_character_text_segment
+
+    single_char_to_multi_char_quote_convention_changer: QuoteConventionChangingUsfmUpdateBlockHandler = (
+        create_quote_convention_changing_usfm_update_block_handler("standard_english", "typewriter_french")
+    )
+
+    single_character_text_segment: TextSegment = TextSegment.Builder().set_text("this “is ‘a test segment’ ”").build()
+    single_character_quotation_marks: List[QuotationMarkMetadata] = [
+        QuotationMarkMetadata(
+            quotation_mark="“",
+            depth=1,
+            direction=QuotationMarkDirection.OPENING,
+            text_segment=single_character_text_segment,
+            start_index=5,
+            end_index=6,
+        ),
+        QuotationMarkMetadata(
+            quotation_mark="‘",
+            depth=2,
+            direction=QuotationMarkDirection.OPENING,
+            text_segment=single_character_text_segment,
+            start_index=9,
+            end_index=10,
+        ),
+        QuotationMarkMetadata(
+            quotation_mark="’",
+            depth=2,
+            direction=QuotationMarkDirection.CLOSING,
+            text_segment=single_character_text_segment,
+            start_index=24,
+            end_index=25,
+        ),
+        QuotationMarkMetadata(
+            quotation_mark="”",
+            depth=1,
+            direction=QuotationMarkDirection.CLOSING,
+            text_segment=single_character_text_segment,
+            start_index=26,
+            end_index=27,
+        ),
+    ]
+
+    single_char_to_multi_char_quote_convention_changer._update_quotation_marks(single_character_quotation_marks)
+
+    assert single_character_text_segment.text == "this <<is <a test segment> >>"
+
+    assert single_character_quotation_marks[0].start_index == 5
+    assert single_character_quotation_marks[0].end_index == 7
+    assert single_character_quotation_marks[0].text_segment == single_character_text_segment
+
+    assert single_character_quotation_marks[1].start_index == 10
+    assert single_character_quotation_marks[1].end_index == 11
+    assert single_character_quotation_marks[1].text_segment == single_character_text_segment
+
+    assert single_character_quotation_marks[2].start_index == 25
+    assert single_character_quotation_marks[2].end_index == 26
+    assert single_character_quotation_marks[2].text_segment == single_character_text_segment
+
+    assert single_character_quotation_marks[3].start_index == 27
+    assert single_character_quotation_marks[3].end_index == 29
+    assert single_character_quotation_marks[3].text_segment == single_character_text_segment
 
 
 def test_check_for_chapter_change() -> None:

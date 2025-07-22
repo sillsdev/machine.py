@@ -3,6 +3,7 @@ from typing import List, Optional
 from .fallback_quotation_mark_resolver import FallbackQuotationMarkResolver
 from .punctuation_analysis.depth_based_quotation_mark_resolver import DepthBasedQuotationMarkResolver
 from .punctuation_analysis.quotation_mark_finder import QuotationMarkFinder
+from .punctuation_analysis.quotation_mark_metadata import QuotationMarkMetadata
 from .punctuation_analysis.quotation_mark_resolver import QuotationMarkResolver
 from .punctuation_analysis.quotation_mark_string_match import QuotationMarkStringMatch
 from .punctuation_analysis.quote_convention import QuoteConvention
@@ -85,8 +86,10 @@ class QuoteConventionChangingUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         quotation_mark_matches: List[QuotationMarkStringMatch] = (
             self._quotation_mark_finder.find_all_potential_quotation_marks_in_text_segments(text_segments)
         )
-        for resolved_quotation_mark in quotation_mark_resolver.resolve_quotation_marks(quotation_mark_matches):
-            resolved_quotation_mark.update_quotation_mark(self._target_quote_convention)
+        resolved_quotation_mark_matches: List[QuotationMarkMetadata] = list(
+            quotation_mark_resolver.resolve_quotation_marks(quotation_mark_matches)
+        )
+        self._update_quotation_marks(resolved_quotation_mark_matches)
 
     def _create_text_segments(self, element: UsfmUpdateBlockElement) -> List[TextSegment]:
         text_segments: List[TextSegment] = []
@@ -121,6 +124,23 @@ class QuoteConventionChangingUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
             if i < len(text_segments) - 1:
                 text_segments[i].next_segment = text_segments[i + 1]
         return text_segments
+
+    def _update_quotation_marks(self, resolved_quotation_mark_matches: List[QuotationMarkMetadata]) -> None:
+        for quotation_mark_index, resolved_quotation_mark_match in enumerate(resolved_quotation_mark_matches):
+            previous_length: int = resolved_quotation_mark_match.length
+            resolved_quotation_mark_match.update_quotation_mark(self._target_quote_convention)
+            updated_length: int = resolved_quotation_mark_match.length
+
+            if previous_length != updated_length:
+                self._shift_quotation_mark_metadata_indices(
+                    resolved_quotation_mark_matches[quotation_mark_index + 1 :], updated_length - previous_length
+                )
+
+    def _shift_quotation_mark_metadata_indices(
+        self, quotation_mark_metadata_list: List[QuotationMarkMetadata], shift_amount: int
+    ) -> None:
+        for quotation_mark_metadata in quotation_mark_metadata_list:
+            quotation_mark_metadata.shift_indices(shift_amount)
 
     def _check_for_chapter_change(self, block: UsfmUpdateBlock) -> None:
         for scripture_ref in block.refs:
