@@ -29,7 +29,7 @@ def test_reset():
     assert len(basic_quotation_mark_resolver._issues) == 0
 
 
-def test_simple_quotation_mark_resolution():
+def test_simple_quotation_mark_resolution_with_no_previous_mark():
     english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert english_quote_convention is not None
 
@@ -40,17 +40,75 @@ def test_simple_quotation_mark_resolution():
     actual_resolved_quotation_marks = list(
         basic_quotation_mark_resolver.resolve_quotation_marks(
             [
-                QuotationMarkStringMatch(TextSegment.Builder().set_text('"test text"').build(), 0, 1),
-                QuotationMarkStringMatch(TextSegment.Builder().set_text('"test text"').build(), 10, 11),
+                QuotationMarkStringMatch(TextSegment.Builder().set_text('test " text').build(), 5, 6),
             ]
         )
     )
     expected_resolved_quotation_marks = [
         QuotationMarkMetadata(
-            '"', 1, QuotationMarkDirection.OPENING, TextSegment.Builder().set_text('"test text"').build(), 0, 1
+            '"', 1, QuotationMarkDirection.OPENING, TextSegment.Builder().set_text('test " text').build(), 5, 6
+        ),
+    ]
+
+    assert_resolved_quotation_marks_equal(
+        actual_resolved_quotation_marks,
+        expected_resolved_quotation_marks,
+    )
+
+
+def test_simple_quotation_mark_resolution_with_previous_opening_mark():
+    english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
+    assert english_quote_convention is not None
+
+    basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
+        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize())
+    )
+
+    actual_resolved_quotation_marks = list(
+        basic_quotation_mark_resolver.resolve_quotation_marks(
+            [
+                QuotationMarkStringMatch(TextSegment.Builder().set_text('"test " text').build(), 0, 1),
+                QuotationMarkStringMatch(TextSegment.Builder().set_text('"test " text').build(), 6, 7),
+            ]
+        )
+    )
+    expected_resolved_quotation_marks = [
+        QuotationMarkMetadata(
+            '"', 1, QuotationMarkDirection.OPENING, TextSegment.Builder().set_text('"test " text').build(), 0, 1
         ),
         QuotationMarkMetadata(
-            '"', 1, QuotationMarkDirection.CLOSING, TextSegment.Builder().set_text('"test text"').build(), 10, 11
+            '"', 1, QuotationMarkDirection.CLOSING, TextSegment.Builder().set_text('"test " text').build(), 6, 7
+        ),
+    ]
+
+    assert_resolved_quotation_marks_equal(
+        actual_resolved_quotation_marks,
+        expected_resolved_quotation_marks,
+    )
+
+
+def test_simple_quotation_mark_resolution_with_previous_closing_mark():
+    english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
+    assert english_quote_convention is not None
+
+    basic_quotation_mark_resolver = FallbackQuotationMarkResolver(
+        QuotationMarkUpdateResolutionSettings(english_quote_convention.normalize())
+    )
+
+    actual_resolved_quotation_marks = list(
+        basic_quotation_mark_resolver.resolve_quotation_marks(
+            [
+                QuotationMarkStringMatch(TextSegment.Builder().set_text('test" " text').build(), 4, 5),
+                QuotationMarkStringMatch(TextSegment.Builder().set_text('test" " text').build(), 6, 7),
+            ]
+        )
+    )
+    expected_resolved_quotation_marks = [
+        QuotationMarkMetadata(
+            '"', 1, QuotationMarkDirection.CLOSING, TextSegment.Builder().set_text('test" " text').build(), 4, 5
+        ),
+        QuotationMarkMetadata(
+            '"', 1, QuotationMarkDirection.OPENING, TextSegment.Builder().set_text('test" " text').build(), 6, 7
         ),
     ]
 

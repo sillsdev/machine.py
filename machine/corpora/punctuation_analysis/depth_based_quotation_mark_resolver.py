@@ -176,6 +176,9 @@ class QuotationMarkCategorizer:
         self,
         quotation_mark_match: QuotationMarkStringMatch,
     ) -> bool:
+        if self._quote_continuer_state.current_depth >= self._quotation_mark_resolver_state.current_depth:
+            return False
+
         if (
             self._settings.should_rely_on_paragraph_markers
             and not quotation_mark_match._text_segment.marker_is_in_preceding_context(UsfmMarkerType.PARAGRAPH)

@@ -42,6 +42,19 @@ class FallbackQuotationMarkResolver(QuotationMarkResolver):
             else:
                 self._issues.add(QuotationMarkResolutionIssue.UNEXPECTED_QUOTATION_MARK)
         else:
+            # Make a reasonable guess about the direction of the quotation mark
+            if (
+                self._last_quotation_mark is None
+                or self._last_quotation_mark.direction is QuotationMarkDirection.CLOSING
+            ):
+                quotation_mark: Optional[QuotationMarkMetadata] = self._resolve_opening_mark(quotation_mark_match)
+                if quotation_mark is not None:
+                    yield quotation_mark
+            else:
+                quotation_mark: Optional[QuotationMarkMetadata] = self._resolve_closing_mark(quotation_mark_match)
+                if quotation_mark is not None:
+                    yield quotation_mark
+
             self._issues.add(QuotationMarkResolutionIssue.AMBIGUOUS_QUOTATION_MARK)
 
     def _is_opening_quotation_mark(
