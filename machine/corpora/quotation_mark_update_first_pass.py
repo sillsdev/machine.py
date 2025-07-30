@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Dict, List, Set
 
 from .punctuation_analysis.chapter import Chapter
@@ -33,15 +34,12 @@ class QuotationMarkUpdateFirstPass(UsfmStructureExtractor):
     def _check_whether_fallback_mode_will_work(
         self, source_quote_convention: QuoteConvention, target_quote_convention: QuoteConvention
     ) -> bool:
-        target_marks_by_source_marks: Dict[str, Set[str]] = {}
-        for depth in range(1, source_quote_convention.num_levels + 1):
+        target_marks_by_source_marks: Dict[str, Set[str]] = defaultdict(set)
+        for depth in range(1, min(source_quote_convention.num_levels, target_quote_convention.num_levels) + 1):
             opening_quotation_mark = source_quote_convention.get_opening_quotation_mark_at_depth(depth)
-            if opening_quotation_mark not in target_marks_by_source_marks:
-                target_marks_by_source_marks[opening_quotation_mark] = set()
-            if depth <= target_quote_convention.num_levels:
-                target_marks_by_source_marks[opening_quotation_mark].add(
-                    target_quote_convention.get_closing_quotation_mark_at_depth(depth)
-                )
+            target_marks_by_source_marks[opening_quotation_mark].add(
+                target_quote_convention.get_closing_quotation_mark_at_depth(depth)
+            )
 
         for source_mark in target_marks_by_source_marks:
             if len(target_marks_by_source_marks[source_mark]) > 1:

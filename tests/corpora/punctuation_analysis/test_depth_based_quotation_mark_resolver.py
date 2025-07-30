@@ -993,19 +993,19 @@ def test_is_opening_quote() -> None:
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
     assert not standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
-        QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 1, 2)
+        QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201d").build(), 0, 1)
     )
     assert standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c\u201d").build(), 1, 2)
     )
     assert not standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
-        QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 1, 2)
+        QuotationMarkStringMatch(TextSegment.Builder().set_text("\u2019").build(), 0, 1)
     )
     assert standard_swedish_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c\u2019").build(), 1, 2)
     )
     assert not three_conventions_quotation_mark_categorizer.is_opening_quotation_mark(
-        QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 1, 2)
+        QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c").build(), 0, 1)
     )
     assert three_conventions_quotation_mark_categorizer.is_opening_quotation_mark(
         QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c\u201c").build(), 1, 2)
@@ -2290,7 +2290,6 @@ def test_too_deep_nesting_issue() -> None:
         QuotationMarkMetadata("\u2018", 2, QuotationMarkDirection.OPENING, text_segment, 6, 7),
         QuotationMarkMetadata("\u201c", 3, QuotationMarkDirection.OPENING, text_segment, 10, 11),
         QuotationMarkMetadata("\u2018", 4, QuotationMarkDirection.OPENING, text_segment, 13, 14),
-        # QuotationMarkMetadata("\u201c", 5, QuotationMarkDirection.Opening, text_segment, 20, 21),
     ]
     assert standard_english_quotation_mark_resolver.get_issues() == {
         QuotationMarkResolutionIssue.TOO_DEEP_NESTING,

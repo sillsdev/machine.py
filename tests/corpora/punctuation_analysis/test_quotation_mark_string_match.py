@@ -154,7 +154,7 @@ def test_does_trailing_substring_match() -> None:
     assert quotation_mark_string_match.trailing_substring_matches(regex.compile(r"^ text$"))
 
     quotation_mark_string_match = QuotationMarkStringMatch(
-        TextSegment.Builder().set_text("sample text").build(), 11, 12
+        TextSegment.Builder().set_text("sample text").build(), 10, 11
     )
     assert not quotation_mark_string_match.trailing_substring_matches(regex.compile(r".+"))
 

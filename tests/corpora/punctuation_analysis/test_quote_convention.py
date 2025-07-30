@@ -89,13 +89,13 @@ def test_get_num_levels() -> None:
     assert empty_quote_convention.num_levels == 0
 
     one_level_quote_convention = QuoteConvention(
-        "one-level-quote-convention",
+        "one_level_quote_convention",
         [SingleLevelQuoteConvention("\u201c", "\u201d")],
     )
     assert one_level_quote_convention.num_levels == 1
 
     two_level_quote_convention = QuoteConvention(
-        "two-level-quote-convention",
+        "two_level_quote_convention",
         [
             SingleLevelQuoteConvention("\u201c", "\u201d"),
             SingleLevelQuoteConvention("\u2018", "\u2019"),
@@ -104,7 +104,7 @@ def test_get_num_levels() -> None:
     assert two_level_quote_convention.num_levels == 2
 
     three_level_quote_convention = QuoteConvention(
-        "three-level-quote-convention",
+        "three_level_quote_convention",
         [
             SingleLevelQuoteConvention("\u201c", "\u201d"),
             SingleLevelQuoteConvention("\u2018", "\u2019"),
@@ -116,7 +116,7 @@ def test_get_num_levels() -> None:
 
 def test_get_opening_quote_at_level() -> None:
     quote_convention = QuoteConvention(
-        "test-quote-convention",
+        "test_quote_convention",
         [
             SingleLevelQuoteConvention("\u201c", "\u201d"),
             SingleLevelQuoteConvention("\u2018", "\u2019"),
@@ -130,7 +130,7 @@ def test_get_opening_quote_at_level() -> None:
 
 def test_get_closing_quote_at_level() -> None:
     quote_convention = QuoteConvention(
-        "test-quote-convention",
+        "test_quote_convention",
         [
             SingleLevelQuoteConvention("\u201c", "\u201d"),
             SingleLevelQuoteConvention("\u2018", "\u2019"),
@@ -144,7 +144,7 @@ def test_get_closing_quote_at_level() -> None:
 
 def test_get_expected_quotation_mark() -> None:
     quote_convention = QuoteConvention(
-        "test-quote-convention",
+        "test_quote_convention",
         [
             SingleLevelQuoteConvention("\u201c", "\u201d"),
             SingleLevelQuoteConvention("\u2018", "\u2019"),
@@ -168,28 +168,28 @@ def test_includes_opening_quotation_mark() -> None:
     assert not empty_quote_convention._includes_opening_quotation_mark("\u201c")
 
     positive_quote_convention1 = QuoteConvention(
-        "positive quote convention 1", [SingleLevelQuoteConvention("\u201c", "\u201d")]
+        "positive_quote_convention_1", [SingleLevelQuoteConvention("\u201c", "\u201d")]
     )
     assert positive_quote_convention1._includes_opening_quotation_mark("\u201c")
 
     negative_quote_convention1 = QuoteConvention(
-        "negative quote convention 1", [SingleLevelQuoteConvention("\u2018", "\u2019")]
+        "negative_quote_convention_1", [SingleLevelQuoteConvention("\u2018", "\u2019")]
     )
     assert not negative_quote_convention1._includes_opening_quotation_mark("\u201c")
 
     negative_quote_convention2 = QuoteConvention(
-        "negative quote convention 2", [SingleLevelQuoteConvention("\u201d", "\u201c")]
+        "negative_quote_convention_2", [SingleLevelQuoteConvention("\u201d", "\u201c")]
     )
     assert not negative_quote_convention2._includes_opening_quotation_mark("\u201c")
 
     positive_quote_convention2 = QuoteConvention(
-        "positive quote convention 2",
+        "positive_quote_convention_2",
         [SingleLevelQuoteConvention("\u201c", "\u201d"), SingleLevelQuoteConvention("\u2018", "\u2019")],
     )
     assert positive_quote_convention2._includes_opening_quotation_mark("\u201c")
 
     positive_quote_convention3 = QuoteConvention(
-        "positive quote convention 3",
+        "positive_quote_convention_3",
         [SingleLevelQuoteConvention("\u2018", "\u2019"), SingleLevelQuoteConvention("\u201c", "\u201d")],
     )
     assert positive_quote_convention3._includes_opening_quotation_mark("\u201c")
@@ -210,34 +210,34 @@ def test_includes_closing_quotation_mark() -> None:
     assert not empty_quote_convention._includes_closing_quotation_mark("\u201d")
 
     positive_quote_convention1 = QuoteConvention(
-        "positive quote convention 1", [SingleLevelQuoteConvention("\u201c", "\u201d")]
+        "positive_quote_convention_1", [SingleLevelQuoteConvention("\u201c", "\u201d")]
     )
     assert positive_quote_convention1._includes_closing_quotation_mark("\u201d")
 
     negative_quote_convention1 = QuoteConvention(
-        "negative quote convention 1", [SingleLevelQuoteConvention("\u2018", "\u2019")]
+        "negative_quote_convention_1", [SingleLevelQuoteConvention("\u2018", "\u2019")]
     )
     assert not negative_quote_convention1._includes_closing_quotation_mark("\u201d")
 
     negative_quote_convention2 = QuoteConvention(
-        "negative quote convention 2", [SingleLevelQuoteConvention("\u201d", "\u201c")]
+        "negative_quote_convention_2", [SingleLevelQuoteConvention("\u201d", "\u201c")]
     )
     assert not negative_quote_convention2._includes_closing_quotation_mark("\u201d")
 
     positive_quote_convention2 = QuoteConvention(
-        "positive quote convention 2",
+        "positive_quote_convention_2",
         [SingleLevelQuoteConvention("\u201c", "\u201d"), SingleLevelQuoteConvention("\u2018", "\u2019")],
     )
     assert positive_quote_convention2._includes_closing_quotation_mark("\u201d")
 
     positive_quote_convention3 = QuoteConvention(
-        "positive quote convention 3",
+        "positive_quote_convention_3",
         [SingleLevelQuoteConvention("\u2018", "\u2019"), SingleLevelQuoteConvention("\u201c", "\u201d")],
     )
     assert positive_quote_convention3._includes_closing_quotation_mark("\u201d")
 
     negative_quote_convention3 = QuoteConvention(
-        "negative quote convention 3",
+        "negative_quote_convention_3",
         [
             SingleLevelQuoteConvention("\u2018", "\u2019"),
             SingleLevelQuoteConvention("'", "'"),
@@ -249,7 +249,7 @@ def test_includes_closing_quotation_mark() -> None:
 
 def test_get_possible_depths() -> None:
     quote_convention = QuoteConvention(
-        "test-quote-convention",
+        "test_quote_convention",
         [
             SingleLevelQuoteConvention("\u201c", "\u201d"),
             SingleLevelQuoteConvention("\u2018", "\u2019"),
@@ -271,7 +271,7 @@ def test_get_possible_depths() -> None:
 
 def test_is_compatible_with_observed_quotation_marks() -> None:
     quote_convention = QuoteConvention(
-        "test-quote-convention",
+        "test_quote_convention",
         [
             SingleLevelQuoteConvention("\u201c", "\u201d"),
             SingleLevelQuoteConvention("\u2018", "\u2019"),
@@ -302,7 +302,7 @@ def test_normalize() -> None:
     assert normalized_empty_quote_convention.num_levels == 0
 
     standard_english_quote_convention = QuoteConvention(
-        "standard-english-quote-convention",
+        "standard_english_quote_convention",
         [
             SingleLevelQuoteConvention("\u201c", "\u201d"),
             SingleLevelQuoteConvention("\u2018", "\u2019"),
@@ -311,7 +311,7 @@ def test_normalize() -> None:
         ],
     )
     normalized_standard_english_quote_convention = standard_english_quote_convention.normalize()
-    assert normalized_standard_english_quote_convention.name == "standard-english-quote-convention_normalized"
+    assert normalized_standard_english_quote_convention.name == "standard_english_quote_convention_normalized"
     assert normalized_standard_english_quote_convention.num_levels == 4
     assert normalized_standard_english_quote_convention.get_opening_quotation_mark_at_depth(1) == '"'
     assert normalized_standard_english_quote_convention.get_closing_quotation_mark_at_depth(1) == '"'
@@ -323,7 +323,7 @@ def test_normalize() -> None:
     assert normalized_standard_english_quote_convention.get_closing_quotation_mark_at_depth(4) == "'"
 
     western_european_quote_convention = QuoteConvention(
-        "test-quote-convention",
+        "test_quote_convention",
         [
             SingleLevelQuoteConvention("\u201c", "\u201d"),
             SingleLevelQuoteConvention("\u00ab", "\u00bb"),
@@ -331,7 +331,7 @@ def test_normalize() -> None:
         ],
     )
     normalized_western_european_quote_convention = western_european_quote_convention.normalize()
-    assert normalized_western_european_quote_convention.name == "test-quote-convention_normalized"
+    assert normalized_western_european_quote_convention.name == "test_quote_convention_normalized"
     assert normalized_western_european_quote_convention.num_levels == 3
     assert normalized_western_european_quote_convention.get_opening_quotation_mark_at_depth(1) == '"'
     assert normalized_western_european_quote_convention.get_closing_quotation_mark_at_depth(1) == '"'
@@ -341,7 +341,7 @@ def test_normalize() -> None:
     assert normalized_western_european_quote_convention.get_closing_quotation_mark_at_depth(3) == "'"
 
     hybrid_british_typewriter_english_quote_convention = QuoteConvention(
-        "hybrid-british-typewriter-english-quote-convention",
+        "hybrid_british_typewriter_english_quote_convention",
         [
             SingleLevelQuoteConvention("\u00ab", "\u00bb"),
             SingleLevelQuoteConvention("'", "'"),
@@ -354,7 +354,7 @@ def test_normalize() -> None:
     )
     assert (
         normalized_hybrid_british_typewriter_english_quote_convention.name
-        == "hybrid-british-typewriter-english-quote-convention_normalized"
+        == "hybrid_british_typewriter_english_quote_convention_normalized"
     )
     assert normalized_hybrid_british_typewriter_english_quote_convention.num_levels == 3
     assert normalized_hybrid_british_typewriter_english_quote_convention.get_opening_quotation_mark_at_depth(1) == '"'
@@ -367,7 +367,7 @@ def test_normalize() -> None:
 
 def test_print_summary() -> None:
     quote_convention = QuoteConvention(
-        "test-quote-convention",
+        "test_quote_convention",
         [
             SingleLevelQuoteConvention("\u201c", "\u201D"),
             SingleLevelQuoteConvention("\u2018", "\u2019"),
@@ -375,7 +375,7 @@ def test_print_summary() -> None:
         ],
     )
     expected_summary_message = (
-        "test-quote-convention\n"
+        "test_quote_convention\n"
         + "\u201CFirst-level quote\u201D\n"
         + "\u2018Second-level quote\u2019\n"
         + "\u201DThird-level quote\u201D\n"
