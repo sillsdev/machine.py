@@ -1,3 +1,5 @@
+from testutils.corpora_test_helpers import ignore_line_endings
+
 from machine.corpora import (
     QuotationMarkDenormalizationFirstPass,
     QuotationMarkDenormalizationUsfmUpdateBlockHandler,
@@ -22,11 +24,11 @@ def test_full_quotation_denormalization_pipeline() -> None:
     God has said, 'You shall not eat of it. You shall not touch it, lest you die.'"
     """
 
-    expected_denormalized_usfm = """\\id GEN\r
-\\c 1\r
-\\v 1 Now the serpent was more subtle than any animal of the field which Yahweh God had made. He said to the woman, “Has God really said, ‘You shall not eat of any tree of the garden’?”\r
-\\v 2 The woman said to the serpent, “We may eat fruit from the trees of the garden,\r
-\\v 3 but not the fruit of the tree which is in the middle of the garden. God has said, ‘You shall not eat of it. You shall not touch it, lest you die.’”\r
+    expected_denormalized_usfm = """\\id GEN
+\\c 1
+\\v 1 Now the serpent was more subtle than any animal of the field which Yahweh God had made. He said to the woman, “Has God really said, ‘You shall not eat of any tree of the garden’?”
+\\v 2 The woman said to the serpent, “We may eat fruit from the trees of the garden,
+\\v 3 but not the fruit of the tree which is in the middle of the garden. God has said, ‘You shall not eat of it. You shall not touch it, lest you die.’”
 """  # noqa: E501
 
     standard_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
@@ -50,4 +52,4 @@ def test_full_quotation_denormalization_pipeline() -> None:
 
     actual_denormalized_usfm = updater.get_usfm()
 
-    assert actual_denormalized_usfm == expected_denormalized_usfm
+    ignore_line_endings(actual_denormalized_usfm, expected_denormalized_usfm)

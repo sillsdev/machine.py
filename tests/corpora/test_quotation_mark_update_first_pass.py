@@ -6,6 +6,7 @@ from machine.corpora.punctuation_analysis import (
     Chapter,
     QuotationMarkResolutionIssue,
     QuoteConvention,
+    SingleLevelQuoteConvention,
     TextSegment,
     Verse,
 )
@@ -224,6 +225,41 @@ def test_check_whether_fallback_mode_will_work_with_normalized_conventions() -> 
         first_pass_analyzer._check_whether_fallback_mode_will_work(
             get_quote_convention_by_name("standard_russian").normalize(),
             get_quote_convention_by_name("standard_french"),
+        )
+        is False
+    )
+
+
+def test_check_whether_fallback_mode_will_work_with_artificial_conventions() -> None:
+
+    first_pass_analyzer = QuotationMarkUpdateFirstPass(QuoteConvention("", []), QuoteConvention("", []))
+
+    # This tests combinations of quotation marks that haven't been observed in real-world conventions,
+    # but would cause fallback mode not to work.
+    assert (
+        first_pass_analyzer._check_whether_fallback_mode_will_work(
+            QuoteConvention(
+                "artificial_source_quote_convention1",
+                [SingleLevelQuoteConvention('"', '"'), SingleLevelQuoteConvention('"', '"')],
+            ),
+            QuoteConvention(
+                "artificial_target_quote_convention1",
+                [SingleLevelQuoteConvention("\u201c", "\u201d"), SingleLevelQuoteConvention("\u201c", "\u201c")],
+            ),
+        )
+        is False
+    )
+
+    assert (
+        first_pass_analyzer._check_whether_fallback_mode_will_work(
+            QuoteConvention(
+                "artificial_source_quote_convention2",
+                [SingleLevelQuoteConvention('"', '"'), SingleLevelQuoteConvention('"', '"')],
+            ),
+            QuoteConvention(
+                "artificial_target_quote_convention2",
+                [SingleLevelQuoteConvention("\u201d", "\u201d"), SingleLevelQuoteConvention("\u201c", "\u201d")],
+            ),
         )
         is False
     )
