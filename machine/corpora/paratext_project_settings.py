@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Iterable, Optional
 
-from ..scripture.canon import book_id_to_number, book_number_to_id
+from ..scripture.canon import book_id_to_number, book_number_to_id, get_scripture_books
 from ..scripture.verse_ref import Versification
 from .usfm_stylesheet import UsfmStylesheet
 
@@ -52,6 +52,10 @@ class ParatextProjectSettings:
         else:
             book_part = _get_book_file_name_digits(book_id) + book_id
         return self.file_name_prefix + book_part + self.file_name_suffix
+
+    def get_all_scripture_book_file_names(self) -> Iterable[str]:
+        for book_id in get_scripture_books():
+            yield self.get_book_file_name(book_id)
 
 
 def _get_book_file_name_digits(book_id: str) -> str:
