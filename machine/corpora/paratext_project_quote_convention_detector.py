@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import BinaryIO, Iterable, Optional, Sequence, Union
+from typing import BinaryIO, Optional, Union
 
 from ..utils.typeshed import StrPath
 from .paratext_project_settings import ParatextProjectSettings
