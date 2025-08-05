@@ -843,7 +843,7 @@ def test_update_block_verse_preserve_paras() -> None:
 \v 1 verse 1 \p inner verse paragraph
 """
 
-    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_block_handler = _TestUsfmUpdateBlockHandler()
     update_usfm(
         rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE, update_block_handlers=[update_block_handler]
     )
@@ -872,7 +872,7 @@ def test_update_block_verse_strip_paras() -> None:
 \v 1 verse 1 \p inner verse paragraph
 """
 
-    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_block_handler = _TestUsfmUpdateBlockHandler()
     update_usfm(
         rows, usfm, paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP, update_block_handlers=[update_block_handler]
     )
@@ -901,7 +901,7 @@ def test_update_block_verse_range() -> None:
 \v 1-3 verse 1 through 3
 """
 
-    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_block_handler = _TestUsfmUpdateBlockHandler()
     update_usfm(
         rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE, update_block_handlers=[update_block_handler]
     )
@@ -928,7 +928,7 @@ def test_update_block_footnote_preserve_embeds() -> None:
 \v 1 verse\f \fr 1.1 \ft Some note \f* 1
 """
 
-    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_block_handler = _TestUsfmUpdateBlockHandler()
     update_usfm(
         rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE, update_block_handlers=[update_block_handler]
     )
@@ -957,7 +957,7 @@ def test_update_block_footnote_strip_embeds() -> None:
 \v 1 verse\f \fr 1.1 \ft Some note \f* 1
 """
 
-    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_block_handler = _TestUsfmUpdateBlockHandler()
     update_usfm(rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.STRIP, update_block_handlers=[update_block_handler])
 
     assert len(update_block_handler.blocks) == 1
@@ -985,7 +985,7 @@ def test_update_block_nonverse() -> None:
 \v 1 verse 1
 """
 
-    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_block_handler = _TestUsfmUpdateBlockHandler()
     update_usfm(rows, usfm, update_block_handlers=[update_block_handler])
 
     assert len(update_block_handler.blocks) == 2
@@ -1010,7 +1010,7 @@ def test_update_block_verse_preserve_styles() -> None:
 \v 1 verse \bd 1\bd*
 """
 
-    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_block_handler = _TestUsfmUpdateBlockHandler()
     update_usfm(
         rows, usfm, style_behavior=UpdateUsfmMarkerBehavior.PRESERVE, update_block_handlers=[update_block_handler]
     )
@@ -1041,7 +1041,7 @@ def test_update_block_verse_strip_styles() -> None:
 \v 1 verse \bd 1\bd*
 """
 
-    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_block_handler = _TestUsfmUpdateBlockHandler()
     update_usfm(rows, usfm, style_behavior=UpdateUsfmMarkerBehavior.STRIP, update_block_handlers=[update_block_handler])
 
     assert len(update_block_handler.blocks) == 1
@@ -1074,7 +1074,7 @@ def test_update_block_verse_section_header() -> None:
 \v 2 Verse 2
 """
 
-    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_block_handler = _TestUsfmUpdateBlockHandler()
     update_usfm(rows, usfm, update_block_handlers=[update_block_handler])
 
     assert len(update_block_handler.blocks) == 4
@@ -1114,7 +1114,7 @@ def test_update_block_verse_section_header_in_verse() -> None:
 \p end of verse
 """
 
-    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_block_handler = _TestUsfmUpdateBlockHandler()
     update_usfm(rows, usfm, update_block_handlers=[update_block_handler])
 
     assert len(update_block_handler.blocks) == 3
@@ -1148,7 +1148,7 @@ def test_update_block_nonverse_paragraph_end_of_verse() -> None:
 \s Section header
 """
 
-    update_block_handler = TestUsfmUpdateBlockHandler()
+    update_block_handler = _TestUsfmUpdateBlockHandler()
     update_usfm(rows, usfm, update_block_handlers=[update_block_handler])
 
     assert len(update_block_handler.blocks) == 3
@@ -1307,7 +1307,7 @@ def assert_update_block_equals(
         assert element.marked_for_removal == expected_marked_for_removal
 
 
-class TestUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
+class _TestUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
     def __init__(self):
         self.blocks: list[UsfmUpdateBlock] = []
 

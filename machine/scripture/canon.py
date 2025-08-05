@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Iterable, Union
 
 ALL_BOOK_IDS = [
     "GEN",
@@ -181,3 +181,7 @@ def is_canonical(book: Union[str, int]) -> bool:
     if isinstance(book, int):
         book = book_number_to_id(book)
     return is_book_id_valid(book) and book not in NON_CANONICAL_IDS
+
+
+def get_scripture_books() -> Iterable[str]:
+    return list(map(lambda kvp: kvp[0], filter(lambda kvp: is_ot_nt(kvp[1]), BOOK_NUMBERS.items())))
