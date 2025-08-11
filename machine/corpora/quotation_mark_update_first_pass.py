@@ -18,8 +18,6 @@ class QuotationMarkUpdateFirstPass(UsfmStructureExtractor):
 
     def __init__(self, source_quote_convention: QuoteConvention, target_quote_convention: QuoteConvention):
         super().__init__()
-        self._source_quote_convention: QuoteConvention = source_quote_convention
-        self._target_quote_convention: QuoteConvention = target_quote_convention
         self._quotation_mark_finder: QuotationMarkFinder = QuotationMarkFinder(
             QuoteConventionSet([source_quote_convention])
         )
