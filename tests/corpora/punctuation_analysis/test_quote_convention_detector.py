@@ -1,7 +1,7 @@
 from typing import Union
 
 from machine.corpora import parse_usfm
-from machine.corpora.punctuation_analysis import QuoteConventionAnalysis, QuoteConventionDetector
+from machine.punctuation_analysis import QuoteConventionAnalysis, QuoteConventionDetector
 
 # Text comes from the World English Bible, which is in the public domain.
 

@@ -1,4 +1,5 @@
-from machine.corpora.punctuation_analysis import Chapter, TextSegment, Verse
+import machine.corpora  # pyright: ignore[reportMissingImports] # noqa: F401
+from machine.punctuation_analysis import Chapter, TextSegment, Verse
 
 
 def test_initialize_verse() -> None:

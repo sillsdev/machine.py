@@ -1,7 +1,7 @@
 from typing import List, Union
 
 from machine.corpora import QuotationMarkUpdateFirstPass, QuotationMarkUpdateStrategy, parse_usfm
-from machine.corpora.punctuation_analysis import (
+from machine.punctuation_analysis import (
     STANDARD_QUOTE_CONVENTIONS,
     Chapter,
     QuotationMarkResolutionIssue,

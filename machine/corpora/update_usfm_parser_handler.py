@@ -87,9 +87,6 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         start_book_tokens: List[UsfmToken] = []
         if self._id_text is not None:
             start_book_tokens.append(UsfmToken(UsfmTokenType.TEXT, text=self._id_text + " "))
-        for remark in self._remarks:
-            start_book_tokens.append(UsfmToken(UsfmTokenType.PARAGRAPH, "rem"))
-            start_book_tokens.append(UsfmToken(UsfmTokenType.TEXT, text=remark))
         self._push_updated_text(start_book_tokens)
 
         super().start_book(state, marker, code)
@@ -289,7 +286,20 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         if isinstance(stylesheet, str):
             stylesheet = UsfmStylesheet(stylesheet)
         tokenizer = UsfmTokenizer(stylesheet)
-        return tokenizer.detokenize(self._tokens)
+        tokens = list(self._tokens)
+        if len(self._remarks) > 0:
+            remark_tokens: List[UsfmToken] = []
+            for remark in self._remarks:
+                remark_tokens.append(UsfmToken(UsfmTokenType.PARAGRAPH, "rem"))
+                remark_tokens.append(UsfmToken(UsfmTokenType.TEXT, text=remark))
+            if len(tokens) > 0 and tokens[0].marker == "id":
+                if len(tokens) > 1 and tokens[1].type == UsfmTokenType.TEXT:
+                    for remark_token in reversed(remark_tokens):
+                        tokens.insert(2, remark_token)
+                else:
+                    for remark_token in reversed(remark_tokens):
+                        tokens.insert(1, remark_token)
+        return tokenizer.detokenize(tokens)
 
     def _advance_rows(self, seg_scr_refs: Sequence[ScriptureRef]) -> Tuple[List[str], Optional[dict[str, object]]]:
         row_texts: List[str] = []

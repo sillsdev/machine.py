@@ -1,14 +1,14 @@
 from typing import Dict, List, Set
 
-from .punctuation_analysis.chapter import Chapter
-from .punctuation_analysis.depth_based_quotation_mark_resolver import DepthBasedQuotationMarkResolver
-from .punctuation_analysis.quotation_mark_finder import QuotationMarkFinder
-from .punctuation_analysis.quotation_mark_resolution_issue import QuotationMarkResolutionIssue
-from .punctuation_analysis.quotation_mark_resolver import QuotationMarkResolver
-from .punctuation_analysis.quotation_mark_string_match import QuotationMarkStringMatch
-from .punctuation_analysis.quote_convention import QuoteConvention
-from .punctuation_analysis.quote_convention_set import QuoteConventionSet
-from .punctuation_analysis.usfm_structure_extractor import UsfmStructureExtractor
+from ..punctuation_analysis.chapter import Chapter
+from ..punctuation_analysis.depth_based_quotation_mark_resolver import DepthBasedQuotationMarkResolver
+from ..punctuation_analysis.quotation_mark_finder import QuotationMarkFinder
+from ..punctuation_analysis.quotation_mark_resolution_issue import QuotationMarkResolutionIssue
+from ..punctuation_analysis.quotation_mark_resolver import QuotationMarkResolver
+from ..punctuation_analysis.quotation_mark_string_match import QuotationMarkStringMatch
+from ..punctuation_analysis.quote_convention import QuoteConvention
+from ..punctuation_analysis.quote_convention_set import QuoteConventionSet
+from ..punctuation_analysis.usfm_structure_extractor import UsfmStructureExtractor
 from .quotation_mark_update_resolution_settings import QuotationMarkUpdateResolutionSettings
 from .quotation_mark_update_strategy import QuotationMarkUpdateStrategy
 
