@@ -1,4 +1,3 @@
-import machine.corpora  # pyright: ignore[reportMissingImports] # noqa: F401
 from machine.punctuation_analysis import Chapter, TextSegment, Verse
 
 
