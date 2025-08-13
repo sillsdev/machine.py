@@ -1222,13 +1222,28 @@ def test_pass_remark():
         ),
     ]
     usfm = r"""\id MAT
+\rem Existing remark
 \c 1
 \v 1 This is a verse
 """
 
     target = update_usfm(rows, usfm, text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING, remarks=["An added remark"])
     result = r"""\id MAT
+\rem Existing remark
 \rem An added remark
+\c 1
+\v 1 Update 1
+"""
+
+    assert_usfm_equals(target, result)
+
+    target = update_usfm(
+        rows, target, text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING, remarks=["Another added remark"]
+    )
+    result = r"""\id MAT
+\rem Existing remark
+\rem An added remark
+\rem Another added remark
 \c 1
 \v 1 Update 1
 """
