@@ -1,4 +1,4 @@
-from .punctuation_analysis.quote_convention import QuoteConvention
+from ..punctuation_analysis.quote_convention import QuoteConvention
 from .quotation_mark_update_first_pass import QuotationMarkUpdateFirstPass
 
 

@@ -1,6 +1,6 @@
 from typing import Optional, Set
 
-from ..usfm_token import UsfmToken
+from ..corpora.usfm_token import UsfmToken
 from .usfm_marker_type import UsfmMarkerType
 
 

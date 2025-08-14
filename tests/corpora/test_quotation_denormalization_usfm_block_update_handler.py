@@ -7,7 +7,7 @@ from machine.corpora import (
     UpdateUsfmParserHandler,
     parse_usfm,
 )
-from machine.corpora.punctuation_analysis import STANDARD_QUOTE_CONVENTIONS, QuoteConvention
+from machine.punctuation_analysis import STANDARD_QUOTE_CONVENTIONS, QuoteConvention
 
 simple_normalized_usfm = """\\c 1
     \\v 1 Now the serpent was more subtle than any animal

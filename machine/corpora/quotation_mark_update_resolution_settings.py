@@ -2,11 +2,11 @@ from typing import Set
 
 import regex
 
-from .punctuation_analysis.quotation_mark_direction import QuotationMarkDirection
-from .punctuation_analysis.quotation_mark_resolution_settings import QuotationMarkResolutionSettings
-from .punctuation_analysis.quotation_mark_string_match import QuotationMarkStringMatch
-from .punctuation_analysis.quote_convention import QuoteConvention
-from .punctuation_analysis.quote_convention_set import QuoteConventionSet
+from ..punctuation_analysis.quotation_mark_direction import QuotationMarkDirection
+from ..punctuation_analysis.quotation_mark_resolution_settings import QuotationMarkResolutionSettings
+from ..punctuation_analysis.quotation_mark_string_match import QuotationMarkStringMatch
+from ..punctuation_analysis.quote_convention import QuoteConvention
+from ..punctuation_analysis.quote_convention_set import QuoteConventionSet
 
 
 class QuotationMarkUpdateResolutionSettings(QuotationMarkResolutionSettings):

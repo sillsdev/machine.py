@@ -1,7 +1,7 @@
 from typing import List
 
 from machine.corpora import UsfmParser
-from machine.corpora.punctuation_analysis import Chapter, TextSegment, UsfmMarkerType, UsfmStructureExtractor, Verse
+from machine.punctuation_analysis import Chapter, TextSegment, UsfmMarkerType, UsfmStructureExtractor, Verse
 
 verse_text_parser_state = usfm_parser = UsfmParser("").state
 verse_text_parser_state.verse_ref.verse_num = 1

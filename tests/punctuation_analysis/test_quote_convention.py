@@ -1,5 +1,5 @@
-from machine.corpora.punctuation_analysis import QuotationMarkDirection
-from machine.corpora.punctuation_analysis.quote_convention import QuoteConvention, SingleLevelQuoteConvention
+from machine.punctuation_analysis import QuotationMarkDirection
+from machine.punctuation_analysis.quote_convention import QuoteConvention, SingleLevelQuoteConvention
 
 
 def test_single_level_quote_convention_normalize() -> None:

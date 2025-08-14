@@ -1,8 +1,8 @@
 from typing import Optional, Sequence
 
-from ..usfm_parser_handler import UsfmParserHandler
-from ..usfm_parser_state import UsfmParserState
-from ..usfm_token import UsfmAttribute
+from ..corpora.usfm_parser_handler import UsfmParserHandler
+from ..corpora.usfm_parser_state import UsfmParserState
+from ..corpora.usfm_token import UsfmAttribute
 from .chapter import Chapter
 from .text_segment import TextSegment
 from .usfm_marker_type import UsfmMarkerType

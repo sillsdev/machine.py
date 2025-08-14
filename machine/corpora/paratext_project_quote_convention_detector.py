@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import BinaryIO, Optional, Union
 
+from ..punctuation_analysis.quote_convention_detector import QuoteConventionAnalysis, QuoteConventionDetector
 from ..utils.typeshed import StrPath
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
-from .punctuation_analysis.quote_convention_detector import QuoteConventionAnalysis, QuoteConventionDetector
 from .usfm_parser import parse_usfm
 
 

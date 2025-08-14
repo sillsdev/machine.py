@@ -1,11 +1,11 @@
 from typing import Generator, Optional, Set
 
-from .punctuation_analysis.quotation_mark_direction import QuotationMarkDirection
-from .punctuation_analysis.quotation_mark_metadata import QuotationMarkMetadata
-from .punctuation_analysis.quotation_mark_resolution_issue import QuotationMarkResolutionIssue
-from .punctuation_analysis.quotation_mark_resolution_settings import QuotationMarkResolutionSettings
-from .punctuation_analysis.quotation_mark_resolver import QuotationMarkResolver
-from .punctuation_analysis.quotation_mark_string_match import QuotationMarkStringMatch
+from ..punctuation_analysis.quotation_mark_direction import QuotationMarkDirection
+from ..punctuation_analysis.quotation_mark_metadata import QuotationMarkMetadata
+from ..punctuation_analysis.quotation_mark_resolution_issue import QuotationMarkResolutionIssue
+from ..punctuation_analysis.quotation_mark_resolution_settings import QuotationMarkResolutionSettings
+from ..punctuation_analysis.quotation_mark_resolver import QuotationMarkResolver
+from ..punctuation_analysis.quotation_mark_string_match import QuotationMarkStringMatch
 
 
 class FallbackQuotationMarkResolver(QuotationMarkResolver):

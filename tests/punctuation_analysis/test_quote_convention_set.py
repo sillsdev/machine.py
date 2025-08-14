@@ -1,6 +1,6 @@
 from pytest import approx
 
-from machine.corpora.punctuation_analysis import (
+from machine.punctuation_analysis import (
     QuotationMarkDirection,
     QuotationMarkMetadata,
     QuotationMarkTabulator,

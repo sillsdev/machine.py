@@ -1,6 +1,6 @@
 from typing import Union
 
-from machine.corpora.punctuation_analysis import (
+from machine.punctuation_analysis import (
     STANDARD_QUOTE_CONVENTIONS,
     QuotationMarkDirection,
     QuotationMarkMetadata,
