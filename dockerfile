@@ -33,8 +33,6 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 WORKDIR /root
 
 RUN apt-get update && \
-    apt-get install --no-install-recommends -y software-properties-common && \
-    apt-get update && \
     apt-get install --no-install-recommends -y \
     # these are needed for ClearML
     git libsm6 libxext6 libxrender-dev libglib2.0-0
