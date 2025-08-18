@@ -3,7 +3,7 @@ ARG PYTHON_VERSION=3.12
 ARG UBUNTU_VERSION=noble
 ARG POETRY_VERSION=1.6.1
 
-FROM python:$PYTHON_VERSION-slim AS builder
+FROM python:$PYTHON_VERSION-slim-bookworm AS builder
 ARG POETRY_VERSION
 
 ENV POETRY_HOME=/opt/poetry
@@ -23,7 +23,7 @@ COPY poetry.lock pyproject.toml /src
 RUN poetry export --with=gpu --without-hashes -f requirements.txt > requirements.txt
 
 
-FROM python:$PYTHON_VERSION-slim
+FROM python:$PYTHON_VERSION-slim-bookworm
 ARG PYTHON_VERSION
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=on
