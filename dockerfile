@@ -44,9 +44,6 @@ RUN apt-get install --no-install-recommends -y python3-pip && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get clean
 
-# make some useful symlinks that are expected to exist
-RUN ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python3  & \
-    ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python
 COPY --from=builder /src/requirements.txt .
 COPY --exclude=.* . .
 
@@ -59,7 +56,6 @@ RUN --mount=type=cache,target=/root/.cache \
     python -m pip install --no-cache-dir clearml-agent setuptools
 RUN python -m pip install --no-deps . && rm -r /root/*
 ENV CLEARML_AGENT_SKIP_PYTHON_ENV_INSTALL=1
-ENV CLEARML_AGENT_SKIP_PIP_VENV_INSTALL=/usr/local/bin/python
 
 ENV EFLOMAL_PATH=/usr/local/lib/python${PYTHON_VERSION}/site-packages/eflomal/bin
 
