@@ -602,6 +602,7 @@ class Versification:
         "RussianProtestant": VersificationType.RUSSIAN_PROTESTANT,
         "RussianOrthodox": VersificationType.RUSSIAN_ORTHODOX,
     }
+    _BUILTIN_VERSIFICATION_TYPES_TO_NAMES = {value: key for key, value in _BUILTIN_VERSIFICATION_NAMES_TO_TYPES.items()}
     _NON_CANONICAL_LAST_CHAPTER_OR_VERSE = 998
 
     @classmethod
@@ -635,8 +636,9 @@ class Versification:
 
         path = Path(__file__).parent / filename
 
+        versification = Versification(cls._BUILTIN_VERSIFICATION_TYPES_TO_NAMES[type])
         with open(path, "r", encoding="utf-8-sig") as file:
-            versification = cls.parse(file)
+            versification = cls.parse(file, versification=versification)
         cls._BUILTIN_VERSIFICATIONS[type] = versification
         return versification
 

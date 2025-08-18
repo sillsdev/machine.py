@@ -3,7 +3,14 @@ from io import BytesIO, StringIO
 from pytest import raises
 from testutils.corpora_test_helpers import CUSTOM_VERS_PATH
 
-from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, VerseRef, Versification
+from machine.scripture import (
+    ENGLISH_VERSIFICATION,
+    ORIGINAL_VERSIFICATION,
+    RUSSIAN_ORTHODOX_VERSIFICATION,
+    VerseRef,
+    Versification,
+    VersificationType,
+)
 
 
 def test_parse_valid() -> None:
@@ -77,3 +84,9 @@ def test_utf_16_encoding_stream() -> None:
         stream = BytesIO(stream.read())
         versification = Versification.load(stream, ENGLISH_VERSIFICATION, "custom")
         assert versification.get_last_verse(47, 13) == 13
+
+
+def test_builtin_versification_type() -> None:
+    assert ENGLISH_VERSIFICATION.type == VersificationType.ENGLISH
+    assert ORIGINAL_VERSIFICATION.type == VersificationType.ORIGINAL
+    assert RUSSIAN_ORTHODOX_VERSIFICATION.type == VersificationType.RUSSIAN_ORTHODOX
