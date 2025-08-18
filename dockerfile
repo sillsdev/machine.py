@@ -3,7 +3,7 @@ ARG PYTHON_VERSION=3.12
 ARG UBUNTU_VERSION=noble
 ARG POETRY_VERSION=1.6.1
 
-FROM python:$PYTHON_VERSION-slim AS builder
+FROM python:$PYTHON_VERSION-slim-bookworm AS builder
 ARG POETRY_VERSION
 
 ENV POETRY_HOME=/opt/poetry
@@ -23,7 +23,7 @@ COPY poetry.lock pyproject.toml /src
 RUN poetry export --with=gpu --without-hashes -f requirements.txt > requirements.txt
 
 
-FROM python:$PYTHON_VERSION
+FROM python:$PYTHON_VERSION-slim-bookworm
 ARG PYTHON_VERSION
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=on
@@ -35,7 +35,7 @@ WORKDIR /root
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
     # these are needed for ClearML
-    git libsm6 libxext6 libxrender-dev libglib2.0-0
+    git libsm6 libxext6 libxrender-dev libglib2.0-0 build-essential
 
 # get rid of all distro python3 packages - they cause conflicts and we don't need them.
 RUN apt list | grep ^python3- | sed 's|/.*||' | xargs apt remove -y
@@ -44,9 +44,6 @@ RUN apt-get install --no-install-recommends -y python3-pip && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get clean
 
-# make some useful symlinks that are expected to exist
-RUN ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python3  & \
-    ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python
 COPY --from=builder /src/requirements.txt .
 COPY --exclude=.* . .
 
