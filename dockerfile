@@ -23,7 +23,7 @@ COPY poetry.lock pyproject.toml /src
 RUN poetry export --with=gpu --without-hashes -f requirements.txt > requirements.txt
 
 
-FROM python:$PYTHON_VERSION
+FROM python:$PYTHON_VERSION-slim
 ARG PYTHON_VERSION
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=on
@@ -35,7 +35,7 @@ WORKDIR /root
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
     # these are needed for ClearML
-    git libsm6 libxext6 libxrender-dev libglib2.0-0
+    git libsm6 libxext6 libxrender-dev libglib2.0-0 build-essential
 
 # get rid of all distro python3 packages - they cause conflicts and we don't need them.
 RUN apt list | grep ^python3- | sed 's|/.*||' | xargs apt remove -y
@@ -59,6 +59,7 @@ RUN --mount=type=cache,target=/root/.cache \
     python -m pip install --no-cache-dir clearml-agent setuptools
 RUN python -m pip install --no-deps . && rm -r /root/*
 ENV CLEARML_AGENT_SKIP_PYTHON_ENV_INSTALL=1
+ENV CLEARML_AGENT_SKIP_PIP_VENV_INSTALL=/usr/local/bin/python
 
 ENV EFLOMAL_PATH=/usr/local/lib/python${PYTHON_VERSION}/site-packages/eflomal/bin
 
