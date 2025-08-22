@@ -128,7 +128,7 @@ class EflomalAligner:
                     trg_output_file,
                 )
 
-            iters = max(2, int(round(1.0 * 5000 / sqrt(n_sentences))))
+            iters = max(2, int(round(1.0 * 5000 / sqrt(n_sentences))) if n_sentences > 0 else 0)
             iters4 = max(1, iters // 4)
             n_iterations = (max(2, iters4), iters4, iters)
 
