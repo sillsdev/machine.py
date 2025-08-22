@@ -70,7 +70,7 @@ def load_smt_decoder(model: tt.SmtModel, parameters: ThotSmtParameters) -> tt.Sm
 def escape_token(token: str) -> str:
     if token == "|||":
         return "<3bars>"
-    return token
+    return token.encode("utf-8", errors="ignore").decode("utf-8")
 
 
 def escape_tokens(segment: Iterable[str]) -> Iterable[str]:
