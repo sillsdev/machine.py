@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import BinaryIO, Optional
+from typing import BinaryIO
 
 from ..utils.typeshed import StrPath
 from .file_paratext_project_settings_parser import FileParatextProjectSettingsParser
@@ -15,5 +15,5 @@ class FileParatextProjectQuoteConventionDetector(ParatextProjectQuoteConventionD
     def _exists(self, file_name: str) -> bool:
         return (Path(self._project_dir) / file_name).exists()
 
-    def _open(self, file_name: str) -> Optional[BinaryIO]:
+    def _open(self, file_name: StrPath) -> BinaryIO:
         return open(Path(self._project_dir) / file_name, mode="rb")
