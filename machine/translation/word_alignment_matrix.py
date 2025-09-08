@@ -23,8 +23,10 @@ class WordAlignmentMatrix:
         cls,
         row_count: int,
         column_count: int,
-        set_values: Collection[Union[AlignedWordPair, Tuple[int, int]]] = set(),
+        set_values: Optional[Collection[Union[AlignedWordPair, Tuple[int, int]]]] = None,
     ) -> WordAlignmentMatrix:
+        if set_values is None:
+            set_values = set()
         matrix = np.full((row_count, column_count), False)
         for i, j in set_values:
             matrix[i, j] = True
