@@ -29,6 +29,7 @@ norecursedirs = "tests/testutils"
 typeCheckingMode = "basic"
 extraPaths = ["tests"]
 reportMissingModuleSource = false
+reportMissingImports = false
 
 [tool.poetry]
 name = "sil-machine"
