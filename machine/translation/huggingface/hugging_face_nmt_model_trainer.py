@@ -328,13 +328,13 @@ class HuggingFaceNmtModelTrainer(Trainer):
             train_dataset=cast(Any, train_dataset),
             tokenizer=tokenizer,
             data_collator=data_collator,
-            callbacks=[
-                _ProgressCallback(
-                    self._training_args.max_steps if self._training_args.max_steps > 0 else None,
-                    progress,
-                    check_canceled,
-                )
-            ],
+            # callbacks=[
+            #     _ProgressCallback(
+            #         self._training_args.max_steps if self._training_args.max_steps > 0 else None,
+            #         progress,
+            #         check_canceled,
+            #     )
+            # ],
         )
 
         logger.info("Train NMT model")
