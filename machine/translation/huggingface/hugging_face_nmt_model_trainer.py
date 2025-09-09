@@ -384,7 +384,7 @@ class _ProgressCallback(TrainerCallback):
         self._max_steps = max_steps if max_steps is not None else 0
         self._progress = progress
         self._check_canceled = check_canceled
-        self._update_frequency = update_frequency if update_frequency is not None else (self._max_steps // 100)
+        self._update_frequency = update_frequency if update_frequency is not None else max((self._max_steps // 100), 1)
 
     def on_train_begin(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs) -> None:
         if self._check_canceled is not None:
