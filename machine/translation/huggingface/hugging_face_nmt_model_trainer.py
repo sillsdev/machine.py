@@ -322,19 +322,19 @@ class HuggingFaceNmtModelTrainer(Trainer):
             pad_to_multiple_of=8 if self._training_args.fp16 else None,
         )
 
-        self._trainer = InnerSeq2SeqTrainer(
+        self._trainer = AutoGradientAccumulationStepsSeq2SeqTrainer(
             model=model,
             args=self._training_args,
             train_dataset=cast(Any, train_dataset),
             tokenizer=tokenizer,
             data_collator=data_collator,
-            # callbacks=[
-            #     _ProgressCallback(
-            #         self._training_args.max_steps if self._training_args.max_steps > 0 else None,
-            #         progress,
-            #         check_canceled,
-            #     )
-            # ],
+            callbacks=[
+                _ProgressCallback(
+                    self._training_args.max_steps if self._training_args.max_steps > 0 else None,
+                    progress,
+                    check_canceled,
+                )
+            ],
         )
 
         logger.info("Train NMT model")
@@ -379,10 +379,12 @@ class _ProgressCallback(TrainerCallback):
         max_steps: Optional[int],
         progress: Optional[Callable[[ProgressStatus], None]],
         check_canceled: Optional[Callable[[], None]],
+        update_frequency: Optional[int] = None,
     ) -> None:
-        self._max_steps = max_steps
+        self._max_steps = max_steps if max_steps is not None else 0
         self._progress = progress
         self._check_canceled = check_canceled
+        self._update_frequency = update_frequency if update_frequency is not None else (self._max_steps // 100)
 
     def on_train_begin(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs) -> None:
         if self._check_canceled is not None:
@@ -394,6 +396,9 @@ class _ProgressCallback(TrainerCallback):
             )
 
     def on_step_end(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs) -> None:
+        if (state.global_step % self._update_frequency) != 0:
+            return
+
         if self._check_canceled is not None:
             self._check_canceled()
 
@@ -405,7 +410,7 @@ class _ProgressCallback(TrainerCallback):
             )
 
 
-class InnerSeq2SeqTrainer(Seq2SeqTrainer):
+class AutoGradientAccumulationStepsSeq2SeqTrainer(Seq2SeqTrainer):
     def __init__(
         self,
         model: Union[PreTrainedModel, Module],

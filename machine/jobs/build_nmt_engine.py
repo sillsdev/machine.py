@@ -25,7 +25,7 @@ logger = logging.getLogger(str(__package__) + ".build_nmt_engine")
 def run(args: dict) -> None:
     progress: Optional[Callable[[ProgressStatus], None]] = None
     check_canceled: Optional[Callable[[], None]] = None
-    task = None
+    task: Optional[Task] = None
     if args["clearml"]:
         task = Task.init()
 
