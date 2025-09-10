@@ -10,14 +10,15 @@ default:
       do_train: true
       optim: adamw_torch
       warmup_steps: 1000
-      per_device_train_batch_size: 16
-      gradient_accumulation_steps: 4
+      per_device_train_batch_size: 64
+      gradient_accumulation_steps: 1
       label_smoothing_factor: 0.2
       group_by_length: true
       gradient_checkpointing: true
       lr_scheduler_type: cosine
       learning_rate: 0.0002
       fp16: true
+      tf32: true
       save_strategy: no
       max_steps: 5000
     generate_params:
