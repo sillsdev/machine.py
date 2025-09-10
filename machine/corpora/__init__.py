@@ -8,6 +8,7 @@ from .dbl_bundle_text_corpus import DblBundleTextCorpus
 from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .dictionary_text_corpus import DictionaryTextCorpus
 from .fallback_quotation_mark_resolver import FallbackQuotationMarkResolver
+from .file_paratext_project_quote_convention_detector import FileParatextProjectQuoteConventionDetector
 from .file_paratext_project_settings_parser import FileParatextProjectSettingsParser
 from .file_paratext_project_text_updater import FileParatextProjectTextUpdater
 from .flatten import flatten
@@ -104,6 +105,7 @@ __all__ = [
     "EMPTY_SCRIPTURE_REF",
     "escape_spaces",
     "extract_scripture_corpus",
+    "FileParatextProjectQuoteConventionDetector",
     "FileParatextProjectSettingsParser",
     "FileParatextProjectTextUpdater",
     "flatten",
