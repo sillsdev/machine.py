@@ -65,7 +65,7 @@ urllib3 = "<2"
 sentencepiece = "^0.2.0"
 sil-thot = "^3.4.6"
 
-transformers = ">=4.38.0,<4.46"
+transformers = "4.46.2"
 datasets = "^2.4.0"
 sacremoses = "^0.0.53"
 
