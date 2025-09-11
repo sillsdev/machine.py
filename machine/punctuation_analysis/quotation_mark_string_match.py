@@ -35,7 +35,7 @@ class QuotationMarkStringMatch:
 
     @property
     def quotation_mark(self) -> str:
-        return self._text_segment.text[self._start_index : self._end_index].string
+        return str(self._text_segment.text[self._start_index : self._end_index])
 
     def is_valid_opening_quotation_mark(self, quote_conventions: QuoteConventionSet) -> bool:
         return quote_conventions.is_valid_opening_quotation_mark(self.quotation_mark)
@@ -59,18 +59,18 @@ class QuotationMarkStringMatch:
             if previous_segment is not None and not self._text_segment.marker_is_in_preceding_context(
                 UsfmMarkerType.PARAGRAPH
             ):
-                return previous_segment.text[-1].string
+                return str(previous_segment.text[-1])
             return None
-        return self._text_segment.text[self._start_index - 1].string
+        return str(self._text_segment.text[self._start_index - 1])
 
     @property
     def next_character(self) -> Optional[str]:
         if self.is_at_end_of_segment():
             next_segment = self._text_segment.next_segment
             if next_segment is not None and not next_segment.marker_is_in_preceding_context(UsfmMarkerType.PARAGRAPH):
-                return next_segment.text[0].string
+                return str(next_segment.text[0])
             return None
-        return self._text_segment.text[self._end_index].string
+        return str(self._text_segment.text[self._end_index])
 
     def leading_substring_matches(self, regex_pattern: regex.Pattern) -> bool:
         return regex_pattern.search(self._text_segment.substring_before(self._start_index)) is not None
@@ -100,9 +100,9 @@ class QuotationMarkStringMatch:
     # Not used, but a useful method for debugging
     @property
     def context(self) -> str:
-        return self._text_segment.text[
+        return str(self._text_segment.text[
             max(self._start_index - 10, 0) : min(self._end_index + 10, len(self._text_segment.text))
-        ].string
+        ])
 
     def resolve(self, depth: int, direction: QuotationMarkDirection) -> QuotationMarkMetadata:
         return QuotationMarkMetadata(

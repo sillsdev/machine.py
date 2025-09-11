@@ -36,7 +36,7 @@ class QuotationMarkFinder:
         self, text_segment: TextSegment
     ) -> List[QuotationMarkStringMatch]:
         quotation_matches: List[QuotationMarkStringMatch] = []
-        for quotation_mark_match in self._QUOTATION_MARK_PATTERN.finditer(text_segment.text.string):
+        for quotation_mark_match in self._QUOTATION_MARK_PATTERN.finditer(str(text_segment.text)):
             if self._quote_conventions.is_valid_opening_quotation_mark(
                 quotation_mark_match.group()
             ) or self._quote_conventions.is_valid_closing_quotation_mark(quotation_mark_match.group()):

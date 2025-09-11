@@ -40,10 +40,10 @@ class TextSegment:
         return len(self._text)
 
     def substring_before(self, index: int) -> str:
-        return self._text[:index].string
+        return str(self._text[:index])
 
     def substring_after(self, index: int) -> str:
-        return self._text[index:].string
+        return str(self._text[index:])
 
     def marker_is_in_preceding_context(self, marker: UsfmMarkerType) -> bool:
         return marker in self._markers_in_preceding_context
@@ -57,7 +57,7 @@ class TextSegment:
     def replace_substring(self, start_index: int, end_index: int, replacement: str) -> None:
         self._text = GraphemeString(self.substring_before(start_index) + replacement + self.substring_after(end_index))
         if self._usfm_token is not None:
-            self._usfm_token.text = self._text.string
+            self._usfm_token.text = str(self._text)
 
     class Builder:
         def __init__(self):
@@ -97,17 +97,13 @@ class GraphemeString:
     def __len__(self) -> int:
         return len(self._string_index_by_grapheme_index)
 
-    @property
-    def string(self) -> str:
-        return self._string
-
     def __str__(self):
         return self._string
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, GraphemeString):
             return False
-        return self._string == other.string
+        return self._string == other._string
 
     def __getitem__(self, key) -> "GraphemeString":
         if isinstance(key, int):
