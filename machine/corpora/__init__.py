@@ -85,6 +85,7 @@ from .usx_file_text import UsxFileText
 from .usx_file_text_corpus import UsxFileTextCorpus
 from .usx_memory_text import UsxMemoryText
 from .usx_zip_text import UsxZipText
+from .zip_paratext_project_quote_convention_detector import ZipParatextProjectQuoteConventionDetector
 from .zip_paratext_project_settings_parser import ZipParatextProjectSettingsParser
 from .zip_paratext_project_settings_parser_base import ZipParatextProjectSettingsParserBase
 from .zip_paratext_project_terms_parser import ZipParatextProjectTermsParser
@@ -188,6 +189,7 @@ __all__ = [
     "UsxFileTextCorpus",
     "UsxMemoryText",
     "UsxZipText",
+    "ZipParatextProjectQuoteConventionDetector",
     "ZipParatextProjectSettingsParser",
     "ZipParatextProjectSettingsParserBase",
     "ZipParatextProjectTermsParser",

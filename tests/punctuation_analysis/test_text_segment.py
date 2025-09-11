@@ -5,7 +5,7 @@ from machine.punctuation_analysis import TextSegment, UsfmMarkerType
 def test_builder_initialization() -> None:
     builder = TextSegment.Builder()
 
-    assert builder._text_segment._text == ""
+    assert str(builder._text_segment.text) == ""
     assert builder._text_segment.previous_segment is None
     assert builder._text_segment.next_segment is None
     assert builder._text_segment._immediate_preceding_marker is UsfmMarkerType.NO_MARKER
@@ -20,7 +20,7 @@ def test_builder_set_text() -> None:
     text = "Example text"
     builder.set_text(text)
 
-    assert builder._text_segment._text == text
+    assert str(builder._text_segment.text) == text
 
 
 def test_builder_set_previous_segment() -> None:
@@ -62,7 +62,7 @@ def test_builder_set_usfm_token() -> None:
     assert builder._text_segment._usfm_token is not None
     assert builder._text_segment._usfm_token.type == UsfmTokenType.TEXT
     assert builder._text_segment._usfm_token.text == "USFM token text"
-    assert builder._text_segment._text == ""
+    assert str(builder._text_segment.text) == ""
     assert builder._text_segment.previous_segment is None
     assert builder._text_segment.next_segment is None
 
@@ -148,10 +148,10 @@ def test_equals() -> None:
 
 def test_get_text() -> None:
     text_segment = TextSegment.Builder().set_text("example text").build()
-    assert text_segment.text == "example text"
+    assert str(text_segment.text) == "example text"
 
     text_segment = TextSegment.Builder().set_text("new example text").build()
-    assert text_segment.text == "new example text"
+    assert str(text_segment.text) == "new example text"
 
 
 def test_length() -> None:
@@ -160,6 +160,14 @@ def test_length() -> None:
 
     text_segment = TextSegment.Builder().set_text("new example text").build()
     assert text_segment.length == len("new example text")
+
+    # Combining characters
+    text_segment = TextSegment.Builder().set_text("उत्पत्ति पुस्तकले").build()
+    assert text_segment.length == 11
+
+    # Surrogate pairs
+    text_segment = TextSegment.Builder().set_text("𝜺𝜺").build()
+    assert text_segment.length == 2
 
 
 def test_substring_before() -> None:
@@ -243,28 +251,28 @@ def test_is_last_segment_in_verse() -> None:
 def test_replace_substring() -> None:
     text_segment = TextSegment.Builder().set_text("example text").build()
     text_segment.replace_substring(0, 7, "sample")
-    assert text_segment.text == "sample text"
+    assert str(text_segment.text) == "sample text"
 
     text_segment.replace_substring(7, 11, "text")
-    assert text_segment.text == "sample text"
+    assert str(text_segment.text) == "sample text"
 
     text_segment.replace_substring(0, 7, "")
-    assert text_segment.text == "text"
+    assert str(text_segment.text) == "text"
 
     text_segment.replace_substring(0, 4, "new'")
-    assert text_segment.text == "new'"
+    assert str(text_segment.text) == "new'"
 
     text_segment.replace_substring(3, 4, "\u2019")
-    assert text_segment.text == "new\u2019"
+    assert str(text_segment.text) == "new\u2019"
 
     text_segment.replace_substring(0, 0, "prefix ")
-    assert text_segment.text == "prefix new\u2019"
+    assert str(text_segment.text) == "prefix new\u2019"
 
     text_segment.replace_substring(0, 0, "")
-    assert text_segment.text == "prefix new\u2019"
+    assert str(text_segment.text) == "prefix new\u2019"
 
     text_segment.replace_substring(11, 11, " suffix")
-    assert text_segment.text == "prefix new\u2019 suffix"
+    assert str(text_segment.text) == "prefix new\u2019 suffix"
 
     text_segment.replace_substring(6, 6, "-")
-    assert text_segment.text == "prefix- new\u2019 suffix"
+    assert str(text_segment.text) == "prefix- new\u2019 suffix"
