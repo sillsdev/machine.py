@@ -99,6 +99,7 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
             batch_size=self._config.huggingface.generate_params.batch_size,
             truncation=TruncationStrategy.LONGEST_FIRST,
             oom_batch_size_backoff_mult=self._config.huggingface.generate_params.oom_batch_size_backoff_mult,
+            output_attentions=False,
         )
 
     def save_model(self) -> Path:
