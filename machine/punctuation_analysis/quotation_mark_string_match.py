@@ -100,9 +100,11 @@ class QuotationMarkStringMatch:
     # Not used, but a useful method for debugging
     @property
     def context(self) -> str:
-        return str(self._text_segment.text[
-            max(self._start_index - 10, 0) : min(self._end_index + 10, len(self._text_segment.text))
-        ])
+        return str(
+            self._text_segment.text[
+                max(self._start_index - 10, 0) : min(self._end_index + 10, len(self._text_segment.text))
+            ]
+        )
 
     def resolve(self, depth: int, direction: QuotationMarkDirection) -> QuotationMarkMetadata:
         return QuotationMarkMetadata(
