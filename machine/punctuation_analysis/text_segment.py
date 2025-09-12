@@ -123,14 +123,14 @@ class GraphemeString:
         else:
             raise TypeError("Indices must be integers or slices")
 
-    def _normalize_start_index(self, index: int | None) -> int:
+    def _normalize_start_index(self, index: Optional[int]) -> int:
         if index is None:
             return 0
         if index < 0:
             return len(self) + index
         return index
 
-    def _normalize_stop_index(self, index: int | None) -> int:
+    def _normalize_stop_index(self, index: Optional[int]) -> int:
         if index is None:
             return len(self)
         if index < 0:
