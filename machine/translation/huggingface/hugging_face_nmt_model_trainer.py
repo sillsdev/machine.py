@@ -7,14 +7,14 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
 import torch  # pyright: ignore[reportMissingImports]
-from accelerate import Accelerator
-from accelerate.utils.memory import should_reduce_batch_size
+from accelerate import Accelerator  # pyright: ignore[reportMissingImports]
+from accelerate.utils.memory import should_reduce_batch_size  # pyright: ignore[reportMissingImports]
 from datasets.arrow_dataset import Dataset
 from sacremoses import MosesPunctNormalizer
 from torch import Tensor  # pyright: ignore[reportMissingImports]
-from torch.nn import Module
-from torch.optim.lr_scheduler import LambdaLR
-from torch.optim.optimizer import Optimizer
+from torch.nn import Module  # pyright: ignore[reportMissingImports]
+from torch.optim.lr_scheduler import LambdaLR  # pyright: ignore[reportMissingImports]
+from torch.optim.optimizer import Optimizer  # pyright: ignore[reportMissingImports]
 from torch.utils.checkpoint import checkpoint  # pyright: ignore[reportMissingImports] # noqa: F401
 from transformers import (
     AutoConfig,
