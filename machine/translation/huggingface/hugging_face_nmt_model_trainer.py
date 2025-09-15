@@ -267,7 +267,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
             # For multilingual translation models like mBART-50 and M2M100 we need to force the target language token
             # as the first generated token. We ask the user to explicitly provide this as --forced_bos_token argument.
             forced_bos_token_id = tokenizer.convert_tokens_to_ids(self._tgt_lang)
-            # model.config.forced_bos_token_id = forced_bos_token_id
+            model.config.forced_bos_token_id = forced_bos_token_id
             if model.generation_config is not None:
                 model.generation_config.forced_bos_token_id = forced_bos_token_id
 
