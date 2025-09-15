@@ -7,7 +7,7 @@ from .usfm_marker_type import UsfmMarkerType
 
 class TextSegment:
     def __init__(self):
-        self._text: GraphemeString = GraphemeString("")
+        self._text: GlyphString = GlyphString("")
         self._immediate_preceding_marker: UsfmMarkerType = UsfmMarkerType.NO_MARKER
         self._markers_in_preceding_context: Set[UsfmMarkerType] = set()
         self.previous_segment: Optional[TextSegment] = None
@@ -32,7 +32,7 @@ class TextSegment:
         return True
 
     @property
-    def text(self) -> "GraphemeString":
+    def text(self) -> "GlyphString":
         return self._text
 
     @property
@@ -55,7 +55,7 @@ class TextSegment:
         return self.index_in_verse == self.num_segments_in_verse - 1
 
     def replace_substring(self, start_index: int, end_index: int, replacement: str) -> None:
-        self._text = GraphemeString(self.substring_before(start_index) + replacement + self.substring_after(end_index))
+        self._text = GlyphString(self.substring_before(start_index) + replacement + self.substring_after(end_index))
         if self._usfm_token is not None:
             self._usfm_token.text = str(self._text)
 
@@ -77,49 +77,49 @@ class TextSegment:
             return self
 
         def set_text(self, text: str) -> "TextSegment.Builder":
-            self._text_segment._text = GraphemeString(text)
+            self._text_segment._text = GlyphString(text)
             return self
 
         def build(self) -> "TextSegment":
             return self._text_segment
 
 
-class GraphemeString:
+class GlyphString:
     def __init__(self, string: str) -> None:
         self._string = string
-        self._string_index_by_grapheme_index = {
-            grapheme_index: string_index
-            for grapheme_index, string_index in enumerate(
+        self._string_index_by_glyph_index = {
+            glyph_index: string_index
+            for glyph_index, string_index in enumerate(
                 [i for i, c in enumerate(string) if unicodedata.category(c) not in ["Mc", "Mn"]]
             )
         }
 
     def __len__(self) -> int:
-        return len(self._string_index_by_grapheme_index)
+        return len(self._string_index_by_glyph_index)
 
     def __str__(self):
         return self._string
 
     def __eq__(self, other) -> bool:
-        if not isinstance(other, GraphemeString):
+        if not isinstance(other, GlyphString):
             return False
         return self._string == other._string
 
-    def __getitem__(self, key) -> "GraphemeString":
+    def __getitem__(self, key) -> "GlyphString":
         if isinstance(key, int):
-            grapheme_start = self._normalize_start_index(key)
-            grapheme_stop = self._normalize_stop_index(grapheme_start + 1)
-            string_start = self._string_index_by_grapheme_index.get(grapheme_start, len(self))
-            string_stop = self._string_index_by_grapheme_index.get(grapheme_stop, None)
-            return GraphemeString(self._string[string_start:string_stop])
+            glyph_start = self._normalize_start_index(key)
+            glyph_stop = self._normalize_stop_index(glyph_start + 1)
+            string_start = self._string_index_by_glyph_index.get(glyph_start, len(self))
+            string_stop = self._string_index_by_glyph_index.get(glyph_stop, None)
+            return GlyphString(self._string[string_start:string_stop])
         elif isinstance(key, slice):
             if key.step is not None and key.step != 1:
-                raise TypeError("Steps are not allowed in _GraphemeString slices")
-            grapheme_start = self._normalize_start_index(key.start)
-            grapheme_stop = self._normalize_stop_index(key.stop)
-            string_start = self._string_index_by_grapheme_index.get(grapheme_start, len(self))
-            string_stop = self._string_index_by_grapheme_index.get(grapheme_stop, None)
-            return GraphemeString(self._string[string_start:string_stop])
+                raise TypeError("Steps are not allowed in _glyphString slices")
+            glyph_start = self._normalize_start_index(key.start)
+            glyph_stop = self._normalize_stop_index(key.stop)
+            string_start = self._string_index_by_glyph_index.get(glyph_start, len(self))
+            string_stop = self._string_index_by_glyph_index.get(glyph_stop, None)
+            return GlyphString(self._string[string_start:string_stop])
         else:
             raise TypeError("Indices must be integers or slices")
 
@@ -137,10 +137,10 @@ class GraphemeString:
             return len(self) + index
         return index
 
-    def string_index_to_grapheme_index(self, string_index: int) -> int:
+    def string_index_to_glyph_index(self, string_index: int) -> int:
         if string_index == len(self._string):
             return len(self)
-        for g_index, s_index in self._string_index_by_grapheme_index.items():
+        for g_index, s_index in self._string_index_by_glyph_index.items():
             if s_index == string_index:
                 return g_index
-        raise ValueError(f"No corresponding grapheme index found for string index {string_index}.")
+        raise ValueError(f"No corresponding glyph index found for string index {string_index}.")
