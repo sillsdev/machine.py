@@ -129,7 +129,7 @@ def test_get_previous_character() -> None:
         0,
         1,
     )
-    assert quotation_mark_string_match.previous_character == "ले"
+    assert quotation_mark_string_match.previous_character == "\u0947"
 
 
 def test_get_next_character() -> None:

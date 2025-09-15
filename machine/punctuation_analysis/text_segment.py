@@ -1,4 +1,3 @@
-import unicodedata
 from typing import Optional, Set
 
 from ..corpora.usfm_token import UsfmToken
@@ -7,7 +6,7 @@ from .usfm_marker_type import UsfmMarkerType
 
 class TextSegment:
     def __init__(self):
-        self._text: GlyphString = GlyphString("")
+        self._text = ""
         self._immediate_preceding_marker: UsfmMarkerType = UsfmMarkerType.NO_MARKER
         self._markers_in_preceding_context: Set[UsfmMarkerType] = set()
         self.previous_segment: Optional[TextSegment] = None
@@ -32,7 +31,7 @@ class TextSegment:
         return True
 
     @property
-    def text(self) -> "GlyphString":
+    def text(self) -> str:
         return self._text
 
     @property
@@ -55,7 +54,7 @@ class TextSegment:
         return self.index_in_verse == self.num_segments_in_verse - 1
 
     def replace_substring(self, start_index: int, end_index: int, replacement: str) -> None:
-        self._text = GlyphString(self.substring_before(start_index) + replacement + self.substring_after(end_index))
+        self._text = self.substring_before(start_index) + replacement + self.substring_after(end_index)
         if self._usfm_token is not None:
             self._usfm_token.text = str(self._text)
 
@@ -77,70 +76,8 @@ class TextSegment:
             return self
 
         def set_text(self, text: str) -> "TextSegment.Builder":
-            self._text_segment._text = GlyphString(text)
+            self._text_segment._text = text
             return self
 
         def build(self) -> "TextSegment":
             return self._text_segment
-
-
-class GlyphString:
-    def __init__(self, string: str) -> None:
-        self._string = string
-        self._string_index_by_glyph_index = {
-            glyph_index: string_index
-            for glyph_index, string_index in enumerate(
-                [i for i, c in enumerate(string) if unicodedata.category(c) not in ["Mc", "Mn"]]
-            )
-        }
-
-    def __len__(self) -> int:
-        return len(self._string_index_by_glyph_index)
-
-    def __str__(self):
-        return self._string
-
-    def __eq__(self, other) -> bool:
-        if not isinstance(other, GlyphString):
-            return False
-        return self._string == other._string
-
-    def __getitem__(self, key) -> "GlyphString":
-        if isinstance(key, int):
-            glyph_start = self._normalize_start_index(key)
-            glyph_stop = self._normalize_stop_index(glyph_start + 1)
-            string_start = self._string_index_by_glyph_index.get(glyph_start, len(self))
-            string_stop = self._string_index_by_glyph_index.get(glyph_stop, None)
-            return GlyphString(self._string[string_start:string_stop])
-        elif isinstance(key, slice):
-            if key.step is not None and key.step != 1:
-                raise TypeError("Steps are not allowed in _glyphString slices")
-            glyph_start = self._normalize_start_index(key.start)
-            glyph_stop = self._normalize_stop_index(key.stop)
-            string_start = self._string_index_by_glyph_index.get(glyph_start, len(self))
-            string_stop = self._string_index_by_glyph_index.get(glyph_stop, None)
-            return GlyphString(self._string[string_start:string_stop])
-        else:
-            raise TypeError("Indices must be integers or slices")
-
-    def _normalize_start_index(self, index: Optional[int]) -> int:
-        if index is None:
-            return 0
-        if index < 0:
-            return len(self) + index
-        return index
-
-    def _normalize_stop_index(self, index: Optional[int]) -> int:
-        if index is None:
-            return len(self)
-        if index < 0:
-            return len(self) + index
-        return index
-
-    def string_index_to_glyph_index(self, string_index: int) -> int:
-        if string_index == len(self._string):
-            return len(self)
-        for g_index, s_index in self._string_index_by_glyph_index.items():
-            if s_index == string_index:
-                return g_index
-        raise ValueError(f"No corresponding glyph index found for string index {string_index}.")

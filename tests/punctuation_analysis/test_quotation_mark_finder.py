@@ -177,7 +177,7 @@ def test_that_all_possible_quotation_marks_are_identified() -> None:
 
     assert quotation_mark_finder.find_all_potential_quotation_marks_in_text_segment(
         TextSegment.Builder().set_text('उत्पत्ति "पुस्तकले').build()
-    ) == [QuotationMarkStringMatch(TextSegment.Builder().set_text('उत्पत्ति "पुस्तकले').build(), 6, 7)]
+    ) == [QuotationMarkStringMatch(TextSegment.Builder().set_text('उत्पत्ति "पुस्तकले').build(), 9, 10)]
 
 
 def test_that_it_uses_the_quote_convention_set() -> None:
