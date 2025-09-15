@@ -43,8 +43,8 @@ class QuotationMarkFinder:
                 quotation_matches.append(
                     QuotationMarkStringMatch(
                         text_segment,
-                        text_segment.text.string_index_to_grapheme_index(quotation_mark_match.start()),
-                        text_segment.text.string_index_to_grapheme_index(quotation_mark_match.end()),
+                        text_segment.text.string_index_to_glyph_index(quotation_mark_match.start()),
+                        text_segment.text.string_index_to_glyph_index(quotation_mark_match.end()),
                     )
                 )
         return quotation_matches
