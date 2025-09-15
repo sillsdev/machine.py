@@ -19,7 +19,7 @@ def test_update_quotation_mark() -> None:
         end_index=23,
     )
     quotation_mark_metadata.update_quotation_mark(get_quote_convention_by_name("standard_english"))
-    assert str(quotation_mark_metadata.text_segment.text) == "He said to the woman, “Has God really said,"
+    assert quotation_mark_metadata.text_segment.text == "He said to the woman, “Has God really said,"
 
     quotation_mark_metadata = QuotationMarkMetadata(
         quotation_mark='"',
@@ -30,7 +30,7 @@ def test_update_quotation_mark() -> None:
         end_index=23,
     )
     quotation_mark_metadata.update_quotation_mark(get_quote_convention_by_name("western_european"))
-    assert str(quotation_mark_metadata.text_segment.text) == "He said to the woman, «Has God really said,"
+    assert quotation_mark_metadata.text_segment.text == "He said to the woman, «Has God really said,"
 
     quotation_mark_metadata = QuotationMarkMetadata(
         quotation_mark='"',
@@ -41,7 +41,7 @@ def test_update_quotation_mark() -> None:
         end_index=24,
     )
     quotation_mark_metadata.update_quotation_mark(get_quote_convention_by_name("western_european"))
-    assert str(quotation_mark_metadata.text_segment.text) == 'He said to the woman, "«as God really said,'
+    assert quotation_mark_metadata.text_segment.text == 'He said to the woman, "«as God really said,'
 
 
 def test_update_quotation_mark_with_multi_character_quotation_marks() -> None:
@@ -54,7 +54,7 @@ def test_update_quotation_mark_with_multi_character_quotation_marks() -> None:
         end_index=23,
     )
     quotation_mark_metadata.update_quotation_mark(get_quote_convention_by_name("typewriter_french"))
-    assert str(quotation_mark_metadata.text_segment.text) == "He said to the woman, <<Has God really said,"
+    assert quotation_mark_metadata.text_segment.text == "He said to the woman, <<Has God really said,"
     assert quotation_mark_metadata.start_index == 22
     assert quotation_mark_metadata.end_index == 24
 
@@ -67,7 +67,7 @@ def test_update_quotation_mark_with_multi_character_quotation_marks() -> None:
         end_index=24,
     )
     quotation_mark_metadata.update_quotation_mark(get_quote_convention_by_name("standard_english"))
-    assert str(quotation_mark_metadata.text_segment.text) == "He said to the woman, “Has God really said,"
+    assert quotation_mark_metadata.text_segment.text == "He said to the woman, “Has God really said,"
     assert quotation_mark_metadata.start_index == 22
     assert quotation_mark_metadata.end_index == 23
 
