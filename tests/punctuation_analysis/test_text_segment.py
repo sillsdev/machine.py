@@ -5,7 +5,7 @@ from machine.punctuation_analysis import TextSegment, UsfmMarkerType
 def test_builder_initialization() -> None:
     builder = TextSegment.Builder()
 
-    assert builder._text_segment._text == ""
+    assert builder._text_segment.text == ""
     assert builder._text_segment.previous_segment is None
     assert builder._text_segment.next_segment is None
     assert builder._text_segment._immediate_preceding_marker is UsfmMarkerType.NO_MARKER
@@ -20,7 +20,7 @@ def test_builder_set_text() -> None:
     text = "Example text"
     builder.set_text(text)
 
-    assert builder._text_segment._text == text
+    assert builder._text_segment.text == text
 
 
 def test_builder_set_previous_segment() -> None:
@@ -62,7 +62,7 @@ def test_builder_set_usfm_token() -> None:
     assert builder._text_segment._usfm_token is not None
     assert builder._text_segment._usfm_token.type == UsfmTokenType.TEXT
     assert builder._text_segment._usfm_token.text == "USFM token text"
-    assert builder._text_segment._text == ""
+    assert builder._text_segment.text == ""
     assert builder._text_segment.previous_segment is None
     assert builder._text_segment.next_segment is None
 
@@ -160,6 +160,14 @@ def test_length() -> None:
 
     text_segment = TextSegment.Builder().set_text("new example text").build()
     assert text_segment.length == len("new example text")
+
+    # Combining characters
+    text_segment = TextSegment.Builder().set_text("उत्पत्ति पुस्तकले").build()
+    assert text_segment.length == 17
+
+    # Surrogate pairs
+    text_segment = TextSegment.Builder().set_text("𝜺𝜺").build()
+    assert text_segment.length == 2
 
 
 def test_substring_before() -> None:

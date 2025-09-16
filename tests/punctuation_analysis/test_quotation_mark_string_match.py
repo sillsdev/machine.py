@@ -121,6 +121,16 @@ def test_get_previous_character() -> None:
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("\u201c\u201d").build(), 1, 2)
     assert quotation_mark_string_match.previous_character == "“"
 
+    quotation_mark_string_match = QuotationMarkStringMatch(
+        TextSegment.Builder()
+        .set_text('"उत्पत्ति पुस्तकले')
+        .set_previous_segment(TextSegment.Builder().set_text("उत्पत्ति पुस्तकले").build())
+        .build(),
+        0,
+        1,
+    )
+    assert quotation_mark_string_match.previous_character == "\u0947"
+
 
 def test_get_next_character() -> None:
     quotation_mark_string_match = QuotationMarkStringMatch(TextSegment.Builder().set_text("sample text").build(), 1, 2)

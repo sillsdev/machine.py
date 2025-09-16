@@ -39,10 +39,10 @@ class TextSegment:
         return len(self._text)
 
     def substring_before(self, index: int) -> str:
-        return self._text[:index]
+        return str(self._text[:index])
 
     def substring_after(self, index: int) -> str:
-        return self._text[index:]
+        return str(self._text[index:])
 
     def marker_is_in_preceding_context(self, marker: UsfmMarkerType) -> bool:
         return marker in self._markers_in_preceding_context
@@ -56,7 +56,7 @@ class TextSegment:
     def replace_substring(self, start_index: int, end_index: int, replacement: str) -> None:
         self._text = self.substring_before(start_index) + replacement + self.substring_after(end_index)
         if self._usfm_token is not None:
-            self._usfm_token.text = self._text
+            self._usfm_token.text = str(self._text)
 
     class Builder:
         def __init__(self):
