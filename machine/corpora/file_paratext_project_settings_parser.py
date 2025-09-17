@@ -11,7 +11,7 @@ class FileParatextProjectSettingsParser(ParatextProjectSettingsParserBase):
         self._project_dir = Path(project_dir)
 
     def _create_stylesheet(self, file_name: StrPath) -> UsfmStylesheet:
-        custom_stylesheet_filename = self._project_dir / file_name
+        custom_stylesheet_filename = self._project_dir / "custom.sty"
         return UsfmStylesheet(
             file_name,
             custom_stylesheet_filename if custom_stylesheet_filename.is_file() else None,
