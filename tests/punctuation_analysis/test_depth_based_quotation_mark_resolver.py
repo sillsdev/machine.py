@@ -1,6 +1,5 @@
 from pytest import raises
 
-from machine.corpora import QuotationMarkUpdateResolutionSettings
 from machine.punctuation_analysis import (
     STANDARD_QUOTE_CONVENTIONS,
     DepthBasedQuotationMarkResolver,
@@ -10,6 +9,7 @@ from machine.punctuation_analysis import (
     QuotationMarkResolutionIssue,
     QuotationMarkResolverState,
     QuotationMarkStringMatch,
+    QuotationMarkUpdateResolutionSettings,
     QuoteContinuerState,
     QuoteContinuerStyle,
     QuoteConventionDetectionResolutionSettings,

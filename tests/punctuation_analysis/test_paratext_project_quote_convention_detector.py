@@ -3,7 +3,9 @@ from typing import Dict, Optional
 from testutils.memory_paratext_project_quote_convention_detector import MemoryParatextProjectQuoteConventionDetector
 
 from machine.corpora import ParatextProjectSettings, UsfmStylesheet
-from machine.corpora.paratext_project_quote_convention_detector import ParatextProjectQuoteConventionDetector
+from machine.punctuation_analysis.paratext_project_quote_convention_detector import (
+    ParatextProjectQuoteConventionDetector,
+)
 from machine.punctuation_analysis.quote_convention_detector import QuoteConventionAnalysis
 from machine.scripture import ORIGINAL_VERSIFICATION, Versification
 

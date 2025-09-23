@@ -1,31 +1,29 @@
 from typing import Union
 
-from machine.corpora import (
+from machine.corpora import UpdateUsfmParserHandler, parse_usfm
+from machine.punctuation_analysis import (
+    STANDARD_QUOTE_CONVENTIONS,
     QuotationMarkDenormalizationUsfmUpdateBlockHandler,
     QuotationMarkUpdateSettings,
     QuotationMarkUpdateStrategy,
-    UpdateUsfmParserHandler,
-    parse_usfm,
+    QuoteConvention,
 )
-from machine.punctuation_analysis import STANDARD_QUOTE_CONVENTIONS, QuoteConvention
 
-simple_normalized_usfm = """\\c 1
+
+def test_simple_english_quote_denormalization() -> None:
+    normalized_usfm = """\\c 1
     \\v 1 Now the serpent was more subtle than any animal
     of the field which Yahweh God had made.
     He said to the woman, "Has God really said,
     'You shall not eat of any tree of the garden'?"
     """
-
-
-def test_simple_english_quote_denormalization() -> None:
-    normalized_usfm = simple_normalized_usfm
     expected_usfm = (
         "\\c 1\n"
         + "\\v 1 Now the serpent was more subtle than any animal of the field which Yahweh God had made. He said to "
         + "the woman, “Has God really said, ‘You shall not eat of any tree of the garden’?”"
     )
 
-    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_english", "standard_english")
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_english")
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
@@ -42,33 +40,43 @@ def test_simple_british_english_quote_denormalization() -> None:
         + "the woman, ‘Has God really said, “You shall not eat of any tree of the garden”?’"
     )
 
-    observed_usfm = denormalize_quotation_marks(normalized_usfm, "british_english", "british_english")
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "british_english")
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
 # no denormalization should be needed for this example
 def test_simple_typewriter_english_quote_denormalization() -> None:
-    normalized_usfm = simple_normalized_usfm
+    normalized_usfm = """\\c 1
+    \\v 1 Now the serpent was more subtle than any animal
+    of the field which Yahweh God had made.
+    He said to the woman, "Has God really said,
+    'You shall not eat of any tree of the garden'?"
+    """
     expected_usfm = (
         "\\c 1\n"
         + "\\v 1 Now the serpent was more subtle than any animal of the field which Yahweh God had made. He said to "
         + "the woman, \"Has God really said, 'You shall not eat of any tree of the garden'?\""
     )
 
-    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_english", "typewriter_english")
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "typewriter_english")
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
 # some of the quotes shouldn't need to be denormalized
 def test_simple_hybrid_typewriter_english_quote_denormalization() -> None:
-    normalized_usfm = simple_normalized_usfm
+    normalized_usfm = """\\c 1
+    \\v 1 Now the serpent was more subtle than any animal
+    of the field which Yahweh God had made.
+    He said to the woman, "Has God really said,
+    'You shall not eat of any tree of the garden'?"
+    """
     expected_usfm = (
         "\\c 1\n"
         + "\\v 1 Now the serpent was more subtle than any animal of the field which Yahweh God had made. He said to "
         + "the woman, “Has God really said, 'You shall not eat of any tree of the garden'?”"
     )
 
-    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_english", "hybrid_typewriter_english")
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "hybrid_typewriter_english")
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
@@ -87,7 +95,7 @@ def test_simple_french_quote_denormalization() -> None:
         + "the woman, «Has God really said, ‹You shall not eat of any tree of the garden›?»"
     )
 
-    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_french", "standard_french")
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_french")
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
@@ -105,7 +113,7 @@ def test_simple_typewriter_french_quote_denormalization() -> None:
         + "the woman, <<Has God really said, <You shall not eat of any tree of the garden>?>>"
     )
 
-    observed_usfm = denormalize_quotation_marks(normalized_usfm, "typewriter_french", "typewriter_french")
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "typewriter_french")
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
@@ -123,7 +131,7 @@ def test_simple_western_european_quote_denormalization() -> None:
         + "the woman, «Has God really said, “You shall not eat of any tree of the garden”?»"
     )
 
-    observed_usfm = denormalize_quotation_marks(normalized_usfm, "western_european", "western_european")
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "western_european")
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
@@ -140,9 +148,7 @@ def test_simple_typewriter_western_european_quote_denormalization() -> None:
         + 'the woman, <<Has God really said, "You shall not eat of any tree of the garden"?>>'
     )
 
-    observed_usfm = denormalize_quotation_marks(
-        normalized_usfm, "typewriter_western_european", "typewriter_western_european"
-    )
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "typewriter_western_european")
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
@@ -159,9 +165,7 @@ def test_simple_typewriter_western_european_variant_quote_denormalization() -> N
         + 'the woman, "Has God really said, <You shall not eat of any tree of the garden>?"'
     )
 
-    observed_usfm = denormalize_quotation_marks(
-        normalized_usfm, "typewriter_western_european_variant", "typewriter_western_european_variant"
-    )
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "typewriter_western_european_variant")
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
@@ -178,9 +182,7 @@ def test_simple_hybrid_typewriter_western_european_quote_denormalization() -> No
         + 'the woman, «Has God really said, "You shall not eat of any tree of the garden"?»'
     )
 
-    observed_usfm = denormalize_quotation_marks(
-        normalized_usfm, "hybrid_typewriter_western_european", "hybrid_typewriter_western_european"
-    )
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "hybrid_typewriter_western_european")
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
@@ -197,7 +199,7 @@ def test_simple_central_european_quote_denormalization() -> None:
         + "the woman, „Has God really said, ‚You shall not eat of any tree of the garden‘?“"
     )
 
-    observed_usfm = denormalize_quotation_marks(normalized_usfm, "central_european", "central_european")
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "central_european")
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
@@ -214,9 +216,7 @@ def test_simple_central_european_guillemets_quote_denormalization() -> None:
         + "the woman, »Has God really said, ›You shall not eat of any tree of the garden‹?«"
     )
 
-    observed_usfm = denormalize_quotation_marks(
-        normalized_usfm, "central_european_guillemets", "central_european_guillemets"
-    )
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "central_european_guillemets")
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
@@ -233,31 +233,41 @@ def test_simple_swedish_quote_denormalization() -> None:
         + "the woman, ”Has God really said, ’You shall not eat of any tree of the garden’?”"
     )
 
-    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_swedish", "standard_swedish")
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_swedish")
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
 def test_simple_finnish_quote_denormalization() -> None:
-    normalized_usfm = simple_normalized_usfm
+    normalized_usfm = """\\c 1
+    \\v 1 Now the serpent was more subtle than any animal
+    of the field which Yahweh God had made.
+    He said to the woman, "Has God really said,
+    'You shall not eat of any tree of the garden'?"
+    """
     expected_usfm = (
         "\\c 1\n"
         + "\\v 1 Now the serpent was more subtle than any animal of the field which Yahweh God had made. He said to "
         + "the woman, »Has God really said, ’You shall not eat of any tree of the garden’?»"
     )
 
-    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_english", "standard_finnish")
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_finnish")
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
 def test_simple_eastern_european_quote_denormalization() -> None:
-    normalized_usfm = simple_normalized_usfm
+    normalized_usfm = """\\c 1
+    \\v 1 Now the serpent was more subtle than any animal
+    of the field which Yahweh God had made.
+    He said to the woman, "Has God really said,
+    'You shall not eat of any tree of the garden'?"
+    """
     expected_usfm = (
         "\\c 1\n"
         + "\\v 1 Now the serpent was more subtle than any animal of the field which Yahweh God had made. He said to "
         + "the woman, „Has God really said, ‚You shall not eat of any tree of the garden’?”"
     )
 
-    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_english", "eastern_european")
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "eastern_european")
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
@@ -274,24 +284,34 @@ def test_simple_russian_quote_denormalization() -> None:
         + "the woman, «Has God really said, „You shall not eat of any tree of the garden“?»"
     )
 
-    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_russian", "standard_russian")
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_russian")
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
 def test_simple_arabic_quote_denormalization() -> None:
-    normalized_usfm = simple_normalized_usfm
+    normalized_usfm = """\\c 1
+    \\v 1 Now the serpent was more subtle than any animal
+    of the field which Yahweh God had made.
+    He said to the woman, "Has God really said,
+    'You shall not eat of any tree of the garden'?"
+    """
     expected_usfm = (
         "\\c 1\n"
         + "\\v 1 Now the serpent was more subtle than any animal of the field which Yahweh God had made. He said to "
         + "the woman, ”Has God really said, ’You shall not eat of any tree of the garden‘?“"
     )
 
-    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_english", "standard_arabic")
+    observed_usfm = denormalize_quotation_marks(normalized_usfm, "standard_arabic")
     assert_usfm_equal(observed_usfm, expected_usfm)
 
 
 def test_fallback_quotation_denormalization_same_as_full() -> None:
-    normalized_usfm = simple_normalized_usfm
+    normalized_usfm = """\\c 1
+    \\v 1 Now the serpent was more subtle than any animal
+    of the field which Yahweh God had made.
+    He said to the woman, "Has God really said,
+    'You shall not eat of any tree of the garden'?"
+    """
     expected_usfm = (
         "\\c 1\n"
         + "\\v 1 Now the serpent was more subtle than any animal of the field which Yahweh God had made. He said to "
@@ -300,7 +320,6 @@ def test_fallback_quotation_denormalization_same_as_full() -> None:
 
     observed_usfm = denormalize_quotation_marks(
         normalized_usfm,
-        "standard_english",
         "standard_english",
         QuotationMarkUpdateSettings(default_chapter_strategy=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
     )
@@ -323,7 +342,6 @@ def test_fallback_quotation_denormalization_incorrectly_nested() -> None:
     observed_usfm = denormalize_quotation_marks(
         normalized_usfm,
         "standard_english",
-        "standard_english",
         QuotationMarkUpdateSettings(default_chapter_strategy=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
     )
     assert_usfm_equal(observed_usfm, expected_usfm)
@@ -344,7 +362,6 @@ def test_fallback_quotation_denormalization_incorrectly_nested_second_case() -> 
 
     observed_usfm = denormalize_quotation_marks(
         normalized_usfm,
-        "standard_english",
         "standard_english",
         QuotationMarkUpdateSettings(default_chapter_strategy=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
     )
@@ -367,7 +384,6 @@ def test_fallback_quotation_denormalization_unclosed_quote() -> None:
     observed_usfm = denormalize_quotation_marks(
         normalized_usfm,
         "standard_english",
-        "standard_english",
         QuotationMarkUpdateSettings(default_chapter_strategy=QuotationMarkUpdateStrategy.APPLY_FALLBACK),
     )
     assert_usfm_equal(observed_usfm, expected_usfm)
@@ -375,13 +391,12 @@ def test_fallback_quotation_denormalization_unclosed_quote() -> None:
 
 def denormalize_quotation_marks(
     normalized_usfm: str,
-    source_quote_convention_name: str,
     target_quote_convention_name: str,
     quotation_denormalization_settings: QuotationMarkUpdateSettings = QuotationMarkUpdateSettings(),
 ) -> str:
     quotation_denormalizer: QuotationMarkDenormalizationUsfmUpdateBlockHandler = (
         create_quotation_denormalization_usfm_update_block_handler(
-            source_quote_convention_name, target_quote_convention_name, quotation_denormalization_settings
+            target_quote_convention_name, quotation_denormalization_settings
         )
     )
 
@@ -392,15 +407,12 @@ def denormalize_quotation_marks(
 
 
 def create_quotation_denormalization_usfm_update_block_handler(
-    source_quote_convention_name: str,
     target_quote_convention_name: str,
     quotation_denormalization_settings: QuotationMarkUpdateSettings = QuotationMarkUpdateSettings(),
 ) -> QuotationMarkDenormalizationUsfmUpdateBlockHandler:
-    source_quote_convention = get_quote_convention_by_name(source_quote_convention_name)
     target_quote_convention = get_quote_convention_by_name(target_quote_convention_name)
 
     return QuotationMarkDenormalizationUsfmUpdateBlockHandler(
-        source_quote_convention,
         target_quote_convention,
         quotation_denormalization_settings,
     )

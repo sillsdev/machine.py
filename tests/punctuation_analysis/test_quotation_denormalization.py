@@ -1,13 +1,12 @@
 from testutils.corpora_test_helpers import ignore_line_endings
 
-from machine.corpora import (
+from machine.corpora import UpdateUsfmParserHandler, parse_usfm
+from machine.punctuation_analysis import (
+    STANDARD_QUOTE_CONVENTIONS,
     QuotationMarkDenormalizationFirstPass,
     QuotationMarkDenormalizationUsfmUpdateBlockHandler,
     QuotationMarkUpdateSettings,
-    UpdateUsfmParserHandler,
-    parse_usfm,
 )
-from machine.punctuation_analysis import STANDARD_QUOTE_CONVENTIONS
 
 
 def test_full_quotation_denormalization_pipeline() -> None:
@@ -34,15 +33,12 @@ def test_full_quotation_denormalization_pipeline() -> None:
     standard_english_quote_convention = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name("standard_english")
     assert standard_english_quote_convention is not None
 
-    quotation_mark_denormalization_first_pass = QuotationMarkDenormalizationFirstPass(
-        standard_english_quote_convention, standard_english_quote_convention
-    )
+    quotation_mark_denormalization_first_pass = QuotationMarkDenormalizationFirstPass(standard_english_quote_convention)
 
     parse_usfm(normalized_usfm, quotation_mark_denormalization_first_pass)
     best_chapter_strategies = quotation_mark_denormalization_first_pass.find_best_chapter_strategies()
 
     quotation_mark_denormalizer = QuotationMarkDenormalizationUsfmUpdateBlockHandler(
-        standard_english_quote_convention,
         standard_english_quote_convention,
         QuotationMarkUpdateSettings(chapter_strategies=best_chapter_strategies),
     )

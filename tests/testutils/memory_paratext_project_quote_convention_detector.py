@@ -2,7 +2,9 @@ from io import BytesIO
 from typing import BinaryIO, Dict
 
 from machine.corpora import ParatextProjectSettings
-from machine.corpora.paratext_project_quote_convention_detector import ParatextProjectQuoteConventionDetector
+from machine.punctuation_analysis.paratext_project_quote_convention_detector import (
+    ParatextProjectQuoteConventionDetector,
+)
 
 
 class MemoryParatextProjectQuoteConventionDetector(ParatextProjectQuoteConventionDetector):
