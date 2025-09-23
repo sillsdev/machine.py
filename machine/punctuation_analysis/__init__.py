@@ -8,6 +8,7 @@ from .depth_based_quotation_mark_resolver import (
 )
 from .fallback_quotation_mark_resolver import FallbackQuotationMarkResolver
 from .file_paratext_project_quote_convention_detector import FileParatextProjectQuoteConventionDetector
+from .paratext_project_quote_convention_detector import ParatextProjectQuoteConventionDetector
 from .preliminary_quotation_mark_analyzer import (
     ApostropheProportionStatistics,
     PreliminaryApostropheAnalyzer,
@@ -48,6 +49,7 @@ __all__ = [
     "DepthBasedQuotationMarkResolver",
     "FallbackQuotationMarkResolver",
     "FileParatextProjectQuoteConventionDetector",
+    "ParatextProjectQuoteConventionDetector",
     "PreliminaryApostropheAnalyzer",
     "PreliminaryQuotationMarkAnalyzer",
     "SingleLevelQuoteConvention",
