@@ -1,10 +1,11 @@
-from machine.corpora import FallbackQuotationMarkResolver, QuotationMarkUpdateResolutionSettings
 from machine.punctuation_analysis import (
     STANDARD_QUOTE_CONVENTIONS,
+    FallbackQuotationMarkResolver,
     QuotationMarkDirection,
     QuotationMarkMetadata,
     QuotationMarkResolutionIssue,
     QuotationMarkStringMatch,
+    QuotationMarkUpdateResolutionSettings,
     QuoteConventionDetectionResolutionSettings,
     QuoteConventionSet,
     TextSegment,

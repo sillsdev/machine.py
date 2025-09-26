@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import BinaryIO
 
+from ..corpora.file_paratext_project_settings_parser import FileParatextProjectSettingsParser
 from ..utils.typeshed import StrPath
-from .file_paratext_project_settings_parser import FileParatextProjectSettingsParser
 from .paratext_project_quote_convention_detector import ParatextProjectQuoteConventionDetector
 
 
