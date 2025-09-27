@@ -11,6 +11,31 @@ from .text_segment import TextSegment
 from .verse import Verse
 
 
+class QuotationMarkCounter:
+    _NEGLIGIBLE_PROPORTION_THRESHOLD = 0.01
+
+    def __init__(self):
+        self.reset()
+
+    def reset(self) -> None:
+        self._quotation_mark_counts: Dict[str, int] = defaultdict(int)
+        self._total_quotation_mark_count: int = 0
+
+    def count_quotation_marks(self, quotation_marks: List[QuotationMarkStringMatch]) -> None:
+        for quotation_mark_match in quotation_marks:
+            mark: str = quotation_mark_match.quotation_mark
+            self._quotation_mark_counts[mark] += 1
+            self._total_quotation_mark_count += 1
+
+    def is_quotation_mark_proportion_negligible(self, quotation_mark: str) -> bool:
+        if self._total_quotation_mark_count == 0:
+            return True
+        return (
+            self._quotation_mark_counts[quotation_mark] / self._total_quotation_mark_count
+            < self._NEGLIGIBLE_PROPORTION_THRESHOLD
+        )
+
+
 class ApostropheProportionStatistics:
     def __init__(self):
         self.reset()
@@ -260,11 +285,13 @@ class PreliminaryQuotationMarkAnalyzer:
         self._quote_conventions = quote_conventions
         self._apostrophe_analyzer = PreliminaryApostropheAnalyzer()
         self._quotation_mark_sequences = QuotationMarkSequences()
+        self._quotation_mark_counts = QuotationMarkCounter()
         self.reset()
 
     def reset(self) -> None:
         self._apostrophe_analyzer.reset()
         self._quotation_mark_sequences.reset()
+        self._quotation_mark_counts.reset()
 
     def narrow_down_possible_quote_conventions(self, chapters: List[Chapter]) -> QuoteConventionSet:
         for chapter in chapters:
@@ -281,6 +308,7 @@ class PreliminaryQuotationMarkAnalyzer:
         ).find_all_potential_quotation_marks_in_verse(verse)
         self._analyze_quotation_mark_sequence(quotation_marks)
         self._apostrophe_analyzer.process_quotation_marks(verse.text_segments, quotation_marks)
+        self._quotation_mark_counts.count_quotation_marks(quotation_marks)
 
     def _analyze_quotation_mark_sequence(self, quotation_marks: List[QuotationMarkStringMatch]) -> None:
         quotation_mark_grouper: QuotationMarkGrouper = QuotationMarkGrouper(quotation_marks, self._quote_conventions)
@@ -304,6 +332,8 @@ class PreliminaryQuotationMarkAnalyzer:
         ]
 
     def _is_opening_quotation_mark(self, quotation_mark: str) -> bool:
+        if self._quotation_mark_counts.is_quotation_mark_proportion_negligible(quotation_mark):
+            return False
         if self._apostrophe_analyzer.is_apostrophe_only(quotation_mark):
             return False
 
@@ -323,6 +353,8 @@ class PreliminaryQuotationMarkAnalyzer:
         ]
 
     def _is_closing_quotation_mark(self, quotation_mark: str) -> bool:
+        if self._quotation_mark_counts.is_quotation_mark_proportion_negligible(quotation_mark):
+            return False
         if self._apostrophe_analyzer.is_apostrophe_only(quotation_mark):
             return False
 
