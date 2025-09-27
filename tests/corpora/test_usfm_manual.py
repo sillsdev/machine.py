@@ -21,11 +21,10 @@ from machine.corpora import (
     StandardParallelTextCorpus,
     UpdateUsfmRow,
     UpdateUsfmTextBehavior,
-    ZipParatextProjectQuoteConventionDetector,
     ZipParatextProjectSettingsParser,
     ZipParatextProjectTextUpdater,
 )
-from machine.punctuation_analysis import QuoteConventionDetector
+from machine.punctuation_analysis import QuoteConventionDetector, ZipParatextProjectQuoteConventionDetector
 
 
 @pytest.mark.skip(reason="This is for manual testing only. Remove this decorator to run the test.")

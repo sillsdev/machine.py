@@ -1,10 +1,12 @@
 from typing import List, Union
 
-from machine.corpora import QuotationMarkUpdateFirstPass, QuotationMarkUpdateStrategy, parse_usfm
+from machine.corpora import parse_usfm
 from machine.punctuation_analysis import (
     STANDARD_QUOTE_CONVENTIONS,
     Chapter,
     QuotationMarkResolutionIssue,
+    QuotationMarkUpdateFirstPass,
+    QuotationMarkUpdateStrategy,
     QuoteConvention,
     SingleLevelQuoteConvention,
     TextSegment,

@@ -1,9 +1,6 @@
 from typing import Generator, List, Set, Union
 
 from machine.corpora import (
-    QuotationMarkUpdateSettings,
-    QuotationMarkUpdateStrategy,
-    QuoteConventionChangingUsfmUpdateBlockHandler,
     ScriptureRef,
     UpdateUsfmParserHandler,
     UsfmToken,
@@ -21,6 +18,9 @@ from machine.punctuation_analysis import (
     QuotationMarkResolutionIssue,
     QuotationMarkResolver,
     QuotationMarkStringMatch,
+    QuotationMarkUpdateSettings,
+    QuotationMarkUpdateStrategy,
+    QuoteConventionChangingUsfmUpdateBlockHandler,
     QuoteConventionSet,
     TextSegment,
     UsfmMarkerType,

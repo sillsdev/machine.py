@@ -1,5 +1,9 @@
 from typing import List, Optional
 
+from ..corpora.usfm_token import UsfmToken, UsfmTokenType
+from ..corpora.usfm_update_block import UsfmUpdateBlock
+from ..corpora.usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
+from ..corpora.usfm_update_block_handler import UsfmUpdateBlockHandler
 from ..punctuation_analysis.depth_based_quotation_mark_resolver import DepthBasedQuotationMarkResolver
 from ..punctuation_analysis.quotation_mark_finder import QuotationMarkFinder
 from ..punctuation_analysis.quotation_mark_metadata import QuotationMarkMetadata
@@ -13,31 +17,27 @@ from .fallback_quotation_mark_resolver import FallbackQuotationMarkResolver
 from .quotation_mark_update_resolution_settings import QuotationMarkUpdateResolutionSettings
 from .quotation_mark_update_settings import QuotationMarkUpdateSettings
 from .quotation_mark_update_strategy import QuotationMarkUpdateStrategy
-from .usfm_token import UsfmToken, UsfmTokenType
-from .usfm_update_block import UsfmUpdateBlock
-from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
-from .usfm_update_block_handler import UsfmUpdateBlockHandler
 
 
 class QuoteConventionChangingUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
 
     def __init__(
         self,
-        source_quote_convention: QuoteConvention,
-        target_quote_convention: QuoteConvention,
+        old_quote_convention: QuoteConvention,
+        new_quote_convention: QuoteConvention,
         settings: QuotationMarkUpdateSettings = QuotationMarkUpdateSettings(),
     ):
         super().__init__()
-        self._source_quote_convention: QuoteConvention = source_quote_convention
-        self._target_quote_convention: QuoteConvention = target_quote_convention
+        self._old_quote_convention: QuoteConvention = old_quote_convention
+        self._new_quote_convention: QuoteConvention = new_quote_convention
         self._settings: QuotationMarkUpdateSettings = settings
 
         self._quotation_mark_finder: QuotationMarkFinder = QuotationMarkFinder(
-            QuoteConventionSet([self._source_quote_convention])
+            QuoteConventionSet([self._old_quote_convention])
         )
         self._next_scripture_text_segment_builder: TextSegment.Builder = TextSegment.Builder()
 
-        resolution_settings = QuotationMarkUpdateResolutionSettings(self._source_quote_convention)
+        resolution_settings = QuotationMarkUpdateResolutionSettings(self._old_quote_convention)
 
         # Each embed represents a separate context for quotation marks
         # (i.e. you can't open a quote in one context and close it in another)
@@ -128,7 +128,7 @@ class QuoteConventionChangingUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
     def _update_quotation_marks(self, resolved_quotation_mark_matches: List[QuotationMarkMetadata]) -> None:
         for quotation_mark_index, resolved_quotation_mark_match in enumerate(resolved_quotation_mark_matches):
             previous_length: int = resolved_quotation_mark_match.length
-            resolved_quotation_mark_match.update_quotation_mark(self._target_quote_convention)
+            resolved_quotation_mark_match.update_quotation_mark(self._new_quote_convention)
             updated_length: int = resolved_quotation_mark_match.length
 
             if previous_length != updated_length:
