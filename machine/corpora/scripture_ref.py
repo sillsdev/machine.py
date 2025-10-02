@@ -120,7 +120,8 @@ class ScriptureRef(Comparable):
         return self.compare_to(other) < 0
 
     def __hash__(self) -> int:
-        # Using to_relaxed() is necessary to maintain equality across relaxed refs, __eq__ properly handles relaxed ref comparison
+        # Using to_relaxed() is necessary to maintain equality across relaxed refs,
+        # __eq__ properly handles relaxed ref comparison
         return hash((self.verse_ref, tuple(self.to_relaxed().path)))
 
     def __repr__(self) -> str:

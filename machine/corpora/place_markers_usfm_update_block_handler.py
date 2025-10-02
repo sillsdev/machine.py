@@ -125,7 +125,9 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
             except ValueError:
                 raise UsfmUpdateBlockHandlerException(
                     block,
-                    f'No token "{tok}" found in text "{trg_sent}" at or beyond index {trg_tok_starts[-1] + prev_len if len(trg_tok_starts) > 0 else 0}. Is the versification correctly specified?',
+                    f'No token "{tok}" found in text "{trg_sent}" at or beyond index'
+                    f"{trg_tok_starts[-1] + prev_len if len(trg_tok_starts) > 0 else 0}."
+                    "Is the versification correctly specified?",
                 )
             trg_tok_starts.append(index_of_trg_tok_in_sent)
             prev_len = len(tok)

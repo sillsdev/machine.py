@@ -2,7 +2,6 @@ from enum import Enum, auto
 from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 from ..scripture.verse_ref import IgnoreSegmentsVerseRef, VerseRef, Versification
-
 from .scripture_ref import ScriptureRef
 from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler, ScriptureTextType
 from .usfm_parser_state import UsfmParserState
