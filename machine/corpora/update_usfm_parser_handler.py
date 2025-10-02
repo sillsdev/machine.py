@@ -58,6 +58,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         self._verse_rows: List[int] = []
         self._verse_row_index = 0
         self._verse_rows_map: Dict[VerseRef, List[_RowInfo]] = {}
+        self._verse_rows_ref = VerseRef()
         if len(self._rows) > 0:
             self._update_rows_versification: Versification = self._rows[0].refs[0].versification
         else:
