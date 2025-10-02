@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from .chapter import Chapter
 from .depth_based_quotation_mark_resolver import DepthBasedQuotationMarkResolver
@@ -51,8 +51,10 @@ class QuoteConventionDetector(UsfmStructureExtractor):
 
         self._quotation_mark_tabulator.tabulate(resolved_quotation_marks)
 
-    def detect_quote_convention(self) -> Optional[QuoteConventionAnalysis]:
-        self._count_quotation_marks_in_chapters(self.get_chapters())
+    def detect_quote_convention(
+        self, include_chapters: Optional[Dict[int, List[int]]] = None
+    ) -> Optional[QuoteConventionAnalysis]:
+        self._count_quotation_marks_in_chapters(self.get_chapters(include_chapters))
 
         (best_quote_convention, score) = STANDARD_QUOTE_CONVENTIONS.find_most_similar_convention(
             self._quotation_mark_tabulator
