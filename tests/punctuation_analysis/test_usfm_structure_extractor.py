@@ -7,6 +7,52 @@ verse_text_parser_state = usfm_parser = UsfmParser("").state
 verse_text_parser_state.verse_ref.verse_num = 1
 
 
+def test_get_chapters_filter_by_book():
+    usfm_structure_extractor = UsfmStructureExtractor()
+    usfm_structure_extractor.start_book(verse_text_parser_state, "id", "MAT")
+    usfm_structure_extractor.chapter(verse_text_parser_state, "1", "c", None, None)
+    usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
+    usfm_structure_extractor.text(verse_text_parser_state, "test")
+
+    actual_chapters = usfm_structure_extractor.get_chapters({41: [1]})
+    assert len(actual_chapters) == 0
+
+
+def test_get_chapters_filter_by_chapter():
+    usfm_structure_extractor = UsfmStructureExtractor()
+    usfm_structure_extractor.start_book(verse_text_parser_state, "id", "MAT")
+    usfm_structure_extractor.chapter(verse_text_parser_state, "1", "c", None, None)
+    usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
+    usfm_structure_extractor.text(verse_text_parser_state, "test")
+    usfm_structure_extractor.chapter(verse_text_parser_state, "2", "c", None, None)
+    usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
+    usfm_structure_extractor.text(verse_text_parser_state, "test2")
+    usfm_structure_extractor.chapter(verse_text_parser_state, "3", "c", None, None)
+    usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
+    usfm_structure_extractor.text(verse_text_parser_state, "test3")
+
+    expected_chapters = [
+        Chapter(
+            [
+                Verse(
+                    [
+                        TextSegment.Builder()
+                        .set_text("test2")
+                        .add_preceding_marker(UsfmMarkerType.CHAPTER)
+                        .add_preceding_marker(UsfmMarkerType.VERSE)
+                        .build()
+                    ]
+                )
+            ]
+        )
+    ]
+
+    actual_chapters = usfm_structure_extractor.get_chapters({40: [2]})
+    assert_chapter_equal(expected_chapters, actual_chapters)
+    assert actual_chapters[0].verses[0]._text_segments[0].previous_segment is None
+    assert actual_chapters[0].verses[0]._text_segments[0].next_segment is None
+
+
 def test_chapter_and_verse_markers():
     usfm_structure_extractor = UsfmStructureExtractor()
     usfm_structure_extractor.chapter(verse_text_parser_state, "1", "c", None, None)

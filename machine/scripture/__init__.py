@@ -20,7 +20,7 @@ from .constants import (
     SEPTUAGINT_VERSIFICATION,
     VULGATE_VERSIFICATION,
 )
-from .parse import get_books, get_chapters
+from .parse import get_books, get_chapters, parse_selection
 from .verse_ref import (
     NULL_VERSIFICATION,
     VERSE_RANGE_SEPARATOR,
@@ -53,6 +53,7 @@ __all__ = [
     "NON_CANONICAL_IDS",
     "NULL_VERSIFICATION",
     "ORIGINAL_VERSIFICATION",
+    "parse_selection",
     "RUSSIAN_ORTHODOX_VERSIFICATION",
     "RUSSIAN_PROTESTANT_VERSIFICATION",
     "SEPTUAGINT_VERSIFICATION",
