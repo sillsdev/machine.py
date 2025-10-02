@@ -1,8 +1,9 @@
-from typing import Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 from ..corpora.usfm_parser_handler import UsfmParserHandler
 from ..corpora.usfm_parser_state import UsfmParserState
 from ..corpora.usfm_token import UsfmAttribute
+from ..scripture.canon import book_id_to_number
 from .chapter import Chapter
 from .text_segment import TextSegment
 from .usfm_marker_type import UsfmMarkerType
@@ -14,6 +15,9 @@ class UsfmStructureExtractor(UsfmParserHandler):
         self._text_segments: list[TextSegment] = []
         self._next_text_segment_builder: TextSegment.Builder = TextSegment.Builder()
 
+    def start_book(self, state: UsfmParserState, marker: str, code: str) -> None:
+        self._next_text_segment_builder.set_book(code)
+
     def chapter(
         self,
         state: UsfmParserState,
@@ -23,6 +27,7 @@ class UsfmStructureExtractor(UsfmParserHandler):
         pub_number: Optional[str],
     ) -> None:
         self._next_text_segment_builder.add_preceding_marker(UsfmMarkerType.CHAPTER)
+        self._next_text_segment_builder.set_chapter(number)
 
     def start_para(
         self,
@@ -79,11 +84,26 @@ class UsfmStructureExtractor(UsfmParserHandler):
             self._text_segments.append(text_segment)
         self._next_text_segment_builder = TextSegment.Builder()
 
-    def get_chapters(self) -> list[Chapter]:
+    def get_chapters(self, include_chapters: Optional[Dict[int, List[int]]] = None) -> list[Chapter]:
         chapters: list[Chapter] = []
+        current_book: int = 0
+        current_chapter: int = 0
         current_chapter_verses: list[Verse] = []
         current_verse_segments: list[TextSegment] = []
         for text_segment in self._text_segments:
+            if text_segment.book is not None:
+                current_book = book_id_to_number(text_segment.book)
+            if text_segment.chapter is not None:
+                current_chapter = text_segment.chapter
+            if include_chapters is not None and current_book > 0:
+                if current_book not in include_chapters:
+                    continue
+                elif (
+                    current_chapter > 0
+                    and len(include_chapters[current_book]) > 0
+                    and current_chapter not in include_chapters[current_book]
+                ):
+                    continue
             if text_segment.marker_is_in_preceding_context(UsfmMarkerType.VERSE):
                 if len(current_verse_segments) > 0:
                     current_chapter_verses.append(Verse(current_verse_segments))

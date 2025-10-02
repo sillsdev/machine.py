@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import BinaryIO, Optional, Union
+from typing import BinaryIO, Dict, List, Optional, Union
 
 from ..corpora.paratext_project_settings import ParatextProjectSettings
 from ..corpora.paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
 from ..corpora.usfm_parser import parse_usfm
+from ..scripture.canon import book_id_to_number, get_scripture_books
 from ..utils.typeshed import StrPath
 from .quote_convention_detector import QuoteConventionAnalysis, QuoteConventionDetector
 
@@ -16,10 +17,13 @@ class ParatextProjectQuoteConventionDetector(ABC):
             self._settings = settings
 
     def get_quote_convention_analysis(
-        self, handler: Optional[QuoteConventionDetector] = None
+        self, handler: Optional[QuoteConventionDetector] = None, include_chapters: Optional[Dict[int, List[int]]] = None
     ) -> Optional[QuoteConventionAnalysis]:
         handler = QuoteConventionDetector() if handler is None else handler
-        for file_name in self._settings.get_all_scripture_book_file_names():
+        for book_id in get_scripture_books():
+            if include_chapters is not None and book_id_to_number(book_id) not in include_chapters:
+                continue
+            file_name: str = self._settings.get_book_file_name(book_id)
             if not self._exists(file_name):
                 continue
             with self._open(file_name) as sfm_file:
@@ -33,7 +37,7 @@ class ParatextProjectQuoteConventionDetector(ABC):
                     f". Error: '{e}'"
                 )
                 raise RuntimeError(error_message) from e
-        return handler.detect_quote_convention()
+        return handler.detect_quote_convention(include_chapters)
 
     @abstractmethod
     def _exists(self, file_name: StrPath) -> bool: ...
