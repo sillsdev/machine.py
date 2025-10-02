@@ -4,7 +4,7 @@ from functools import total_ordering
 from typing import List, Optional
 
 from ..scripture.constants import ENGLISH_VERSIFICATION
-from ..scripture.verse_ref import VerseRef, Versification
+from ..scripture.verse_ref import IgnoreSegmentsVerseRef, VerseRef, Versification
 from ..utils.comparable import Comparable
 from .scripture_element import ScriptureElement
 
@@ -112,7 +112,7 @@ class ScriptureRef(Comparable):
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ScriptureRef):
             return NotImplemented
-        return self.verse_ref == other.verse_ref and self.path == other.path
+        return self.compare_to(other, True) == 0
 
     def __lt__(self, other: object) -> bool:
         if not isinstance(other, ScriptureRef):
@@ -120,13 +120,29 @@ class ScriptureRef(Comparable):
         return self.compare_to(other) < 0
 
     def __hash__(self) -> int:
-        return hash((self.verse_ref, tuple(self.path)))
+        # Using to_relaxed() is necessary to maintain equality across relaxed refs, __eq__ properly handles relaxed ref comparison
+        return hash((self.verse_ref, tuple(self.to_relaxed().path)))
 
     def __repr__(self) -> str:
         result = str(self.verse_ref)
         if len(self.path) > 0:
             result += "/" + "/".join(str(se) for se in self.path)
         return result
+
+
+class IgnoreSegmentsScriptureRef(ScriptureRef):
+    def __eq__(self, other):
+        if not isinstance(other, ScriptureRef):
+            return NotImplemented
+        return self.compare_to(other, False)
+
+    def __hash__(self):
+        return hash(
+            (
+                IgnoreSegmentsVerseRef(self.verse_ref),
+                tuple(self.to_relaxed().path),
+            )
+        )
 
 
 EMPTY_SCRIPTURE_REF = ScriptureRef()

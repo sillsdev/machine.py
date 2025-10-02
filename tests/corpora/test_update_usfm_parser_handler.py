@@ -1214,38 +1214,129 @@ def test_header_reference_paragraphs() -> None:
     assert_usfm_equals(target, result)
 
 
+def test_out_of_order_verses() -> None:
+    rows = [
+        UpdateUsfmRow(scr_ref("MAT 1:1"), "new verse 1"),
+        UpdateUsfmRow(scr_ref("MAT 1:2"), "new verse 2"),
+        UpdateUsfmRow(scr_ref("MAT 1:3"), "new verse 3"),
+        UpdateUsfmRow(scr_ref("MAT 1:4"), "new verse 4"),
+        UpdateUsfmRow(scr_ref("MAT 1:5"), "new verse 5"),
+        UpdateUsfmRow(scr_ref("MAT 1:6a"), "new verse 6a"),
+        UpdateUsfmRow(scr_ref("MAT 1:6b"), "new verse 6b"),
+        UpdateUsfmRow(scr_ref("MAT 1:6b/1:s"), "new section"),
+        UpdateUsfmRow(scr_ref("MAT 1:7"), "new verse 7"),
+        UpdateUsfmRow(scr_ref("MAT 1:8"), "new verse 8"),
+    ]
+    usfm = r"""\id MAT
+\c 1
+\s1 beginning-of-chapter header
+\p
+\v 1 verse 1
+\v 2 verse 2
+\v 3 verse 3
+\v 6b verse 6b
+\s section
+\v 7 verse 7
+\v 8 verse 8
+\v 4 verse 4
+\v 5 verse 5
+\v 6a verse 6a
+"""
+
+    target = update_usfm(rows, usfm, paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP, compare_segments=True)
+    result = r"""\id MAT
+\c 1
+\s1 beginning-of-chapter header
+\p
+\v 1 new verse 1
+\v 2 new verse 2
+\v 3 new verse 3
+\v 6b new verse 6b
+\s new section
+\v 7 new verse 7
+\v 8 new verse 8
+\v 4 new verse 4
+\v 5 new verse 5
+\v 6a new verse 6a
+"""
+    assert_usfm_equals(target, result)
+
+
+def test_duplicate_verses() -> None:
+    rows = [
+        UpdateUsfmRow(scr_ref("MAT 1:1"), "new verse 1"),
+        UpdateUsfmRow(scr_ref("MAT 1:2"), "new verse 2"),
+        UpdateUsfmRow(scr_ref("MAT 1:3"), "new verse 3"),
+        UpdateUsfmRow(scr_ref("MAT 1:4"), "new verse 4"),
+    ]
+    usfm = r"""\id MAT
+\c 1
+\s1 beginning-of-chapter header
+\p
+\v 1 verse 1
+\v 2 verse 2
+\v 3 verse 3
+\v 3 another verse 3\f \fr 1.3 \ft Some duplicate verse three note \f* 1
+\p more verse three
+\v 4 verse 4
+"""
+
+    target = update_usfm(rows, usfm, paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP)
+    result = r"""\id MAT
+\c 1
+\s1 beginning-of-chapter header
+\p
+\v 1 new verse 1
+\v 2 new verse 2
+\v 3 new verse 3
+\v 4 new verse 4
+"""
+    assert_usfm_equals(target, result)
+
+
 def test_pass_remark():
     rows = [
         UpdateUsfmRow(
             scr_ref("MAT 1:1"),
-            str("Update 1"),
+            "Update 1",
+        ),
+        UpdateUsfmRow(
+            scr_ref("MAT 1:2"),
+            "Update 2",
         ),
     ]
-    usfm = r"""\id MAT
+    usfm = r"""\id MAT - Test
+\ide UTF-8
 \rem Existing remark
 \c 1
-\v 1 This is a verse
+\v 1 Some text
+\v 2
+\v 3 Other text
 """
 
-    target = update_usfm(rows, usfm, text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING, remarks=["An added remark"])
-    result = r"""\id MAT
+    target = update_usfm(rows, usfm, text_behavior=UpdateUsfmTextBehavior.PREFER_EXISTING, remarks=["New remark"])
+    result = r"""\id MAT - Test
+\ide UTF-8
 \rem Existing remark
-\rem An added remark
+\rem New remark
 \c 1
-\v 1 Update 1
+\v 1 Some text
+\v 2 Update 2
+\v 3 Other text
 """
 
     assert_usfm_equals(target, result)
 
-    target = update_usfm(
-        rows, target, text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING, remarks=["Another added remark"]
-    )
-    result = r"""\id MAT
+    target = update_usfm(rows, target, text_behavior=UpdateUsfmTextBehavior.PREFER_EXISTING, remarks=["New remark 2"])
+    result = r"""\id MAT - Test
+\ide UTF-8
 \rem Existing remark
-\rem An added remark
-\rem Another added remark
+\rem New remark
+\rem New remark 2
 \c 1
-\v 1 Update 1
+\v 1 Some text
+\v 2 Update 2
+\v 3 Other text
 """
 
     assert_usfm_equals(target, result)
@@ -1266,6 +1357,7 @@ def update_usfm(
     preserve_paragraph_styles: Optional[Iterable[str]] = None,
     update_block_handlers: Optional[Iterable[UsfmUpdateBlockHandler]] = None,
     remarks: Optional[Iterable[str]] = None,
+    compare_segments: bool = False,
 ) -> Optional[str]:
     if source is None:
         updater = FileParatextProjectTextUpdater(USFM_TEST_PROJECT_PATH)
@@ -1280,6 +1372,8 @@ def update_usfm(
             preserve_paragraph_styles,
             update_block_handlers,
             remarks,
+            lambda _: False,
+            compare_segments,
         )
     else:
         source = source.strip().replace("\r\n", "\n") + "\r\n"
@@ -1293,6 +1387,8 @@ def update_usfm(
             preserve_paragraph_styles,
             update_block_handlers,
             remarks,
+            lambda _: False,
+            compare_segments,
         )
         parse_usfm(source, updater)
         return updater.get_usfm()

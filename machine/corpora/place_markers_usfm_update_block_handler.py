@@ -7,7 +7,7 @@ from .update_usfm_parser_handler import UpdateUsfmMarkerBehavior
 from .usfm_token import UsfmToken, UsfmTokenType
 from .usfm_update_block import UsfmUpdateBlock
 from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
-from .usfm_update_block_handler import UsfmUpdateBlockHandler
+from .usfm_update_block_handler import UsfmUpdateBlockHandler, UsfmUpdateBlockHandlerException
 
 PLACE_MARKERS_ALIGNMENT_INFO_KEY = "alignment_info"
 
@@ -118,7 +118,16 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         trg_tok_starts = []
         prev_len = 0
         for tok in trg_toks:
-            trg_tok_starts.append(trg_sent.index(tok, trg_tok_starts[-1] + prev_len if len(trg_tok_starts) > 0 else 0))
+            try:
+                index_of_trg_tok_in_sent = trg_sent.index(
+                    tok, trg_tok_starts[-1] + prev_len if len(trg_tok_starts) > 0 else 0
+                )
+            except ValueError:
+                raise UsfmUpdateBlockHandlerException(
+                    block,
+                    f'No token "{tok}" found in text "{trg_sent}" at or beyond index {trg_tok_starts[-1] + prev_len if len(trg_tok_starts) > 0 else 0}. Is the versification correctly specified?',
+                )
+            trg_tok_starts.append(index_of_trg_tok_in_sent)
             prev_len = len(tok)
 
         # Predict marker placements and get insertion order

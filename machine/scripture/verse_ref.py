@@ -391,6 +391,11 @@ class VerseRef(Comparable):
             and self.versification == other.versification
         )
 
+    def __eq__(self, other):
+        if not isinstance(other, VerseRef):
+            return NotImplemented
+        return self._compare_verses(other, True) == 0
+
     def __hash__(self) -> int:
         if self._verse is not None:
             return self.bbbcccvvv ^ hash(self._verse)
@@ -572,6 +577,19 @@ def _get_verse_num(verse: Optional[str]) -> Tuple[bool, int]:
             v_num = -1
             return False, v_num
     return True, v_num
+
+
+class IgnoreSegmentsVerseRef(VerseRef):
+    def __init__(self, verse_ref: VerseRef):
+        super().__init__(verse_ref.book, verse_ref.chapter, verse_ref.verse, verse_ref.versification)
+
+    def __eq__(self, other):
+        if not isinstance(other, VerseRef):
+            return NotImplemented
+        return self._compare_verses(other, False) == 0
+
+    def __hash__(self) -> int:
+        return self.bbbcccvvv
 
 
 class VersificationType(IntEnum):

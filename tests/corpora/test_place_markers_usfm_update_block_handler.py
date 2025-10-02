@@ -594,8 +594,8 @@ def test_verses_out_of_order() -> None:
     result = r"""\id MAT
 \c 1
 \v 2 new verse 2
-\v 1
-\p
+\v 1 new verse 1
+\p new paragraph 2
 """
     assess(target, result)
 

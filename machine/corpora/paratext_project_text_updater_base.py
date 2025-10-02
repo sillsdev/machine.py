@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import BinaryIO, Iterable, Optional, Sequence, Union
+from typing import BinaryIO, Callable, Iterable, Optional, Sequence, Union
 
 from ..utils.typeshed import StrPath
 from .paratext_project_settings import ParatextProjectSettings
@@ -11,7 +11,7 @@ from .update_usfm_parser_handler import (
     UpdateUsfmTextBehavior,
 )
 from .usfm_parser import parse_usfm
-from .usfm_update_block_handler import UsfmUpdateBlockHandler
+from .usfm_update_block_handler import UsfmUpdateBlockHandler, UsfmUpdateBlockHandlerException
 
 
 class ParatextProjectTextUpdaterBase(ABC):
@@ -33,6 +33,8 @@ class ParatextProjectTextUpdaterBase(ABC):
         preserve_paragraph_styles: Optional[Union[Iterable[str], str]] = None,
         update_block_handlers: Optional[Iterable[UsfmUpdateBlockHandler]] = None,
         remarks: Optional[Iterable[str]] = None,
+        error_handler: Optional[Callable[[UsfmUpdateBlockHandlerException], bool]] = None,
+        compare_segments: bool = False,
     ) -> Optional[str]:
         file_name: str = self._settings.get_book_file_name(book_id)
         if not self._exists(file_name):
@@ -49,6 +51,8 @@ class ParatextProjectTextUpdaterBase(ABC):
             preserve_paragraph_styles,
             update_block_handlers=update_block_handlers,
             remarks=remarks,
+            error_handler=error_handler,
+            compare_segments=compare_segments,
         )
         try:
             parse_usfm(usfm, handler, self._settings.stylesheet, self._settings.versification)
