@@ -7,7 +7,7 @@ from .update_usfm_parser_handler import UpdateUsfmMarkerBehavior
 from .usfm_token import UsfmToken, UsfmTokenType
 from .usfm_update_block import UsfmUpdateBlock
 from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
-from .usfm_update_block_handler import UsfmUpdateBlockHandler, UsfmUpdateBlockHandlerException
+from .usfm_update_block_handler import UsfmUpdateBlockHandler, UsfmUpdateBlockHandlerError
 
 PLACE_MARKERS_ALIGNMENT_INFO_KEY = "alignment_info"
 
@@ -123,7 +123,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                     tok, trg_tok_starts[-1] + prev_len if len(trg_tok_starts) > 0 else 0
                 )
             except ValueError:
-                raise UsfmUpdateBlockHandlerException(
+                raise UsfmUpdateBlockHandlerError(
                     block,
                     f'No token "{tok}" found in text "{trg_sent}" at or beyond index'
                     f"{trg_tok_starts[-1] + prev_len if len(trg_tok_starts) > 0 else 0}."

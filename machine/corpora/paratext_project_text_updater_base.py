@@ -11,7 +11,7 @@ from .update_usfm_parser_handler import (
     UpdateUsfmTextBehavior,
 )
 from .usfm_parser import parse_usfm
-from .usfm_update_block_handler import UsfmUpdateBlockHandler, UsfmUpdateBlockHandlerException
+from .usfm_update_block_handler import UsfmUpdateBlockHandler, UsfmUpdateBlockHandlerError
 
 
 class ParatextProjectTextUpdaterBase(ABC):
@@ -33,7 +33,7 @@ class ParatextProjectTextUpdaterBase(ABC):
         preserve_paragraph_styles: Optional[Union[Iterable[str], str]] = None,
         update_block_handlers: Optional[Iterable[UsfmUpdateBlockHandler]] = None,
         remarks: Optional[Iterable[str]] = None,
-        error_handler: Optional[Callable[[UsfmUpdateBlockHandlerException], bool]] = None,
+        error_handler: Optional[Callable[[UsfmUpdateBlockHandlerError], bool]] = None,
         compare_segments: bool = False,
     ) -> Optional[str]:
         file_name: str = self._settings.get_book_file_name(book_id)

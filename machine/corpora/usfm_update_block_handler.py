@@ -8,7 +8,7 @@ class UsfmUpdateBlockHandler(ABC):
     def process_block(self, block: UsfmUpdateBlock) -> UsfmUpdateBlock: ...
 
 
-class UsfmUpdateBlockHandlerException(Exception):
+class UsfmUpdateBlockHandlerError(Exception):
     def __init__(self, block: UsfmUpdateBlock, *args):
         self._block = block
         super().__init__(*args)

@@ -11,7 +11,7 @@ from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
 from .usfm_tokenizer import UsfmTokenizer
 from .usfm_update_block import UsfmUpdateBlock
 from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
-from .usfm_update_block_handler import UsfmUpdateBlockHandler, UsfmUpdateBlockHandlerException
+from .usfm_update_block_handler import UsfmUpdateBlockHandler, UsfmUpdateBlockHandlerError
 
 
 class UpdateUsfmTextBehavior(Enum):
@@ -50,7 +50,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         preserve_paragraph_styles: Optional[Union[Iterable[str], str]] = None,
         update_block_handlers: Optional[Iterable[UsfmUpdateBlockHandler]] = None,
         remarks: Optional[Iterable[str]] = None,
-        error_handler: Optional[Callable[[UsfmUpdateBlockHandlerException], bool]] = None,
+        error_handler: Optional[Callable[[UsfmUpdateBlockHandlerError], bool]] = None,
         compare_segments: bool = False,
     ) -> None:
         super().__init__()
@@ -462,7 +462,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         for handler in self._update_block_handlers:
             try:
                 update_block = handler.process_block(update_block)
-            except UsfmUpdateBlockHandlerException as e:
+            except UsfmUpdateBlockHandlerError as e:
                 should_continue = self._error_handler(e)
                 if not should_continue:
                     raise
