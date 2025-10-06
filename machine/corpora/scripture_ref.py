@@ -4,7 +4,7 @@ from functools import total_ordering
 from typing import List, Optional
 
 from ..scripture.constants import ENGLISH_VERSIFICATION
-from ..scripture.verse_ref import IgnoreSegmentsVerseRef, VerseRef, Versification
+from ..scripture.verse_ref import VerseRef, Versification
 from ..utils.comparable import Comparable
 from .scripture_element import ScriptureElement
 
