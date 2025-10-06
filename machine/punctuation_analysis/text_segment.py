@@ -7,6 +7,8 @@ from .usfm_marker_type import UsfmMarkerType
 class TextSegment:
     def __init__(self):
         self._text = ""
+        self.book: Optional[str] = None
+        self.chapter: Optional[int] = None
         self._immediate_preceding_marker: UsfmMarkerType = UsfmMarkerType.NO_MARKER
         self._markers_in_preceding_context: Set[UsfmMarkerType] = set()
         self.previous_segment: Optional[TextSegment] = None
@@ -69,6 +71,14 @@ class TextSegment:
         def add_preceding_marker(self, marker: UsfmMarkerType) -> "TextSegment.Builder":
             self._text_segment._immediate_preceding_marker = marker
             self._text_segment._markers_in_preceding_context.add(marker)
+            return self
+
+        def set_book(self, code: str) -> "TextSegment.Builder":
+            self._text_segment.book = code
+            return self
+
+        def set_chapter(self, number: int) -> "TextSegment.Builder":
+            self._text_segment.chapter = number
             return self
 
         def set_usfm_token(self, token: UsfmToken) -> "TextSegment.Builder":

@@ -184,4 +184,4 @@ def is_canonical(book: Union[str, int]) -> bool:
 
 
 def get_scripture_books() -> Iterable[str]:
-    return list(map(lambda kvp: kvp[0], filter(lambda kvp: is_ot_nt(kvp[1]), BOOK_NUMBERS.items())))
+    return list(map(lambda kvp: kvp[0], filter(lambda kvp: is_canonical(kvp[1]), BOOK_NUMBERS.items())))
