@@ -70,10 +70,14 @@ class ParatextProjectTermsParserBase(ABC):
                 id = term.attrib["Id"]
                 if _is_in_category(id, term_categories, term_id_to_category_dict):
                     id_ = id.replace("\n", "&#xA")
-                    renderings = term.find("Renderings")
-                    gloss = renderings.text if renderings is not None and renderings.text is not None else ""
-                    glosses = _get_glosses(gloss)
-                    terms_renderings[id_].extend(glosses)
+                    renderings_element = term.find("Renderings")
+                    rendering_text = (
+                        renderings_element.text
+                        if renderings_element is not None and renderings_element.text is not None
+                        else ""
+                    )
+                    renderings = _get_renderings(rendering_text)
+                    terms_renderings[id_].extend(renderings)
 
         terms_glosses: Dict[str, List[str]] = defaultdict(list)
         if terms_glosses_doc is not None and use_term_glosses:
@@ -102,23 +106,31 @@ def _is_in_category(id: str, term_categories: Sequence[str], term_id_to_category
     return not term_categories or (category is not None and category in term_categories)
 
 
+def _clean_term(term: str):
+    term = term.strip()
+    term = _strip_parens(term)
+    term = " ".join(term.split())
+    return term
+
+
 def _get_glosses(gloss: str) -> List[str]:
     match = _CONTENT_IN_BRACKETS_REGEX.match(gloss)
     if match:
-        gloss = match.group(0)
-    gloss = gloss.replace("?", "")
-    gloss = gloss.replace("*", "")
-    gloss = gloss.replace("/", " ")
-    gloss = gloss.strip()
-    gloss = _strip_parens(gloss)
+        gloss = match.group(1)
+    gloss = _clean_term(gloss)
     gloss = _strip_parens(gloss, left="[", right="]")
     gloss = gloss.strip()
     for match in _NUMERICAL_INFORMATION_REGEX.finditer(gloss):
         gloss = gloss.replace(match.group(0), "")
-    glosses = re.split(r"\|\|", gloss)
-    glosses = [re.split(r"[,;]", g) for g in glosses]
-    glosses = [item.strip() for sublist in glosses for item in sublist if item.strip()]
+    glosses = re.split(r"[,;/]", gloss)
+    glosses = list(set([gloss.strip() for gloss in glosses if gloss.strip()]))
     return glosses
+
+
+def _get_renderings(rendering: str) -> List[str]:
+    renderings = re.split(r"\|\|", rendering.strip())
+    renderings = [_clean_term(rendering).strip().replace("*", "") for rendering in renderings]
+    return [rendering for rendering in renderings if rendering]
 
 
 def _strip_parens(term_string: str, left: str = "(", right: str = ")") -> str:

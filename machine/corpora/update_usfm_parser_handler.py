@@ -1,6 +1,7 @@
 from enum import Enum, auto
-from typing import Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
+from ..scripture.verse_ref import IgnoreSegmentsVerseRef, VerseRef, Versification
 from .scripture_ref import ScriptureRef
 from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler, ScriptureTextType
 from .usfm_parser_state import UsfmParserState
@@ -10,7 +11,7 @@ from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
 from .usfm_tokenizer import UsfmTokenizer
 from .usfm_update_block import UsfmUpdateBlock
 from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
-from .usfm_update_block_handler import UsfmUpdateBlockHandler
+from .usfm_update_block_handler import UsfmUpdateBlockHandler, UsfmUpdateBlockHandlerError
 
 
 class UpdateUsfmTextBehavior(Enum):
@@ -22,6 +23,12 @@ class UpdateUsfmTextBehavior(Enum):
 class UpdateUsfmMarkerBehavior(Enum):
     PRESERVE = auto()
     STRIP = auto()
+
+
+class _RowInfo:
+    def __init__(self, row_index: int):
+        self.row_index = row_index
+        self.is_consumed = False
 
 
 class UpdateUsfmRow:
@@ -43,9 +50,19 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         preserve_paragraph_styles: Optional[Union[Iterable[str], str]] = None,
         update_block_handlers: Optional[Iterable[UsfmUpdateBlockHandler]] = None,
         remarks: Optional[Iterable[str]] = None,
+        error_handler: Optional[Callable[[UsfmUpdateBlockHandlerError], bool]] = None,
+        compare_segments: bool = False,
     ) -> None:
         super().__init__()
         self._rows = rows or []
+        self._verse_rows: List[int] = []
+        self._verse_row_index = 0
+        self._verse_rows_map: Dict[VerseRef, List[_RowInfo]] = {}
+        self._verse_rows_ref = VerseRef()
+        if len(self._rows) > 0:
+            self._update_rows_versification: Versification = self._rows[0].refs[0].versification
+        else:
+            self._update_rows_versification = Versification.get_builtin("English")
         self._tokens: List[UsfmToken] = []
         self._updated_text: List[UsfmToken] = []
         self._update_block_stack: list[UsfmUpdateBlock] = []
@@ -65,6 +82,11 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
             self._remarks = []
         else:
             self._remarks = list(remarks)
+        if error_handler is None:
+            self._error_handler = lambda _: False
+        else:
+            self._error_handler = error_handler
+        self._compare_segments = compare_segments
         self._text_behavior = text_behavior
         self._paragraph_behavior = paragraph_behavior
         self._embed_behavior = embed_behavior
@@ -82,6 +104,10 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         super().end_usfm(state)
 
     def start_book(self, state: UsfmParserState, marker: str, code: str) -> None:
+        self._verse_rows_ref = state.verse_ref.copy()
+        self._update_verse_rows_map()
+        self._update_verse_rows()
+
         self._collect_readonly_tokens(state)
         self._update_block_stack.append(UsfmUpdateBlock())
         start_book_tokens: List[UsfmToken] = []
@@ -108,7 +134,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
     ) -> None:
         if state.is_verse_text:
             # Only strip paragraph markers in a verse
-            if self._paragraph_behavior == UpdateUsfmMarkerBehavior.PRESERVE:
+            if self._paragraph_behavior == UpdateUsfmMarkerBehavior.PRESERVE and not self._duplicate_verse:
                 self._collect_updatable_tokens(state)
             else:
                 self._skip_updatable_tokens(state)
@@ -148,6 +174,11 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
     ) -> None:
         self._use_updated_text()
 
+        if self._verse_rows_ref != state.verse_ref:
+            self._verse_rows_ref = state.verse_ref.copy()
+            self._update_verse_rows_map()
+            self._update_verse_rows()
+
         super().chapter(state, number, marker, alt_number, pub_number)
 
         self._collect_readonly_tokens(state)
@@ -179,14 +210,23 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
             if last_paragraph is not None:
                 last_paragraph.marked_for_removal = False
 
-        super().verse(state, number, marker, alt_number, pub_number)
+        if self._verse_rows_ref != state.verse_ref:
+            self._verse_rows_ref = state.verse_ref.copy()
+            self._update_verse_rows()
 
-        self._collect_readonly_tokens(state)
+        super().verse(state, number, marker, alt_number, pub_number)
+        if self._duplicate_verse:
+            self._skip_updatable_tokens(state)
+        else:
+            self._collect_readonly_tokens(state)
 
     def start_note(self, state: UsfmParserState, marker: str, caller: str, category: str) -> None:
         super().start_note(state, marker, caller, category)
 
-        self._collect_updatable_tokens(state)
+        if not self._duplicate_verse:
+            self._collect_updatable_tokens(state)
+        else:
+            self._skip_updatable_tokens(state)
 
     def end_note(self, state: UsfmParserState, marker: str, closed: bool) -> None:
         if closed:
@@ -219,15 +259,14 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         attributes: Sequence[UsfmAttribute],
         closed: bool,
     ) -> None:
-        if closed:
-            if self._current_text_type == ScriptureTextType.EMBED:
-                self._collect_updatable_tokens(state)
+        if self._current_text_type == ScriptureTextType.EMBED:
+            self._collect_updatable_tokens(state)
+        else:
+            self._replace_with_new_tokens(state)
+            if self._style_behavior == UpdateUsfmMarkerBehavior.STRIP:
+                self._skip_updatable_tokens(state)
             else:
-                self._replace_with_new_tokens(state)
-                if self._style_behavior == UpdateUsfmMarkerBehavior.STRIP:
-                    self._skip_updatable_tokens(state)
-                else:
-                    self._collect_updatable_tokens(state)
+                self._collect_updatable_tokens(state)
 
         super().end_char(state, marker, attributes, closed)
 
@@ -242,7 +281,9 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
     def text(self, state: UsfmParserState, text: str) -> None:
         super().text(state, text)
 
-        if self._replace_with_new_tokens(state):
+        if self._replace_with_new_tokens(state) or (
+            self._duplicate_verse and self._current_text_type == ScriptureTextType.VERSE
+        ):
             self._skip_updatable_tokens(state)
         else:
             self._collect_updatable_tokens(state)
@@ -292,11 +333,10 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
             for remark in self._remarks:
                 remark_tokens.append(UsfmToken(UsfmTokenType.PARAGRAPH, "rem"))
                 remark_tokens.append(UsfmToken(UsfmTokenType.TEXT, text=remark))
-            if len(tokens) > 0 and tokens[0].marker == "id":
-                index = 1
-                if len(tokens) > 1 and tokens[1].type == UsfmTokenType.TEXT:
-                    index = 2
-                while tokens[index].marker == "rem":
+            if len(tokens) > 0:
+                index = 0
+                markers_to_skip = {"id", "ide", "rem"}
+                while tokens[index].marker in markers_to_skip:
                     index += 1
                     if len(tokens) > index and tokens[index].type == UsfmTokenType.TEXT:
                         index += 1
@@ -308,13 +348,15 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         row_texts: List[str] = []
         row_metadata = None
         source_index: int = 0
-        while self._row_index < len(self._rows) and source_index < len(seg_scr_refs):
+        while self._verse_row_index < len(self._verse_rows) and source_index < len(seg_scr_refs):
             compare: int = 0
-            row = self._rows[self._row_index]
+            row = self._rows[self._verse_rows[self._verse_row_index]]
             row_scr_refs, text, metadata = row.refs, row.text, row.metadata
             for row_scr_ref in row_scr_refs:
                 while source_index < len(seg_scr_refs):
-                    compare = row_scr_ref.compare_to(seg_scr_refs[source_index], compare_segments=False)
+                    compare = row_scr_ref.compare_to(
+                        seg_scr_refs[source_index], compare_segments=self._compare_segments
+                    )
                     if compare > 0:
                         # row is ahead of source, increment source
                         source_index += 1
@@ -328,7 +370,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
                     break
             if compare <= 0:
                 # source is ahead of row, increment row
-                self._row_index += 1
+                self._verse_row_index += 1
         return row_texts, row_metadata
 
     def _collect_updatable_tokens(self, state: UsfmParserState) -> None:
@@ -418,7 +460,13 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
             para_elems.append(update_block.pop())
 
         for handler in self._update_block_handlers:
-            update_block = handler.process_block(update_block)
+            try:
+                update_block = handler.process_block(update_block)
+            except UsfmUpdateBlockHandlerError as e:
+                should_continue = self._error_handler(e)
+                if not should_continue:
+                    raise
+
         tokens = update_block.get_tokens()
         for elem in reversed(para_elems):
             tokens.extend(elem.get_tokens())
@@ -448,6 +496,41 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
 
     def _is_in_preserved_paragraph(self, state: UsfmParserState) -> bool:
         return state.para_tag is not None and state.para_tag.marker in self._preserve_paragraph_styles
+
+    def _update_verse_rows_map(self) -> None:
+        self._verse_rows_map.clear()
+        while (
+            self._row_index < len(self._rows)
+            and self._rows[self._row_index].refs[0].chapter_num == self._verse_rows_ref.chapter_num
+        ):
+            row = self._rows[self._row_index]
+            ri = _RowInfo(self._row_index)
+            for sr in row.refs:
+                vr = sr.verse_ref if self._compare_segments else IgnoreSegmentsVerseRef(sr.verse_ref)
+                if vr in self._verse_rows_map:
+                    self._verse_rows_map[vr].append(ri)
+                else:
+                    self._verse_rows_map[vr] = [ri]
+            self._row_index += 1
+
+    def _update_verse_rows(self) -> None:
+        vref = self._verse_rows_ref.copy()
+        # We are using a dictionary, which uses an equality comparer. As a result, we need to change the
+        # source verse ref to use the row versification. If we used a SortedList, it wouldn't be necessary, but it
+        # would be less efficient.
+        vref.change_versification(self._update_rows_versification)
+
+        self._verse_rows.clear()
+        self._verse_row_index = 0
+
+        for vr in vref.all_verses():
+            if not self._compare_segments:
+                vr = IgnoreSegmentsVerseRef(vr)
+            if rows := self._verse_rows_map.get(vr):
+                for row in rows:
+                    if not row.is_consumed:
+                        self._verse_rows.append(row.row_index)
+                        row.is_consumed = True
 
 
 def _is_nonverse_paragraph(state: UsfmParserState, element: UsfmUpdateBlockElement) -> bool:

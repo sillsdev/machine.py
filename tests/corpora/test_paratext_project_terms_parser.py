@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple
 from testutils.memory_paratext_project_terms_parser import MemoryParatextProjectTermsParser
 
 from machine.corpora import ParatextProjectSettings, ParatextProjectTermsParserBase, UsfmStylesheet
-from machine.corpora.paratext_project_terms_parser_base import _get_glosses, _strip_parens
+from machine.corpora.paratext_project_terms_parser_base import _get_glosses, _get_renderings, _strip_parens
 from machine.scripture import ORIGINAL_VERSIFICATION, Versification
 
 
@@ -110,11 +110,16 @@ def test_strip_parens() -> None:
 
 def test_get_glosses() -> None:
     assert _get_glosses("") == []
-    assert _get_glosses("*Abba* /") == ["Abba"]
-    assert _get_glosses("Abba|| ") == ["Abba"]
-    assert _get_glosses("Abba||Abbah?") == ["Abba", "Abbah"]
     assert _get_glosses("Abba (note)") == ["Abba"]
-    assert _get_glosses("Ahasuerus, Xerxes; Assuerus") == ["Ahasuerus", "Xerxes", "Assuerus"]
+    assert set(_get_glosses("Ahasuerus, Xerxes; Assuerus")) == set(["Assuerus", "Xerxes", "Ahasuerus"])
+
+
+def test_get_renderings() -> None:
+    assert _get_renderings("") == []
+    assert _get_renderings("*Abba*") == ["Abba"]
+    assert _get_renderings("Abba|| ") == ["Abba"]
+    assert _get_renderings("Abba||Abbah") == ["Abba", "Abbah"]
+    assert _get_renderings("Abba (note)") == ["Abba"]
 
 
 class _TestEnvironment:
