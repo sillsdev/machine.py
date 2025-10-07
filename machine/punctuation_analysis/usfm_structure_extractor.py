@@ -27,8 +27,7 @@ class UsfmStructureExtractor(UsfmParserHandler):
         pub_number: Optional[str],
     ) -> None:
         self._next_text_segment_builder.add_preceding_marker(UsfmMarkerType.CHAPTER)
-        chapter_number: int = int(number) if number.isdigit() else 0
-        self._next_text_segment_builder.set_chapter(chapter_number)
+        self._next_text_segment_builder.set_chapter(state.verse_ref.chapter_num)
 
     def start_para(
         self,
