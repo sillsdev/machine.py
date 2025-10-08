@@ -21,12 +21,15 @@ def test_get_chapters_filter_by_book():
 def test_get_chapters_filter_by_chapter():
     usfm_structure_extractor = UsfmStructureExtractor()
     usfm_structure_extractor.start_book(verse_text_parser_state, "id", "MAT")
+    verse_text_parser_state.verse_ref.chapter_num = 1
     usfm_structure_extractor.chapter(verse_text_parser_state, "1", "c", None, None)
     usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
     usfm_structure_extractor.text(verse_text_parser_state, "test")
+    verse_text_parser_state.verse_ref.chapter_num = 2
     usfm_structure_extractor.chapter(verse_text_parser_state, "2", "c", None, None)
     usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
     usfm_structure_extractor.text(verse_text_parser_state, "test2")
+    verse_text_parser_state.verse_ref.chapter_num = 3
     usfm_structure_extractor.chapter(verse_text_parser_state, "3", "c", None, None)
     usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
     usfm_structure_extractor.text(verse_text_parser_state, "test3")
