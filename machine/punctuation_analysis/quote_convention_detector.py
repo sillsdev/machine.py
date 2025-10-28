@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from .chapter import Chapter
 from .depth_based_quotation_mark_resolver import DepthBasedQuotationMarkResolver
@@ -8,18 +7,11 @@ from .quotation_mark_finder import QuotationMarkFinder
 from .quotation_mark_metadata import QuotationMarkMetadata
 from .quotation_mark_string_match import QuotationMarkStringMatch
 from .quotation_mark_tabulator import QuotationMarkTabulator
-from .quote_convention import QuoteConvention
+from .quote_convention_analysis import QuoteConventionAnalysis
 from .quote_convention_detection_resolution_settings import QuoteConventionDetectionResolutionSettings
 from .quote_convention_set import QuoteConventionSet
 from .standard_quote_conventions import STANDARD_QUOTE_CONVENTIONS
 from .usfm_structure_extractor import UsfmStructureExtractor
-
-
-@dataclass(frozen=True)
-class QuoteConventionAnalysis:
-    best_quote_convention: QuoteConvention
-    best_quote_convention_score: float
-    analysis_summary: str
 
 
 class QuoteConventionDetector(UsfmStructureExtractor):
@@ -56,12 +48,14 @@ class QuoteConventionDetector(UsfmStructureExtractor):
     ) -> Optional[QuoteConventionAnalysis]:
         self._count_quotation_marks_in_chapters(self.get_chapters(include_chapters))
 
-        (best_quote_convention, score) = STANDARD_QUOTE_CONVENTIONS.find_most_similar_convention(
-            self._quotation_mark_tabulator
-        )
+        return STANDARD_QUOTE_CONVENTIONS.score_all_quote_conventions(self._quotation_mark_tabulator)
 
-        if score > 0 and best_quote_convention is not None:
-            return QuoteConventionAnalysis(
-                best_quote_convention, score, self._quotation_mark_tabulator.get_summary_message()
-            )
-        return None
+    def detect_quote_convention_and_get_tabulated_quotation_marks(
+        self, include_chapters: Optional[Dict[int, List[int]]] = None
+    ) -> Tuple[Optional[QuoteConventionAnalysis], QuotationMarkTabulator]:
+        self._count_quotation_marks_in_chapters(self.get_chapters(include_chapters))
+
+        return (
+            STANDARD_QUOTE_CONVENTIONS.score_all_quote_conventions(self._quotation_mark_tabulator),
+            self._quotation_mark_tabulator,
+        )

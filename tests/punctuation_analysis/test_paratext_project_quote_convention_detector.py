@@ -90,6 +90,27 @@ def test_get_quote_convention_invalid_book_code() -> None:
     assert analysis is None
 
 
+def test_get_quote_convention_weighted_average_of_multiple_books() -> None:
+    env = _TestEnvironment(
+        files={
+            "41MATTest.SFM": rf"""\id MAT
+{get_test_chapter(1, standard_english_quote_convention)}""",
+            "42MRKTest.SFM": r"""\id MRK
+\c 1
+\v 1 This "sentence uses a different" convention""",
+        }
+    )
+    analysis: Optional[QuoteConventionAnalysis] = env.get_quote_convention()
+    assert analysis is not None
+    assert analysis.best_quote_convention.name == "standard_english"
+    assert analysis.best_quote_convention_score > 0.8
+    assert analysis.best_quote_convention_score < 0.9
+    assert (
+        analysis.analysis_summary
+        == "The most common level 1 quotation marks are “ (5 of 6 opening marks) and ” (5 of 6 closing marks)"
+    )
+
+
 class _TestEnvironment:
     def __init__(
         self,

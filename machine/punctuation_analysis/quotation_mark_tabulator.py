@@ -15,6 +15,10 @@ class QuotationMarkCounts:
         self._quotation_mark_counter.update([quotation_mark])
         self._total_count += 1
 
+    def count_from(self, quotation_mark_counts: "QuotationMarkCounts") -> None:
+        self._quotation_mark_counter.update(quotation_mark_counts._quotation_mark_counter)
+        self._total_count += quotation_mark_counts._total_count
+
     def find_best_quotation_mark_proportion(self) -> tuple[str, int, int]:
         return self._quotation_mark_counter.most_common(1)[0] + (self._total_count,)
 
@@ -36,6 +40,13 @@ class QuotationMarkTabulator:
         for quotation_mark in quotation_marks:
             self._count_quotation_mark(quotation_mark)
 
+    def tabulate_from(self, tabulated_quotation_marks: "QuotationMarkTabulator") -> None:
+        for (
+            depth_and_direction,
+            quotation_mark_counts,
+        ) in tabulated_quotation_marks._quotation_counts_by_depth_and_direction.items():
+            self._quotation_counts_by_depth_and_direction[depth_and_direction].count_from(quotation_mark_counts)
+
     def _count_quotation_mark(self, quotation_mark: QuotationMarkMetadata) -> None:
         key = (quotation_mark.depth, quotation_mark.direction)
         self._quotation_counts_by_depth_and_direction[key].count_quotation_mark(quotation_mark.quotation_mark)
@@ -47,6 +58,12 @@ class QuotationMarkTabulator:
         self, depth: int, direction: QuotationMarkDirection
     ) -> tuple[str, int, int]:
         return self._quotation_counts_by_depth_and_direction[(depth, direction)].find_best_quotation_mark_proportion()
+
+    def get_total_quotation_mark_count(self) -> int:
+        total_count = 0
+        for counts in self._quotation_counts_by_depth_and_direction.values():
+            total_count += counts.get_observed_count()
+        return total_count
 
     def calculate_similarity(self, quote_convention: QuoteConvention) -> float:
         weighted_difference = 0
