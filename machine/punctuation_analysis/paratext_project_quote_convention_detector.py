@@ -22,10 +22,10 @@ class WeightedAverageQuoteConventionAnalysisBuilder:
 
     def record_book_results(
         self,
-        quote_convention_analysis: Optional[QuoteConventionAnalysis],
+        quote_convention_analysis: QuoteConventionAnalysis,
         tabulated_quotation_marks: QuotationMarkTabulator,
     ) -> None:
-        if quote_convention_analysis is None or quote_convention_analysis.weight == 0:
+        if quote_convention_analysis.best_quote_convention is None or quote_convention_analysis.weight == 0:
             return
 
         self._total_tabulated_quotation_marks.tabulate_from(tabulated_quotation_marks)

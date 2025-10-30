@@ -10,7 +10,7 @@ class QuoteConventionAnalysis:
         self,
         convention_scores: dict[QuoteConvention, float],
         tabulated_quotation_marks: QuotationMarkTabulator,
-        analysis_weight: float = 1.0,
+        analysis_weight: float = 1.0,  # weight is used for combining scores for multiple books
     ):
         self._convention_scores = convention_scores
         if len(convention_scores) > 0:
