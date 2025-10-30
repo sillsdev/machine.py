@@ -16,7 +16,8 @@ from .quote_convention_detector import QuoteConventionDetector
 class WeightedAverageQuoteConventionAnalysisBuilder:
     def __init__(self) -> None:
         self._total_weight: float = 0
-        self._convention_votes: Dict[QuoteConvention, float] = defaultdict(float)
+        self._convention_votes: Dict[str, float] = defaultdict(float)
+        self._quote_conventions_by_name: Dict[str, QuoteConvention] = {}
         self._total_tabulated_quotation_marks = QuotationMarkTabulator()
 
     def record_book_results(
@@ -24,24 +25,25 @@ class WeightedAverageQuoteConventionAnalysisBuilder:
         quote_convention_analysis: Optional[QuoteConventionAnalysis],
         tabulated_quotation_marks: QuotationMarkTabulator,
     ) -> None:
-        if quote_convention_analysis is None:
+        if quote_convention_analysis is None or quote_convention_analysis.weight == 0:
             return
 
         self._total_tabulated_quotation_marks.tabulate_from(tabulated_quotation_marks)
 
         self._total_weight += quote_convention_analysis.weight
         for convention, score in quote_convention_analysis.get_all_convention_scores():
-            self._convention_votes[convention] += score * quote_convention_analysis.weight
+            if convention.name not in self._quote_conventions_by_name:
+                self._quote_conventions_by_name[convention.name] = convention
+            self._convention_votes[convention.name] += score * quote_convention_analysis.weight
 
-    def to_quote_convention_analysis(self) -> Optional[QuoteConventionAnalysis]:
-        if self._total_weight == 0:
-            return None
-
+    def to_quote_convention_analysis(self) -> QuoteConventionAnalysis:
         quote_convention_analysis_builder = QuoteConventionAnalysis.Builder(self._total_tabulated_quotation_marks)
 
-        for convention, total_score in self._convention_votes.items():
+        for convention_name, total_score in self._convention_votes.items():
             if total_score > 0:
-                quote_convention_analysis_builder.record_convention_score(convention, total_score / self._total_weight)
+                quote_convention_analysis_builder.record_convention_score(
+                    self._quote_conventions_by_name[convention_name], total_score / self._total_weight
+                )
 
         return quote_convention_analysis_builder.build()
 
@@ -55,7 +57,7 @@ class ParatextProjectQuoteConventionDetector(ABC):
 
     def get_quote_convention_analysis(
         self, include_chapters: Optional[Dict[int, List[int]]] = None
-    ) -> Optional[QuoteConventionAnalysis]:
+    ) -> QuoteConventionAnalysis:
 
         weighted_average_quote_convention_analysis_builder = WeightedAverageQuoteConventionAnalysisBuilder()
 

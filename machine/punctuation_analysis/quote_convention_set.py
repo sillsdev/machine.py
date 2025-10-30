@@ -151,9 +151,7 @@ class QuoteConventionSet:
 
         return (best_quote_convention, best_similarity)
 
-    def score_all_quote_conventions(
-        self, tabulated_quotation_marks: QuotationMarkTabulator
-    ) -> Optional[QuoteConventionAnalysis]:
+    def score_all_quote_conventions(self, tabulated_quotation_marks: QuotationMarkTabulator) -> QuoteConventionAnalysis:
         quote_convention_analysis_builder = QuoteConventionAnalysis.Builder(tabulated_quotation_marks)
         for quote_convention in self._conventions:
             score = tabulated_quotation_marks.calculate_similarity(quote_convention)

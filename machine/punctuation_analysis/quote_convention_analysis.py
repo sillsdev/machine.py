@@ -1,3 +1,5 @@
+from typing import Optional
+
 from .quotation_mark_tabulator import QuotationMarkTabulator
 from .quote_convention import QuoteConvention
 
@@ -11,8 +13,16 @@ class QuoteConventionAnalysis:
         analysis_weight: float = 1.0,
     ):
         self._convention_scores = convention_scores
-        self._best_quote_convention = max(convention_scores.items(), key=lambda item: item[1])[0]
-        self._best_quote_convention_score = convention_scores[self._best_quote_convention]
+        if len(convention_scores) > 0:
+            self._best_quote_convention_score = max(convention_scores.items(), key=lambda item: item[1])[1]
+        else:
+            self._best_quote_convention_score = 0
+
+        if self._best_quote_convention_score > 0:
+            self._best_quote_convention = max(convention_scores.items(), key=lambda item: item[1])[0]
+        else:
+            self._best_quote_convention = None
+
         self._tabulated_quotation_marks = tabulated_quotation_marks
         self._analysis_weight = analysis_weight
 
@@ -24,7 +34,7 @@ class QuoteConventionAnalysis:
         return self._tabulated_quotation_marks.get_summary_message()
 
     @property
-    def best_quote_convention(self) -> QuoteConvention:
+    def best_quote_convention(self) -> Optional[QuoteConvention]:
         return self._best_quote_convention
 
     @property

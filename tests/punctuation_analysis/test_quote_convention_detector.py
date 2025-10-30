@@ -1,5 +1,3 @@
-from typing import Union
-
 from machine.corpora import parse_usfm
 from machine.punctuation_analysis import QuoteConventionAnalysis, QuoteConventionDetector
 
@@ -15,7 +13,8 @@ def test_standard_english() -> None:
     ‘You shall not eat of any tree of the garden’?”
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "standard_english"
 
 
@@ -28,7 +27,8 @@ def test_typewriter_english() -> None:
     'You shall not eat of any tree of the garden'?\"
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "typewriter_english"
 
 
@@ -41,7 +41,8 @@ def test_british_english() -> None:
     “You shall not eat of any tree of the garden”?’
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "british_english"
 
 
@@ -54,7 +55,8 @@ def test_british_typewriter_english() -> None:
     \"You shall not eat of any tree of the garden\"?'
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "british_typewriter_english"
 
 
@@ -67,7 +69,8 @@ def test_hybrid_typewriter_english() -> None:
     'You shall not eat of any tree of the garden'?”
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "hybrid_typewriter_english"
 
 
@@ -80,7 +83,8 @@ def test_standard_french() -> None:
     ‹You shall not eat of any tree of the garden›?»
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "standard_french"
 
 
@@ -93,7 +97,8 @@ def test_typewriter_french() -> None:
     <You shall not eat of any tree of the garden>?>>
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "typewriter_french"
 
 
@@ -109,7 +114,8 @@ def test_western_european() -> None:
     “You shall not eat of any tree of the garden”?»
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "western_european"
 
 
@@ -122,7 +128,8 @@ def test_british_inspired_western_european() -> None:
     ‘You shall not eat of any tree of the garden’?»
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "british_inspired_western_european"
 
 
@@ -135,7 +142,8 @@ def test_typewriter_western_european() -> None:
     "You shall not eat of any tree of the garden"?>>
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "typewriter_western_european"
 
 
@@ -148,7 +156,8 @@ def test_typewriter_western_european_variant() -> None:
     <You shall not eat of any tree of the garden>?"
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "typewriter_western_european_variant"
 
 
@@ -161,7 +170,8 @@ def test_hybrid_typewriter_western_european() -> None:
     "You shall not eat of any tree of the garden"?»
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "hybrid_typewriter_western_european"
 
 
@@ -174,7 +184,8 @@ def test_hybrid_british_typewriter_western_european() -> None:
     'You shall not eat of any tree of the garden'?»
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "hybrid_british_typewriter_western_european"
 
 
@@ -187,7 +198,8 @@ def test_central_european() -> None:
     ‚You shall not eat of any tree of the garden‘?“
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "central_european"
 
 
@@ -200,7 +212,8 @@ def test_central_european_guillemets() -> None:
     ›You shall not eat of any tree of the garden‹?«
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "central_european_guillemets"
 
 
@@ -213,7 +226,8 @@ def test_standard_swedish() -> None:
     ’You shall not eat of any tree of the garden’?”
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "standard_swedish"
 
 
@@ -226,7 +240,8 @@ def test_standard_finnish() -> None:
     ’You shall not eat of any tree of the garden’?»
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "standard_finnish"
 
 
@@ -239,7 +254,8 @@ def test_eastern_european() -> None:
     ‚You shall not eat of any tree of the garden’?”
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "eastern_european"
 
 
@@ -252,7 +268,8 @@ def test_standard_russian() -> None:
     „You shall not eat of any tree of the garden“?»
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "standard_russian"
 
 
@@ -265,7 +282,8 @@ def test_standard_arabic() -> None:
     ’You shall not eat of any tree of the garden‘?“
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "standard_arabic"
 
 
@@ -278,7 +296,8 @@ def test_non_standard_arabic() -> None:
     ’You shall not eat of any tree of the garden‘?»
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "non-standard_arabic"
 
 
@@ -295,11 +314,12 @@ def test_mismatched_quotation_marks() -> None:
     God has said, ‘You shall not eat of it. You shall not touch it, lest you die.’
     """
     analysis = detect_quote_convention(usfm)
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention.name == "standard_english"
 
 
-def detect_quote_convention(usfm: str) -> Union[QuoteConventionAnalysis, None]:
+def detect_quote_convention(usfm: str) -> QuoteConventionAnalysis:
     quote_convention_detector = QuoteConventionDetector()
     parse_usfm(usfm, quote_convention_detector)
     return quote_convention_detector.detect_quote_convention()

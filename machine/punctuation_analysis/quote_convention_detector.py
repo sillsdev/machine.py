@@ -45,14 +45,14 @@ class QuoteConventionDetector(UsfmStructureExtractor):
 
     def detect_quote_convention(
         self, include_chapters: Optional[Dict[int, List[int]]] = None
-    ) -> Optional[QuoteConventionAnalysis]:
+    ) -> QuoteConventionAnalysis:
         self._count_quotation_marks_in_chapters(self.get_chapters(include_chapters))
 
         return STANDARD_QUOTE_CONVENTIONS.score_all_quote_conventions(self._quotation_mark_tabulator)
 
     def detect_quote_convention_and_get_tabulated_quotation_marks(
         self, include_chapters: Optional[Dict[int, List[int]]] = None
-    ) -> Tuple[Optional[QuoteConventionAnalysis], QuotationMarkTabulator]:
+    ) -> Tuple[QuoteConventionAnalysis, QuotationMarkTabulator]:
         self._count_quotation_marks_in_chapters(self.get_chapters(include_chapters))
 
         return (
