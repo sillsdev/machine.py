@@ -118,7 +118,7 @@ def test_calculate_similarity() -> None:
     )
     assert two_level_quotation_mark_tabulator.calculate_similarity(
         QuoteConvention("", [SingleLevelQuoteConvention("\u201c", "\u201d")])
-    ) == approx(0.66666666666667, rel=1e-9)
+    ) == approx(0.5, rel=1e-9)
     assert (
         two_level_quotation_mark_tabulator.calculate_similarity(
             QuoteConvention(
@@ -131,9 +131,12 @@ def test_calculate_similarity() -> None:
         QuoteConvention(
             "", [SingleLevelQuoteConvention("\u201c", "\u201d"), SingleLevelQuoteConvention("\u00ab", "\u00bb")]
         )
-    ) == approx(0.66666666666667, rel=1e-9)
-    assert two_level_quotation_mark_tabulator.calculate_similarity(
-        QuoteConvention(
-            "", [SingleLevelQuoteConvention("\u2018", "\u2019"), SingleLevelQuoteConvention("\u2018", "\u2019")]
+    ) == approx(0.5, rel=1e-9)
+    assert (
+        two_level_quotation_mark_tabulator.calculate_similarity(
+            QuoteConvention(
+                "", [SingleLevelQuoteConvention("\u2018", "\u2019"), SingleLevelQuoteConvention("\u2018", "\u2019")]
+            )
         )
-    ) == approx(0.33333333333333, rel=1e-9)
+        == 0.0
+    )

@@ -1,5 +1,5 @@
 from collections import Counter, defaultdict
-from typing import List
+from typing import Dict, List
 
 from .quotation_mark_direction import QuotationMarkDirection
 from .quotation_mark_metadata import QuotationMarkMetadata
@@ -66,22 +66,32 @@ class QuotationMarkTabulator:
         return total_count
 
     def calculate_similarity(self, quote_convention: QuoteConvention) -> float:
-        weighted_difference = 0
-        total_weight = 0
-        for depth, direction in self._quotation_counts_by_depth_and_direction:
+        num_marks_by_depth: Dict[int, int] = defaultdict(int)
+        num_matching_marks_by_depth: Dict[int, int] = defaultdict(int)
+
+        for depth, direction in sorted(self._quotation_counts_by_depth_and_direction, key=lambda item: item[0]):
             expected_quotation_mark: str = quote_convention.get_expected_quotation_mark(depth, direction)
 
-            # Give higher weight to shallower depths, since deeper marks are more likely to be mistakes
-            weighted_difference += self._quotation_counts_by_depth_and_direction[
+            num_matching_marks = self._quotation_counts_by_depth_and_direction[(depth, direction)].get_observed_count()
+            num_marks_by_depth[depth] += num_matching_marks
+            num_matching_marks_by_depth[depth] += num_matching_marks - self._quotation_counts_by_depth_and_direction[
                 (depth, direction)
-            ].calculate_num_differences(expected_quotation_mark) * 2 ** (-depth)
-            total_weight += self._quotation_counts_by_depth_and_direction[
-                (depth, direction)
-            ].get_observed_count() * 2 ** (-depth)
+            ].calculate_num_differences(expected_quotation_mark)
 
-        if total_weight == 0:
+        # The scores of greater depths depend on the scores of shallower depths
+        scores_by_depth: Dict[int, float] = defaultdict(float)
+        for depth in sorted(num_marks_by_depth.keys()):
+            previous_depth_score = (
+                scores_by_depth[depth - 1] / num_marks_by_depth[depth - 1] if depth - 1 in scores_by_depth else 1
+            )
+            scores_by_depth[depth] = previous_depth_score * num_matching_marks_by_depth[depth]
+
+        total_marks = sum(num_marks_by_depth.values())
+        total_score = sum(scores_by_depth.values())
+
+        if total_marks == 0:
             return 0
-        return 1 - (weighted_difference / total_weight)
+        return total_score / total_marks
 
     def get_summary_message(self) -> str:
         message_lines: List[str] = []
