@@ -61,7 +61,7 @@ class QuoteConvention:
         return True
 
     def __hash__(self) -> int:
-        return hash((tuple(self.level_conventions)))
+        return hash(tuple(self.level_conventions))
 
     @property
     def name(self) -> str:

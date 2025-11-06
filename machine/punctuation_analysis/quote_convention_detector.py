@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from .chapter import Chapter
 from .depth_based_quotation_mark_resolver import DepthBasedQuotationMarkResolver
@@ -49,13 +49,3 @@ class QuoteConventionDetector(UsfmStructureExtractor):
         self._count_quotation_marks_in_chapters(self.get_chapters(include_chapters))
 
         return STANDARD_QUOTE_CONVENTIONS.score_all_quote_conventions(self._quotation_mark_tabulator)
-
-    def detect_quote_convention_and_get_tabulated_quotation_marks(
-        self, include_chapters: Optional[Dict[int, List[int]]] = None
-    ) -> Tuple[QuoteConventionAnalysis, QuotationMarkTabulator]:
-        self._count_quotation_marks_in_chapters(self.get_chapters(include_chapters))
-
-        return (
-            STANDARD_QUOTE_CONVENTIONS.score_all_quote_conventions(self._quotation_mark_tabulator),
-            self._quotation_mark_tabulator,
-        )
