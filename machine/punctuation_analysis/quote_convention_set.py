@@ -7,6 +7,7 @@ import regex
 from .quotation_mark_direction import QuotationMarkDirection
 from .quotation_mark_tabulator import QuotationMarkTabulator
 from .quote_convention import QuoteConvention
+from .quote_convention_analysis import QuoteConventionAnalysis
 
 
 class QuoteConventionSet:
@@ -149,3 +150,11 @@ class QuoteConventionSet:
                 best_quote_convention = quote_convention
 
         return (best_quote_convention, best_similarity)
+
+    def score_all_quote_conventions(self, tabulated_quotation_marks: QuotationMarkTabulator) -> QuoteConventionAnalysis:
+        quote_convention_analysis_builder = QuoteConventionAnalysis.Builder(tabulated_quotation_marks)
+        for quote_convention in self._conventions:
+            score = tabulated_quotation_marks.calculate_similarity(quote_convention)
+            quote_convention_analysis_builder.record_convention_score(quote_convention, score)
+
+        return quote_convention_analysis_builder.build()

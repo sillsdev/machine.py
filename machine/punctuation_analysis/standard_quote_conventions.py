@@ -187,6 +187,15 @@ STANDARD_QUOTE_CONVENTIONS: QuoteConventionSet = QuoteConventionSet(
             [
                 SingleLevelQuoteConvention("\u00ab", "\u00bb"),
                 SingleLevelQuoteConvention("\u2019", "\u2018"),
+                SingleLevelQuoteConvention("\u201d", "\u201c"),
+            ],
+        ),
+        QuoteConvention(
+            "arabic_inspired_western_european",
+            [
+                SingleLevelQuoteConvention("\u00ab", "\u00bb"),
+                SingleLevelQuoteConvention("\u201d", "\u201c"),
+                SingleLevelQuoteConvention("\u2019", "\u2018"),
             ],
         ),
     ]

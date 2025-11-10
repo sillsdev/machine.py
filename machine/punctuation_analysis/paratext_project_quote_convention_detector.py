@@ -6,7 +6,8 @@ from ..corpora.paratext_project_settings_parser_base import ParatextProjectSetti
 from ..corpora.usfm_parser import parse_usfm
 from ..scripture.canon import book_id_to_number, get_scripture_books
 from ..utils.typeshed import StrPath
-from .quote_convention_detector import QuoteConventionAnalysis, QuoteConventionDetector
+from .quote_convention_analysis import QuoteConventionAnalysis
+from .quote_convention_detector import QuoteConventionDetector
 
 
 class ParatextProjectQuoteConventionDetector(ABC):
@@ -17,15 +18,20 @@ class ParatextProjectQuoteConventionDetector(ABC):
             self._settings = settings
 
     def get_quote_convention_analysis(
-        self, handler: Optional[QuoteConventionDetector] = None, include_chapters: Optional[Dict[int, List[int]]] = None
-    ) -> Optional[QuoteConventionAnalysis]:
-        handler = QuoteConventionDetector() if handler is None else handler
+        self, include_chapters: Optional[Dict[int, List[int]]] = None
+    ) -> QuoteConventionAnalysis:
+
+        book_quote_convention_analyses: List[QuoteConventionAnalysis] = []
+
         for book_id in get_scripture_books():
             if include_chapters is not None and book_id_to_number(book_id) not in include_chapters:
                 continue
             file_name: str = self._settings.get_book_file_name(book_id)
             if not self._exists(file_name):
                 continue
+
+            handler = QuoteConventionDetector()
+
             with self._open(file_name) as sfm_file:
                 usfm: str = sfm_file.read().decode(self._settings.encoding)
             try:
@@ -37,7 +43,11 @@ class ParatextProjectQuoteConventionDetector(ABC):
                     f". Error: '{e}'"
                 )
                 raise RuntimeError(error_message) from e
-        return handler.detect_quote_convention(include_chapters)
+
+            quote_convention_analysis = handler.detect_quote_convention(include_chapters)
+            book_quote_convention_analyses.append(quote_convention_analysis)
+
+        return QuoteConventionAnalysis.combine_with_weighted_average(book_quote_convention_analyses)
 
     @abstractmethod
     def _exists(self, file_name: StrPath) -> bool: ...

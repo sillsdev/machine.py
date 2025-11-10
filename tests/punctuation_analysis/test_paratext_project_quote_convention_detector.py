@@ -27,7 +27,8 @@ def test_get_quote_convention() -> None:
         }
     )
     analysis: Optional[QuoteConventionAnalysis] = env.get_quote_convention()
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention_score > 0.8
     assert analysis.best_quote_convention.name == "standard_english"
 
@@ -42,7 +43,8 @@ def test_get_quote_convention_by_book() -> None:
         }
     )
     analysis: Optional[QuoteConventionAnalysis] = env.get_quote_convention("MRK")
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention_score > 0.8
     assert analysis.best_quote_convention.name == "standard_french"
 
@@ -61,7 +63,8 @@ def test_get_quote_convention_by_chapter() -> None:
         }
     )
     analysis: Optional[QuoteConventionAnalysis] = env.get_quote_convention("MRK2,4-5")
-    assert analysis is not None
+
+    assert analysis.best_quote_convention is not None
     assert analysis.best_quote_convention_score > 0.66
     assert analysis.best_quote_convention.name == "standard_french"
 
@@ -76,7 +79,7 @@ def test_get_quote_convention_by_chapter_indeterminate() -> None:
         }
     )
     analysis: Optional[QuoteConventionAnalysis] = env.get_quote_convention("MAT1,3")
-    assert analysis is None
+    assert analysis.best_quote_convention is None
 
 
 def test_get_quote_convention_invalid_book_code() -> None:
@@ -87,7 +90,29 @@ def test_get_quote_convention_invalid_book_code() -> None:
         }
     )
     analysis: Optional[QuoteConventionAnalysis] = env.get_quote_convention("MAT")
-    assert analysis is None
+    assert analysis.best_quote_convention is None
+
+
+def test_get_quote_convention_weighted_average_of_multiple_books() -> None:
+    env = _TestEnvironment(
+        files={
+            "41MATTest.SFM": rf"""\id MAT
+{get_test_chapter(1, standard_english_quote_convention)}""",
+            "42MRKTest.SFM": r"""\id MRK
+\c 1
+\v 1 This "sentence uses a different" convention""",
+        }
+    )
+    analysis: Optional[QuoteConventionAnalysis] = env.get_quote_convention()
+
+    assert analysis.best_quote_convention is not None
+    assert analysis.best_quote_convention.name == "standard_english"
+    assert analysis.best_quote_convention_score > 0.8
+    assert analysis.best_quote_convention_score < 0.9
+    assert (
+        analysis.analysis_summary
+        == "The most common level 1 quotation marks are “ (5 of 6 opening marks) and ” (5 of 6 closing marks)"
+    )
 
 
 class _TestEnvironment:
@@ -104,7 +129,7 @@ class _TestEnvironment:
     def detector(self) -> ParatextProjectQuoteConventionDetector:
         return self._detector
 
-    def get_quote_convention(self, scripture_range: Optional[str] = None) -> Optional[QuoteConventionAnalysis]:
+    def get_quote_convention(self, scripture_range: Optional[str] = None) -> QuoteConventionAnalysis:
         chapters: Optional[Dict[int, List[int]]] = None
         if scripture_range is not None:
             chapters = get_chapters(scripture_range, ORIGINAL_VERSIFICATION)

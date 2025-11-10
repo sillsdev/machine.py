@@ -2,12 +2,14 @@ from io import BytesIO
 from typing import BinaryIO, Optional
 from zipfile import ZipFile
 
+from ..corpora.zip_paratext_project_settings_parser import ZipParatextProjectSettingsParser
 from .paratext_project_quote_convention_detector import ParatextProjectQuoteConventionDetector
 
 
 class ZipParatextProjectQuoteConventionDetector(ParatextProjectQuoteConventionDetector):
     def __init__(self, archive: ZipFile) -> None:
         self._archive = archive
+        super().__init__(ZipParatextProjectSettingsParser(archive))
 
     def _exists(self, file_name: str) -> bool:
         return file_name in self._archive.namelist()

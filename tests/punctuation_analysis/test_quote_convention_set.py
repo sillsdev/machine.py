@@ -1251,11 +1251,11 @@ def test_find_most_similar_convention() -> None:
     )
     assert all_three_quote_convention_set.find_most_similar_convention(noisy_multiple_english_quotes_tabulator) == (
         standard_english_quote_convention,
-        approx(0.9, rel=1e-9),
+        approx(0.8333333333333, rel=1e-9),
     )
     assert two_french_quote_convention_set.find_most_similar_convention(noisy_multiple_english_quotes_tabulator) == (
         western_european_quote_convention,
-        approx(0.1, rel=1e-9),
+        0,
     )
 
     noisy_multiple_french_quotes_tabulator = QuotationMarkTabulator()
@@ -1273,7 +1273,7 @@ def test_find_most_similar_convention() -> None:
     )
     assert all_three_quote_convention_set.find_most_similar_convention(noisy_multiple_french_quotes_tabulator) == (
         standard_french_quote_convention,
-        approx(0.916666666666, rel=1e-9),
+        approx(0.875, rel=1e-9),
     )
 
     too_deep_english_quotes_tabulator = QuotationMarkTabulator()
@@ -1288,7 +1288,7 @@ def test_find_most_similar_convention() -> None:
     )
     assert all_three_quote_convention_set.find_most_similar_convention(too_deep_english_quotes_tabulator) == (
         standard_english_quote_convention,
-        approx(0.967741935483871, rel=1e-9),
+        approx(0.8, rel=1e-9),
     )
 
     # in case of ties, the earlier convention in the list should be returned

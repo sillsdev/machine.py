@@ -37,6 +37,9 @@ class SingleLevelQuoteConvention:
         )
         return SingleLevelQuoteConvention(normalized_opening_quotation_mark, normalized_closing_quotation_mark)
 
+    def __hash__(self) -> int:
+        return hash((self.opening_quotation_mark, self.closing_quotation_mark))
+
 
 class QuoteConvention:
     def __init__(self, name: str, level_conventions: list[SingleLevelQuoteConvention]):
@@ -56,6 +59,9 @@ class QuoteConvention:
             if level_convention.closing_quotation_mark != other_level_convention.closing_quotation_mark:
                 return False
         return True
+
+    def __hash__(self) -> int:
+        return hash(tuple(self.level_conventions))
 
     @property
     def name(self) -> str:
