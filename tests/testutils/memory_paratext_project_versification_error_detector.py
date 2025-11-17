@@ -1,8 +1,8 @@
 from typing import Dict, Optional
 
 from machine.corpora import ParatextProjectSettings
-
 from machine.corpora.paratext_project_versification_error_detector import ParatextProjectVersificationErrorDetector
+
 from .memory_paratext_project_file_handler import DefaultParatextProjectSettings, MemoryParatextProjectFileHandler
 
 
