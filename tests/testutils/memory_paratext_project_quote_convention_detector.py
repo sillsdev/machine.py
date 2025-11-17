@@ -1,10 +1,9 @@
-from io import BytesIO
-from typing import BinaryIO, Dict
+from typing import Dict
 
 from machine.corpora import ParatextProjectSettings
 from machine.punctuation_analysis import ParatextProjectQuoteConventionDetector
 
-from .memory_paratext_project_file_handler import MemoryParatextProjectFileHandler
+from .memory_paratext_project_file_handler import MemoryParatextProjectFileHandler, DefaultParatextProjectSettings
 
 
 class MemoryParatextProjectQuoteConventionDetector(ParatextProjectQuoteConventionDetector):

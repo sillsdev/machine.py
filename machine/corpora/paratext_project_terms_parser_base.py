@@ -4,7 +4,7 @@ import re
 from abc import ABC
 from collections import defaultdict
 from importlib.resources import open_binary
-from typing import BinaryIO, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 from xml.etree import ElementTree
 
 from .paratext_project_file_handler import ParatextProjectFileHandler

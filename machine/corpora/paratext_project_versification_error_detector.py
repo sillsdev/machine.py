@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import List, Optional, Union
 
 from .paratext_project_file_handler import ParatextProjectFileHandler
 from .paratext_project_settings import ParatextProjectSettings

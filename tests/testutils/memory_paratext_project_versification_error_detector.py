@@ -1,5 +1,4 @@
-from io import BytesIO
-from typing import BinaryIO, Dict, Optional
+from typing import Dict, Optional
 
 from machine.corpora import ParatextProjectSettings
 

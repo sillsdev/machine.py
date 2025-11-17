@@ -1,7 +1,6 @@
-from abc import ABC, abstractmethod
-from typing import BinaryIO, Callable, Iterable, Optional, Sequence, Union
+from abc import ABC
+from typing import Callable, Iterable, Optional, Sequence, Union
 
-from ..utils.typeshed import StrPath
 from .paratext_project_file_handler import ParatextProjectFileHandler
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
