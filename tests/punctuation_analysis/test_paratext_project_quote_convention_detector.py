@@ -1,15 +1,16 @@
 from typing import Dict, List, Optional
 
+from testutils.memory_paratext_project_file_handler import DefaultParatextProjectSettings
 from testutils.memory_paratext_project_quote_convention_detector import MemoryParatextProjectQuoteConventionDetector
 
-from machine.corpora import ParatextProjectSettings, UsfmStylesheet
+from machine.corpora import ParatextProjectSettings
 from machine.punctuation_analysis import (
     STANDARD_QUOTE_CONVENTIONS,
     ParatextProjectQuoteConventionDetector,
     QuoteConvention,
     QuoteConventionAnalysis,
 )
-from machine.scripture import ORIGINAL_VERSIFICATION, Versification, get_chapters
+from machine.scripture import ORIGINAL_VERSIFICATION, get_chapters
 
 standard_english_quote_convention: Optional[QuoteConvention] = STANDARD_QUOTE_CONVENTIONS.get_quote_convention_by_name(
     "standard_english"
@@ -122,7 +123,7 @@ class _TestEnvironment:
         files: Optional[Dict[str, str]] = None,
     ) -> None:
         self._detector: ParatextProjectQuoteConventionDetector = MemoryParatextProjectQuoteConventionDetector(
-            settings or _DefaultParatextProjectSettings(), files or {}
+            settings or DefaultParatextProjectSettings(), files or {}
         )
 
     @property
@@ -150,36 +151,3 @@ def get_test_chapter(number: int, quote_convention: Optional[QuoteConvention]) -
 \q3 and more things someone else said.{right_quote}
 \m That is why he said {left_quote}things someone else said.{right_quote}
 \v 5 Then someone said, {left_quote}More things someone said.{right_quote}"""
-
-
-class _DefaultParatextProjectSettings(ParatextProjectSettings):
-    def __init__(
-        self,
-        name: str = "Test",
-        full_name: str = "TestProject",
-        encoding: Optional[str] = None,
-        versification: Optional[Versification] = None,
-        stylesheet: Optional[UsfmStylesheet] = None,
-        file_name_prefix: str = "",
-        file_name_form: str = "41MAT",
-        file_name_suffix: str = "Test.SFM",
-        biblical_terms_list_type: str = "Project",
-        biblical_terms_project_name: str = "Test",
-        biblical_terms_file_name: str = "ProjectBiblicalTerms.xml",
-        language_code: str = "en",
-    ):
-
-        super().__init__(
-            name,
-            full_name,
-            encoding if encoding is not None else "utf-8",
-            versification if versification is not None else ORIGINAL_VERSIFICATION,
-            stylesheet if stylesheet is not None else UsfmStylesheet("usfm.sty"),
-            file_name_prefix,
-            file_name_form,
-            file_name_suffix,
-            biblical_terms_list_type,
-            biblical_terms_project_name,
-            biblical_terms_file_name,
-            language_code,
-        )
