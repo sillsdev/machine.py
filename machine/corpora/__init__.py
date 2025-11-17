@@ -7,8 +7,10 @@ from .corpus import Corpus
 from .dbl_bundle_text_corpus import DblBundleTextCorpus
 from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .dictionary_text_corpus import DictionaryTextCorpus
+from .file_paratext_project_file_handler import FileParatextProjectFileHandler
 from .file_paratext_project_settings_parser import FileParatextProjectSettingsParser
 from .file_paratext_project_text_updater import FileParatextProjectTextUpdater
+from .file_paratext_project_versification_error_detector import FileParatextProjectVersificationErrorDetector
 from .flatten import flatten
 from .memory_alignment_collection import MemoryAlignmentCollection
 from .memory_stream_container import MemoryStreamContainer
@@ -22,6 +24,7 @@ from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
 from .paratext_project_terms_parser_base import ParatextProjectTermsParserBase
 from .paratext_project_text_updater_base import ParatextProjectTextUpdaterBase
+from .paratext_project_versification_error_detector import ParatextProjectVersificationErrorDetector
 from .paratext_text_corpus import ParatextTextCorpus
 from .place_markers_usfm_update_block_handler import PlaceMarkersAlignmentInfo, PlaceMarkersUsfmUpdateBlockHandler
 from .scripture_element import ScriptureElement
@@ -70,16 +73,22 @@ from .usfm_tokenizer import RtlReferenceOrder, UsfmTokenizer
 from .usfm_update_block import UsfmUpdateBlock
 from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
 from .usfm_update_block_handler import UsfmUpdateBlockHandler
+from .usfm_versification_error_detector import (
+    UsfmVersificationError,
+    UsfmVersificationErrorDetector,
+    UsfmVersificationErrorType,
+)
 from .usx_file_alignment_collection import UsxFileAlignmentCollection
 from .usx_file_alignment_corpus import UsxFileAlignmentCorpus
 from .usx_file_text import UsxFileText
 from .usx_file_text_corpus import UsxFileTextCorpus
 from .usx_memory_text import UsxMemoryText
 from .usx_zip_text import UsxZipText
+from .zip_paratext_project_file_handler import ZipParatextProjectFileHandler
 from .zip_paratext_project_settings_parser import ZipParatextProjectSettingsParser
-from .zip_paratext_project_settings_parser_base import ZipParatextProjectSettingsParserBase
 from .zip_paratext_project_terms_parser import ZipParatextProjectTermsParser
 from .zip_paratext_project_text_updater import ZipParatextProjectTextUpdater
+from .zip_paratext_project_versification_detector import ZipParatextProjectVersificationErrorDetector
 
 __all__ = [
     "AlignedWordPair",
@@ -95,8 +104,10 @@ __all__ = [
     "EMPTY_SCRIPTURE_REF",
     "escape_spaces",
     "extract_scripture_corpus",
+    "FileParatextProjectFileHandler",
     "FileParatextProjectSettingsParser",
     "FileParatextProjectTextUpdater",
+    "FileParatextProjectVersificationErrorDetector",
     "flatten",
     "is_scripture",
     "lowercase",
@@ -117,10 +128,11 @@ __all__ = [
     "ParatextProjectSettingsParserBase",
     "ParatextProjectTermsParserBase",
     "ParatextProjectTextUpdaterBase",
+    "ParatextProjectVersificationErrorDetector",
     "ParatextTextCorpus",
+    "parse_usfm",
     "PlaceMarkersAlignmentInfo",
     "PlaceMarkersUsfmUpdateBlockHandler",
-    "parse_usfm",
     "RtlReferenceOrder",
     "ScriptureElement",
     "ScriptureRef",
@@ -139,8 +151,8 @@ __all__ = [
     "unescape_spaces",
     "UpdateUsfmMarkerBehavior",
     "UpdateUsfmParserHandler",
-    "UpdateUsfmTextBehavior",
     "UpdateUsfmRow",
+    "UpdateUsfmTextBehavior",
     "UsfmAttribute",
     "UsfmElementType",
     "UsfmFileText",
@@ -164,14 +176,18 @@ __all__ = [
     "UsfmUpdateBlockElement",
     "UsfmUpdateBlockElementType",
     "UsfmUpdateBlockHandler",
+    "UsfmVersificationError",
+    "UsfmVersificationErrorDetector",
+    "UsfmVersificationErrorType",
     "UsxFileAlignmentCollection",
     "UsxFileAlignmentCorpus",
     "UsxFileText",
     "UsxFileTextCorpus",
     "UsxMemoryText",
     "UsxZipText",
+    "ZipParatextProjectFileHandler",
     "ZipParatextProjectSettingsParser",
-    "ZipParatextProjectSettingsParserBase",
     "ZipParatextProjectTermsParser",
     "ZipParatextProjectTextUpdater",
+    "ZipParatextProjectVersificationErrorDetector",
 ]

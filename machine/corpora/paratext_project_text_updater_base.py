@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import BinaryIO, Callable, Iterable, Optional, Sequence, Union
 
 from ..utils.typeshed import StrPath
+from .paratext_project_file_handler import ParatextProjectFileHandler
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
 from .update_usfm_parser_handler import (
@@ -15,7 +16,12 @@ from .usfm_update_block_handler import UsfmUpdateBlockHandler, UsfmUpdateBlockHa
 
 
 class ParatextProjectTextUpdaterBase(ABC):
-    def __init__(self, settings: Union[ParatextProjectSettings, ParatextProjectSettingsParserBase]) -> None:
+    def __init__(
+        self,
+        paratext_project_file_handler: ParatextProjectFileHandler,
+        settings: Union[ParatextProjectSettings, ParatextProjectSettingsParserBase],
+    ) -> None:
+        self._paratext_project_file_handler = paratext_project_file_handler
         if isinstance(settings, ParatextProjectSettingsParserBase):
             self._settings = settings.parse()
         else:
@@ -37,9 +43,9 @@ class ParatextProjectTextUpdaterBase(ABC):
         compare_segments: bool = False,
     ) -> Optional[str]:
         file_name: str = self._settings.get_book_file_name(book_id)
-        if not self._exists(file_name):
+        if not self._paratext_project_file_handler.exists(file_name):
             return None
-        with self._open(file_name) as sfm_file:
+        with self._paratext_project_file_handler.open(file_name) as sfm_file:
             usfm: str = sfm_file.read().decode(self._settings.encoding)
         handler = UpdateUsfmParserHandler(
             rows,
@@ -64,9 +70,3 @@ class ParatextProjectTextUpdaterBase(ABC):
                 f". Error: '{e}'"
             )
             raise RuntimeError(error_message) from e
-
-    @abstractmethod
-    def _exists(self, file_name: StrPath) -> bool: ...
-
-    @abstractmethod
-    def _open(self, file_name: StrPath) -> BinaryIO: ...

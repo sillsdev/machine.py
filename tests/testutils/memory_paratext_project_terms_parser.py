@@ -1,17 +1,10 @@
-from io import BytesIO
-from typing import BinaryIO, Dict
+from typing import Dict, Optional
 
 from machine.corpora import ParatextProjectSettings, ParatextProjectTermsParserBase
 
+from .memory_paratext_project_file_handler import DefaultParatextProjectSettings, MemoryParatextProjectFileHandler
+
 
 class MemoryParatextProjectTermsParser(ParatextProjectTermsParserBase):
-    def __init__(self, settings: ParatextProjectSettings, files: Dict[str, str]) -> None:
-        super().__init__(settings)
-
-        self.files = files
-
-    def _exists(self, file_name: str) -> bool:
-        return file_name in self.files
-
-    def _open(self, file_name: str) -> BinaryIO:
-        return BytesIO(self.files[file_name].encode("utf-8"))
+    def __init__(self, files: Dict[str, str], settings: Optional[ParatextProjectSettings]) -> None:
+        super().__init__(MemoryParatextProjectFileHandler(files), settings or DefaultParatextProjectSettings())

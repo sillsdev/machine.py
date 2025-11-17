@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional, Tuple
 
+from testutils.memory_paratext_project_file_handler import DefaultParatextProjectSettings
 from testutils.memory_paratext_project_terms_parser import MemoryParatextProjectTermsParser
 
 from machine.corpora import ParatextProjectSettings, ParatextProjectTermsParserBase, UsfmStylesheet
@@ -40,7 +41,7 @@ def test_get_key_terms_from_terms_renderings() -> None:
 
 def test_get_key_terms_from_terms_localizations_no_term_renderings() -> None:
     env = _TestEnvironment(
-        _DefaultParatextProjectSettings(biblical_terms_list_type="Major", biblical_terms_file_name="BiblicalTerms.xml"),
+        DefaultParatextProjectSettings(biblical_terms_list_type="Major", biblical_terms_file_name="BiblicalTerms.xml"),
         use_term_glosses=True,
     )
     terms: List[Tuple[str, List[str]]] = env.get_glosses()
@@ -52,7 +53,7 @@ def test_get_key_terms_from_terms_localizations_no_term_renderings() -> None:
 
 def test_get_key_terms_from_terms_localizations_no_term_renderings_do_not_use_term_glosses() -> None:
     env = _TestEnvironment(
-        _DefaultParatextProjectSettings(biblical_terms_list_type="Major", biblical_terms_file_name="BiblicalTerms.xml"),
+        DefaultParatextProjectSettings(biblical_terms_list_type="Major", biblical_terms_file_name="BiblicalTerms.xml"),
         use_term_glosses=False,
     )
     terms: List[Tuple[str, List[str]]] = env.get_glosses()
@@ -61,7 +62,7 @@ def test_get_key_terms_from_terms_localizations_no_term_renderings_do_not_use_te
 
 def test_get_key_terms_from_terms_localizations() -> None:
     env = _TestEnvironment(
-        _DefaultParatextProjectSettings(
+        DefaultParatextProjectSettings(
             biblical_terms_list_type="Major", biblical_terms_file_name="BiblicalTerms.xml", language_code="fr"
         ),
         use_term_glosses=True,
@@ -75,7 +76,7 @@ def test_get_key_terms_from_terms_localizations() -> None:
 
 def test_get_key_terms_from_terms_localizations_term_renderings_exists_prefer_localization() -> None:
     env = _TestEnvironment(
-        _DefaultParatextProjectSettings(biblical_terms_list_type="Major", biblical_terms_file_name="BiblicalTerms.xml"),
+        DefaultParatextProjectSettings(biblical_terms_list_type="Major", biblical_terms_file_name="BiblicalTerms.xml"),
         files={
             "TermRenderings.xml": r"""
 <TermRenderingsList>
@@ -131,7 +132,7 @@ class _TestEnvironment:
     ) -> None:
         self._use_term_glosses: bool = use_term_glosses
         self._parser: ParatextProjectTermsParserBase = MemoryParatextProjectTermsParser(
-            settings or _DefaultParatextProjectSettings(), files or {}
+            files or {}, settings or DefaultParatextProjectSettings()
         )
 
     @property
@@ -140,36 +141,3 @@ class _TestEnvironment:
 
     def get_glosses(self) -> List[Tuple[str, List[str]]]:
         return self.parser.parse(["PN"], self._use_term_glosses)
-
-
-class _DefaultParatextProjectSettings(ParatextProjectSettings):
-    def __init__(
-        self,
-        name: str = "Test",
-        full_name: str = "TestProject",
-        encoding: Optional[str] = None,
-        versification: Optional[Versification] = None,
-        stylesheet: Optional[UsfmStylesheet] = None,
-        file_name_prefix: str = "",
-        file_name_form: str = "41MAT",
-        file_name_suffix: str = "Test.SFM",
-        biblical_terms_list_type: str = "Project",
-        biblical_terms_project_name: str = "Test",
-        biblical_terms_file_name: str = "ProjectBiblicalTerms.xml",
-        language_code: str = "en",
-    ):
-
-        super().__init__(
-            name,
-            full_name,
-            encoding if encoding is not None else "utf-8",
-            versification if versification is not None else ORIGINAL_VERSIFICATION,
-            stylesheet if stylesheet is not None else UsfmStylesheet("usfm.sty"),
-            file_name_prefix,
-            file_name_form,
-            file_name_suffix,
-            biblical_terms_list_type,
-            biblical_terms_project_name,
-            biblical_terms_file_name,
-            language_code,
-        )

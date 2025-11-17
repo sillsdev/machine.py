@@ -95,6 +95,13 @@ class VerseRef(Comparable):
         return VerseRef(b_cv[0], c_v[0], c_v[1], versification)
 
     @classmethod
+    def try_from_string(cls, verse_str: str) -> Optional[VerseRef]:
+        try:
+            return cls.from_string(verse_str)
+        except ValueError:
+            return None
+
+    @classmethod
     def from_range(cls, start: VerseRef, end: VerseRef) -> VerseRef:
         if start.book_num != end.book_num or start.chapter_num != end.chapter_num:
             raise ValueError("The start and end verses are not in the same chapter.")
@@ -228,6 +235,10 @@ class VerseRef(Comparable):
     @property
     def is_excluded(self) -> bool:
         return self.versification.is_excluded(self.bbbcccvvv)
+
+    @property
+    def has_segments_defined(self):
+        return self.versification is not None and self.versification.verse_segments[self.bbbcccvvv] is not None
 
     def get_segments(self, default_segments: Optional[Set[str]] = None) -> Optional[Set[str]]:
         if self.versification is None:

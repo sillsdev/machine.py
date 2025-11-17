@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import re
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections import defaultdict
 from importlib.resources import open_binary
 from typing import BinaryIO, Dict, List, Optional, Sequence, Tuple, Union
 from xml.etree import ElementTree
 
+from .paratext_project_file_handler import ParatextProjectFileHandler
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
 
@@ -24,7 +25,12 @@ _NUMERICAL_INFORMATION_REGEX = re.compile(r"\s+\d+(\.\d+)*$")
 
 
 class ParatextProjectTermsParserBase(ABC):
-    def __init__(self, settings: Union[ParatextProjectSettings, ParatextProjectSettingsParserBase]) -> None:
+    def __init__(
+        self,
+        paratext_project_file_handler: ParatextProjectFileHandler,
+        settings: Union[ParatextProjectSettings, ParatextProjectSettingsParserBase],
+    ) -> None:
+        self._paratext_project_file_handler = paratext_project_file_handler
         self._settings: ParatextProjectSettings
         if isinstance(settings, ParatextProjectSettingsParserBase):
             self._settings = settings.parse()
@@ -34,8 +40,8 @@ class ParatextProjectTermsParserBase(ABC):
     def parse(self, term_categories: Sequence[str], use_term_glosses: bool = True) -> List[Tuple[str, List[str]]]:
         biblical_terms_doc = None
         if self._settings.biblical_terms_list_type == "Project":
-            if self._exists(self._settings.biblical_terms_file_name):
-                with self._open(self._settings.biblical_terms_file_name) as stream:
+            if self._paratext_project_file_handler.exists(self._settings.biblical_terms_file_name):
+                with self._paratext_project_file_handler.open(self._settings.biblical_terms_file_name) as stream:
                     biblical_terms_doc = ElementTree.parse(stream)
                     term_id_to_category_dict = _get_category_per_id(biblical_terms_doc)
         elif self._settings.biblical_terms_list_type in _PREDEFINED_TERMS_LIST_TYPES:
@@ -60,8 +66,8 @@ class ParatextProjectTermsParserBase(ABC):
                 terms_glosses_doc = ElementTree.parse(stream)
 
         term_renderings_doc: Optional[ElementTree.ElementTree[ElementTree.Element]] = None
-        if self._exists("TermRenderings.xml"):
-            with self._open("TermRenderings.xml") as stream:
+        if self._paratext_project_file_handler.exists("TermRenderings.xml"):
+            with self._paratext_project_file_handler.open("TermRenderings.xml") as stream:
                 term_renderings_doc = ElementTree.parse(stream)
 
         terms_renderings: Dict[str, List[str]] = defaultdict(list)
@@ -93,12 +99,6 @@ class ParatextProjectTermsParserBase(ABC):
             return [(key, list(value)) for key, value in combined.items()]
 
         return []
-
-    @abstractmethod
-    def _exists(self, file_name: str) -> bool: ...
-
-    @abstractmethod
-    def _open(self, file_name: str) -> BinaryIO: ...
 
 
 def _is_in_category(id: str, term_categories: Sequence[str], term_id_to_category_dict: Dict[str, str]) -> bool:
