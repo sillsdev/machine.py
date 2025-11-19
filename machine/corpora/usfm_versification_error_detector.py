@@ -1,6 +1,7 @@
 from enum import Enum, auto
 from typing import List, Optional
 
+from .usfm_parser_state import UsfmParserState
 from machine.scripture import canon
 
 from ..scripture.verse_ref import ValidStatus, VerseRef, Versification
@@ -123,7 +124,7 @@ class UsfmVersificationErrorDetector(UsfmParserHandler):
     def errors(self) -> List[UsfmVersificationError]:
         return self._errors.copy()
 
-    def end_usfm(self, state) -> None:
+    def end_usfm(self, state: UsfmParserState) -> None:
         if self._current_book > 0 and canon.is_canonical(self._current_book):
             versification_error = UsfmVersificationError(
                 self._current_book,
@@ -137,12 +138,14 @@ class UsfmVersificationErrorDetector(UsfmParserHandler):
             if versification_error.check_error():
                 self._errors.append(versification_error)
 
-    def start_book(self, state, marker, code) -> None:
+    def start_book(self, state: UsfmParserState, marker: str, code: str) -> None:
         self._current_book = state.verse_ref.book_num
         self._current_chapter = 0
         self._current_verse = VerseRef()
 
-    def chapter(self, state, number, marker, alt_number, pub_number) -> None:
+    def chapter(
+        self, state: UsfmParserState, number: str, marker: str, alt_number: Optional[str], pub_number: Optional[str]
+    ) -> None:
         if self._current_book > 0 and canon.is_canonical(self._current_book) and self._current_chapter > 0:
             versification_error = UsfmVersificationError(
                 self._current_book,
@@ -154,7 +157,9 @@ class UsfmVersificationErrorDetector(UsfmParserHandler):
             if versification_error.check_error():
                 self._errors.append(versification_error)
 
-    def verse(self, state, number, marker, alt_number, pub_number) -> None:
+    def verse(
+        self, state: UsfmParserState, number: str, marker: str, alt_number: Optional[str], pub_number: Optional[str]
+    ) -> None:
         if self._current_book > 0 and canon.is_canonical(self._current_book) and self._current_chapter > 0:
             versification_error = UsfmVersificationError(
                 self._current_book,
