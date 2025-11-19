@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import BinaryIO
 
+from ..corpora.file_paratext_project_file_handler import FileParatextProjectFileHandler
 from ..corpora.file_paratext_project_settings_parser import FileParatextProjectSettingsParser
 from ..utils.typeshed import StrPath
 from .paratext_project_quote_convention_detector import ParatextProjectQuoteConventionDetector
@@ -8,7 +9,9 @@ from .paratext_project_quote_convention_detector import ParatextProjectQuoteConv
 
 class FileParatextProjectQuoteConventionDetector(ParatextProjectQuoteConventionDetector):
     def __init__(self, project_dir: StrPath) -> None:
-        super().__init__(FileParatextProjectSettingsParser(project_dir))
+        super().__init__(
+            FileParatextProjectFileHandler(project_dir), FileParatextProjectSettingsParser(project_dir).parse()
+        )
 
         self._project_dir = project_dir
 
