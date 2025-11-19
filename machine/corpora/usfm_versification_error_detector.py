@@ -1,11 +1,11 @@
 from enum import Enum, auto
 from typing import List, Optional
 
-from .usfm_parser_state import UsfmParserState
 from machine.scripture import canon
 
 from ..scripture.verse_ref import ValidStatus, VerseRef, Versification
 from .usfm_parser_handler import UsfmParserHandler
+from .usfm_parser_state import UsfmParserState
 
 
 class UsfmVersificationErrorType(Enum):
