@@ -120,10 +120,10 @@ class UsfmVersificationErrorDetector(UsfmParserHandler):
         self._errors: List[UsfmVersificationError] = []
 
     @property
-    def errors(self):
+    def errors(self) -> List[UsfmVersificationError]:
         return self._errors.copy()
 
-    def end_usfm(self, state):
+    def end_usfm(self, state) -> None:
         if self._current_book > 0 and canon.is_canonical(self._current_book):
             versification_error = UsfmVersificationError(
                 self._current_book,
@@ -137,12 +137,12 @@ class UsfmVersificationErrorDetector(UsfmParserHandler):
             if versification_error.check_error():
                 self._errors.append(versification_error)
 
-    def start_book(self, state, marker, code):
+    def start_book(self, state, marker, code) -> None:
         self._current_book = state.verse_ref.book_num
         self._current_chapter = 0
         self._current_verse = VerseRef()
 
-    def chapter(self, state, number, marker, alt_number, pub_number):
+    def chapter(self, state, number, marker, alt_number, pub_number) -> None:
         if self._current_book > 0 and canon.is_canonical(self._current_book) and self._current_chapter > 0:
             versification_error = UsfmVersificationError(
                 self._current_book,
@@ -154,7 +154,7 @@ class UsfmVersificationErrorDetector(UsfmParserHandler):
             if versification_error.check_error():
                 self._errors.append(versification_error)
 
-    def verse(self, state, number, marker, alt_number, pub_number):
+    def verse(self, state, number, marker, alt_number, pub_number) -> None:
         if self._current_book > 0 and canon.is_canonical(self._current_book) and self._current_chapter > 0:
             versification_error = UsfmVersificationError(
                 self._current_book,

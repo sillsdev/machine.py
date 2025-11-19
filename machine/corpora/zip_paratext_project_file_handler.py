@@ -1,7 +1,7 @@
 import os
 from io import BytesIO
 from tempfile import mkstemp
-from typing import BinaryIO, Optional
+from typing import BinaryIO, Optional, cast
 from zipfile import ZipFile
 
 from .paratext_project_file_handler import ParatextProjectFileHandler
@@ -36,7 +36,7 @@ class ZipParatextProjectFileHandler(ParatextProjectFileHandler):
             if self.exists(file_name):
                 stylesheet_temp_fd, stylesheet_temp_path = mkstemp()
                 with (
-                    self.open(file_name) as source,  # type: ignore
+                    cast(BinaryIO, self.open(file_name)) as source,
                     open(stylesheet_temp_fd, "wb", closefd=False) as stylesheet_temp_file,
                 ):
                     stylesheet_temp_file.write(source.read())
@@ -45,7 +45,7 @@ class ZipParatextProjectFileHandler(ParatextProjectFileHandler):
             if self.exists("custom.sty"):
                 custom_stylesheet_temp_fd, custom_stylesheet_temp_path = mkstemp()
                 with (
-                    self.open("custom.sty") as source,  # type: ignore
+                    cast(BinaryIO, self.open("custom.sty")) as source,
                     open(custom_stylesheet_temp_fd, "wb", closefd=False) as custom_stylesheet_temp_file,
                 ):
                     custom_stylesheet_temp_file.write(source.read())

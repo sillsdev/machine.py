@@ -20,6 +20,7 @@ from .parallel_text_corpus import ParallelTextCorpus
 from .parallel_text_row import ParallelTextRow
 from .paratext_backup_terms_corpus import ParatextBackupTermsCorpus
 from .paratext_backup_text_corpus import ParatextBackupTextCorpus
+from .paratext_project_file_handler import ParatextProjectFileHandler
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
 from .paratext_project_terms_parser_base import ParatextProjectTermsParserBase
@@ -124,6 +125,7 @@ __all__ = [
     "ParallelTextRow",
     "ParatextBackupTermsCorpus",
     "ParatextBackupTextCorpus",
+    "ParatextProjectFileHandler",
     "ParatextProjectSettings",
     "ParatextProjectSettingsParserBase",
     "ParatextProjectTermsParserBase",

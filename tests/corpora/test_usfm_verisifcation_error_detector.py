@@ -6,10 +6,8 @@ from testutils.memory_paratext_project_versification_error_detector import (
     MemoryParatextProjectVersificationErrorDetector,
 )
 
-from machine.corpora.paratext_project_settings import ParatextProjectSettings
-from machine.corpora.usfm_versification_error_detector import UsfmVersificationError, UsfmVersificationErrorType
-from machine.scripture.constants import ORIGINAL_VERSIFICATION
-from machine.scripture.verse_ref import Versification
+from machine.corpora import ParatextProjectSettings, UsfmVersificationError, UsfmVersificationErrorType
+from machine.scripture import ORIGINAL_VERSIFICATION, Versification
 
 
 def get_usfm_versification_errors_no_errors():

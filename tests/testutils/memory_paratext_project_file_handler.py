@@ -1,11 +1,8 @@
 from io import BytesIO
 from typing import BinaryIO, Dict, Optional
 
-from machine.corpora.paratext_project_file_handler import ParatextProjectFileHandler
-from machine.corpora.paratext_project_settings import ParatextProjectSettings
-from machine.corpora.usfm_stylesheet import UsfmStylesheet
-from machine.scripture.constants import ORIGINAL_VERSIFICATION
-from machine.scripture.verse_ref import Versification
+from machine.corpora import ParatextProjectFileHandler, ParatextProjectSettings, UsfmStylesheet
+from machine.scripture import ORIGINAL_VERSIFICATION, Versification
 
 
 class MemoryParatextProjectFileHandler(ParatextProjectFileHandler):

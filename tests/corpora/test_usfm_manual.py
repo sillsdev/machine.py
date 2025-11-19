@@ -18,8 +18,8 @@ from machine.corpora import (
     StandardParallelTextCorpus,
     UpdateUsfmRow,
     UpdateUsfmTextBehavior,
+    ZipParatextProjectVersificationErrorDetector,
 )
-from machine.corpora.zip_paratext_project_versification_detector import ZipParatextProjectVersificationErrorDetector
 from machine.punctuation_analysis import QuoteConventionDetector, ZipParatextProjectQuoteConventionDetector
 
 
