@@ -106,6 +106,10 @@ class TextCorpus(Corpus[TextRow]):
 
         return self.transform(_unescape_spaces)
 
+    @property
+    def is_scripture(self):
+        return self.versification is not None
+
     def filter_texts(self, filter: Optional[Union[Callable[[Text], bool], Iterable[str]]] = None) -> TextCorpus:
         if filter is None:
             return self

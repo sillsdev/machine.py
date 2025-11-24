@@ -2,13 +2,15 @@ from abc import ABC, abstractmethod
 from itertools import islice
 from typing import Any, Callable, Generator, Generic, Iterable, Optional, Sequence, Tuple, TypeVar
 
+from .n_parallel_text_row import NParallelTextRow
+
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .alignment_row import AlignmentRow
 from .corpora_utils import batch, get_split_indices
 from .parallel_text_row import ParallelTextRow
 from .text_row import TextRow
 
-Row = TypeVar("Row", TextRow, ParallelTextRow, AlignmentRow)
+Row = TypeVar("Row", TextRow, ParallelTextRow, AlignmentRow, NParallelTextRow)
 Item = TypeVar("Item")
 
 
