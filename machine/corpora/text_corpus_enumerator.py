@@ -1,5 +1,5 @@
 from queue import SimpleQueue
-from typing import Any, Generator, List, Optional, Tuple, cast, ContextManager
+from typing import Any, ContextManager, Generator, List, Optional, Tuple, cast
 
 from ..scripture.verse_ref import Versification
 from .scripture_ref import EMPTY_SCRIPTURE_REF, ScriptureRef
