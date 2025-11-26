@@ -1,94 +1,93 @@
-from typing import Generator, List, Optional, Tuple, cast, overload
-
-from ..utils.context_managed_generator import ContextManagedGenerator
-
-from .scripture_ref import ScriptureRef
+from queue import SimpleQueue
+from typing import Any, Generator, List, Optional, Tuple, cast, ContextManager
 
 from ..scripture.verse_ref import Versification
+from .scripture_ref import EMPTY_SCRIPTURE_REF, ScriptureRef
 from .text_row import TextRow, TextRowFlags
 
 
-class _TextCorpusEnumerator(ContextManagedGenerator[TextRow, None, None]):
+class _TextCorpusEnumerator(ContextManager["_TextCorpusEnumerator"], Generator[TextRow, None, None]):
     def __init__(
-        self, enumerator: Generator[TextRow, None, None], ref_versification: Versification, versification: Versification
+        self, generator: Generator[TextRow, None, None], ref_versification: Versification, versification: Versification
     ):
-        self._enumerator = enumerator
+        self._generator = generator
         self._ref_versification = ref_versification
         self._is_scripture = (
             ref_versification is not None and versification is not None and ref_versification != versification
         )
-        self._verse_rows: List[TextRow] = []
         self._is_enumerating = False
-        self._enumerator_has_more_data = True
-        self._current: Optional[TextRow] = None
+        self._verse_rows: SimpleQueue[TextRow] = SimpleQueue()
+        self._row: Optional[TextRow] = None
 
-    def __iter__(self):
-        return self
-
-    def __next__(self) -> TextRow:
-        if not self.move_next() or self._current is None:
-            raise StopIteration
-        return self._current
-
-    @property
-    def current(self):
-        return self._current
-
-    def move_next(self) -> bool:
+    def send(self, value: None) -> TextRow:
         if self._is_scripture:
             if not self._is_enumerating:
-                self._current = self._enumerator.__next__()
+                self._row = next(self._generator, None)
                 self._is_enumerating = True
-            if len(self._verse_rows) == 0 and self._current is not None and self._enumerator_has_more_data:
+            if self._verse_rows.empty() and self._row is not None:
                 self._collect_verses()
-            if len(self._verse_rows) > 0:
-                self._current = self._verse_rows.pop(0)
-                return True
-            self._current = None
-            return False
+            if not self._verse_rows.empty():
+                return self._verse_rows.get()
+            raise StopIteration
 
-        self._current = self._enumerator.__next__()
-        self._enumerator_has_more_data = self._current != None
-        return self._enumerator_has_more_data
+        self._row = next(self._generator, None)
+        if self._row is not None:
+            return self._row
+        raise StopIteration
 
-    # Not porting reset() since it is unused
+    def throw(self, type: Any, value: Any = None, traceback: Any = None) -> TextRow:
+        raise StopIteration
+
+    def close(self) -> None:
+        super().close()
+        self._generator.close()
+
+    def __enter__(self) -> "_TextCorpusEnumerator":
+        return self
+
+    def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
+        self.close()
 
     def _collect_verses(self):
+        assert self._ref_versification is not None
         rows: List[Tuple[ScriptureRef, TextRow]] = []
-        out_of_order: bool = False
-        prev_ref = ScriptureRef._empty
-        range_start_offset: int = -1
-        while True:
-            row = cast(TextRow, self._current)
+        out_of_order = False
+        prev_ref = EMPTY_SCRIPTURE_REF
+        range_start_offset = -1
+        while self._row is not None:
+            row = cast(TextRow, self._row)
             ref = cast(ScriptureRef, row.ref)
-            if prev_ref is not None and not prev_ref.is_empty and ref.book_num != prev_ref.book_num:
+            if not prev_ref.is_empty and ref.book_num != prev_ref.book_num:
                 break
 
             ref = ref.change_versification(self._ref_versification)
+            # convert one-to-many mapping to a verse range
             if ref == prev_ref:
-                range_start_ref, range_start_row = rows[len(rows) + range_start_offset]
+                range_start_ref, range_start_row = rows[range_start_offset]
                 flags = TextRowFlags.IN_RANGE
                 if range_start_row.is_sentence_start:
                     flags |= TextRowFlags.SENTENCE_START
                 if range_start_offset == -1 and (not range_start_row.is_in_range or range_start_row.is_range_start):
                     flags |= TextRowFlags.RANGE_START
-                    new_text_row = TextRow(range_start_row.text_id, range_start_row.ref)
-                    new_text_row.segment = list(range_start_row.segment) + list(row.segment)
-                    new_text_row.flags = flags
-                rows[len(rows) + range_start_offset] = range_start_ref, new_text_row
+                new_text_row = TextRow(
+                    range_start_row.text_id,
+                    range_start_row.ref,
+                    segment=list(range_start_row.segment) + list(row.segment),
+                    flags=flags,
+                )
+                rows[range_start_offset] = range_start_ref, new_text_row
+                row = TextRow(row.text_id, row.ref, flags=TextRowFlags.IN_RANGE)
                 range_start_offset -= 1
             else:
                 range_start_offset = -1
             rows.append((ref, row))
-            if not out_of_order and ref.compare_to(prev_ref) < 0:
+            if not out_of_order and ref < prev_ref:
                 out_of_order = True
             prev_ref = ref
-            self._enumerator_has_more_data = bool(self._enumerator.__next__())
-            if not self._enumerator_has_more_data:
-                break
+            self._row = next(self._generator, None)
 
         if out_of_order:
-            rows.sort(key=lambda tup: tup[0])
+            rows.sort(key=lambda t: t[0])
 
         for _, row in rows:
-            self._verse_rows.append(row)
+            self._verse_rows.put(row)

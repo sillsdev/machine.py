@@ -576,12 +576,12 @@ def test_get_segments_all_source_rows() -> None:
     rows = list(parallel_corpus)
     assert len(rows) == 7
     assert rows[1].source_refs == [2]
-    assert rows[1].target_refs == []
+    assert rows[1].target_refs == [2]
     assert rows[1].source_segment == "source segment 2 .".split()
     assert rows[1].target_segment == []
 
     assert rows[4].source_refs == [5]
-    assert rows[4].target_refs == []
+    assert rows[4].target_refs == [5]
     assert rows[4].source_segment == "source segment 5 .".split()
     assert rows[4].target_segment == []
 

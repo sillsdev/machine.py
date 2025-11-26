@@ -1,11 +1,11 @@
-from typing import List, Sequence
+from typing import Sequence
 
 from .text_row import TextRowFlags
 
 
 class NParallelTextRow:
     def __init__(self, text_id: str, n_refs: Sequence[Sequence[object]]):
-        if len([n_ref for n_ref in n_refs if n_ref is not None]) == 0:
+        if len([n_ref for n_ref in n_refs if n_ref is not None and len(n_ref) > 0]) == 0:
             raise ValueError(f"Refs must be provided but n_refs={n_refs}")
         self._text_id = text_id
         self._n_refs = n_refs

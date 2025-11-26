@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Sequence
+from typing import List, Sequence
 
-from .text_corpus import TextCorpus
-from .n_parallel_text_row import NParallelTextRow
 from .corpus import Corpus
+from .n_parallel_text_row import NParallelTextRow
+from .text_corpus import TextCorpus
 
 
 class NParallelTextCorpusBase(Corpus[NParallelTextRow], ABC):
