@@ -377,7 +377,6 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
                             yield r
 
 
-@staticmethod
 def default_row_ref_comparer(x: object, y: object) -> int:
     # Do not use the default comparer for ScriptureRef, since we want to ignore segments
     if isinstance(x, ScriptureRef) and isinstance(y, ScriptureRef):
