@@ -1,24 +1,4 @@
-from io import StringIO
-from typing import Any, Iterable, Optional
-
-import pandas as pd
-from datasets.arrow_dataset import Dataset
-
-from machine.corpora import (
-    AlignedWordPair,
-    AlignmentRow,
-    DictionaryAlignmentCorpus,
-    DictionaryTextCorpus,
-    MemoryAlignmentCollection,
-    MemoryText,
-    NParallelTextCorpus,
-    ParallelTextCorpus,
-    ScriptureRef,
-    StandardParallelTextCorpus,
-    TextRow,
-    TextRowFlags,
-)
-from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, Versification
+from machine.corpora import DictionaryTextCorpus, MemoryText, NParallelTextCorpus, TextRow, TextRowFlags
 
 
 def test_get_rows_zero_corpora() -> None:
@@ -585,9 +565,9 @@ def test_get_rows_three_corpora_same_ref_corpora_of_different_sizes():
     assert rows[0].n_refs[1] == [1]
 
 
-def _text_row(textId: str, rowRef: object, text="", flags=TextRowFlags.SENTENCE_START) -> TextRow:
+def _text_row(text_id: str, row_ref: object, text="", flags=TextRowFlags.SENTENCE_START) -> TextRow:
 
-    tr = TextRow(textId, rowRef)
+    tr = TextRow(text_id, row_ref)
     tr.segment = [] if len(text) == 0 else text.split()
     tr.flags = flags
     return tr
