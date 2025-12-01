@@ -1,5 +1,5 @@
 from io import StringIO
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, List, Optional, Tuple, cast
 
 import pandas as pd
 from datasets.arrow_dataset import Dataset
@@ -1029,17 +1029,17 @@ def test_to_pandas() -> None:
     assert df.at[0, "ref"] == 1
     assert df.at[0, "source"] == "source segment 1 ."
     assert df.at[0, "target"] == "target segment 1 ."
-    assert set_equals([df.at[0, "alignment"]], [(0, 0)])
+    assert set_equals(cast(List[Tuple[int, int]], df.at[0, "alignment"]), [(0, 0)])
     assert df.at[1, "text"] == "text1"
     assert df.at[1, "ref"] == 2
     assert df.at[1, "source"] == "source segment 2 ."
     assert df.at[1, "target"] == ""
-    assert set_equals([df.at[1, "alignment"]], [])
+    assert set_equals(cast(List[Tuple[int, int]], df.at[1, "alignment"]), [])
     assert df.at[2, "text"] == "text1"
     assert df.at[2, "ref"] == 3
     assert df.at[2, "source"] == "source segment 3 ."
     assert df.at[2, "target"] == "target segment 3 ."
-    assert set_equals([df.at[2, "alignment"]], [(2, 2)])
+    assert set_equals(cast(List[Tuple[int, int]], df.at[2, "alignment"]), [(2, 2)])
 
 
 def test_from_pandas() -> None:

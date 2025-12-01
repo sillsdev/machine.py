@@ -112,7 +112,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
         text_ids = text_ids.union(all_rows_text_ids)
         return text_ids
 
-    def get_rows(self, text_ids: Optional[Iterable[str]]) -> Iterable[NParallelTextRow]:
+    def get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Iterable[NParallelTextRow]:
         filter_text_ids = self._get_text_ids_from_corpora()
         if text_ids is not None:
             filter_text_ids = filter_text_ids.intersection(text_ids)
