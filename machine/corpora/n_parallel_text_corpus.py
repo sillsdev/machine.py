@@ -1,12 +1,12 @@
 from contextlib import ExitStack
-from typing import Callable, Iterable, List, Optional, Sequence, Set, cast
+from typing import Any, Callable, Iterable, List, Optional, Sequence, Set, cast
 
 from ..scripture.verse_ref import Versification
 from .n_parallel_text_corpus_base import NParallelTextCorpusBase
 from .n_parallel_text_row import NParallelTextRow
 from .scripture_ref import ScriptureRef
 from .text_corpus import TextCorpus
-from .text_corpus_enumerator import _TextCorpusEnumerator
+from .text_corpus_enumerator import TextCorpusEnumerator
 from .text_row import TextRow, TextRowFlags
 
 
@@ -81,7 +81,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
     ):
         self._corpora = corpora
         self._row_ref_comparer = row_ref_comparer if row_ref_comparer is not None else default_row_ref_comparer
-        self.all_rows = [False for _ in range(len(corpora))]
+        self.all_rows: Sequence[bool] = tuple(False for _ in range(len(corpora)))
 
     def is_tokenized(self, i: int) -> bool:
         return self.corpora[i].is_tokenized
@@ -91,7 +91,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
         return len(self.corpora)
 
     @property
-    def corpora(self) -> List[TextCorpus]:
+    def corpora(self) -> Sequence[TextCorpus]:
         return list(self._corpora)
 
     @property
@@ -116,11 +116,11 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
         filter_text_ids = self._get_text_ids_from_corpora()
         if text_ids is not None:
             filter_text_ids = filter_text_ids.intersection(text_ids)
-        enumerated_corpora: List[_TextCorpusEnumerator] = []
+        enumerated_corpora: List[TextCorpusEnumerator] = []
         for i in range(self.n):
             generator = iter(self.corpora[i].get_rows(filter_text_ids))
             enumerated_corpora.append(
-                _TextCorpusEnumerator(generator, self.corpora[0].versification, self.corpora[i].versification)
+                TextCorpusEnumerator(generator, self.corpora[0].versification, self.corpora[i].versification)
             )
         for row in self._get_rows(enumerated_corpora):
             yield row
@@ -142,7 +142,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
                 min_ref_indexes.append(i)
         return min_ref_indexes
 
-    def _get_rows(self, generators: List[_TextCorpusEnumerator]) -> Iterable[NParallelTextRow]:
+    def _get_rows(self, generators: List[TextCorpusEnumerator]) -> Iterable[NParallelTextRow]:
         with ExitStack() as stack:
             iterators = []
             for generator in generators:
@@ -274,7 +274,10 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
     def _correct_versification(self, refs: List[object], i: int) -> List[object]:
         if any([not c.is_scripture for c in self.corpora]) or len(refs) == 0:
             return refs
-        return [cast(ScriptureRef, ref).change_versification(self.corpora[i].versification) for ref in refs]
+        return [
+            cast(ScriptureRef, ref).change_versification(cast(Versification, self.corpora[i].versification))
+            for ref in refs
+        ]
 
     def _create_rows(
         self, range_info: _NRangeInfo, rows: List[Optional[TextRow]], force_in_range: Optional[Sequence[bool]] = None
@@ -377,7 +380,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
                             yield r
 
 
-def default_row_ref_comparer(x: object, y: object) -> int:
+def default_row_ref_comparer(x: Any, y: Any) -> int:
     # Do not use the default comparer for ScriptureRef, since we want to ignore segments
     if isinstance(x, ScriptureRef) and isinstance(y, ScriptureRef):
         return x.compare_to(y, False)
@@ -387,6 +390,6 @@ def default_row_ref_comparer(x: object, y: object) -> int:
         return -1
     if x == y:
         return 0
-    if x < y:  # type: ignore
+    if x < y:
         return -1
     return 1

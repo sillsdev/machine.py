@@ -6,9 +6,12 @@ from .scripture_ref import EMPTY_SCRIPTURE_REF, ScriptureRef
 from .text_row import TextRow, TextRowFlags
 
 
-class _TextCorpusEnumerator(ContextManager["_TextCorpusEnumerator"], Generator[TextRow, None, None]):
+class TextCorpusEnumerator(ContextManager["TextCorpusEnumerator"], Generator[TextRow, None, None]):
     def __init__(
-        self, generator: Generator[TextRow, None, None], ref_versification: Versification, versification: Versification
+        self,
+        generator: Generator[TextRow, None, None],
+        ref_versification: Optional[Versification],
+        versification: Optional[Versification],
     ):
         self._generator = generator
         self._ref_versification = ref_versification
@@ -42,7 +45,7 @@ class _TextCorpusEnumerator(ContextManager["_TextCorpusEnumerator"], Generator[T
         super().close()
         self._generator.close()
 
-    def __enter__(self) -> "_TextCorpusEnumerator":
+    def __enter__(self) -> "TextCorpusEnumerator":
         return self
 
     def __exit__(self, type: Any, value: Any, traceback: Any) -> None:

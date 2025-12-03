@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Sequence
+from typing import Iterable, Sequence
 
 from .corpus import Corpus
 from .n_parallel_text_row import NParallelTextRow
@@ -14,7 +14,7 @@ class NParallelTextCorpusBase(Corpus[NParallelTextRow], ABC):
 
     @property
     @abstractmethod
-    def corpora(self) -> List[TextCorpus]: ...
+    def corpora(self) -> Sequence[TextCorpus]: ...
 
     @abstractmethod
-    def get_rows(self, text_ids: List[str]) -> Sequence[NParallelTextRow]: ...
+    def get_rows(self, text_ids: Iterable[str]) -> Sequence[NParallelTextRow]: ...
