@@ -91,6 +91,15 @@ def report_clearml_progress(
                         "value": progress_status.step_count,
                     }
                 )
+            if progress_status.phase_started is not None:
+                props.append(
+                    {
+                        "type": datetime,
+                        "name": f"{progress_status.phase_stage}_started",
+                        "description": "Phase Started",
+                        "value": progress_status.phase_started,
+                    }
+                )
     if len(props) > 0:
         task.set_user_properties(*props)
 
