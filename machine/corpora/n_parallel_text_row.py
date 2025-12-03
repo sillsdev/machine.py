@@ -1,10 +1,10 @@
-from typing import Sequence
+from typing import Any, Sequence
 
 from .text_row import TextRowFlags
 
 
 class NParallelTextRow:
-    def __init__(self, text_id: str, n_refs: Sequence[Sequence[object]]):
+    def __init__(self, text_id: str, n_refs: Sequence[Sequence[Any]]):
         if len([n_ref for n_ref in n_refs if n_ref is not None and len(n_ref) > 0]) == 0:
             raise ValueError(f"Refs must be provided but n_refs={n_refs}")
         self._text_id = text_id
@@ -18,11 +18,11 @@ class NParallelTextRow:
         return self._text_id
 
     @property
-    def ref(self) -> object:
+    def ref(self) -> Any:
         return self._n_refs[0][0]
 
     @property
-    def n_refs(self) -> Sequence[Sequence[object]]:
+    def n_refs(self) -> Sequence[Sequence[Any]]:
         return self._n_refs
 
     def is_sentence_start(self, i: int) -> bool:

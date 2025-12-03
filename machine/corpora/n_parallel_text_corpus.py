@@ -11,7 +11,7 @@ from .text_row import TextRow, TextRowFlags
 
 
 class _RangeRow:
-    refs: List[object]
+    refs: List[Any]
     segment: List[str]
     is_sentence_start: bool = False
 
@@ -49,8 +49,8 @@ class _NRangeInfo:
         self.rows[index].segment.extend(row.segment)
 
     def create_row(self) -> NParallelTextRow:
-        refs: List[List[object]] = [[] for _ in range(self.n)]
-        reference_refs: List[object] = [r.refs[0] if len(r.refs) > 0 else None for r in self.rows if len(r.refs) > 0]
+        refs: List[List[Any]] = [[] for _ in range(self.n)]
+        reference_refs: List[Any] = [r.refs[0] if len(r.refs) > 0 else None for r in self.rows if len(r.refs) > 0]
         for i in range(len(self.rows)):
             row = self.rows[i]
 
@@ -76,12 +76,10 @@ class _NRangeInfo:
 
 
 class NParallelTextCorpus(NParallelTextCorpusBase):
-    def __init__(
-        self, corpora: Sequence[TextCorpus], row_ref_comparer: Optional[Callable[[object, object], int]] = None
-    ):
+    def __init__(self, corpora: Sequence[TextCorpus], row_ref_comparer: Optional[Callable[[Any, Any], int]] = None):
         self._corpora = corpora
         self._row_ref_comparer = row_ref_comparer if row_ref_comparer is not None else default_row_ref_comparer
-        self.all_rows: Sequence[bool] = tuple(False for _ in range(len(corpora)))
+        self._all_rows: Sequence[bool] = [False for _ in range(len(corpora))]
 
     def is_tokenized(self, i: int) -> bool:
         return self.corpora[i].is_tokenized
@@ -95,8 +93,12 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
         return list(self._corpora)
 
     @property
-    def row_ref_comparer(self) -> Callable[[object, object], int]:
+    def row_ref_comparer(self) -> Callable[[Any, Any], int]:
         return self._row_ref_comparer
+
+    @property
+    def all_rows(self) -> Sequence[bool]:
+        return self._all_rows
 
     def _get_text_ids_from_corpora(self) -> Set[str]:
         text_ids: Set[str] = set()
@@ -107,7 +109,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
             else:
                 text_ids = text_ids.intersection({text.id for text in self.corpora[i].texts})
 
-            if self.all_rows[i]:
+            if self._all_rows[i]:
                 all_rows_text_ids = all_rows_text_ids.union({text.id for text in self.corpora[i].texts})
         text_ids = text_ids.union(all_rows_text_ids)
         return text_ids
@@ -129,7 +131,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
     def _all_ranges_are_new_ranges(rows: List[TextRow]):
         return all([True if row.is_range_start or not row.is_in_range else False for row in rows])
 
-    def _min_ref_indexes(self, refs: Sequence[object]) -> Sequence[int]:
+    def _min_ref_indexes(self, refs: Sequence[Any]) -> Sequence[int]:
         min_ref = refs[0]
         min_ref_indexes = [0]
         for i in range(len(refs)):
@@ -181,7 +183,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
                     or len([i for i in min_ref_indexes if not completed[i]]) == 1
                 ):
                     # then there are some non-min refs or only one incomplete generator
-                    if any([not self.all_rows[i] for i in non_min_ref_indexes]) and any(
+                    if any([not self._all_rows[i] for i in non_min_ref_indexes]) and any(
                         [not completed[i] and current_rows[i].is_in_range for i in min_ref_indexes]
                     ):
                         # At least one of the non-min rows has not been marked as 'all rows'
@@ -231,7 +233,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
                     if any(
                         [
                             current_rows[i].is_in_range
-                            and all([j == i or not self.all_rows[j] for j in min_ref_indexes])
+                            and all([j == i or not self._all_rows[j] for j in min_ref_indexes])
                             for i in min_ref_indexes
                         ]
                     ):
@@ -271,7 +273,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
             if range_info.is_in_range:
                 yield range_info.create_row()
 
-    def _correct_versification(self, refs: List[object], i: int) -> List[object]:
+    def _correct_versification(self, refs: List[Any], i: int) -> List[Any]:
         if any([not c.is_scripture for c in self.corpora]) or len(refs) == 0:
             return refs
         return [
@@ -288,7 +290,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
         default_refs = [[r.ref for r in rows if r is not None][0]]
 
         text_id: Optional[str] = None
-        refs: List[List[object]] = []
+        refs: List[List[Any]] = []
         flags: List[TextRowFlags] = []
         for i in range(self.n):
             refs.append([])
@@ -342,7 +344,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
         text_rows = [None for _ in range(self.n)]
         rows_have_content = False
         for i in min_ref_indexes:
-            if not self.all_rows[i] or i in already_yielded:
+            if not self._all_rows[i] or i in already_yielded:
                 continue
             text_row = current_rows[i]
             text_rows[i] = text_row
