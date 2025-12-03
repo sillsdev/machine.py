@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from types import TracebackType
 from typing import Callable, ContextManager, Iterable, Optional, Sequence, Type
 
@@ -19,6 +20,7 @@ class Phase:
 class PhaseProgressStatus(ProgressStatus):
     phase_stage: Optional[str] = None
     phase_step: Optional[int] = None
+    phase_started: Optional[datetime] = None
 
 
 class PhaseProgress(ContextManager[Callable[[ProgressStatus], None]]):
@@ -70,6 +72,7 @@ class PhasedProgressReporter:
         self._percent_completed = 0.0
         self._step = 0
         self._prev_phase_last_step = 0
+        self._phase_started = None
 
     @property
     def phases(self) -> Sequence[Phase]:
@@ -80,6 +83,7 @@ class PhasedProgressReporter:
         return None if self._current_phase_index == -1 else self._phases[self._current_phase_index]
 
     def start_next_phase(self) -> PhaseProgress:
+        self._phase_started = datetime.now()
         self._prev_phase_last_step = self._step
         self._percent_completed += self._current_phase_percentage
         self._current_phase_index += 1
@@ -102,6 +106,7 @@ class PhasedProgressReporter:
                 value.step_count,
                 self.current_phase.stage if self.current_phase is not None else None,
                 value.step,
+                self._phase_started,
             )
         )
 
