@@ -79,7 +79,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
     def __init__(self, corpora: Sequence[TextCorpus], row_ref_comparer: Optional[Callable[[Any, Any], int]] = None):
         self._corpora = corpora
         self._row_ref_comparer = row_ref_comparer if row_ref_comparer is not None else default_row_ref_comparer
-        self._all_rows: Sequence[bool] = [False for _ in range(len(corpora))]
+        self._all_rows: List[bool] = [False for _ in range(len(corpora))]
 
     def is_tokenized(self, i: int) -> bool:
         return self.corpora[i].is_tokenized
@@ -97,7 +97,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
         return self._row_ref_comparer
 
     @property
-    def all_rows(self) -> Sequence[bool]:
+    def all_rows(self) -> List[bool]:
         return self._all_rows
 
     def _get_text_ids_from_corpora(self) -> Set[str]:
