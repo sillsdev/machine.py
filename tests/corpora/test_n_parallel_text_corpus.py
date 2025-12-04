@@ -115,7 +115,7 @@ def test_get_rows_three_corpora_missing_rows_all_all_rows():
         )
     )
     n_parallel_corpus = NParallelTextCorpus([corpus1, corpus2, corpus3])
-    n_parallel_corpus._all_rows = [True, True, True]
+    n_parallel_corpus.all_rows[:] = [True, True, True]
     rows = list(n_parallel_corpus.get_rows())
     assert len(rows) == 3
     assert all([r[0] == 3 for r in rows[2].n_refs])
@@ -152,7 +152,7 @@ def test_get_rows_three_corpora_missing_rows_some_all_rows():
         )
     )
     n_parallel_corpus = NParallelTextCorpus([corpus1, corpus2, corpus3])
-    n_parallel_corpus._all_rows = [True, False, True]
+    n_parallel_corpus.all_rows[:] = [True, False, True]
     rows = list(n_parallel_corpus.get_rows())
     assert len(rows) == 2
     assert all([r[0] == 3 for r in rows[1].n_refs])
@@ -192,7 +192,7 @@ def test_get_rows_three_corpora_missing_rows_all_all_rows_missing_middle():
         )
     )
     n_parallel_corpus = NParallelTextCorpus([corpus1, corpus2, corpus3])
-    n_parallel_corpus._all_rows = [True, True, True]
+    n_parallel_corpus.all_rows[:] = [True, True, True]
     rows = list(n_parallel_corpus.get_rows())
     assert len(rows) == 3
     assert all([len(r) == 0 or r[0] == 2 for r in rows[1].n_refs])
@@ -228,7 +228,7 @@ def test_get_rows_three_corpora_missing_rows_missing_last_rows():
         )
     )
     n_parallel_corpus = NParallelTextCorpus([corpus1, corpus2, corpus3])
-    n_parallel_corpus._all_rows = [True, False, False]
+    n_parallel_corpus.all_rows[:] = [True, False, False]
     rows = list(n_parallel_corpus.get_rows())
     assert len(rows) == 3
     assert all([r[0] == 2 for r in rows[1].n_refs])
@@ -247,7 +247,7 @@ def test_get_rows_three_corpora_one_corpus():
         )
     )
     n_parallel_corpus = NParallelTextCorpus([corpus1])
-    n_parallel_corpus._all_rows = [True]
+    n_parallel_corpus.all_rows[:] = [True]
     rows = list(n_parallel_corpus.get_rows())
     assert len(rows) == 2
     assert all([r[0] == 1 for r in rows[0].n_refs])
@@ -389,7 +389,7 @@ def test_get_rows_three_corpora_overlapping_ranges_all_individual_rows():
         )
     )
     n_parallel_corpus = NParallelTextCorpus([corpus1, corpus2, corpus3])
-    n_parallel_corpus._all_rows = [False, False, True]
+    n_parallel_corpus.all_rows[:] = [False, False, True]
     rows = list(n_parallel_corpus.get_rows())
     assert len(rows) == 3
     assert rows[0].n_refs[0] == [1]
@@ -437,7 +437,7 @@ def test_get_rows_three_corpora_overlapping_ranges_all_one_through_two_rows():
         )
     )
     n_parallel_corpus = NParallelTextCorpus([corpus1, corpus2, corpus3])
-    n_parallel_corpus._all_rows = [False, True, False]
+    n_parallel_corpus.all_rows[:] = [False, True, False]
     rows = list(n_parallel_corpus.get_rows())
     assert len(rows) == 2
     assert rows[0].n_refs[0] == [1, 2]
@@ -485,7 +485,7 @@ def test_get_rows_three_corpora_overlapping_ranges_all_two_through_three_rows():
         )
     )
     n_parallel_corpus = NParallelTextCorpus([corpus1, corpus2, corpus3])
-    n_parallel_corpus._all_rows = [True, False, False]
+    n_parallel_corpus.all_rows[:] = [True, False, False]
     rows = list(n_parallel_corpus.get_rows())
     assert len(rows) == 2
     assert rows[0].n_refs[0] == [1]
@@ -559,7 +559,7 @@ def test_get_rows_three_corpora_same_ref_corpora_of_different_sizes():
         )
     )
     n_parallel_corpus = NParallelTextCorpus([corpus1, corpus2, corpus3])
-    n_parallel_corpus._all_rows = [True, True, True]
+    n_parallel_corpus.all_rows[:] = [True, True, True]
     rows = list(n_parallel_corpus.get_rows())
     assert len(rows) == 4
     assert rows[0].n_refs[1] == [1]

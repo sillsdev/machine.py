@@ -27,8 +27,7 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
         self._all_source_rows = all_source_rows
         self._all_target_rows = all_target_rows
         self._n_parallel_text_corpus = NParallelTextCorpus([source_corpus, target_corpus])
-        self._n_parallel_text_corpus.all_rows[0] = self.all_source_rows
-        self._n_parallel_text_corpus.all_rows[1] = self.all_target_rows
+        self._n_parallel_text_corpus.all_rows[:] = [self.all_source_rows, self.all_target_rows]
         self._row_ref_comparer = row_ref_comparer or default_row_ref_comparer
 
     @property
