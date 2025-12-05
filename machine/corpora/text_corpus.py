@@ -28,7 +28,7 @@ class TextCorpus(Corpus[TextRow]):
 
     @property
     @abstractmethod
-    def versification(self) -> Versification: ...
+    def versification(self) -> Optional[Versification]: ...
 
     def get_rows(self, text_ids: Optional[Iterable[str]] = None) -> ContextManagedGenerator[TextRow, None, None]:
         return ContextManagedGenerator(self._get_rows(text_ids))
@@ -106,6 +106,10 @@ class TextCorpus(Corpus[TextRow]):
 
         return self.transform(_unescape_spaces)
 
+    @property
+    def is_scripture(self):
+        return self.versification is not None
+
     def filter_texts(self, filter: Optional[Union[Callable[[Text], bool], Iterable[str]]] = None) -> TextCorpus:
         if filter is None:
             return self
@@ -173,7 +177,7 @@ class _TransformTextCorpus(TextCorpus):
         return self._is_tokenized
 
     @property
-    def versification(self) -> Versification:
+    def versification(self) -> Optional[Versification]:
         return self._corpus.versification
 
     def count(self, include_empty: bool = True, text_ids: Optional[Iterable[str]] = None) -> int:
@@ -198,7 +202,7 @@ class _TextFilterTextCorpus(TextCorpus):
         return self._corpus.is_tokenized
 
     @property
-    def versification(self) -> Versification:
+    def versification(self) -> Optional[Versification]:
         return self._corpus.versification
 
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
@@ -220,7 +224,7 @@ class _FilterTextCorpus(TextCorpus):
         return self._corpus.is_tokenized
 
     @property
-    def versification(self) -> Versification:
+    def versification(self) -> Optional[Versification]:
         return self._corpus.versification
 
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
@@ -242,7 +246,7 @@ class _TakeTextCorpus(TextCorpus):
         return self._corpus.is_tokenized
 
     @property
-    def versification(self) -> Versification:
+    def versification(self) -> Optional[Versification]:
         return self._corpus.versification
 
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:
@@ -264,7 +268,7 @@ class _FilterTextsTextCorpus(TextCorpus):
         return self._corpus.is_tokenized
 
     @property
-    def versification(self) -> Versification:
+    def versification(self) -> Optional[Versification]:
         return self._corpus.versification
 
     def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[TextRow, None, None]:

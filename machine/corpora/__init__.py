@@ -16,6 +16,8 @@ from .memory_alignment_collection import MemoryAlignmentCollection
 from .memory_stream_container import MemoryStreamContainer
 from .memory_text import MemoryText
 from .multi_key_ref import MultiKeyRef
+from .n_parallel_text_corpus import NParallelTextCorpus
+from .n_parallel_text_row import NParallelTextRow
 from .parallel_text_corpus import ParallelTextCorpus
 from .parallel_text_row import ParallelTextRow
 from .paratext_backup_terms_corpus import ParatextBackupTermsCorpus
@@ -121,6 +123,8 @@ __all__ = [
     "nfkc_normalize",
     "nfkd_normalize",
     "normalize",
+    "NParallelTextCorpus",
+    "NParallelTextRow",
     "ParallelTextCorpus",
     "ParallelTextRow",
     "ParatextBackupTermsCorpus",

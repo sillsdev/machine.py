@@ -1,5 +1,5 @@
 from io import StringIO
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, List, Optional, Tuple, cast
 
 import pandas as pd
 from datasets.arrow_dataset import Dataset
@@ -576,12 +576,12 @@ def test_get_segments_all_source_rows() -> None:
     rows = list(parallel_corpus)
     assert len(rows) == 7
     assert rows[1].source_refs == [2]
-    assert rows[1].target_refs == []
+    assert rows[1].target_refs == [2]
     assert rows[1].source_segment == "source segment 2 .".split()
     assert rows[1].target_segment == []
 
     assert rows[4].source_refs == [5]
-    assert rows[4].target_refs == []
+    assert rows[4].target_refs == [5]
     assert rows[4].source_segment == "source segment 5 .".split()
     assert rows[4].target_segment == []
 
@@ -1029,17 +1029,17 @@ def test_to_pandas() -> None:
     assert df.at[0, "ref"] == 1
     assert df.at[0, "source"] == "source segment 1 ."
     assert df.at[0, "target"] == "target segment 1 ."
-    assert set_equals(df.at[0, "alignment"], [(0, 0)])
+    assert set_equals(cast(List[Tuple[int, int]], df.at[0, "alignment"]), [(0, 0)])
     assert df.at[1, "text"] == "text1"
     assert df.at[1, "ref"] == 2
     assert df.at[1, "source"] == "source segment 2 ."
     assert df.at[1, "target"] == ""
-    assert set_equals(df.at[1, "alignment"], [])
+    assert set_equals(cast(List[Tuple[int, int]], df.at[1, "alignment"]), [])
     assert df.at[2, "text"] == "text1"
     assert df.at[2, "ref"] == 3
     assert df.at[2, "source"] == "source segment 3 ."
     assert df.at[2, "target"] == "target segment 3 ."
-    assert set_equals(df.at[2, "alignment"], [(2, 2)])
+    assert set_equals(cast(List[Tuple[int, int]], df.at[2, "alignment"]), [(2, 2)])
 
 
 def test_from_pandas() -> None:
