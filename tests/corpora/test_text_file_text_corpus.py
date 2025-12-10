@@ -14,6 +14,17 @@ def test_folder() -> None:
     assert [t.id for t in corpus.texts] == ["Test1", "Test2", "Test3"]
 
 
+def test_multiple_files() -> None:
+    corpus = TextFileTextCorpus(
+        [
+            TEXT_TEST_PROJECT_PATH / "Test1.txt",
+            TEXT_TEST_PROJECT_PATH / "Test2.txt",
+            TEXT_TEST_PROJECT_PATH / "Test3.txt",
+        ]
+    )
+    assert [t.id for t in corpus.texts] == ["Test1", "Test2", "Test3"]
+
+
 def test_single_file() -> None:
     corpus = TextFileTextCorpus(TEXT_TEST_PROJECT_PATH / "Test1.txt")
     assert [t.id for t in corpus.texts] == ["*all*"]
