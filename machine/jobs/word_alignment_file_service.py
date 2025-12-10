@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterator, List, TypedDict
+from typing import Any, Iterable, Iterator, List, TypedDict, Union
 
 import json_stream
 
@@ -23,14 +23,14 @@ class WordAlignmentFileService:
         self,
         type: SharedFileServiceType,
         config: Any,
-        source_filename: str = "train.src.txt",
-        target_filename: str = "train.trg.txt",
+        source_filenames: Union[str, Iterable[str]] = ["train.src.txt", "train.key-terms.src.txt"],
+        target_filenames: Union[str, Iterable[str]] = ["train.trg.txt", "train.key-terms.trg.txt"],
         word_alignment_input_filename: str = "word_alignments.inputs.json",
         word_alignment_output_filename: str = "word_alignments.outputs.json",
     ) -> None:
 
-        self._source_filename = source_filename
-        self._target_filename = target_filename
+        self._source_filenames = [source_filenames] if isinstance(source_filenames, str) else list(source_filenames)
+        self._target_filenames = [target_filenames] if isinstance(target_filenames, str) else list(target_filenames)
         self._word_alignment_input_filename = word_alignment_input_filename
         self._word_alignment_output_filename = word_alignment_output_filename
 
@@ -38,12 +38,14 @@ class WordAlignmentFileService:
 
     def create_source_corpus(self) -> TextCorpus:
         return TextFileTextCorpus(
-            self.shared_file_service.download_file(f"{self.shared_file_service.build_path}/{self._source_filename}")
+            self.shared_file_service.download_file(f"{self.shared_file_service.build_path}/{source_filename}")
+            for source_filename in self._source_filenames
         )
 
     def create_target_corpus(self) -> TextCorpus:
         return TextFileTextCorpus(
-            self.shared_file_service.download_file(f"{self.shared_file_service.build_path}/{self._target_filename}")
+            self.shared_file_service.download_file(f"{self.shared_file_service.build_path}/{target_filename}")
+            for target_filename in self._target_filenames
         )
 
     def get_word_alignment_inputs(self) -> List[WordAlignmentInput]:
@@ -64,10 +66,16 @@ class WordAlignmentFileService:
         return wa_inputs
 
     def exists_source_corpus(self) -> bool:
-        return self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{self._source_filename}")
+        return all(
+            self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{source_filename}")
+            for source_filename in self._source_filenames
+        )
 
     def exists_target_corpus(self) -> bool:
-        return self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{self._target_filename}")
+        return all(
+            self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{target_filename}")
+            for target_filename in self._target_filenames
+        )
 
     def exists_word_alignment_inputs(self) -> bool:
         return self.shared_file_service._exists_file(
