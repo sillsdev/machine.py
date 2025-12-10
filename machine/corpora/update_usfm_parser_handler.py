@@ -104,9 +104,10 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         super().end_usfm(state)
 
     def start_book(self, state: UsfmParserState, marker: str, code: str) -> None:
-        self._verse_rows_ref = state.verse_ref.copy()
-        self._update_verse_rows_map()
-        self._update_verse_rows()
+        if self._verse_rows_ref.book_num != state.verse_ref.book_num:
+            self._verse_rows_ref = state.verse_ref.copy()
+            self._update_verse_rows_map()
+            self._update_verse_rows()
 
         self._collect_readonly_tokens(state)
         self._update_block_stack.append(UsfmUpdateBlock())
