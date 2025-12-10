@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Generator, Iterator, List, TypedDict
+from typing import Any, Generator, Iterator, List, Optional, TypedDict, Union
 
 import json_stream
 
@@ -21,40 +21,56 @@ class PretranslationInfo(TypedDict):
     alignment: str
 
 
-SOURCE_FILENAME = "train.src.txt"
-TARGET_FILENAME = "train.trg.txt"
-SOURCE_PRETRANSLATION_FILENAME = "pretranslate.src.json"
-TARGET_PRETRANSLATION_FILENAME = "pretranslate.trg.json"
-
-
 class TranslationFileService:
     def __init__(
         self,
         type: SharedFileServiceType,
         config: Any,
+        source_filenames: Optional[Union[str, List[str]]] = None,
+        target_filenames: Optional[Union[str, List[str]]] = None,
+        source_pretranslation_filename: str = "pretranslate.src.json",
+        target_pretranslation_filename: str = "pretranslate.trg.json",
     ) -> None:
+
+        if source_filenames is None:
+            source_filenames = ["train.src.txt", "train.key-terms.src.txt"]
+        if target_filenames is None:
+            target_filenames = ["train.trg.txt", "train.key-terms.trg.txt"]
+
+        self._source_filenames = [source_filenames] if isinstance(source_filenames, str) else list(source_filenames)
+        self._target_filenames = [target_filenames] if isinstance(target_filenames, str) else list(target_filenames)
+        self._source_pretranslation_filename = source_pretranslation_filename
+        self._target_pretranslation_filename = target_pretranslation_filename
 
         self.shared_file_service: SharedFileServiceBase = get_shared_file_service(type, config)
 
     def create_source_corpus(self) -> TextCorpus:
         return TextFileTextCorpus(
-            self.shared_file_service.download_file(f"{self.shared_file_service.build_path}/{SOURCE_FILENAME}")
+            self.shared_file_service.download_file(f"{self.shared_file_service.build_path}/{source_filename}")
+            for source_filename in self._source_filenames
         )
 
     def create_target_corpus(self) -> TextCorpus:
         return TextFileTextCorpus(
-            self.shared_file_service.download_file(f"{self.shared_file_service.build_path}/{TARGET_FILENAME}")
+            self.shared_file_service.download_file(f"{self.shared_file_service.build_path}/{target_filename}")
+            for target_filename in self._target_filenames
         )
 
     def exists_source_corpus(self) -> bool:
-        return self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{SOURCE_FILENAME}")
+        return all(
+            self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{source_filename}")
+            for source_filename in self._source_filenames
+        )
 
     def exists_target_corpus(self) -> bool:
-        return self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{TARGET_FILENAME}")
+        return all(
+            self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{target_filename}")
+            for target_filename in self._target_filenames
+        )
 
     def get_source_pretranslations(self) -> ContextManagedGenerator[PretranslationInfo, None, None]:
         src_pretranslate_path = self.shared_file_service.download_file(
-            f"{self.shared_file_service.build_path}/{SOURCE_PRETRANSLATION_FILENAME}"
+            f"{self.shared_file_service.build_path}/{self._source_pretranslation_filename}"
         )
 
         def generator() -> Generator[PretranslationInfo, None, None]:
@@ -77,4 +93,4 @@ class TranslationFileService:
 
     @contextmanager
     def open_target_pretranslation_writer(self) -> Iterator[DictToJsonWriter]:
-        return self.shared_file_service.open_target_writer(TARGET_PRETRANSLATION_FILENAME)
+        return self.shared_file_service.open_target_writer(self._target_pretranslation_filename)
