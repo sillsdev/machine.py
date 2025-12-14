@@ -1294,6 +1294,45 @@ def test_duplicate_verses() -> None:
     assert_usfm_equals(target, result)
 
 
+def test_duplicate_id_tags() -> None:
+    rows = [
+        UpdateUsfmRow(scr_ref("MAT 1:0/1:s"), "new section header"),
+        UpdateUsfmRow(scr_ref("MAT 1:1"), "new verse 1"),
+        UpdateUsfmRow(scr_ref("MAT 1:2"), "new verse 2"),
+        UpdateUsfmRow(scr_ref("MAT 1:3"), "new verse 3"),
+        UpdateUsfmRow(scr_ref("MAT 1:4"), "new verse 4"),
+    ]
+    usfm = r"""\id MAT
+\s section header
+\c 1
+\s1 beginning-of-chapter header
+\p
+\v 1 verse 1
+\id
+\v 2 verse 2
+\id MAT
+\v 3 verse 3
+\id MRK
+\v 4 verse 4
+"""
+
+    target = update_usfm(rows, usfm, paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP)
+    result = r"""\id MAT
+\s new section header
+\c 1
+\s1 beginning-of-chapter header
+\p
+\v 1 new verse 1
+\id
+\v 2 new verse 2
+\id MAT
+\v 3 new verse 3
+\id MRK
+\v 4 new verse 4
+"""
+    assert_usfm_equals(target, result)
+
+
 def test_pass_remark():
     rows = [
         UpdateUsfmRow(
