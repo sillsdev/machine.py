@@ -90,6 +90,49 @@ def test_get_rows_opt_break_middle_include_markers() -> None:
     assert rows[0].text == "First verse in line // More text"
 
 
+def test_get_sidebar_first_tag() -> None:
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\esb
+\ip My sidebar text
+\esbe
+\c 1
+\p
+\v 1 First verse
+""",
+        include_all_text=True,
+        include_markers=True,
+    )
+    assert len(rows) == 3, str.join(",", [tr.text for tr in rows])
+    assert rows[0].text == "My sidebar text"
+    assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:0/1:esb/1:ip")
+    assert rows[1].text == ""
+    assert scripture_ref(rows[1]) == ScriptureRef.parse("MAT 1:0/2:p")
+    assert rows[2].text == "First verse"
+    assert scripture_ref(rows[2]) == ScriptureRef.parse("MAT 1:1")
+
+
+def test_get_table_row_first_tag() -> None:
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\tr \th1 Day \th2 Tribe \th3 Leader
+\tr \tcr1 1st \tc2 Judah \tc3 Nahshon son of Amminadab
+\c 1
+\p
+\v 1 First verse
+""",
+        include_all_text=True,
+        include_markers=True,
+    )
+    assert len(rows) == 8, str.join(",", [tr.text for tr in rows])
+    assert rows[0].text == "\\th1 Day"
+    assert scripture_ref(rows[0]) == ScriptureRef.parse("MAT 1:0/1:tr/1:th1")
+    assert rows[6].text == ""
+    assert scripture_ref(rows[6]) == ScriptureRef.parse("MAT 1:0/3:p")
+    assert rows[7].text == "First verse"
+    assert scripture_ref(rows[7]) == ScriptureRef.parse("MAT 1:1")
+
+
 def test_get_rows_verse_para_beginning_non_verse_segment() -> None:
     # a verse paragraph that begins with a non-verse segment followed by a verse segment
     rows: List[TextRow] = get_rows(
