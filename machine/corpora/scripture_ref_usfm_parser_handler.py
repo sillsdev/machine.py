@@ -89,6 +89,8 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
 
     def start_row(self, state: UsfmParserState, marker: str) -> None:
         if self._current_text_type == ScriptureTextType.NONVERSE or self._current_text_type == ScriptureTextType.NONE:
+            if self._cur_verse_ref.is_default:
+                self._update_verse_ref(state.verse_ref, marker)
             self._start_parent_element(marker)
 
     def end_row(self, state: UsfmParserState, marker: str) -> None:
@@ -106,6 +108,8 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
             self._end_non_verse_text_wrapper(state)
 
     def start_sidebar(self, state: UsfmParserState, marker: str, category: str) -> None:
+        if self._cur_verse_ref.is_default:
+            self._update_verse_ref(state.verse_ref, marker)
         self._start_parent_element(marker)
 
     def end_sidebar(self, state: UsfmParserState, marker: str, closed: bool) -> None:
