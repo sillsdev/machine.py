@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from machine.scripture import canon
 
-from ..scripture.verse_ref import ValidStatus, VerseRef, Versification
+from ..scripture.verse_ref import ValidStatus, VerseRef
 from .paratext_project_settings import ParatextProjectSettings
 from .usfm_parser_handler import UsfmParserHandler
 from .usfm_parser_state import UsfmParserState
