@@ -9,6 +9,7 @@ from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .dictionary_text_corpus import DictionaryTextCorpus
 from .file_paratext_project_file_handler import FileParatextProjectFileHandler
 from .file_paratext_project_settings_parser import FileParatextProjectSettingsParser
+from .file_paratext_project_terms_parser import FileParatextProjectTermsParser
 from .file_paratext_project_text_updater import FileParatextProjectTextUpdater
 from .file_paratext_project_versification_error_detector import FileParatextProjectVersificationErrorDetector
 from .flatten import flatten
@@ -109,6 +110,7 @@ __all__ = [
     "extract_scripture_corpus",
     "FileParatextProjectFileHandler",
     "FileParatextProjectSettingsParser",
+    "FileParatextProjectTermsParser",
     "FileParatextProjectTextUpdater",
     "FileParatextProjectVersificationErrorDetector",
     "flatten",

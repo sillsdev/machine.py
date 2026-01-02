@@ -77,7 +77,7 @@ class UsfmVersificationError:
             )
             is None
         ):
-            return ""
+            return self.default_verse(self._expected_chapter, self._expected_verse)
         if self._type == UsfmVersificationErrorType.EXTRA_VERSE:
             return ""
         if self._type == UsfmVersificationErrorType.MISSING_VERSE_SEGMENT:
@@ -105,11 +105,17 @@ class UsfmVersificationError:
 
     @property
     def actual_verse_ref(self) -> str:
-        return (
-            str(self._verse_ref)
-            if self._verse_ref is not None
-            else str(VerseRef(self._book_num, self._actual_chapter, self._actual_verse))
-        )
+        if self._verse_ref is not None:
+            return str(self._verse_ref)
+        if actual_verse_ref := VerseRef.try_from_string(
+            f"{self._book_num} {self._actual_chapter}:{self._actual_verse}"
+        ):
+            return str(actual_verse_ref)
+        return self.default_verse(self._actual_chapter, self._actual_verse)
+
+    def default_verse(self, chapter: int, verse: int):
+        verse_string = "" if self._actual_verse == -1 else str(verse)
+        return f"{canon.book_number_to_id(self._book_num)} {chapter}:{verse_string}"
 
 
 class UsfmVersificationErrorDetector(UsfmParserHandler):
