@@ -1,4 +1,4 @@
-from typing import List, Sequence, Tuple
+from typing import Sequence
 from zipfile import ZipFile
 
 from ..utils.typeshed import StrPath

@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional
 
 from testutils.memory_paratext_project_file_handler import DefaultParatextProjectSettings
 from testutils.memory_paratext_project_terms_parser import MemoryParatextProjectTermsParser
