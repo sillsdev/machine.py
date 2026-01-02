@@ -1,6 +1,8 @@
 from typing import List, Sequence, Tuple
 from zipfile import ZipFile
 
+from .key_term_row import KeyTerm
+
 from ..utils.typeshed import StrPath
 from .dictionary_text_corpus import DictionaryTextCorpus
 from .memory_text import MemoryText
@@ -15,7 +17,7 @@ class ParatextBackupTermsCorpus(DictionaryTextCorpus):
 
         with ZipFile(filename, "r") as archive:
             settings = ZipParatextProjectSettingsParser(archive).parse()
-            glosses: List[Tuple[str, List[str]]] = ZipParatextProjectTermsParser(archive, settings).parse(
+            key_terms: Sequence[KeyTerm] = ZipParatextProjectTermsParser(archive, settings).parse(
                 term_categories, use_term_glosses
             )
             text_id = (
@@ -24,5 +26,5 @@ class ParatextBackupTermsCorpus(DictionaryTextCorpus):
                 f"{settings.biblical_terms_file_name}"
             )
 
-            text = MemoryText(text_id, [TextRow(text_id, kvp[0], kvp[1]) for kvp in glosses])
+            text = MemoryText(text_id, [TextRow(text_id, key_term.id, key_term.renderings) for key_term in key_terms])
             self._add_text(text)
