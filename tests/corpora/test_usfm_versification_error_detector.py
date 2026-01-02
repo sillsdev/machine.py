@@ -36,7 +36,7 @@ def get_usfm_versification_errors_no_errors():
     assert len(env.get_usfm_versification_errors()) == 0
 
 
-def get_usfm_versification_errors_missing_verses():
+def get_usfm_versification_errors_missing_verse():
     env = _TestEnvironment(
         files={
             "653JNTest.SFM": r"""\id 3JN
@@ -61,6 +61,8 @@ def get_usfm_versification_errors_missing_verses():
     errors = env.get_usfm_versification_errors()
     assert len(errors) == 1
     assert errors[0].type == UsfmVersificationErrorType.MISSING_VERSE
+    assert errors[0].expected_verse_ref == "3JN 1:15"
+    assert errors[0].actual_verse_ref == "3JN 1:14"
 
 
 def get_usfm_versification_missing_chapter():
@@ -73,6 +75,8 @@ def get_usfm_versification_missing_chapter():
     errors = env.get_usfm_versification_errors()
     assert len(errors) == 1
     assert errors[0].type == UsfmVersificationErrorType.MISSING_CHAPTER
+    assert errors[0].expected_verse_ref == "3JN 1:15"
+    assert errors[0].actual_verse_ref == "3JN 0:0"
 
 
 def get_usfm_versification_errors_extra_verse():
@@ -102,6 +106,8 @@ def get_usfm_versification_errors_extra_verse():
     errors = env.get_usfm_versification_errors()
     assert len(errors) == 1
     assert errors[0].type == UsfmVersificationErrorType.EXTRA_VERSE
+    assert errors[0].expected_verse_ref == ""
+    assert errors[0].actual_verse_ref == "3JN 1:16"
 
 
 def get_usfm_versification_errors_invalid_verse():
@@ -129,6 +135,8 @@ def get_usfm_versification_errors_invalid_verse():
     errors = env.get_usfm_versification_errors()
     assert len(errors) == 1
     assert errors[0].type == UsfmVersificationErrorType.INVALID_VERSE_RANGE
+    assert errors[0].expected_verse_ref == "3JN 1:12-13"
+    assert errors[0].actual_verse_ref == "3JN 1:13-12"
 
 
 def get_usfm_versification_errors_extra_verse_segment():
@@ -158,6 +166,8 @@ def get_usfm_versification_errors_extra_verse_segment():
     errors = env.get_usfm_versification_errors()
     assert len(errors) == 1
     assert errors[0].type == UsfmVersificationErrorType.EXTRA_VERSE_SEGMENT
+    assert errors[0].expected_verse_ref == "3JN 1:14"
+    assert errors[0].actual_verse_ref == "3JN 1:14a"
 
 
 def get_usfm_versification_errors_missing_verse_segments():
@@ -186,6 +196,8 @@ def get_usfm_versification_errors_missing_verse_segments():
     errors = env.get_usfm_versification_errors()
     assert len(errors) == 1
     assert errors[0].type == UsfmVersificationErrorType.MISSING_VERSE_SEGMENT
+    assert errors[0].expected_verse_ref == "3JN 1:13a"
+    assert errors[0].actual_verse_ref == "3JN 1:13"
 
 
 def get_usfm_versification_errors_ignore_noncanonicals():
@@ -227,6 +239,8 @@ def get_usfm_versification_errors_excluded_in_custom_vrs():
     errors = env.get_usfm_versification_errors()
     assert len(errors) == 1
     assert errors[0].type == UsfmVersificationErrorType.EXTRA_VERSE
+    assert errors[0].expected_verse_ref == ""
+    assert errors[0].actual_verse_ref == "3JN 1:13"
 
 
 def get_usfm_versification_errors_multiple_books():
@@ -270,6 +284,8 @@ def get_usfm_versification_errors_multiple_books():
     errors = env.get_usfm_versification_errors()
     assert len(errors) == 1
     assert errors[0].type == UsfmVersificationErrorType.MISSING_VERSE
+    assert errors[0].expected_verse_ref == "2JN 1:13"
+    assert errors[0].actual_verse_ref == "2JN 1:12"
 
 
 def get_usfm_versification_errors_multiple_chapters():
@@ -298,6 +314,10 @@ def get_usfm_versification_errors_multiple_chapters():
     assert len(errors) == 2
     assert errors[0].type == UsfmVersificationErrorType.MISSING_VERSE
     assert errors[0].type == UsfmVersificationErrorType.EXTRA_VERSE
+    assert errors[0].expected_verse_ref == "2JN 1:13"
+    assert errors[0].actual_verse_ref == "2JN 1:12"
+    assert errors[1].expected_verse_ref == ""
+    assert errors[1].actual_verse_ref == "2JN 2:1"
 
 
 class _TestEnvironment:
