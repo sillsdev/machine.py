@@ -8,11 +8,8 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 from xml.etree import ElementTree
 
 from ..scripture.constants import ORIGINAL_VERSIFICATION
-
 from ..scripture.verse_ref import VerseRef
-
 from .key_term_row import KeyTerm
-
 from .paratext_project_file_handler import ParatextProjectFileHandler
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
@@ -111,14 +108,17 @@ class ParatextProjectTermsParserBase(ABC):
                     terms_glosses[id_].extend(glosses)
         if terms_glosses or terms_renderings:
             terms: List[KeyTerm] = []
-            for id, renderings_patterns in terms_renderings.items():
+            for id in sorted(set(terms_renderings.keys()).union(terms_glosses.keys())):
+                renderings_patterns = terms_renderings.get(id, [])
                 category = term_id_to_category_dict.get(id, "?")
                 domain = term_id_to_domain_dict.get(id, "?")
                 glosses = terms_glosses.get(id, [])
                 references = term_id_to_references_dict.get(id, [])
                 renderings = [r.replace("*", "") for r in renderings_patterns]
                 if len(renderings) == 0:
-                    continue
+                    if len(glosses) == 0:
+                        continue
+                    renderings = glosses
                 term = KeyTerm(
                     id=id,
                     category=category,
