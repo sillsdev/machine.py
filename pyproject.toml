@@ -1,6 +1,6 @@
 [tool.black]
 line-length = 120
-target-version = ['py39']
+target-version = ['py310']
 include = '\.pyi?$'
 exclude = '''
 /(
@@ -53,7 +53,7 @@ classifiers = [
 packages = [{ include = "machine" }]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.13"
+python = ">=3.10,<3.14"
 regex = ">=2021.7.6"
 numpy = "^1.24.4"
 sortedcontainers = "^2.4.0"
@@ -62,7 +62,7 @@ charset-normalizer = "^2.1.1"
 urllib3 = "<2"
 
 sentencepiece = "^0.2.0"
-sil-thot = "^3.4.6"
+sil-thot = "^3.4.9"
 
 transformers = "4.46.2"
 datasets = "^2.4.0"
@@ -84,7 +84,7 @@ pytest-cov = "^4.1.0"
 ipykernel = "^6.7.0"
 jupyter = "^1.0.0"
 pandas = "^2.0.3"
-pyright = { extras = ["nodejs"], version = "^1.1.400" }
+pyright = "^1.1.407"
 decoy = "^2.1.0"
 pep8-naming = "^0.14.1"
 
