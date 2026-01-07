@@ -23,7 +23,7 @@ class ParatextProjectVersificationErrorDetector:
         self,
         handler: Optional[UsfmVersificationErrorDetector] = None,
     ) -> List[UsfmVersificationError]:
-        handler = handler or UsfmVersificationErrorDetector(self._settings.versification)
+        handler = handler or UsfmVersificationErrorDetector(self._settings)
         for file_name in self._settings.get_all_scripture_book_file_names():
             if not self._paratext_project_file_handler.exists(file_name):
                 continue
