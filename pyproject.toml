@@ -55,7 +55,7 @@ packages = [{ include = "machine" }]
 [tool.poetry.dependencies]
 python = ">=3.10,<3.14"
 regex = ">=2021.7.6"
-numpy = "^1.24.4"
+numpy = "^2.2.6"
 sortedcontainers = "^2.4.0"
 networkx = "^3"
 charset-normalizer = "^2.1.1"
