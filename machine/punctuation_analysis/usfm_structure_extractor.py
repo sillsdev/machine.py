@@ -110,11 +110,11 @@ class UsfmStructureExtractor(UsfmParserHandler):
                 current_verse_segments = []
             if text_segment.marker_is_in_preceding_context(UsfmMarkerType.CHAPTER):
                 if len(current_chapter_verses) > 0:
-                    chapters.append(Chapter(current_chapter_verses))
+                    chapters.append(Chapter(current_chapter_verses, current_chapter))
                 current_chapter_verses = []
             current_verse_segments.append(text_segment)
         if len(current_verse_segments) > 0:
             current_chapter_verses.append(Verse(current_verse_segments))
         if len(current_chapter_verses) > 0:
-            chapters.append(Chapter(current_chapter_verses))
+            chapters.append(Chapter(current_chapter_verses, current_chapter))
         return chapters

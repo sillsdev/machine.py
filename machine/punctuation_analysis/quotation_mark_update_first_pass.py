@@ -1,4 +1,4 @@
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Tuple
 
 from .chapter import Chapter
 from .depth_based_quotation_mark_resolver import DepthBasedQuotationMarkResolver
@@ -54,11 +54,11 @@ class QuotationMarkUpdateFirstPass(UsfmStructureExtractor):
 
         return True
 
-    def find_best_chapter_strategies(self) -> List[QuotationMarkUpdateStrategy]:
-        best_actions_by_chapter: List[QuotationMarkUpdateStrategy] = []
+    def find_best_chapter_strategies(self) -> List[Tuple[int, QuotationMarkUpdateStrategy]]:
+        best_actions_by_chapter: List[Tuple[int, QuotationMarkUpdateStrategy]] = []
 
         for chapter in self.get_chapters():
-            best_actions_by_chapter.append(self._find_best_strategy_for_chapter(chapter))
+            best_actions_by_chapter.append((chapter.chatper_num, self._find_best_strategy_for_chapter(chapter)))
 
         return best_actions_by_chapter
 

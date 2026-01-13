@@ -678,7 +678,7 @@ def run_first_pass(
     first_pass_analyzer = QuotationMarkUpdateFirstPass(source_quote_convention, target_quote_convention)
     parse_usfm(normalized_usfm, first_pass_analyzer)
 
-    return first_pass_analyzer.find_best_chapter_strategies()
+    return [strategy for _, strategy in first_pass_analyzer.find_best_chapter_strategies()]
 
 
 def run_first_pass_on_chapter(
