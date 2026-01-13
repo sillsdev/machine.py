@@ -390,7 +390,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
         if train_terms_dataset is not None:
             if not isinstance(tokenizer, PreTrainedTokenizerFast):
                 logger.warning(
-                    f"Adding key terms as partial words is not possible when using the non-fast tokenizer '{type(tokenizer)}'."
+                    f"Adding key terms as partial words is not possible when using \
+                          the non-fast tokenizer '{type(tokenizer)}'."
                 )
             train_terms_dataset = train_terms_dataset.map(
                 preprocess_terms_function if isinstance(tokenizer, PreTrainedTokenizerFast) else preprocess_function,
