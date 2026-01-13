@@ -45,6 +45,7 @@ class SmtEngineBuildJob(TranslationEngineBuildJob):
         source_corpus: TextCorpus,
         target_corpus: TextCorpus,
         parallel_corpus: ParallelTextCorpus,
+        parallel_terms_corpus: ParallelTextCorpus,
         progress_reporter: PhasedProgressReporter,
         check_canceled: Optional[Callable[[], None]],
     ) -> Tuple[int, float]:

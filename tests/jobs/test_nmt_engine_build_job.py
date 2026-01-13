@@ -112,7 +112,9 @@ class _TestEnvironment:
         decoy.when(self.nmt_model_factory.create_target_tokenizer_trainer(matchers.Anything())).then_return(
             self.target_tokenizer_trainer
         )
-        decoy.when(self.nmt_model_factory.create_model_trainer(matchers.Anything())).then_return(self.model_trainer)
+        decoy.when(self.nmt_model_factory.create_model_trainer(matchers.Anything(), matchers.Anything())).then_return(
+            self.model_trainer
+        )
         decoy.when(self.nmt_model_factory.create_engine()).then_return(self.engine)
         decoy.when(self.nmt_model_factory.save_model()).then_return(Path("model.tar.gz"))
 
@@ -121,6 +123,11 @@ class _TestEnvironment:
         decoy.when(self.translation_file_service.create_target_corpus()).then_return(DictionaryTextCorpus())
         decoy.when(self.translation_file_service.exists_source_corpus()).then_return(True)
         decoy.when(self.translation_file_service.exists_target_corpus()).then_return(True)
+        decoy.when(self.translation_file_service.create_source_terms_corpus()).then_return(DictionaryTextCorpus())
+        decoy.when(self.translation_file_service.create_target_terms_corpus()).then_return(DictionaryTextCorpus())
+        decoy.when(self.translation_file_service.exists_source_terms_corpus()).then_return(True)
+        decoy.when(self.translation_file_service.exists_target_terms_corpus()).then_return(True)
+
         decoy.when(self.translation_file_service.get_source_pretranslations()).then_do(
             lambda: ContextManagedGenerator(
                 (

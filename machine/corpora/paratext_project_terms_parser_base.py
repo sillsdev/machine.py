@@ -9,7 +9,7 @@ from xml.etree import ElementTree
 
 from ..scripture.constants import ORIGINAL_VERSIFICATION
 from ..scripture.verse_ref import VerseRef
-from .key_term_row import KeyTerm
+from .key_term import KeyTerm
 from .paratext_project_file_handler import ParatextProjectFileHandler
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase

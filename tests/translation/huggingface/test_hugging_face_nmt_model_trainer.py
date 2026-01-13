@@ -127,6 +127,10 @@ def test_update_tokenizer_missing_char() -> None:
         )
         corpus = source_corpus.align_rows(target_corpus)
 
+        terms_corpus = DictionaryTextCorpus(MemoryText("terms", [TextRow("terms", 1, ["telephone"])])).align_rows(
+            DictionaryTextCorpus(MemoryText("terms", [TextRow("terms", 1, ["teléfono"])]))
+        )
+
         training_args = Seq2SeqTrainingArguments(
             output_dir=temp_dir, num_train_epochs=1, report_to=["none"], learning_rate=0.01
         )
@@ -135,6 +139,7 @@ def test_update_tokenizer_missing_char() -> None:
             "hf-internal-testing/tiny-random-nllb",
             training_args,
             corpus,
+            terms_corpus,
             src_lang="en_XX",
             tgt_lang="es_XX",
             max_src_length=20,

@@ -3,7 +3,7 @@ from zipfile import ZipFile
 
 from ..utils.typeshed import StrPath
 from .dictionary_text_corpus import DictionaryTextCorpus
-from .key_term_row import KeyTerm
+from .key_term import KeyTerm
 from .memory_text import MemoryText
 from .text_row import TextRow
 from .zip_paratext_project_settings_parser import ZipParatextProjectSettingsParser

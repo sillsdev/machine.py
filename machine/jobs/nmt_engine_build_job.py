@@ -59,6 +59,7 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
         source_corpus: TextCorpus,
         target_corpus: TextCorpus,
         parallel_corpus: ParallelTextCorpus,
+        parallel_terms_corpus: ParallelTextCorpus,
         progress_reporter: PhasedProgressReporter,
         check_canceled: Optional[Callable[[], None]],
     ) -> Tuple[int, float]:
@@ -85,7 +86,7 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
         logger.info("Training NMT model")
         with (
             progress_reporter.start_next_phase() as phase_progress,
-            self._nmt_model_factory.create_model_trainer(parallel_corpus) as model_trainer,
+            self._nmt_model_factory.create_model_trainer(parallel_corpus, parallel_terms_corpus) as model_trainer,
         ):
             model_trainer.train(progress=phase_progress, check_canceled=check_canceled)
             model_trainer.save()
