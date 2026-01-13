@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 import torch  # pyright: ignore[reportMissingImports]
 from accelerate import Accelerator  # pyright: ignore[reportMissingImports]
 from accelerate.utils.memory import should_reduce_batch_size  # pyright: ignore[reportMissingImports]
+from datasets import concatenate_datasets
 from datasets.arrow_dataset import Dataset
 from sacremoses import MosesPunctNormalizer
 from torch import Tensor  # pyright: ignore[reportMissingImports]
@@ -36,9 +37,11 @@ from transformers import (
     PreTrainedTokenizerFast,
     Seq2SeqTrainer,
     Seq2SeqTrainingArguments,
+    TensorType,
     TrainerCallback,
     set_seed,
 )
+from transformers.tokenization_utils import BatchEncoding
 from transformers.trainer_callback import TrainerControl, TrainerState
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.training_args import TrainingArguments
@@ -88,6 +91,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
         model: Union[PreTrainedModel, str],
         training_args: Seq2SeqTrainingArguments,
         corpus: Union[ParallelTextCorpus, Dataset],
+        terms_corpus: Optional[Union[ParallelTextCorpus, Dataset]] = None,
         src_lang: Optional[str] = None,
         tgt_lang: Optional[str] = None,
         max_src_length: Optional[int] = None,
@@ -98,6 +102,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
         self._model = model
         self._training_args = training_args
         self._corpus = corpus
+        self._terms_corpus = terms_corpus
         self._src_lang = src_lang
         self._tgt_lang = tgt_lang
         self._trainer: Optional[Seq2SeqTrainer] = None
@@ -170,6 +175,13 @@ class HuggingFaceNmtModelTrainer(Trainer):
         else:
             train_dataset = self._corpus.filter_nonempty().to_hf_dataset(src_lang, tgt_lang)
 
+        train_terms_dataset = None
+        if self._terms_corpus is not None:
+            if isinstance(self._terms_corpus, Dataset):
+                train_terms_dataset = self._terms_corpus
+            else:
+                train_terms_dataset = self._terms_corpus.filter_nonempty().to_hf_dataset(src_lang, tgt_lang)
+
         def find_missing_characters(tokenizer: Any, train_dataset: Dataset, lang_codes: List[str]) -> List[str]:
             vocab = tokenizer.get_vocab().keys()
             charset = set()
@@ -222,7 +234,15 @@ class HuggingFaceNmtModelTrainer(Trainer):
                     lang_codes.append(src_lang)
                 if self._add_unk_tgt_tokens:
                     lang_codes.append(tgt_lang)
-                missing_tokens = find_missing_characters(tokenizer, train_dataset, lang_codes)
+                missing_tokens = find_missing_characters(
+                    tokenizer,
+                    (
+                        concatenate_datasets([train_dataset, train_terms_dataset])
+                        if train_terms_dataset is not None
+                        else train_dataset
+                    ),
+                    lang_codes,
+                )
                 if missing_tokens:
                     tokenizer = add_tokens(tokenizer, missing_tokens)
 
@@ -291,6 +311,22 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 "memory"
             )
 
+        def batch_prepare_for_model(
+            tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast],
+            batch_tokens: List[List[str]],
+            return_tensors: Optional[Union[str, TensorType]] = None,
+        ) -> BatchEncoding:
+            batch_outputs: Dict[str, Any] = {}
+            for tokens in batch_tokens:
+                ids = cast(List[int], tokenizer.convert_tokens_to_ids(tokens))
+                outputs = tokenizer.prepare_for_model(ids, add_special_tokens=False)
+
+                for key, value in outputs.items():
+                    if key not in batch_outputs:
+                        batch_outputs[key] = []
+                    batch_outputs[key].append(value)
+            return BatchEncoding(batch_outputs, tensor_type=return_tensors)
+
         def preprocess_function(examples):
             if isinstance(tokenizer, (NllbTokenizer, NllbTokenizerFast)):
                 inputs = [self._mpn.normalize(prefix + ex[src_lang]) for ex in examples["translation"]]
@@ -306,6 +342,42 @@ class HuggingFaceNmtModelTrainer(Trainer):
             model_inputs["labels"] = labels["input_ids"]
             return model_inputs
 
+        def preprocess_terms_function(examples):
+            if isinstance(tokenizer, (NllbTokenizer, NllbTokenizerFast)):
+                inputs = [self._mpn.normalize(ex[src_lang]) for ex in examples["translation"]]
+                targets = [self._mpn.normalize(ex[tgt_lang]) for ex in examples["translation"]]
+            else:
+                inputs = [ex[src_lang] for ex in examples["translation"]]
+                targets = [ex[tgt_lang] for ex in examples["translation"]]
+
+            src_term_tokens = tokenizer(
+                [prefix + i for i in inputs], max_length=max_src_length, truncation=True
+            ).tokens()
+            trg_term_tokens = tokenizer(text_target=targets, max_length=max_tgt_length, truncation=True).tokens()
+
+            src_term_partial_word_tokens = tokenizer(
+                [prefix + "\ufffc" + i for i in inputs], max_length=max_src_length + 2, truncation=True
+            ).tokens()
+            src_term_partial_word_tokens.remove("▁")
+            src_term_partial_word_tokens.remove("\ufffc")
+
+            trg_term_partial_word_tokens = tokenizer(
+                text_target=["\ufffc" + t for t in targets], max_length=max_tgt_length + 2, truncation=True
+            ).tokens()
+            trg_term_partial_word_tokens.remove("▁")
+            trg_term_partial_word_tokens.remove("\ufffc")
+
+            model_inputs = batch_prepare_for_model(
+                tokenizer, [[ex.strip() for ex in src_term_tokens + src_term_partial_word_tokens]]
+            )
+            # Tokenize targets with the `text_target` keyword argument
+            labels = batch_prepare_for_model(
+                tokenizer, [[ex.strip() for ex in trg_term_tokens + trg_term_partial_word_tokens]]
+            )
+
+            model_inputs["labels"] = labels["input_ids"]
+            return model_inputs
+
         logger.info("Run tokenizer")
         train_dataset = train_dataset.map(
             preprocess_function,
@@ -314,6 +386,22 @@ class HuggingFaceNmtModelTrainer(Trainer):
             load_from_cache_file=True,
             desc="Running tokenizer on train dataset",
         )
+
+        if train_terms_dataset is not None:
+            if not isinstance(tokenizer, PreTrainedTokenizerFast):
+                logger.warning(
+                    f"Adding key terms as partial words is not possible when using the non-fast tokenizer '{type(tokenizer)}'."
+                )
+            train_terms_dataset = train_terms_dataset.map(
+                preprocess_terms_function if isinstance(tokenizer, PreTrainedTokenizerFast) else preprocess_function,
+                batched=True,
+                remove_columns=train_terms_dataset.column_names,
+                load_from_cache_file=True,
+                desc="Running tokenizer on train terms dataset",
+            )
+
+            # combine terms and non-terms datasets
+            train_dataset = concatenate_datasets([train_dataset, train_terms_dataset])
 
         data_collator = DataCollatorForSeq2Seq(
             tokenizer,

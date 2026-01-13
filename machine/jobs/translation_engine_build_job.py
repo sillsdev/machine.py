@@ -28,14 +28,20 @@ class TranslationEngineBuildJob(ABC):
         target_corpus = self._translation_file_service.create_target_corpus()
         parallel_corpus: ParallelTextCorpus = source_corpus.align_rows(target_corpus)
 
-        parallel_corpus_size = parallel_corpus.count(include_empty=False)
+        source_terms_corpus = self._translation_file_service.create_source_terms_corpus()
+        target_terms_corpus = self._translation_file_service.create_target_terms_corpus()
+        parallel_terms_corpus: ParallelTextCorpus = source_terms_corpus.align_rows(target_terms_corpus)
+
+        parallel_corpus_size = parallel_corpus.count(include_empty=False) + parallel_terms_corpus.count(
+            include_empty=False
+        )
         progress_reporter = self._get_progress_reporter(progress, parallel_corpus_size)
 
         if parallel_corpus_size == 0:
             train_corpus_size, confidence = self._respond_to_no_training_corpus()
         else:
             train_corpus_size, confidence = self._train_model(
-                source_corpus, target_corpus, parallel_corpus, progress_reporter, check_canceled
+                source_corpus, target_corpus, parallel_corpus, parallel_terms_corpus, progress_reporter, check_canceled
             )
 
         if check_canceled is not None:
@@ -63,6 +69,7 @@ class TranslationEngineBuildJob(ABC):
         source_corpus: TextCorpus,
         target_corpus: TextCorpus,
         parallel_corpus: ParallelTextCorpus,
+        parallel_terms_corpus: ParallelTextCorpus,
         progress_reporter: PhasedProgressReporter,
         check_canceled: Optional[Callable[[], None]],
     ) -> Tuple[int, float]: ...
