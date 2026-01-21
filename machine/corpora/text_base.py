@@ -1,13 +1,15 @@
 from typing import Any
 
+from .data_type import DataType
 from .text import Text
 from .text_row import TextRow, TextRowFlags
 
 
 class TextBase(Text):
-    def __init__(self, id: str, sort_key: str) -> None:
+    def __init__(self, id: str, sort_key: str, data_type: DataType = DataType.SENTENCE) -> None:
         self._id = id
         self._sort_key = sort_key
+        self._data_type = data_type
 
     @property
     def id(self) -> str:
@@ -17,9 +19,13 @@ class TextBase(Text):
     def sort_key(self) -> str:
         return self._sort_key
 
+    @property
+    def data_type(self) -> DataType:
+        return self._data_type
+
     def _create_row(self, text: str, ref: Any, flags: TextRowFlags = TextRowFlags.SENTENCE_START) -> TextRow:
         text = text.strip()
-        return TextRow(self.id, ref, [text] if len(text) > 0 else [], flags)
+        return TextRow(self.id, ref, [text] if len(text) > 0 else [], flags, data_type=self.data_type)
 
     def _create_empty_row(self, ref: Any, flags: TextRowFlags = TextRowFlags.NONE) -> TextRow:
-        return TextRow(self.id, ref, flags=flags)
+        return TextRow(self.id, ref, flags=flags, data_type=self.data_type)

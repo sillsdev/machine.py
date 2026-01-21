@@ -2,6 +2,7 @@ from contextlib import ExitStack
 from typing import Any, Callable, Iterable, List, Optional, Sequence, Set, cast
 
 from ..scripture.verse_ref import Versification
+from .data_type import DataType
 from .n_parallel_text_corpus_base import NParallelTextCorpusBase
 from .n_parallel_text_row import NParallelTextRow
 from .scripture_ref import ScriptureRef
@@ -14,6 +15,7 @@ class _RangeRow:
     refs: List[Any]
     segment: List[str]
     is_sentence_start: bool = False
+    data_type: DataType = DataType.SENTENCE
 
     @property
     def is_in_range(self):
@@ -36,6 +38,7 @@ class _NRangeInfo:
         self.text_id = ""
         self.versifications: Optional[List[Versification]] = None
         self.row_ref_comparer = None
+        self.data_type = DataType.SENTENCE
 
     @property
     def is_in_range(self) -> bool:
@@ -44,6 +47,7 @@ class _NRangeInfo:
     def add_text_row(self, row: TextRow, index: int):
         self.text_id = row.text_id
         self.rows[index].refs.append(row.ref)
+        self.rows[index].data_type = row.data_type
         if self.rows[index].is_empty:
             self.rows[index].is_sentence_start = row.is_sentence_start
         self.rows[index].segment.extend(row.segment)
@@ -53,6 +57,7 @@ class _NRangeInfo:
         reference_refs: List[Any] = [r.refs[0] if len(r.refs) > 0 else None for r in self.rows if len(r.refs) > 0]
         for i in range(len(self.rows)):
             row = self.rows[i]
+            self.data_type = row.data_type
 
             if (
                 self.versifications is not None
@@ -62,7 +67,7 @@ class _NRangeInfo:
                 refs[i] = [cast(ScriptureRef, r).change_versification(self.versifications[i]) for r in reference_refs]
             else:
                 refs[i] = row.refs.copy()
-        n_parallel_text_row = NParallelTextRow(self.text_id, refs)
+        n_parallel_text_row = NParallelTextRow(self.text_id, refs, self.data_type)
         n_parallel_text_row.n_segments = [r.segment.copy() for r in self.rows]
         n_parallel_text_row.n_flags = [
             TextRowFlags.SENTENCE_START if r.is_sentence_start else TextRowFlags.NONE for r in self.rows
@@ -288,6 +293,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
             yield range_info.create_row()
 
         default_refs = [[r.ref for r in rows if r is not None][0]]
+        data_type = DataType.SENTENCE
 
         text_id: Optional[str] = None
         refs: List[List[Any]] = []
@@ -298,6 +304,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
         for i in range(len(rows)):
             row = rows[i]
             if row is not None:
+                data_type = row.data_type
                 text_id = text_id or row.text_id
                 if self.corpora[i].is_scripture:
                     refs[i] = self._correct_versification([row.ref] if row.ref is None else default_refs, i)
@@ -314,7 +321,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
                 )
         refs = [r or default_refs for r in refs]
 
-        new_row = NParallelTextRow(cast(str, text_id), refs)
+        new_row = NParallelTextRow(cast(str, text_id), refs, data_type)
         new_row.n_segments = [r.segment if r is not None else [] for r in rows]
         new_row.n_flags = flags
         yield new_row

@@ -4,6 +4,7 @@ from typing import Any, Generator, Iterator, List, Optional, TypedDict
 
 import json_stream
 
+from ..corpora.data_type import DataType
 from ..corpora.text_corpus import TextCorpus
 from ..corpora.text_file_text_corpus import TextFileTextCorpus
 from ..utils.context_managed_generator import ContextManagedGenerator
@@ -45,42 +46,40 @@ class TranslationFileService:
 
     def create_source_corpus(self) -> TextCorpus:
         return TextFileTextCorpus(
-            self.shared_file_service.download_file(f"{self.shared_file_service.build_path}/{self._source_filename}")
+            file_patterns=[
+                self.shared_file_service.download_file(
+                    f"{self.shared_file_service.build_path}/{self._source_filename}"
+                ),
+                self.shared_file_service.download_file(
+                    f"{self.shared_file_service.build_path}/{self._source_terms_filename}"
+                ),
+            ],
+            data_types=[DataType.SENTENCE, DataType.GLOSS],
         )
 
     def create_target_corpus(self) -> TextCorpus:
         return TextFileTextCorpus(
-            self.shared_file_service.download_file(f"{self.shared_file_service.build_path}/{self._target_filename}")
+            file_patterns=[
+                self.shared_file_service.download_file(
+                    f"{self.shared_file_service.build_path}/{self._target_filename}"
+                ),
+                self.shared_file_service.download_file(
+                    f"{self.shared_file_service.build_path}/{self._target_terms_filename}"
+                ),
+            ],
+            data_types=[DataType.SENTENCE, DataType.GLOSS],
         )
 
     def exists_source_corpus(self) -> bool:
-        return self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{self._source_filename}")
+        return all(
+            self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{source_filename}")
+            for source_filename in [self._source_filename, self._source_terms_filename]
+        )
 
     def exists_target_corpus(self) -> bool:
-        return self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{self._target_filename}")
-
-    def create_source_terms_corpus(self) -> TextCorpus:
-        return TextFileTextCorpus(
-            self.shared_file_service.download_file(
-                f"{self.shared_file_service.build_path}/{self._source_terms_filename}"
-            )
-        )
-
-    def create_target_terms_corpus(self) -> TextCorpus:
-        return TextFileTextCorpus(
-            self.shared_file_service.download_file(
-                f"{self.shared_file_service.build_path}/{self._target_terms_filename}"
-            )
-        )
-
-    def exists_source_terms_corpus(self) -> bool:
-        return self.shared_file_service._exists_file(
-            f"{self.shared_file_service.build_path}/{self._source_terms_filename}"
-        )
-
-    def exists_target_terms_corpus(self) -> bool:
-        return self.shared_file_service._exists_file(
-            f"{self.shared_file_service.build_path}/{self._target_terms_filename}"
+        return all(
+            self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{target_filename}")
+            for target_filename in [self._target_filename, self._target_terms_filename]
         )
 
     def get_source_pretranslations(self) -> ContextManagedGenerator[PretranslationInfo, None, None]:

@@ -2,6 +2,7 @@ from typing import Sequence
 from zipfile import ZipFile
 
 from ..utils.typeshed import StrPath
+from .data_type import DataType
 from .dictionary_text_corpus import DictionaryTextCorpus
 from .key_term import KeyTerm
 from .memory_text import MemoryText
@@ -25,5 +26,12 @@ class ParatextBackupTermsCorpus(DictionaryTextCorpus):
                 f"{settings.biblical_terms_file_name}"
             )
 
-            text = MemoryText(text_id, [TextRow(text_id, key_term.id, key_term.renderings) for key_term in key_terms])
+            text = MemoryText(
+                text_id,
+                [
+                    TextRow(text_id, key_term.id, key_term.renderings, data_type=DataType.GLOSS)
+                    for key_term in key_terms
+                ],
+                data_type=DataType.GLOSS,
+            )
             self._add_text(text)

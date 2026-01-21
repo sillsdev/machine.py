@@ -127,28 +127,6 @@ class _TestEnvironment:
         )
         decoy.when(self.translation_file_service.exists_source_corpus()).then_return(True)
         decoy.when(self.translation_file_service.exists_target_corpus()).then_return(True)
-        decoy.when(self.translation_file_service.create_source_terms_corpus()).then_return(
-            DictionaryTextCorpus(
-                MemoryText(
-                    "terms",
-                    [
-                        TextRow("terms", 1, ["llaves"]),
-                    ],
-                )
-            )
-        )
-        decoy.when(self.translation_file_service.create_target_terms_corpus()).then_return(
-            DictionaryTextCorpus(
-                MemoryText(
-                    "terms",
-                    [
-                        TextRow("terms", 1, ["keys"]),
-                    ],
-                )
-            )
-        )
-        decoy.when(self.translation_file_service.exists_source_terms_corpus()).then_return(True)
-        decoy.when(self.translation_file_service.exists_target_terms_corpus()).then_return(True)
         decoy.when(self.translation_file_service.get_source_pretranslations()).then_do(
             lambda: ContextManagedGenerator(
                 (

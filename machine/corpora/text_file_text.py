@@ -4,14 +4,15 @@ from typing import Generator
 
 from ..utils.string_utils import parse_integer
 from ..utils.typeshed import StrPath
+from .data_type import DataType
 from .multi_key_ref import MultiKeyRef
 from .text_base import TextBase
 from .text_row import TextRow, TextRowFlags
 
 
 class TextFileText(TextBase):
-    def __init__(self, id: str, filename: StrPath) -> None:
-        super().__init__(id, id)
+    def __init__(self, id: str, filename: StrPath, data_type: DataType = DataType.SENTENCE) -> None:
+        super().__init__(id, id, data_type)
         self._filename = Path(filename)
 
     @property

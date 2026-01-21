@@ -78,12 +78,11 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
     def create_target_tokenizer_trainer(self, corpus: TextCorpus) -> Trainer:
         return NullTrainer()
 
-    def create_model_trainer(self, corpus: ParallelTextCorpus, terms_corpus: ParallelTextCorpus) -> Trainer:
+    def create_model_trainer(self, corpus: ParallelTextCorpus) -> Trainer:
         return HuggingFaceNmtModelTrainer(
             self._model,
             self._training_args,
             corpus,
-            terms_corpus,
             src_lang=self._config.src_lang,
             tgt_lang=self._config.trg_lang,
             add_unk_src_tokens=self._config.huggingface.tokenizer.add_unk_src_tokens,

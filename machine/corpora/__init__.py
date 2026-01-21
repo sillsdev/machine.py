@@ -4,6 +4,7 @@ from .alignment_corpus import AlignmentCorpus
 from .alignment_row import AlignmentRow
 from .corpora_utils import batch
 from .corpus import Corpus
+from .data_type import DataType
 from .dbl_bundle_text_corpus import DblBundleTextCorpus
 from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .dictionary_text_corpus import DictionaryTextCorpus
@@ -102,6 +103,7 @@ __all__ = [
     "batch",
     "Corpus",
     "create_versification_ref_corpus",
+    "DataType",
     "DblBundleTextCorpus",
     "DictionaryAlignmentCorpus",
     "DictionaryTextCorpus",
