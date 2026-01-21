@@ -4,15 +4,15 @@ from ..scripture import ENGLISH_VERSIFICATION
 from ..scripture.verse_ref import VerseRef, Versification
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .corpora_utils import gen, get_scripture_text_sort_key
-from .data_type import DataType
 from .scripture_ref import ScriptureElement, ScriptureRef
 from .text_base import TextBase
 from .text_row import TextRow, TextRowFlags
+from .text_row_content_type import TextRowContentType
 
 
 class ScriptureText(TextBase):
     def __init__(self, id: str, versification: Optional[Versification] = None) -> None:
-        super().__init__(id, get_scripture_text_sort_key(id), data_type=DataType.SENTENCE)
+        super().__init__(id, get_scripture_text_sort_key(id), data_type=TextRowContentType.SEGMENT)
         self._versification = ENGLISH_VERSIFICATION if versification is None else versification
 
     @property

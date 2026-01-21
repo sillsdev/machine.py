@@ -45,8 +45,8 @@ from transformers.trainer_callback import TrainerControl, TrainerState
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.training_args import TrainingArguments
 
-from ...corpora.data_type import DataType
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
+from ...corpora.text_row_content_type import TextRowContentType
 from ...utils.progress_status import ProgressStatus
 from ..trainer import Trainer, TrainStats
 
@@ -318,24 +318,24 @@ class HuggingFaceNmtModelTrainer(Trainer):
             # Add one to the data_type in order to convert back from ClassLabels which are enumerated from 0, not 1
             if isinstance(tokenizer, (NllbTokenizer, NllbTokenizerFast)):
                 inputs = [
-                    (self._mpn.normalize(ex[src_lang]), DataType(d + 1))
+                    (self._mpn.normalize(ex[src_lang]), TextRowContentType(d + 1))
                     for ex, d in zip(examples["translation"], examples["data_type"])
                 ]
                 targets = [
-                    (self._mpn.normalize(ex[tgt_lang]), DataType(d + 1))
+                    (self._mpn.normalize(ex[tgt_lang]), TextRowContentType(d + 1))
                     for ex, d in zip(examples["translation"], examples["data_type"])
                 ]
             else:
                 inputs = [
-                    (self._mpn.normalize(ex[src_lang]), DataType(d + 1))
+                    (self._mpn.normalize(ex[src_lang]), TextRowContentType(d + 1))
                     for ex, d in zip(examples["translation"], examples["data_type"])
                 ]
                 targets = [
-                    (self._mpn.normalize(ex[tgt_lang]), DataType(d + 1))
+                    (self._mpn.normalize(ex[tgt_lang]), TextRowContentType(d + 1))
                     for ex, d in zip(examples["translation"], examples["data_type"])
                 ]
 
-            num_glosses = len([1 for _, d in inputs if d == DataType.GLOSS])
+            num_glosses = len([1 for _, d in inputs if d == TextRowContentType.WORD])
             if not isinstance(tokenizer, PreTrainedTokenizerFast) or num_glosses == 0:
                 if num_glosses > 0:
                     logger.warning(
@@ -359,7 +359,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
 
                 src_term_partial_word_tokens: List[List[str]] = []
                 src_term_partial_word_batches = tokenizer(
-                    [prefix + "\ufffc" + i for i, d in inputs if d == DataType.GLOSS],
+                    [prefix + "\ufffc" + i for i, d in inputs if d == TextRowContentType.WORD],
                     max_length=max_src_length + 2,
                     truncation=True,
                 )
@@ -370,7 +370,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
 
                 trg_term_partial_word_tokens: List[List[str]] = []
                 trg_term_partial_word_batches = tokenizer(
-                    text_target=["\ufffc" + t for t, d in targets if d == DataType.GLOSS],
+                    text_target=["\ufffc" + t for t, d in targets if d == TextRowContentType.WORD],
                     max_length=max_tgt_length + 2,
                     truncation=True,
                 )

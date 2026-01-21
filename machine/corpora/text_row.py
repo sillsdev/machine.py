@@ -1,7 +1,7 @@
 from enum import Flag, auto
 from typing import Any, Sequence
 
-from .data_type import DataType
+from .text_row_content_type import TextRowContentType
 
 
 class TextRowFlags(Flag):
@@ -18,7 +18,7 @@ class TextRow(Sequence[str]):
         ref: Any,
         segment: Sequence[str] = [],
         flags: TextRowFlags = TextRowFlags.SENTENCE_START,
-        data_type: DataType = DataType.SENTENCE,
+        data_type: TextRowContentType = TextRowContentType.SEGMENT,
     ) -> None:
         self._text_id = text_id
         self._ref = ref
@@ -36,7 +36,7 @@ class TextRow(Sequence[str]):
         return self._ref
 
     @property
-    def data_type(self) -> DataType:
+    def data_type(self) -> TextRowContentType:
         return self._data_type
 
     @property

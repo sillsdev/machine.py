@@ -2,11 +2,11 @@ from typing import Sequence
 from zipfile import ZipFile
 
 from ..utils.typeshed import StrPath
-from .data_type import DataType
 from .dictionary_text_corpus import DictionaryTextCorpus
 from .key_term import KeyTerm
 from .memory_text import MemoryText
 from .text_row import TextRow
+from .text_row_content_type import TextRowContentType
 from .zip_paratext_project_settings_parser import ZipParatextProjectSettingsParser
 from .zip_paratext_project_terms_parser import ZipParatextProjectTermsParser
 
@@ -29,9 +29,9 @@ class ParatextBackupTermsCorpus(DictionaryTextCorpus):
             text = MemoryText(
                 text_id,
                 [
-                    TextRow(text_id, key_term.id, key_term.renderings, data_type=DataType.GLOSS)
+                    TextRow(text_id, key_term.id, key_term.renderings, data_type=TextRowContentType.WORD)
                     for key_term in key_terms
                 ],
-                data_type=DataType.GLOSS,
+                data_type=TextRowContentType.WORD,
             )
             self._add_text(text)

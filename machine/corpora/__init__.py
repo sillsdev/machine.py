@@ -4,7 +4,6 @@ from .alignment_corpus import AlignmentCorpus
 from .alignment_row import AlignmentRow
 from .corpora_utils import batch
 from .corpus import Corpus
-from .data_type import DataType
 from .dbl_bundle_text_corpus import DblBundleTextCorpus
 from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .dictionary_text_corpus import DictionaryTextCorpus
@@ -49,6 +48,7 @@ from .text_file_alignment_corpus import TextFileAlignmentCorpus
 from .text_file_text import TextFileText
 from .text_file_text_corpus import TextFileTextCorpus
 from .text_row import TextRow, TextRowFlags
+from .text_row_content_type import TextRowContentType
 from .token_processors import (
     escape_spaces,
     lowercase,
@@ -103,7 +103,7 @@ __all__ = [
     "batch",
     "Corpus",
     "create_versification_ref_corpus",
-    "DataType",
+    "TextRowContentType",
     "DblBundleTextCorpus",
     "DictionaryAlignmentCorpus",
     "DictionaryTextCorpus",

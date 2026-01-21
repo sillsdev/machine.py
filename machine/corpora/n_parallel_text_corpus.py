@@ -2,20 +2,20 @@ from contextlib import ExitStack
 from typing import Any, Callable, Iterable, List, Optional, Sequence, Set, cast
 
 from ..scripture.verse_ref import Versification
-from .data_type import DataType
 from .n_parallel_text_corpus_base import NParallelTextCorpusBase
 from .n_parallel_text_row import NParallelTextRow
 from .scripture_ref import ScriptureRef
 from .text_corpus import TextCorpus
 from .text_corpus_enumerator import TextCorpusEnumerator
 from .text_row import TextRow, TextRowFlags
+from .text_row_content_type import TextRowContentType
 
 
 class _RangeRow:
     refs: List[Any]
     segment: List[str]
     is_sentence_start: bool = False
-    data_type: DataType = DataType.SENTENCE
+    data_type: TextRowContentType = TextRowContentType.SEGMENT
 
     @property
     def is_in_range(self):
@@ -38,7 +38,7 @@ class _NRangeInfo:
         self.text_id = ""
         self.versifications: Optional[List[Versification]] = None
         self.row_ref_comparer = None
-        self.data_type = DataType.SENTENCE
+        self.data_type = TextRowContentType.SEGMENT
 
     @property
     def is_in_range(self) -> bool:
@@ -293,7 +293,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
             yield range_info.create_row()
 
         default_refs = [[r.ref for r in rows if r is not None][0]]
-        data_type = DataType.SENTENCE
+        data_type = TextRowContentType.SEGMENT
 
         text_id: Optional[str] = None
         refs: List[List[Any]] = []

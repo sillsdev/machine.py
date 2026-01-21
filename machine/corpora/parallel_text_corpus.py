@@ -26,8 +26,8 @@ from ..utils.context_managed_generator import ContextManagedGenerator
 from .aligned_word_pair import AlignedWordPair
 from .corpora_utils import get_split_indices
 from .corpus import Corpus
-from .data_type import DataType
 from .parallel_text_row import ParallelTextRow
+from .text_row_content_type import TextRowContentType
 from .token_processors import escape_spaces, lowercase, normalize, unescape_spaces
 
 if TYPE_CHECKING:
@@ -419,7 +419,7 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
         if alignment_column is not None:
             features_dict[alignment_column] = Sequence({source_lang: Value("int32"), target_lang: Value("int32")})
         if data_type_column is not None:
-            features_dict[data_type_column] = ClassLabel(names=[e.name for e in DataType])
+            features_dict[data_type_column] = ClassLabel(names=[e.name for e in TextRowContentType])
         features = Features(features_dict)
 
         def iterable() -> Iterable[dict]:

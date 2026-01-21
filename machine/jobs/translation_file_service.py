@@ -4,9 +4,9 @@ from typing import Any, Generator, Iterator, List, Optional, TypedDict
 
 import json_stream
 
-from ..corpora.data_type import DataType
 from ..corpora.text_corpus import TextCorpus
 from ..corpora.text_file_text_corpus import TextFileTextCorpus
+from ..corpora.text_row_content_type import TextRowContentType
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .shared_file_service_base import DictToJsonWriter, SharedFileServiceBase
 from .shared_file_service_factory import SharedFileServiceType, get_shared_file_service
@@ -54,7 +54,7 @@ class TranslationFileService:
                     f"{self.shared_file_service.build_path}/{self._source_terms_filename}"
                 ),
             ],
-            data_types=[DataType.SENTENCE, DataType.GLOSS],
+            data_types=[TextRowContentType.SEGMENT, TextRowContentType.WORD],
         )
 
     def create_target_corpus(self) -> TextCorpus:
@@ -67,7 +67,7 @@ class TranslationFileService:
                     f"{self.shared_file_service.build_path}/{self._target_terms_filename}"
                 ),
             ],
-            data_types=[DataType.SENTENCE, DataType.GLOSS],
+            data_types=[TextRowContentType.SEGMENT, TextRowContentType.WORD],
         )
 
     def exists_source_corpus(self) -> bool:

@@ -1,8 +1,8 @@
 from abc import abstractmethod
 
 from .corpus import Corpus
-from .data_type import DataType
 from .text_row import TextRow
+from .text_row_content_type import TextRowContentType
 
 
 class Text(Corpus[TextRow]):
@@ -16,4 +16,4 @@ class Text(Corpus[TextRow]):
 
     @property
     @abstractmethod
-    def data_type(self) -> DataType: ...
+    def data_type(self) -> TextRowContentType: ...

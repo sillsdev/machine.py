@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Any, Collection, Optional, Sequence
 
 from .aligned_word_pair import AlignedWordPair
-from .data_type import DataType
 from .text_row import TextRowFlags
+from .text_row_content_type import TextRowContentType
 
 
 class ParallelTextRow(Sequence[Sequence[str]]):
@@ -18,7 +18,7 @@ class ParallelTextRow(Sequence[Sequence[str]]):
         aligned_word_pairs: Optional[Collection[AlignedWordPair]] = None,
         source_flags: TextRowFlags = TextRowFlags.SENTENCE_START,
         target_flags: TextRowFlags = TextRowFlags.SENTENCE_START,
-        data_type: DataType = DataType.SENTENCE,
+        data_type: TextRowContentType = TextRowContentType.SEGMENT,
     ) -> None:
         if not text_id:
             raise ValueError("A text_id must be set.")
@@ -55,7 +55,7 @@ class ParallelTextRow(Sequence[Sequence[str]]):
         return self.target_refs if len(self.source_refs) == 0 else self.source_refs
 
     @property
-    def data_type(self) -> DataType:
+    def data_type(self) -> TextRowContentType:
         return self._data_type
 
     @property

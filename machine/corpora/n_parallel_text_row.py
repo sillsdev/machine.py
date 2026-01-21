@@ -1,11 +1,13 @@
 from typing import Any, Sequence
 
-from .data_type import DataType
 from .text_row import TextRowFlags
+from .text_row_content_type import TextRowContentType
 
 
 class NParallelTextRow:
-    def __init__(self, text_id: str, n_refs: Sequence[Sequence[Any]], data_type: DataType = DataType.SENTENCE):
+    def __init__(
+        self, text_id: str, n_refs: Sequence[Sequence[Any]], data_type: TextRowContentType = TextRowContentType.SEGMENT
+    ):
         if len([n_ref for n_ref in n_refs if n_ref is not None and len(n_ref) > 0]) == 0:
             raise ValueError(f"Refs must be provided but n_refs={n_refs}")
         self._text_id = text_id
@@ -24,7 +26,7 @@ class NParallelTextRow:
         return self._n_refs[0][0]
 
     @property
-    def data_type(self) -> DataType:
+    def data_type(self) -> TextRowContentType:
         return self._data_type
 
     @property

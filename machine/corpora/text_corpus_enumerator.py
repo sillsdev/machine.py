@@ -2,9 +2,9 @@ from queue import SimpleQueue
 from typing import Any, ContextManager, Generator, List, Optional, Tuple, cast
 
 from ..scripture.verse_ref import Versification
-from .data_type import DataType
 from .scripture_ref import EMPTY_SCRIPTURE_REF, ScriptureRef
 from .text_row import TextRow, TextRowFlags
+from .text_row_content_type import TextRowContentType
 
 
 class TextCorpusEnumerator(ContextManager["TextCorpusEnumerator"], Generator[TextRow, None, None]):
@@ -78,10 +78,10 @@ class TextCorpusEnumerator(ContextManager["TextCorpusEnumerator"], Generator[Tex
                     range_start_row.ref,
                     segment=list(range_start_row.segment) + list(row.segment),
                     flags=flags,
-                    data_type=DataType.SENTENCE,
+                    data_type=TextRowContentType.SEGMENT,
                 )
                 rows[range_start_offset] = range_start_ref, new_text_row
-                row = TextRow(row.text_id, row.ref, flags=TextRowFlags.IN_RANGE, data_type=DataType.SENTENCE)
+                row = TextRow(row.text_id, row.ref, flags=TextRowFlags.IN_RANGE, data_type=TextRowContentType.SEGMENT)
                 range_start_offset -= 1
             else:
                 range_start_offset = -1

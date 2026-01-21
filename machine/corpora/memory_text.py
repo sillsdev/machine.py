@@ -1,13 +1,15 @@
 from typing import Generator, Iterable
 
 from .corpora_utils import gen
-from .data_type import DataType
 from .text import Text
 from .text_row import TextRow
+from .text_row_content_type import TextRowContentType
 
 
 class MemoryText(Text):
-    def __init__(self, id: str, rows: Iterable[TextRow] = [], data_type: DataType = DataType.SENTENCE) -> None:
+    def __init__(
+        self, id: str, rows: Iterable[TextRow] = [], data_type: TextRowContentType = TextRowContentType.SEGMENT
+    ) -> None:
         self._id = id
         self._rows = list(rows)
         if any([r.data_type != data_type for r in self._rows]):
@@ -23,7 +25,7 @@ class MemoryText(Text):
         return self._id
 
     @property
-    def data_type(self) -> DataType:
+    def data_type(self) -> TextRowContentType:
         return self._data_type
 
     def _get_rows(self) -> Generator[TextRow, None, None]:
