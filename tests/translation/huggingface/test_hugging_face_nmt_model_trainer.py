@@ -21,6 +21,7 @@ from transformers import (
 )
 
 from machine.corpora import DictionaryTextCorpus, MemoryText, TextRow
+from machine.corpora.text_row_content_type import TextRowContentType
 from machine.translation.huggingface import HuggingFaceNmtEngine, HuggingFaceNmtModelTrainer, add_lang_code_to_tokenizer
 
 
@@ -110,7 +111,11 @@ def test_update_tokenizer_missing_char() -> None:
                         _row(1, "Ḏ Ḻ ḻ Ṉ"),
                         _row(2, "d e f g"),
                     ],
-                )
+                ),
+                MemoryText(
+                    "terms",
+                    [TextRow("terms", 3, ["telephone"], content_type=TextRowContentType.WORD)],
+                ),
             ]
         )
 
@@ -120,9 +125,13 @@ def test_update_tokenizer_missing_char() -> None:
                     "text1",
                     [
                         _row(1, "a b c"),
-                        _row(1, "ॽ " + "‌ " + "‍"),
+                        _row(2, "ॽ " + "‌ " + "‍"),
                     ],
-                )
+                ),
+                MemoryText(
+                    "terms",
+                    [TextRow("terms", 3, ["teléfono"], content_type=TextRowContentType.WORD)],
+                ),
             ]
         )
         corpus = source_corpus.align_rows(target_corpus)

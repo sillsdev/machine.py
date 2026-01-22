@@ -87,4 +87,5 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
                         if compare_alignment_corpus == 0 and alignment_row is not None
                         else None
                     ),
+                    content_type=n_row.content_type,
                 )

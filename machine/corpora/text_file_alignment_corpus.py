@@ -22,5 +22,5 @@ class TextFileAlignmentCorpus(DictionaryAlignmentCorpus):
             file_patterns = (str(p) for p in args)
         else:
             file_patterns = (str(p) for p in args[0])
-        collections = (TextFileAlignmentCollection(id, filename) for id, filename in get_files(file_patterns))
+        collections = (TextFileAlignmentCollection(id, filename) for id, filename, _ in get_files(file_patterns))
         super().__init__(collections)

@@ -3,7 +3,8 @@ from typing import List, Optional
 
 from machine.scripture import canon
 
-from ..scripture.verse_ref import ValidStatus, VerseRef, Versification
+from ..scripture.verse_ref import ValidStatus, VerseRef
+from .paratext_project_settings import ParatextProjectSettings
 from .usfm_parser_handler import UsfmParserHandler
 from .usfm_parser_state import UsfmParserState
 
@@ -25,6 +26,7 @@ class UsfmVersificationError:
         expected_verse: int,
         actual_chapter: int,
         actual_verse: int,
+        project_name: str,
         verse_ref: Optional[VerseRef] = None,
     ):
         self._book_num = book_num
@@ -34,10 +36,15 @@ class UsfmVersificationError:
         self._actual_verse = actual_verse
         self._verse_ref = verse_ref
         self._type: UsfmVersificationErrorType
+        self._project_name = project_name
 
     @property
     def type(self) -> UsfmVersificationErrorType:
         return self._type
+
+    @property
+    def project_name(self) -> str:
+        return self._project_name
 
     def check_error(self) -> bool:
         """Returns true if there is an error"""
@@ -71,15 +78,15 @@ class UsfmVersificationError:
 
     @property
     def expected_verse_ref(self) -> str:
+        if self._type == UsfmVersificationErrorType.EXTRA_VERSE:
+            return ""
         if (
             default_verse_ref := VerseRef.try_from_string(
-                f"{self._book_num} {self._expected_chapter}:{self._expected_verse}"
+                f"{canon.book_number_to_id(self._book_num)} {self._expected_chapter}:{self._expected_verse}"
             )
             is None
         ):
-            return ""
-        if self._type == UsfmVersificationErrorType.EXTRA_VERSE:
-            return ""
+            return self.default_verse(self._expected_chapter, self._expected_verse)
         if self._type == UsfmVersificationErrorType.MISSING_VERSE_SEGMENT:
             if (
                 verse_ref_with_segment := VerseRef.try_from_string(
@@ -96,7 +103,7 @@ class UsfmVersificationError:
                 return str(first_verse)
             elif (
                 corrected_verse_range_ref := VerseRef.try_from_string(
-                    f"{self._book_num} {self._expected_chapter}:{first_verse}-{last_verse}"
+                    f"{canon.book_number_to_id(self._book_num)} {self._expected_chapter}:{first_verse}-{last_verse}"
                 )
                 is not None
             ):
@@ -105,16 +112,23 @@ class UsfmVersificationError:
 
     @property
     def actual_verse_ref(self) -> str:
-        return (
-            str(self._verse_ref)
-            if self._verse_ref is not None
-            else str(VerseRef(self._book_num, self._actual_chapter, self._actual_verse))
-        )
+        if self._verse_ref is not None:
+            return str(self._verse_ref)
+        if actual_verse_ref := VerseRef.try_from_string(
+            f"{self._book_num} {self._actual_chapter}:{self._actual_verse}"
+        ):
+            return str(actual_verse_ref)
+        return self.default_verse(self._actual_chapter, self._actual_verse)
+
+    def default_verse(self, chapter: int, verse: int):
+        verse_string = "" if self._actual_verse == -1 else str(verse)
+        return f"{canon.book_number_to_id(self._book_num)} {chapter}:{verse_string}"
 
 
 class UsfmVersificationErrorDetector(UsfmParserHandler):
-    def __init__(self, versification: Versification):
-        self._versification = versification
+    def __init__(self, settings: ParatextProjectSettings):
+        self._project_name = settings.name
+        self._versification = settings.versification
         self._current_book = 0
         self._current_chapter = 0
         self._current_verse = VerseRef()
@@ -134,6 +148,7 @@ class UsfmVersificationErrorDetector(UsfmParserHandler):
                 ),
                 self._current_chapter,
                 list(self._current_verse.all_verses())[-1].verse_num,
+                self._project_name,
             )
             if versification_error.check_error():
                 self._errors.append(versification_error)
@@ -153,6 +168,7 @@ class UsfmVersificationErrorDetector(UsfmParserHandler):
                 self._versification.get_last_verse(self._current_book, self._current_chapter),
                 self._current_chapter,
                 list(self._current_verse.all_verses())[-1].verse_num,
+                self._project_name,
             )
             if versification_error.check_error():
                 self._errors.append(versification_error)
@@ -167,6 +183,8 @@ class UsfmVersificationErrorDetector(UsfmParserHandler):
                 list(self._current_verse.all_verses())[-1].verse_num,
                 self._current_chapter,
                 list(self._current_verse.all_verses())[-1].verse_num,
+                self._project_name,
+                self._current_verse,
             )
             if versification_error.check_error():
                 self._errors.append(versification_error)

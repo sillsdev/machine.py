@@ -36,14 +36,17 @@ from transformers import (
     PreTrainedTokenizerFast,
     Seq2SeqTrainer,
     Seq2SeqTrainingArguments,
+    TensorType,
     TrainerCallback,
     set_seed,
 )
+from transformers.tokenization_utils import BatchEncoding
 from transformers.trainer_callback import TrainerControl, TrainerState
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.training_args import TrainingArguments
 
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
+from ...corpora.text_row_content_type import TextRowContentType
 from ...utils.progress_status import ProgressStatus
 from ..trainer import Trainer, TrainStats
 
@@ -222,7 +225,11 @@ class HuggingFaceNmtModelTrainer(Trainer):
                     lang_codes.append(src_lang)
                 if self._add_unk_tgt_tokens:
                     lang_codes.append(tgt_lang)
-                missing_tokens = find_missing_characters(tokenizer, train_dataset, lang_codes)
+                missing_tokens = find_missing_characters(
+                    tokenizer,
+                    (train_dataset),
+                    lang_codes,
+                )
                 if missing_tokens:
                     tokenizer = add_tokens(tokenizer, missing_tokens)
 
@@ -291,17 +298,92 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 "memory"
             )
 
-        def preprocess_function(examples):
-            if isinstance(tokenizer, (NllbTokenizer, NllbTokenizerFast)):
-                inputs = [self._mpn.normalize(prefix + ex[src_lang]) for ex in examples["translation"]]
-                targets = [self._mpn.normalize(ex[tgt_lang]) for ex in examples["translation"]]
-            else:
-                inputs = [prefix + ex[src_lang] for ex in examples["translation"]]
-                targets = [ex[tgt_lang] for ex in examples["translation"]]
+        def batch_prepare_for_model(
+            tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast],
+            batch_tokens: List[List[str]],
+            return_tensors: Optional[Union[str, TensorType]] = None,
+        ) -> BatchEncoding:
+            batch_outputs: Dict[str, Any] = {}
+            for tokens in batch_tokens:
+                ids = cast(List[int], tokenizer.convert_tokens_to_ids(tokens))
+                outputs = tokenizer.prepare_for_model(ids, add_special_tokens=False)
 
-            model_inputs = tokenizer(inputs, max_length=max_src_length, truncation=True)
-            # Tokenize targets with the `text_target` keyword argument
-            labels = tokenizer(text_target=targets, max_length=max_tgt_length, truncation=True)
+                for key, value in outputs.items():
+                    if key not in batch_outputs:
+                        batch_outputs[key] = []
+                    batch_outputs[key].append(value)
+            return BatchEncoding(batch_outputs, tensor_type=return_tensors)
+
+        def preprocess_function(examples):
+            # Add one to the content_type in order to convert back from ClassLabels which are enumerated from 0, not 1
+            if isinstance(tokenizer, (NllbTokenizer, NllbTokenizerFast)):
+                inputs = [
+                    (self._mpn.normalize(ex[src_lang]), TextRowContentType(d + 1))
+                    for ex, d in zip(examples["translation"], examples["content_type"])
+                ]
+                targets = [
+                    (self._mpn.normalize(ex[tgt_lang]), TextRowContentType(d + 1))
+                    for ex, d in zip(examples["translation"], examples["content_type"])
+                ]
+            else:
+                inputs = [
+                    (self._mpn.normalize(ex[src_lang]), TextRowContentType(d + 1))
+                    for ex, d in zip(examples["translation"], examples["content_type"])
+                ]
+                targets = [
+                    (self._mpn.normalize(ex[tgt_lang]), TextRowContentType(d + 1))
+                    for ex, d in zip(examples["translation"], examples["content_type"])
+                ]
+
+            num_glosses = len([1 for _, d in inputs if d == TextRowContentType.WORD])
+            if not isinstance(tokenizer, PreTrainedTokenizerFast) or num_glosses == 0:
+                if num_glosses > 0:
+                    logger.warning(
+                        f"Adding key terms as partial words is not possible when using \
+                            the non-fast tokenizer '{type(tokenizer)}'."
+                    )
+                model_inputs = tokenizer([prefix + i for i, _ in inputs], max_length=max_src_length, truncation=True)
+                # Tokenize targets with the `text_target` keyword argument
+                labels = tokenizer(text_target=[t for t, _ in targets], max_length=max_tgt_length, truncation=True)
+
+            elif num_glosses > 0:
+                src_tokens: List[List[str]] = []
+                src_batches = tokenizer([prefix + i for i, _ in inputs], max_length=max_src_length, truncation=True)
+                for i in range(len(inputs)):
+                    src_tokens.append(src_batches.tokens(i))
+
+                trg_tokens: List[List[str]] = []
+                trg_batches = tokenizer(text_target=[t for t, _ in targets], max_length=max_tgt_length, truncation=True)
+                for i in range(len(targets)):
+                    trg_tokens.append(trg_batches.tokens(i))
+
+                src_term_partial_word_tokens: List[List[str]] = []
+                src_term_partial_word_batches = tokenizer(
+                    [prefix + "\ufffc" + i for i, d in inputs if d == TextRowContentType.WORD],
+                    max_length=max_src_length + 2,
+                    truncation=True,
+                )
+                for i in range(num_glosses):
+                    src_term_partial_word_tokens.append(src_term_partial_word_batches.tokens(i))
+                    src_term_partial_word_tokens[-1].remove("▁")
+                    src_term_partial_word_tokens[-1].remove("\ufffc")
+
+                trg_term_partial_word_tokens: List[List[str]] = []
+                trg_term_partial_word_batches = tokenizer(
+                    text_target=["\ufffc" + t for t, d in targets if d == TextRowContentType.WORD],
+                    max_length=max_tgt_length + 2,
+                    truncation=True,
+                )
+                for i in range(num_glosses):
+                    trg_term_partial_word_tokens.append(trg_term_partial_word_batches.tokens(i))
+                    trg_term_partial_word_tokens[-1].remove("▁")
+                    trg_term_partial_word_tokens[-1].remove("\ufffc")
+
+                model_inputs = batch_prepare_for_model(
+                    tokenizer, [ex for ex in src_tokens + src_term_partial_word_tokens]
+                )
+                # Tokenize targets with the `text_target` keyword argument
+                labels = batch_prepare_for_model(tokenizer, [ex for ex in trg_tokens + trg_term_partial_word_tokens])
 
             model_inputs["labels"] = labels["input_ids"]
             return model_inputs

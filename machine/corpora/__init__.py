@@ -9,6 +9,7 @@ from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .dictionary_text_corpus import DictionaryTextCorpus
 from .file_paratext_project_file_handler import FileParatextProjectFileHandler
 from .file_paratext_project_settings_parser import FileParatextProjectSettingsParser
+from .file_paratext_project_terms_parser import FileParatextProjectTermsParser
 from .file_paratext_project_text_updater import FileParatextProjectTextUpdater
 from .file_paratext_project_versification_error_detector import FileParatextProjectVersificationErrorDetector
 from .flatten import flatten
@@ -25,7 +26,7 @@ from .paratext_backup_text_corpus import ParatextBackupTextCorpus
 from .paratext_project_file_handler import ParatextProjectFileHandler
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
-from .paratext_project_terms_parser_base import ParatextProjectTermsParserBase
+from .paratext_project_terms_parser_base import KeyTerm, ParatextProjectTermsParserBase
 from .paratext_project_text_updater_base import ParatextProjectTextUpdaterBase
 from .paratext_project_versification_error_detector import ParatextProjectVersificationErrorDetector
 from .paratext_text_corpus import ParatextTextCorpus
@@ -47,6 +48,7 @@ from .text_file_alignment_corpus import TextFileAlignmentCorpus
 from .text_file_text import TextFileText
 from .text_file_text_corpus import TextFileTextCorpus
 from .text_row import TextRow, TextRowFlags
+from .text_row_content_type import TextRowContentType
 from .token_processors import (
     escape_spaces,
     lowercase,
@@ -101,6 +103,7 @@ __all__ = [
     "batch",
     "Corpus",
     "create_versification_ref_corpus",
+    "TextRowContentType",
     "DblBundleTextCorpus",
     "DictionaryAlignmentCorpus",
     "DictionaryTextCorpus",
@@ -109,10 +112,12 @@ __all__ = [
     "extract_scripture_corpus",
     "FileParatextProjectFileHandler",
     "FileParatextProjectSettingsParser",
+    "FileParatextProjectTermsParser",
     "FileParatextProjectTextUpdater",
     "FileParatextProjectVersificationErrorDetector",
     "flatten",
     "is_scripture",
+    "KeyTerm",
     "lowercase",
     "MemoryAlignmentCollection",
     "MemoryStreamContainer",

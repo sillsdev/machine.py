@@ -49,14 +49,14 @@ def get_split_indices(
     return set(rand.sample(range(corpus_size), min(split_size, corpus_size)))
 
 
-def get_files(file_patterns: Iterable[str]) -> Iterable[Tuple[str, str]]:
+def get_files(file_patterns: Iterable[str]) -> Iterable[Tuple[str, str, int]]:
     file_patterns = list(file_patterns)
     if len(file_patterns) == 1 and os.path.isfile(file_patterns[0]):
-        yield ("*all*", file_patterns[0])
+        yield ("*all*", file_patterns[0], 0)
     else:
         for i, file_pattern in enumerate(file_patterns):
             if os.path.isfile(file_pattern):
-                yield (str(i), file_pattern)
+                yield (str(i), file_pattern, i)
                 continue
 
             if "*" not in file_pattern and "?" not in file_pattern and not os.path.exists(file_pattern):
@@ -89,7 +89,7 @@ def get_files(file_patterns: Iterable[str]) -> Iterable[Tuple[str, str]]:
                         updated_id += group
                     if len(updated_id) > 0:
                         id = updated_id
-                yield (id, filename)
+                yield (id, filename, i)
 
 
 def gen(iterable: Iterable[T] = []) -> Generator[T, None, None]:

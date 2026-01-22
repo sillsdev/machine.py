@@ -121,6 +121,7 @@ class _TestEnvironment:
         decoy.when(self.translation_file_service.create_target_corpus()).then_return(DictionaryTextCorpus())
         decoy.when(self.translation_file_service.exists_source_corpus()).then_return(True)
         decoy.when(self.translation_file_service.exists_target_corpus()).then_return(True)
+
         decoy.when(self.translation_file_service.get_source_pretranslations()).then_do(
             lambda: ContextManagedGenerator(
                 (

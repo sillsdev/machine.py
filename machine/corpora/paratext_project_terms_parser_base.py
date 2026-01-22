@@ -7,6 +7,9 @@ from importlib.resources import open_binary
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 from xml.etree import ElementTree
 
+from ..scripture.constants import ORIGINAL_VERSIFICATION
+from ..scripture.verse_ref import VerseRef
+from .key_term import KeyTerm
 from .paratext_project_file_handler import ParatextProjectFileHandler
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
@@ -37,21 +40,27 @@ class ParatextProjectTermsParserBase(ABC):
         else:
             self._settings = settings
 
-    def parse(self, term_categories: Sequence[str], use_term_glosses: bool = True) -> List[Tuple[str, List[str]]]:
+    def parse(self, term_categories: Sequence[str], use_term_glosses: bool = True) -> Sequence[KeyTerm]:
         biblical_terms_doc = None
-        if self._settings.biblical_terms_list_type == "Project":
-            if self._paratext_project_file_handler.exists(self._settings.biblical_terms_file_name):
-                with self._paratext_project_file_handler.open(self._settings.biblical_terms_file_name) as stream:
-                    biblical_terms_doc = ElementTree.parse(stream)
-                    term_id_to_category_dict = _get_category_per_id(biblical_terms_doc)
+        term_id_to_category_dict = {}
+        term_id_to_domain_dict = {}
+        term_id_to_references_dict = {}
+        if self._settings.biblical_terms_list_type == "Project" and self._paratext_project_file_handler.exists(
+            self._settings.biblical_terms_file_name
+        ):
+            with self._paratext_project_file_handler.open(self._settings.biblical_terms_file_name) as stream:
+                biblical_terms_doc = ElementTree.parse(stream)
+                term_id_to_category_dict, term_id_to_domain_dict, term_id_to_references_dict = _get_term_data(
+                    biblical_terms_doc
+                )
         elif self._settings.biblical_terms_list_type in _PREDEFINED_TERMS_LIST_TYPES:
             with open_binary(
                 _SUPPORTED_LANGUAGE_TERMS_LOCALIZATION_XMLS_PACKAGE, self._settings.biblical_terms_file_name
             ) as stream:
                 biblical_terms_doc = ElementTree.parse(stream)
-                term_id_to_category_dict = _get_category_per_id(biblical_terms_doc)
-        else:
-            term_id_to_category_dict = {}
+                term_id_to_category_dict, term_id_to_domain_dict, term_id_to_references_dict = _get_term_data(
+                    biblical_terms_doc
+                )
 
         terms_glosses_doc: Optional[ElementTree.ElementTree[ElementTree.Element]] = None
         resource_name = None
@@ -74,7 +83,10 @@ class ParatextProjectTermsParserBase(ABC):
         if term_renderings_doc is not None:
             for term in term_renderings_doc.findall(".//TermRendering"):
                 id = term.attrib["Id"]
-                if _is_in_category(id, term_categories, term_id_to_category_dict):
+                if (
+                    _is_in_category(id, term_categories, term_id_to_category_dict)
+                    and term.attrib.get("Guess", "false") == "false"
+                ):
                     id_ = id.replace("\n", "&#xA")
                     renderings_element = term.find("Renderings")
                     rendering_text = (
@@ -82,7 +94,7 @@ class ParatextProjectTermsParserBase(ABC):
                         if renderings_element is not None and renderings_element.text is not None
                         else ""
                     )
-                    renderings = _get_renderings(rendering_text)
+                    renderings = _get_renderings_with_pattern(rendering_text)
                     terms_renderings[id_].extend(renderings)
 
         terms_glosses: Dict[str, List[str]] = defaultdict(list)
@@ -95,15 +107,38 @@ class ParatextProjectTermsParserBase(ABC):
                     glosses = _get_glosses(gloss)
                     terms_glosses[id_].extend(glosses)
         if terms_glosses or terms_renderings:
-            combined = {**terms_renderings, **{k: v for k, v in terms_glosses.items() if k not in terms_renderings}}
-            return [(key, list(value)) for key, value in combined.items()]
-
+            terms: List[KeyTerm] = []
+            for id in sorted(set(terms_renderings.keys()).union(terms_glosses.keys())):
+                renderings_patterns = terms_renderings.get(id, [])
+                category = term_id_to_category_dict.get(id, "?")
+                domain = term_id_to_domain_dict.get(id, "?")
+                glosses = terms_glosses.get(id, [])
+                references = term_id_to_references_dict.get(id, [])
+                renderings = [r.replace("*", "") for r in renderings_patterns]
+                if len(renderings) == 0:
+                    if len(glosses) == 0:
+                        continue
+                    renderings = glosses
+                term = KeyTerm(
+                    id=id,
+                    category=category,
+                    domain=domain,
+                    renderings=renderings,
+                    references=references,
+                    renderings_patterns=renderings_patterns,
+                )
+                terms.append(term)
+            return terms
         return []
 
 
 def _is_in_category(id: str, term_categories: Sequence[str], term_id_to_category_dict: Dict[str, str]) -> bool:
     category = term_id_to_category_dict.get(id)
-    return not term_categories or (category is not None and category in term_categories)
+    return (
+        not term_categories
+        or (category is not None and category in term_categories)
+        or (len(term_id_to_category_dict) == 0)
+    )
 
 
 def _clean_term(term: str):
@@ -127,9 +162,9 @@ def _get_glosses(gloss: str) -> List[str]:
     return glosses
 
 
-def _get_renderings(rendering: str) -> List[str]:
+def _get_renderings_with_pattern(rendering: str):
     renderings = re.split(r"\|\|", rendering.strip())
-    renderings = [_clean_term(rendering).strip().replace("*", "") for rendering in renderings]
+    renderings = [_clean_term(rendering).strip() for rendering in renderings]
     return [rendering for rendering in renderings if rendering]
 
 
@@ -150,8 +185,12 @@ def _strip_parens(term_string: str, left: str = "(", right: str = ")") -> str:
     return term_string
 
 
-def _get_category_per_id(biblical_terms_doc: ElementTree.ElementTree[ElementTree.Element]) -> Dict[str, str]:
+def _get_term_data(
+    biblical_terms_doc: ElementTree.ElementTree[ElementTree.Element],
+) -> Tuple[Dict[str, str], Dict[str, str], Dict[str, List[VerseRef]]]:
     term_id_to_category_dict: Dict[str, str] = {}
+    term_id_to_domain_dict: Dict[str, str] = {}
+    term_id_to_references_dict: Dict[str, List[VerseRef]] = {}
 
     for term in biblical_terms_doc.findall(".//Term"):
         term_id = term.attrib["Id"]
@@ -160,5 +199,20 @@ def _get_category_per_id(biblical_terms_doc: ElementTree.ElementTree[ElementTree
             term_id_to_category_dict[term_id] = (
                 category.text if category is not None and category.text is not None else ""
             )
+        if term_id not in term_id_to_domain_dict:
+            domain = term.find("Domain")
+            term_id_to_domain_dict[term_id] = domain.text if domain is not None and domain.text is not None else ""
+        if term_id not in term_id_to_references_dict:
+            references_element = term.find("References")
+            references: List[VerseRef] = []
+            if references_element is not None:
+                for verse_element in references_element.findall("Verse"):
+                    if verse_element.text is None:
+                        continue
+                    bbbcccvvv = int(verse_element.text[:9])
+                    vref = VerseRef.from_bbbcccvvv(bbbcccvvv)
+                    vref.change_versification(ORIGINAL_VERSIFICATION)
+                    references.append(vref)
+                term_id_to_references_dict[term_id] = references
 
-    return term_id_to_category_dict
+    return term_id_to_category_dict, term_id_to_domain_dict, term_id_to_references_dict

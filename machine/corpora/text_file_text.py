@@ -7,11 +7,14 @@ from ..utils.typeshed import StrPath
 from .multi_key_ref import MultiKeyRef
 from .text_base import TextBase
 from .text_row import TextRow, TextRowFlags
+from .text_row_content_type import TextRowContentType
 
 
 class TextFileText(TextBase):
-    def __init__(self, id: str, filename: StrPath) -> None:
-        super().__init__(id, id)
+    def __init__(
+        self, id: str, filename: StrPath, content_type: TextRowContentType = TextRowContentType.SEGMENT
+    ) -> None:
+        super().__init__(id, id, content_type)
         self._filename = Path(filename)
 
     @property

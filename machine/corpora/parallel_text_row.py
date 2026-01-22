@@ -4,6 +4,7 @@ from typing import Any, Collection, Optional, Sequence
 
 from .aligned_word_pair import AlignedWordPair
 from .text_row import TextRowFlags
+from .text_row_content_type import TextRowContentType
 
 
 class ParallelTextRow(Sequence[Sequence[str]]):
@@ -17,6 +18,7 @@ class ParallelTextRow(Sequence[Sequence[str]]):
         aligned_word_pairs: Optional[Collection[AlignedWordPair]] = None,
         source_flags: TextRowFlags = TextRowFlags.SENTENCE_START,
         target_flags: TextRowFlags = TextRowFlags.SENTENCE_START,
+        content_type: TextRowContentType = TextRowContentType.SEGMENT,
     ) -> None:
         if not text_id:
             raise ValueError("A text_id must be set.")
@@ -25,6 +27,7 @@ class ParallelTextRow(Sequence[Sequence[str]]):
         self._text_id = text_id
         self._source_refs = source_refs
         self._target_refs = target_refs
+        self._content_type = content_type
         self.source_segment = source_segment
         self.target_segment = target_segment
         self.aligned_word_pairs = aligned_word_pairs
@@ -50,6 +53,10 @@ class ParallelTextRow(Sequence[Sequence[str]]):
     @property
     def refs(self) -> Sequence[Any]:
         return self.target_refs if len(self.source_refs) == 0 else self.source_refs
+
+    @property
+    def content_type(self) -> TextRowContentType:
+        return self._content_type
 
     @property
     def is_source_sentence_start(self) -> bool:
@@ -107,4 +114,5 @@ class ParallelTextRow(Sequence[Sequence[str]]):
             None if self.aligned_word_pairs is None else [wp.invert() for wp in self.aligned_word_pairs],
             self.target_flags,
             self.source_flags,
+            self.content_type,
         )

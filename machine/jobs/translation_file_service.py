@@ -1,11 +1,12 @@
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Generator, Iterator, List, Optional, TypedDict, Union
+from typing import Any, Generator, Iterator, List, Optional, TypedDict
 
 import json_stream
 
 from ..corpora.text_corpus import TextCorpus
 from ..corpora.text_file_text_corpus import TextFileTextCorpus
+from ..corpora.text_row_content_type import TextRowContentType
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .shared_file_service_base import DictToJsonWriter, SharedFileServiceBase
 from .shared_file_service_factory import SharedFileServiceType, get_shared_file_service
@@ -26,19 +27,18 @@ class TranslationFileService:
         self,
         type: SharedFileServiceType,
         config: Any,
-        source_filenames: Optional[Union[str, List[str]]] = None,
-        target_filenames: Optional[Union[str, List[str]]] = None,
+        source_filename: Optional[str] = "train.src.txt",
+        target_filename: Optional[str] = "train.trg.txt",
+        source_terms_filename: Optional[str] = "train.key-terms.src.txt",
+        target_terms_filename: Optional[str] = "train.key-terms.trg.txt",
         source_pretranslation_filename: str = "pretranslate.src.json",
         target_pretranslation_filename: str = "pretranslate.trg.json",
     ) -> None:
 
-        if source_filenames is None:
-            source_filenames = ["train.src.txt", "train.key-terms.src.txt"]
-        if target_filenames is None:
-            target_filenames = ["train.trg.txt", "train.key-terms.trg.txt"]
-
-        self._source_filenames = [source_filenames] if isinstance(source_filenames, str) else list(source_filenames)
-        self._target_filenames = [target_filenames] if isinstance(target_filenames, str) else list(target_filenames)
+        self._source_filename = source_filename
+        self._target_filename = target_filename
+        self._source_terms_filename = source_terms_filename
+        self._target_terms_filename = target_terms_filename
         self._source_pretranslation_filename = source_pretranslation_filename
         self._target_pretranslation_filename = target_pretranslation_filename
 
@@ -46,26 +46,40 @@ class TranslationFileService:
 
     def create_source_corpus(self) -> TextCorpus:
         return TextFileTextCorpus(
-            self.shared_file_service.download_file(f"{self.shared_file_service.build_path}/{source_filename}")
-            for source_filename in self._source_filenames
+            file_patterns=[
+                self.shared_file_service.download_file(
+                    f"{self.shared_file_service.build_path}/{self._source_filename}"
+                ),
+                self.shared_file_service.download_file(
+                    f"{self.shared_file_service.build_path}/{self._source_terms_filename}"
+                ),
+            ],
+            content_types=[TextRowContentType.SEGMENT, TextRowContentType.WORD],
         )
 
     def create_target_corpus(self) -> TextCorpus:
         return TextFileTextCorpus(
-            self.shared_file_service.download_file(f"{self.shared_file_service.build_path}/{target_filename}")
-            for target_filename in self._target_filenames
+            file_patterns=[
+                self.shared_file_service.download_file(
+                    f"{self.shared_file_service.build_path}/{self._target_filename}"
+                ),
+                self.shared_file_service.download_file(
+                    f"{self.shared_file_service.build_path}/{self._target_terms_filename}"
+                ),
+            ],
+            content_types=[TextRowContentType.SEGMENT, TextRowContentType.WORD],
         )
 
     def exists_source_corpus(self) -> bool:
         return all(
             self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{source_filename}")
-            for source_filename in self._source_filenames
+            for source_filename in [self._source_filename, self._source_terms_filename]
         )
 
     def exists_target_corpus(self) -> bool:
         return all(
             self.shared_file_service._exists_file(f"{self.shared_file_service.build_path}/{target_filename}")
-            for target_filename in self._target_filenames
+            for target_filename in [self._target_filename, self._target_terms_filename]
         )
 
     def get_source_pretranslations(self) -> ContextManagedGenerator[PretranslationInfo, None, None]:

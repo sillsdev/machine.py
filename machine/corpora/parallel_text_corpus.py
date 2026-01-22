@@ -27,6 +27,7 @@ from .aligned_word_pair import AlignedWordPair
 from .corpora_utils import get_split_indices
 from .corpus import Corpus
 from .parallel_text_row import ParallelTextRow
+from .text_row_content_type import TextRowContentType
 from .token_processors import escape_spaces, lowercase, normalize, unescape_spaces
 
 if TYPE_CHECKING:
@@ -401,10 +402,11 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
         ref_column: Optional[str] = "ref",
         translation_column: str = "translation",
         alignment_column: Optional[str] = "alignment",
+        content_type_column: Optional[str] = "content_type",
     ) -> Dataset:
         try:
             from datasets.arrow_dataset import Dataset
-            from datasets.features.features import Features, FeatureType, Sequence, Value
+            from datasets.features.features import ClassLabel, Features, FeatureType, Sequence, Value
             from datasets.features.translation import Translation
         except ImportError:
             raise RuntimeError("datasets is not installed.")
@@ -416,6 +418,8 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
             features_dict[ref_column] = Sequence(Value("string"))
         if alignment_column is not None:
             features_dict[alignment_column] = Sequence({source_lang: Value("int32"), target_lang: Value("int32")})
+        if content_type_column is not None:
+            features_dict[content_type_column] = ClassLabel(names=[e.name for e in TextRowContentType])
         features = Features(features_dict)
 
         def iterable() -> Iterable[dict]:
@@ -426,6 +430,8 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
                         example[text_id_column] = row.text_id
                     if ref_column is not None:
                         example[ref_column] = row.refs
+                    if content_type_column is not None:
+                        example[content_type_column] = row.content_type.name
                     example[translation_column] = {source_lang: row.source_text, target_lang: row.target_text}
                     if alignment_column is not None:
                         src_indices: List[int] = []
