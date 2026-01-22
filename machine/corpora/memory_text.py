@@ -3,7 +3,6 @@ from typing import Generator, Iterable
 from .corpora_utils import gen
 from .text import Text
 from .text_row import TextRow
-from .text_row_content_type import TextRowContentType
 
 
 class MemoryText(Text):
