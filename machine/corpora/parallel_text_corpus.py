@@ -402,7 +402,7 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
         ref_column: Optional[str] = "ref",
         translation_column: str = "translation",
         alignment_column: Optional[str] = "alignment",
-        data_type_column: Optional[str] = "data_type",
+        content_type_column: Optional[str] = "content_type",
     ) -> Dataset:
         try:
             from datasets.arrow_dataset import Dataset
@@ -418,8 +418,8 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
             features_dict[ref_column] = Sequence(Value("string"))
         if alignment_column is not None:
             features_dict[alignment_column] = Sequence({source_lang: Value("int32"), target_lang: Value("int32")})
-        if data_type_column is not None:
-            features_dict[data_type_column] = ClassLabel(names=[e.name for e in TextRowContentType])
+        if content_type_column is not None:
+            features_dict[content_type_column] = ClassLabel(names=[e.name for e in TextRowContentType])
         features = Features(features_dict)
 
         def iterable() -> Iterable[dict]:
@@ -430,8 +430,8 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
                         example[text_id_column] = row.text_id
                     if ref_column is not None:
                         example[ref_column] = row.refs
-                    if data_type_column is not None:
-                        example[data_type_column] = row.data_type.name
+                    if content_type_column is not None:
+                        example[content_type_column] = row.content_type.name
                     example[translation_column] = {source_lang: row.source_text, target_lang: row.target_text}
                     if alignment_column is not None:
                         src_indices: List[int] = []

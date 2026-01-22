@@ -315,24 +315,24 @@ class HuggingFaceNmtModelTrainer(Trainer):
             return BatchEncoding(batch_outputs, tensor_type=return_tensors)
 
         def preprocess_function(examples):
-            # Add one to the data_type in order to convert back from ClassLabels which are enumerated from 0, not 1
+            # Add one to the content_type in order to convert back from ClassLabels which are enumerated from 0, not 1
             if isinstance(tokenizer, (NllbTokenizer, NllbTokenizerFast)):
                 inputs = [
                     (self._mpn.normalize(ex[src_lang]), TextRowContentType(d + 1))
-                    for ex, d in zip(examples["translation"], examples["data_type"])
+                    for ex, d in zip(examples["translation"], examples["content_type"])
                 ]
                 targets = [
                     (self._mpn.normalize(ex[tgt_lang]), TextRowContentType(d + 1))
-                    for ex, d in zip(examples["translation"], examples["data_type"])
+                    for ex, d in zip(examples["translation"], examples["content_type"])
                 ]
             else:
                 inputs = [
                     (self._mpn.normalize(ex[src_lang]), TextRowContentType(d + 1))
-                    for ex, d in zip(examples["translation"], examples["data_type"])
+                    for ex, d in zip(examples["translation"], examples["content_type"])
                 ]
                 targets = [
                     (self._mpn.normalize(ex[tgt_lang]), TextRowContentType(d + 1))
-                    for ex, d in zip(examples["translation"], examples["data_type"])
+                    for ex, d in zip(examples["translation"], examples["content_type"])
                 ]
 
             num_glosses = len([1 for _, d in inputs if d == TextRowContentType.WORD])

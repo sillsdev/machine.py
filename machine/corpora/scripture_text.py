@@ -12,7 +12,7 @@ from .text_row_content_type import TextRowContentType
 
 class ScriptureText(TextBase):
     def __init__(self, id: str, versification: Optional[Versification] = None) -> None:
-        super().__init__(id, get_scripture_text_sort_key(id), data_type=TextRowContentType.SEGMENT)
+        super().__init__(id, get_scripture_text_sort_key(id), content_type=TextRowContentType.SEGMENT)
         self._versification = ENGLISH_VERSIFICATION if versification is None else versification
 
     @property

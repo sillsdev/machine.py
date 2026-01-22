@@ -11,8 +11,10 @@ from .text_row_content_type import TextRowContentType
 
 
 class TextFileText(TextBase):
-    def __init__(self, id: str, filename: StrPath, data_type: TextRowContentType = TextRowContentType.SEGMENT) -> None:
-        super().__init__(id, id, data_type)
+    def __init__(
+        self, id: str, filename: StrPath, content_type: TextRowContentType = TextRowContentType.SEGMENT
+    ) -> None:
+        super().__init__(id, id, content_type)
         self._filename = Path(filename)
 
     @property

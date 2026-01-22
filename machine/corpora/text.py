@@ -13,7 +13,3 @@ class Text(Corpus[TextRow]):
     @property
     @abstractmethod
     def sort_key(self) -> str: ...
-
-    @property
-    @abstractmethod
-    def data_type(self) -> TextRowContentType: ...

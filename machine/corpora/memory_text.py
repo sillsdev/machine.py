@@ -7,14 +7,9 @@ from .text_row_content_type import TextRowContentType
 
 
 class MemoryText(Text):
-    def __init__(
-        self, id: str, rows: Iterable[TextRow] = [], data_type: TextRowContentType = TextRowContentType.SEGMENT
-    ) -> None:
+    def __init__(self, id: str, rows: Iterable[TextRow] = []) -> None:
         self._id = id
         self._rows = list(rows)
-        if any([r.data_type != data_type for r in self._rows]):
-            raise ValueError(f"{type(data_type)} of rows must match text {type(data_type)} {data_type}")
-        self._data_type = data_type
 
     @property
     def id(self) -> str:
@@ -23,10 +18,6 @@ class MemoryText(Text):
     @property
     def sort_key(self) -> str:
         return self._id
-
-    @property
-    def data_type(self) -> TextRowContentType:
-        return self._data_type
 
     def _get_rows(self) -> Generator[TextRow, None, None]:
         return gen(self._rows)

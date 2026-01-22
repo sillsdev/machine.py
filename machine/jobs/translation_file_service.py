@@ -54,7 +54,7 @@ class TranslationFileService:
                     f"{self.shared_file_service.build_path}/{self._source_terms_filename}"
                 ),
             ],
-            data_types=[TextRowContentType.SEGMENT, TextRowContentType.WORD],
+            content_types=[TextRowContentType.SEGMENT, TextRowContentType.WORD],
         )
 
     def create_target_corpus(self) -> TextCorpus:
@@ -67,7 +67,7 @@ class TranslationFileService:
                     f"{self.shared_file_service.build_path}/{self._target_terms_filename}"
                 ),
             ],
-            data_types=[TextRowContentType.SEGMENT, TextRowContentType.WORD],
+            content_types=[TextRowContentType.SEGMENT, TextRowContentType.WORD],
         )
 
     def exists_source_corpus(self) -> bool:

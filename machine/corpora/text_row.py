@@ -18,11 +18,11 @@ class TextRow(Sequence[str]):
         ref: Any,
         segment: Sequence[str] = [],
         flags: TextRowFlags = TextRowFlags.SENTENCE_START,
-        data_type: TextRowContentType = TextRowContentType.SEGMENT,
+        content_type: TextRowContentType = TextRowContentType.SEGMENT,
     ) -> None:
         self._text_id = text_id
         self._ref = ref
-        self._data_type = data_type
+        self._content_type = content_type
 
         self.segment = segment
         self.flags = flags
@@ -36,8 +36,8 @@ class TextRow(Sequence[str]):
         return self._ref
 
     @property
-    def data_type(self) -> TextRowContentType:
-        return self._data_type
+    def content_type(self) -> TextRowContentType:
+        return self._content_type
 
     @property
     def text(self) -> str:

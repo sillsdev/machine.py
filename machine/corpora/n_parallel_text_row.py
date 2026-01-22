@@ -6,7 +6,10 @@ from .text_row_content_type import TextRowContentType
 
 class NParallelTextRow:
     def __init__(
-        self, text_id: str, n_refs: Sequence[Sequence[Any]], data_type: TextRowContentType = TextRowContentType.SEGMENT
+        self,
+        text_id: str,
+        n_refs: Sequence[Sequence[Any]],
+        content_type: TextRowContentType = TextRowContentType.SEGMENT,
     ):
         if len([n_ref for n_ref in n_refs if n_ref is not None and len(n_ref) > 0]) == 0:
             raise ValueError(f"Refs must be provided but n_refs={n_refs}")
@@ -15,7 +18,7 @@ class NParallelTextRow:
         self._n = len(n_refs)
         self.n_segments: Sequence[Sequence[str]] = [[] for _ in range(0, self._n)]
         self.n_flags: Sequence[TextRowFlags] = [TextRowFlags.SENTENCE_START for _ in range(0, self._n)]
-        self._data_type = data_type
+        self._content_type = content_type
 
     @property
     def text_id(self) -> str:
@@ -26,8 +29,8 @@ class NParallelTextRow:
         return self._n_refs[0][0]
 
     @property
-    def data_type(self) -> TextRowContentType:
-        return self._data_type
+    def content_type(self) -> TextRowContentType:
+        return self._content_type
 
     @property
     def n_refs(self) -> Sequence[Sequence[Any]]:
@@ -50,6 +53,6 @@ class NParallelTextRow:
         return " ".join(self.n_segments[i])
 
     def invert(self) -> "NParallelTextRow":
-        inverted_row = NParallelTextRow(self._text_id, list(reversed(self._n_refs)), data_type=self.data_type)
+        inverted_row = NParallelTextRow(self._text_id, list(reversed(self._n_refs)), content_type=self.content_type)
         inverted_row.n_flags = list(reversed(self.n_flags))
         return inverted_row

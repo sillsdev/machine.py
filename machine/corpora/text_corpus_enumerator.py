@@ -78,10 +78,12 @@ class TextCorpusEnumerator(ContextManager["TextCorpusEnumerator"], Generator[Tex
                     range_start_row.ref,
                     segment=list(range_start_row.segment) + list(row.segment),
                     flags=flags,
-                    data_type=TextRowContentType.SEGMENT,
+                    content_type=TextRowContentType.SEGMENT,
                 )
                 rows[range_start_offset] = range_start_ref, new_text_row
-                row = TextRow(row.text_id, row.ref, flags=TextRowFlags.IN_RANGE, data_type=TextRowContentType.SEGMENT)
+                row = TextRow(
+                    row.text_id, row.ref, flags=TextRowFlags.IN_RANGE, content_type=TextRowContentType.SEGMENT
+                )
                 range_start_offset -= 1
             else:
                 range_start_offset = -1

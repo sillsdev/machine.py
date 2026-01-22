@@ -29,9 +29,9 @@ class ParatextBackupTermsCorpus(DictionaryTextCorpus):
             text = MemoryText(
                 text_id,
                 [
-                    TextRow(text_id, key_term.id, key_term.renderings, data_type=TextRowContentType.WORD)
+                    TextRow(text_id, key_term.id, key_term.renderings, content_type=TextRowContentType.WORD)
                     for key_term in key_terms
                 ],
-                data_type=TextRowContentType.WORD,
+                content_type=TextRowContentType.WORD,
             )
             self._add_text(text)
