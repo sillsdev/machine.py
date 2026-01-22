@@ -115,7 +115,6 @@ def test_update_tokenizer_missing_char() -> None:
                 MemoryText(
                     "terms",
                     [TextRow("terms", 3, ["telephone"], content_type=TextRowContentType.WORD)],
-                    content_type=TextRowContentType.WORD,
                 ),
             ]
         )
@@ -132,7 +131,6 @@ def test_update_tokenizer_missing_char() -> None:
                 MemoryText(
                     "terms",
                     [TextRow("terms", 3, ["teléfono"], content_type=TextRowContentType.WORD)],
-                    content_type=TextRowContentType.WORD,
                 ),
             ]
         )

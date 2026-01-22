@@ -32,6 +32,5 @@ class ParatextBackupTermsCorpus(DictionaryTextCorpus):
                     TextRow(text_id, key_term.id, key_term.renderings, content_type=TextRowContentType.WORD)
                     for key_term in key_terms
                 ],
-                content_type=TextRowContentType.WORD,
             )
             self._add_text(text)
