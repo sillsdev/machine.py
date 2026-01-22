@@ -6,10 +6,12 @@ from .text_row_content_type import TextRowContentType
 
 
 class TextBase(Text):
-    def __init__(self, id: str, sort_key: str, content_type: TextRowContentType = TextRowContentType.SEGMENT) -> None:
+    def __init__(
+        self, id: str, sort_key: str, default_content_type: TextRowContentType = TextRowContentType.SEGMENT
+    ) -> None:
         self._id = id
         self._sort_key = sort_key
-        self._default_content_type = content_type
+        self._default_content_type = default_content_type
 
     @property
     def id(self) -> str:
