@@ -208,6 +208,27 @@ def test_get_rows_paragraph_before_nonverse_paragraph() -> None:
     assert rows[2].text == "header"
 
 
+def test_get_rows_verse_zero():
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\h
+\mt
+\c 1
+\p \v 0
+\s
+\p \v 1 Verse one.
+"""
+    )
+
+    assert len(rows) == 2, str.join(",", [tr.text for tr in rows])
+
+    assert rows[0].ref == ScriptureRef.parse("MAT 1:0")
+    assert rows[0].text == ""
+
+    assert rows[1].ref == ScriptureRef.parse("MAT 1:1")
+    assert rows[1].text == "Verse one."
+
+
 def test_get_rows_style_starting_nonverse_paragraph_after_empty_paragraph() -> None:
     rows: List[TextRow] = get_rows(
         r"""\id MAT - Test
@@ -225,6 +246,223 @@ def test_get_rows_style_starting_nonverse_paragraph_after_empty_paragraph() -> N
     assert len(rows) == 4, str.join(",", [tr.text for tr in rows])
     assert rows[1].text == "verse 1 \\b \\q1"
     assert rows[2].text == "\\w header\\w*"
+
+
+def test_get_rows_verse_zero_with_text():
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\h
+\mt
+\c 1
+\p \v 0 Verse zero.
+\s
+\p \v 1 Verse one.
+"""
+    )
+
+    assert len(rows) == 2, str.join(",", [tr.text for tr in rows])
+
+    assert rows[0].ref == ScriptureRef.parse("MAT 1:0")
+    assert rows[0].text == "Verse zero."
+
+    assert rows[1].ref == ScriptureRef.parse("MAT 1:1")
+    assert rows[1].text == "Verse one."
+
+
+def test_get_rows_private_use_marker():
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test English Apocrypha
+\zmt Ignore this paragraph
+\mt1 Test English Apocrypha
+\pc Copyright Statement \zimagecopyrights
+\pc Further copyright statements
+""",
+        include_all_text=True,
+    )
+
+    assert len(rows) == 3, str.join(",", [tr.text for tr in rows])
+
+    assert rows[1].ref == ScriptureRef.parse("MAT 1:0/2:pc")
+    assert rows[1].text == "Copyright Statement"
+
+
+def test_get_rows_verse_range_with_right_to_left_marker():
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\h
+\mt
+\c 1
+\v 1"""
+        + "\u200f"
+        + r"""-2 Verse one and two.
+"""
+    )
+
+    assert len(rows) == 2, str.join(",", [tr.text for tr in rows])
+
+    assert rows[0].ref == ScriptureRef.parse("MAT 1:1")
+    assert rows[0].text == "Verse one and two."
+
+    assert rows[1].ref == ScriptureRef.parse("MAT 1:2")
+
+
+def test_get_rows_non_latin_verse_number():
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\c 1
+\p
+\v १ Verse 1
+\v 3,৪ Verses 3 and 4
+\p
+""",
+        include_all_text=True,
+    )
+
+    assert len(rows) == 4, str.join(",", [tr.text for tr in rows])
+
+    assert rows[0].ref == ScriptureRef.parse("MAT 1:0/1:p")
+    assert rows[0].text == ""
+
+    assert rows[1].ref == ScriptureRef.parse("MAT 1:1")
+    assert rows[1].text == "Verse 1"
+
+    assert rows[2].ref == ScriptureRef.parse("MAT 1:3")
+    assert rows[2].text == "Verses 3 and 4"
+
+    assert rows[3].ref == ScriptureRef.parse("MAT 1:৪")
+    assert rows[3].text == ""
+
+
+def test_get_rows_empty_verse_number():
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\c 1
+\p
+\v
+\b
+""",
+        include_all_text=True,
+    )
+
+    assert len(rows) == 2, str.join(",", [tr.text for tr in rows])
+
+    assert rows[0].ref == ScriptureRef.parse("MAT 1:0/1:p")
+    assert rows[0].text == ""
+
+    assert rows[1].ref == ScriptureRef.parse("MAT 1:0/2:b")
+    assert rows[1].text == ""
+
+
+def test_get_rows_multiple_empty_verse_numbers():
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\c 1
+\p
+\v
+\p
+\v
+\p
+\v
+\p
+""",
+        include_all_text=True,
+    )
+
+    assert len(rows) == 4, str.join(",", [tr.text for tr in rows])
+
+    for i, row in enumerate(rows):
+        assert row.ref == ScriptureRef.parse(f"MAT 1:0/{i+1}:p")
+        assert row.text == ""
+
+
+def test_get_rows_empty_verse_number_with_text():
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\c 1
+\s heading text
+\v  \vn 1 verse text
+""",
+        include_all_text=True,
+    )
+
+    assert len(rows) == 2, str.join(",", [tr.text for tr in rows])
+
+    assert rows[0].ref == ScriptureRef.parse("MAT 1:0/1:s")
+    assert rows[0].text == "heading text"
+
+    assert rows[1].ref == ScriptureRef.parse("MAT 1:0/2:vn")
+    assert rows[1].text == "1 verse text"
+
+
+def test_get_rows_empty_verse_number_mid_verse():
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\c 1
+\p
+\v 1 verse 1 text
+\v
+\v 2 verse 2 text
+""",
+        include_all_text=True,
+    )
+
+    assert len(rows) == 3, str.join(",", [tr.text for tr in rows])
+
+    assert rows[0].ref == ScriptureRef.parse("MAT 1:0/1:p")
+    assert rows[0].text == ""
+
+    assert rows[1].ref == ScriptureRef.parse("MAT 1:1")
+    assert rows[1].text == "verse 1 text"
+
+    assert rows[2].ref == ScriptureRef.parse("MAT 1:2")
+    assert rows[2].text == "verse 2 text"
+
+
+def test_get_rows_invalid_verse_numbers():
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\c 1
+\p
+\v BK1 text goes here
+\v BK 2 text goes here
+\v BK 3 text goes here
+\v BK 4 text goes here
+""",
+        include_all_text=True,
+    )
+
+    assert len(rows) == 1, str.join(",", [tr.text for tr in rows])
+
+    assert rows[0].ref == ScriptureRef.parse("MAT 1:0/1:p")
+    assert rows[0].text == "text goes here 2 text goes here 3 text goes here 4 text goes here"
+
+
+def test_get_rows_incomplete_verse_range():
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\c 1
+\s heading text
+\p
+\q1
+\v 1,
+\q1 verse 1 text
+""",
+        include_all_text=True,
+    )
+
+    assert len(rows) == 4, str.join(",", [tr.text for tr in rows])
+
+    assert rows[0].ref == ScriptureRef.parse("MAT 1:0/1:s")
+    assert rows[0].text == "heading text"
+
+    assert rows[1].ref == ScriptureRef.parse("MAT 1:0/2:p")
+    assert rows[1].text == ""
+
+    assert rows[2].ref == ScriptureRef.parse("MAT 1:1/3:q1")
+    assert rows[2].text == ""
+
+    assert rows[3].ref == ScriptureRef.parse("MAT 1:1/4:q1")
+    assert rows[3].text == "verse 1 text"
 
 
 def get_rows(usfm: str, include_markers: bool = False, include_all_text: bool = False) -> List[TextRow]:

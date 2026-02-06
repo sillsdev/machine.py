@@ -3,7 +3,7 @@ from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Un
 
 from ..scripture.verse_ref import IgnoreSegmentsVerseRef, VerseRef, Versification
 from .scripture_ref import ScriptureRef
-from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler, ScriptureTextType
+from .scripture_ref_usfm_parser_handler_base import ScriptureRefUsfmParserHandlerBase, ScriptureTextType
 from .usfm_parser_state import UsfmParserState
 from .usfm_stylesheet import UsfmStylesheet
 from .usfm_tag import UsfmTextType
@@ -38,7 +38,11 @@ class UpdateUsfmRow:
         self.metadata = metadata
 
 
-class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
+def sanitize_verse_data(verse_data: str) -> str:
+    return verse_data.replace("\u200F", "")
+
+
+class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
     def __init__(
         self,
         rows: Optional[Sequence[UpdateUsfmRow]] = None,
@@ -319,10 +323,16 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         self._end_update_block(state, [scripture_ref])
 
     def _end_embed_text(self, state: UsfmParserState, scripture_ref: ScriptureRef) -> None:
+        # If this embed is outside an update block, create an update block just for this embed
+        embed_outside_of_block = len(self._update_block_stack) == 0
+        if embed_outside_of_block:
+            self._start_update_block([scripture_ref])
         self._update_block_stack[-1].add_embed(
             self._embed_tokens, marked_for_removal=self._embed_behavior == UpdateUsfmMarkerBehavior.STRIP
         )
         self._embed_tokens.clear()
+        if embed_outside_of_block:
+            self._end_update_block(state, [scripture_ref])
 
     def get_usfm(self, stylesheet: Union[str, UsfmStylesheet] = "usfm.sty") -> str:
         if isinstance(stylesheet, str):
@@ -349,6 +359,12 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         row_texts: List[str] = []
         row_metadata = None
         source_index: int = 0
+
+        # handle the special case of verse 0, which although first in the rows,
+        # it will be retrieved some of other segments in the verse.
+        if len(seg_scr_refs) > 0 and seg_scr_refs[0].verse_num == 0 and len(seg_scr_refs[0].path) == 0:
+            self._verse_row_index = 0
+
         while self._verse_row_index < len(self._verse_rows) and source_index < len(seg_scr_refs):
             compare: int = 0
             row = self._rows[self._verse_rows[self._verse_row_index]]
@@ -378,6 +394,8 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandler):
         self._use_updated_text()
         while self._token_index <= state.index + state.special_token_count:
             token = state.tokens[self._token_index]
+            if token.type == UsfmTokenType.VERSE and token.data is not None:
+                token.data = sanitize_verse_data(token.data)
             if self._current_text_type == ScriptureTextType.EMBED:
                 self._embed_tokens.append(token)
             elif (

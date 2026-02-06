@@ -13,7 +13,10 @@ class ZipParatextProjectFileHandler(ParatextProjectFileHandler):
         self._archive = archive
 
     def exists(self, file_name: str) -> bool:
-        return file_name in self._archive.namelist()
+        for actual_entry_name in self._archive.namelist():
+            if actual_entry_name.lower() == file_name.lower():
+                return True
+        return False
 
     def find(self, extension: str) -> Optional[str]:
         for entry in self._archive.namelist():
@@ -22,8 +25,9 @@ class ZipParatextProjectFileHandler(ParatextProjectFileHandler):
         return None
 
     def open(self, file_name: str) -> Optional[BinaryIO]:
-        if file_name in self._archive.namelist():
-            return BytesIO(self._archive.read(file_name))
+        for actual_entry_name in self._archive.namelist():
+            if actual_entry_name.lower() == file_name.lower():
+                return BytesIO(self._archive.read(actual_entry_name))
         return None
 
     def create_stylesheet(self, file_name: str) -> UsfmStylesheet:

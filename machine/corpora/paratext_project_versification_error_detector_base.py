@@ -1,5 +1,6 @@
-from typing import List, Optional, Union
+from typing import List, Optional, Set, Union
 
+from ..scripture.canon import book_id_to_number
 from .paratext_project_file_handler import ParatextProjectFileHandler
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
@@ -7,7 +8,7 @@ from .usfm_parser import parse_usfm
 from .usfm_versification_error_detector import UsfmVersificationError, UsfmVersificationErrorDetector
 
 
-class ParatextProjectVersificationErrorDetector:
+class ParatextProjectVersificationErrorDetectorBase:
     def __init__(
         self,
         paratext_project_file_handler: ParatextProjectFileHandler,
@@ -20,12 +21,17 @@ class ParatextProjectVersificationErrorDetector:
             self._settings = settings
 
     def get_usfm_versification_errors(
-        self,
-        handler: Optional[UsfmVersificationErrorDetector] = None,
+        self, handler: Optional[UsfmVersificationErrorDetector] = None, books: Optional[Set[int]] = None
     ) -> List[UsfmVersificationError]:
         handler = handler or UsfmVersificationErrorDetector(self._settings)
-        for file_name in self._settings.get_all_scripture_book_file_names():
+        for book_id in self._settings.get_all_scripture_book_ids():
+
+            file_name = self._settings.get_book_file_name(book_id)
+
             if not self._paratext_project_file_handler.exists(file_name):
+                continue
+
+            if books is not None and not book_id_to_number(book_id) in books:
                 continue
 
             with self._paratext_project_file_handler.open(file_name) as sfm_file:

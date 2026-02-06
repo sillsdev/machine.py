@@ -37,6 +37,7 @@ class UsfmParserState:
         self._tokens = tokens
         self.index = -1
         self.special_token = False
+        self.chapter_has_verse_zero = False
         self._special_token_count: int = 0
 
     @property
@@ -108,8 +109,8 @@ class UsfmParserState:
 
     @property
     def is_verse_text(self) -> bool:
-        # anything before verse 1 is not verse text
-        if self.verse_ref.verse_num == 0:
+        # anything before verse 1 is not verse text, unless the USFM specified verse 0
+        if self.verse_ref.verse_num == 0 and not self.chapter_has_verse_zero:
             return False
 
         # Sidebars and notes are not verse text

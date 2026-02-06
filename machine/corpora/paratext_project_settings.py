@@ -53,9 +53,9 @@ class ParatextProjectSettings:
             book_part = _get_book_file_name_digits(book_id) + book_id
         return self.file_name_prefix + book_part + self.file_name_suffix
 
-    def get_all_scripture_book_file_names(self) -> Iterable[str]:
+    def get_all_scripture_book_ids(self) -> Iterable[str]:
         for book_id in get_scripture_books():
-            yield self.get_book_file_name(book_id)
+            yield book_id
 
 
 def _get_book_file_name_digits(book_id: str) -> str:

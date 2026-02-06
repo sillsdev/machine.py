@@ -7,7 +7,7 @@ from ..scripture.verse_ref import Versification
 from ..utils.string_utils import has_sentence_ending
 from .corpora_utils import gen
 from .scripture_ref import ScriptureRef
-from .scripture_ref_usfm_parser_handler import ScriptureRefUsfmParserHandler, ScriptureTextType
+from .scripture_ref_usfm_parser_handler_base import ScriptureRefUsfmParserHandlerBase, ScriptureTextType
 from .scripture_text import ScriptureText
 from .stream_container import StreamContainer
 from .text_row import TextRow
@@ -76,7 +76,7 @@ class UsfmTextBase(ScriptureText):
             return reader.read()
 
 
-class _TextRowCollector(ScriptureRefUsfmParserHandler):
+class _TextRowCollector(ScriptureRefUsfmParserHandlerBase):
     def __init__(self, text: UsfmTextBase) -> None:
         super().__init__()
 

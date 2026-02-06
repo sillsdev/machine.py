@@ -50,7 +50,7 @@ def test_paragraph_markers() -> None:
 \p Este texto está en inglés
 \p y esta prueba es para marcadores de párrafo.
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 def test_style_markers() -> None:
@@ -81,7 +81,7 @@ def test_style_markers() -> None:
 \c 1
 \v 1 Esta es la \w primera\w* oración. Este texto está en \w inglés\w* y esta prueba es \w para\w* marcadores de estilo.
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
     align_info = PlaceMarkersAlignmentInfo(
         source_tokens=[t for t in TOKENIZER.tokenize(source)],
@@ -103,7 +103,7 @@ def test_style_markers() -> None:
 \c 1
 \v 1 Esta es la primera oración. Este texto está en inglés y esta prueba es para marcadores de estilo.
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 # NOTE: Not currently updating embeds, will need to change test when we do
@@ -143,7 +143,7 @@ def test_embeds() -> None:
 \v 5 New verse 5 \f \fr 1.5 \ft A \+w stylish\+w* note \f*
 \v 6 New verse 6 \f \fr 1.6 \ft Another \+w stylish\+w* note \f*
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
     target = update_usfm(
         rows,
@@ -160,7 +160,7 @@ def test_embeds() -> None:
 \v 5 New verse 5
 \v 6 New verse 6
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 def test_trailing_empty_paragraphs() -> None:
@@ -200,7 +200,7 @@ def test_trailing_empty_paragraphs() -> None:
 \b
 \q1
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 def test_headers() -> None:
@@ -283,7 +283,7 @@ def test_headers() -> None:
 \v 3 Y
 \s1 Updated header
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 def test_consecutive_markers() -> None:
@@ -320,7 +320,7 @@ def test_consecutive_markers() -> None:
 \v 1 New verse 1
 \p \qt \+w WORD\+w*\qt*
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 def test_verse_ranges() -> None:
@@ -356,7 +356,7 @@ def test_verse_ranges() -> None:
 \v 1-5 New verse range text
 \p new paragraph 2
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 def test_no_update() -> None:
@@ -392,7 +392,7 @@ def test_no_update() -> None:
 \c 1
 \v 1 New paragraph 1 New paragraph 2
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
     # No alignment
     rows = [
@@ -422,7 +422,7 @@ def test_no_update() -> None:
 \v 1 New paragraph 1 New paragraph 2
 \p
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
     # No text update
     rows = []
@@ -437,7 +437,7 @@ def test_no_update() -> None:
 \v 1 Old paragraph 1
 \p Old paragraph 2
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 def test_split_tokens() -> None:
@@ -475,7 +475,7 @@ def test_split_tokens() -> None:
 \p words split
 \p words split
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 def test_no_text() -> None:
@@ -510,7 +510,7 @@ def test_no_text() -> None:
 \c 1
 \v 1  \w \w*
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 def test_consecutive_substring() -> None:
@@ -546,7 +546,7 @@ def test_consecutive_substring() -> None:
 \v 1 string
 \p ring
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 def test_verses_out_of_order() -> None:
@@ -597,7 +597,7 @@ def test_verses_out_of_order() -> None:
 \v 1 new verse 1
 \p new paragraph 2
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
 
 
 def test_strip_paragraphs_with_header() -> None:
@@ -638,7 +638,58 @@ def test_strip_paragraphs_with_header() -> None:
 \p
 \v 2 verse 2
 """
-    assess(target, result)
+    assert_usfm_equals(target, result)
+
+
+def test_support_verse_zero():
+    # Note: Verse 0 has an empty paragraph as the paragraph occurs before verse text,
+    # so is not included in the verse text as it is for the paragraphs for the other verses.
+    rows = [
+        UpdateUsfmRow(scr_ref("MAT 1:0"), "New verse 0"),
+        UpdateUsfmRow(scr_ref("MAT 1:0/1:mt"), "New book header"),
+        UpdateUsfmRow(scr_ref("MAT 1:0/2:s"), "New chapter header"),
+        UpdateUsfmRow(scr_ref("MAT 1:0/3:p"), ""),
+        UpdateUsfmRow(scr_ref("MAT 1:0/4:ms"), "New major section header"),
+        UpdateUsfmRow(scr_ref("MAT 1:0/5:s"), "New section header 1"),
+        UpdateUsfmRow(scr_ref("MAT 1:1"), "New verse 1"),
+        UpdateUsfmRow(scr_ref("MAT 1:1/1:s"), "New section header 2"),
+        UpdateUsfmRow(scr_ref("MAT 1:2"), "New verse 2"),
+        UpdateUsfmRow(scr_ref("MAT 1:3"), "New verse 3"),
+    ]
+    usfm = r"""\id MAT
+\mt Old book header
+\c 1
+\s Old chapter header
+\p
+\v 0 Old verse 0
+\ms Old major section header
+\s Old section header 1
+\p
+\v 1 Old verse 1
+\s Old section header 2
+\p
+\v 2 Old verse 2
+\v 3 Old verse 3
+"""
+
+    target = update_usfm(rows, usfm, update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()])
+
+    result = r"""\id MAT
+\mt New book header
+\c 1
+\s New chapter header
+\p
+\v 0 New verse 0
+\ms New major section header
+\s New section header 1
+\p
+\v 1 New verse 1
+\s New section header 2
+\p
+\v 2 New verse 2
+\v 3 New verse 3
+"""
+    assert_usfm_equals(target, result)
 
 
 def scr_ref(*refs: str) -> List[ScriptureRef]:
@@ -683,7 +734,7 @@ def update_usfm(
     return updater.get_usfm()
 
 
-def assess(target: Optional[str], truth: str) -> None:
+def assert_usfm_equals(target: Optional[str], truth: str) -> None:
     assert target is not None
     for target_line, truth_line in zip(target.split("\n"), truth.split("\n")):
         assert target_line.strip() == truth_line.strip()
