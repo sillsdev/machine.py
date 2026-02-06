@@ -22,10 +22,14 @@ _EMBED_STYLES = {"f", "fe", "x", "fig"}
 
 
 def _is_embed_style(marker: Optional[str]) -> bool:
-    return marker is not None and (marker.strip("*") in _EMBED_STYLES or marker.startswith("z"))
+    return marker is not None and marker.strip("*") in _EMBED_STYLES
 
 
-class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
+def is_private_use_marker(marker: str):
+    return marker is not None and marker.startswith("z")
+
+
+class ScriptureRefUsfmParserHandlerBase(UsfmParserHandler, ABC):
     def __init__(self) -> None:
         self._cur_verse_ref: VerseRef = VerseRef()
         self._cur_elements_stack: List[ScriptureElement] = []
@@ -46,22 +50,29 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     def verse(
         self, state: UsfmParserState, number: str, marker: str, alt_number: Optional[str], pub_number: Optional[str]
     ) -> None:
-        if state.verse_ref == self._cur_verse_ref and not self._duplicate_verse:
-            self._end_verse_text(state, self._create_verse_refs())
-            # ignore duplicate verses
-            self._duplicate_verse = True
+        # Non-latin numbers are implicitly handled
+
+        if state.chapter_has_verse_zero and state.verse_ref.verse_num == 0:
+            # Fall through for the special case of verse 0 being specified in the USFM
+            pass
+        elif state.verse_ref == self._cur_verse_ref and not self._duplicate_verse:
+            if state.verse_ref.verse_num > 0:
+                self._end_verse_text(state, self._create_verse_refs())
+                # ignore duplicate verses
+                self._duplicate_verse = True
+            return
         elif are_overlapping_verse_ranges(verse1=number, verse2=self._cur_verse_ref.verse):
             # merge overlapping verse ranges in to one range
             verse_ref: VerseRef = self._cur_verse_ref.copy()
             verse_ref.verse = merge_verse_ranges(number, self._cur_verse_ref.verse)
             self._update_verse_ref(verse_ref, marker)
+            return
+        if self._current_text_type == ScriptureTextType.NONVERSE:
+            self._end_non_verse_text_wrapper(state)
         else:
-            if self._current_text_type == ScriptureTextType.NONVERSE:
-                self._end_non_verse_text_wrapper(state)
-            elif self._current_text_type == ScriptureTextType.VERSE:
-                self._end_verse_text_wrapper(state)
-            self._update_verse_ref(state.verse_ref, marker)
-            self._start_verse_text_wrapper(state)
+            self._end_verse_text_wrapper(state)
+        self._update_verse_ref(state.verse_ref, marker)
+        self._start_verse_text_wrapper(state)
 
     def start_para(
         self,
@@ -70,6 +81,10 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         unknown: Optional[bool],
         attributes: Optional[Sequence[UsfmAttribute]],
     ) -> None:
+        # ignore private-use markers
+        if is_private_use_marker(marker):
+            return
+
         if self._cur_verse_ref.is_default:
             self._update_verse_ref(state.verse_ref, marker)
         if not state.is_verse_text:
@@ -77,6 +92,10 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
             self._start_non_verse_text_wrapper(state)
 
     def end_para(self, state: UsfmParserState, marker: str) -> None:
+        # ignore private-use markers
+        if is_private_use_marker(marker):
+            return
+
         if self._current_text_type == ScriptureTextType.NONVERSE:
             self._end_parent_element()
             self._end_non_verse_text_wrapper(state)
@@ -126,6 +145,10 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     def start_char(
         self, state: UsfmParserState, marker: str, unknown: bool, attributes: Optional[Sequence[UsfmAttribute]]
     ) -> None:
+        # ignore private-use markers
+        if is_private_use_marker(marker):
+            return
+
         # if we hit a character marker in a verse paragraph and we aren't in a verse, then start a non-verse segment
         self._check_convert_verse_para_to_non_verse(state)
 
@@ -135,6 +158,10 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
     def end_char(
         self, state: UsfmParserState, marker: str, attributes: Optional[Sequence[UsfmAttribute]], closed: bool
     ) -> None:
+        # ignore private-use markers
+        if is_private_use_marker(marker):
+            return
+
         if _is_embed_style(marker):
             self._end_embed_text_wrapper(state)
 
@@ -162,9 +189,9 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         self._start_verse_text(state, self._create_verse_refs())
 
     def _end_verse_text_wrapper(self, state: UsfmParserState) -> None:
-        if not self._duplicate_verse and self._cur_verse_ref.verse_num > 0:
+        if not self._duplicate_verse and (self._cur_verse_ref.verse_num > 0 or state.chapter_has_verse_zero):
             self._end_verse_text(state, self._create_verse_refs())
-        if self._cur_verse_ref.verse_num > 0:
+        if self._cur_verse_ref.verse_num > 0 or state.chapter_has_verse_zero:
             self._cur_text_type_stack.pop()
 
     def _start_non_verse_text_wrapper(self, state: UsfmParserState) -> None:
@@ -177,7 +204,17 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
         self._cur_text_type_stack.pop()
 
     def _update_verse_ref(self, verse_ref: VerseRef, marker: str) -> None:
-        if not are_overlapping_verse_ranges(verse_ref, self._cur_verse_ref):
+        if (
+            self._cur_verse_ref.verse_num == 0
+            and verse_ref.verse_num == 0
+            and not verse_ref.has_multiple
+            and marker == "v"
+        ):
+            # As the verse 0 marker appears within the middle of verse 0,
+            # we should not break the position of current element stack by clearing it.
+            # Instead, we just need to pop the current element off the stack.
+            self._cur_elements_stack.pop()
+        elif not are_overlapping_verse_ranges(verse_ref, self._cur_verse_ref):
             self._cur_elements_stack.clear()
             self._cur_elements_stack.append(ScriptureElement(0, marker))
         self._cur_verse_ref = verse_ref.copy()
@@ -239,6 +276,8 @@ class ScriptureRefUsfmParserHandler(UsfmParserHandler, ABC):
             and para_tag.marker != "tr"
             and state.is_verse_para
             and self._cur_verse_ref.verse_num == 0
+            and not state.chapter_has_verse_zero
+            and not is_private_use_marker(para_tag.marker)
         ):
             self._start_parent_element(para_tag.marker)
             self._start_non_verse_text_wrapper(state)

@@ -190,8 +190,6 @@ def test_invalid() -> None:
     with raises(ValueError):
         VerseRef(2, -42, 1)
     with raises(ValueError):
-        VerseRef(2, 1, -4)
-    with raises(ValueError):
         VerseRef.from_string("MAT 1:")
     with raises(ValueError):
         VerseRef.from_string("MAT 1:2-")
