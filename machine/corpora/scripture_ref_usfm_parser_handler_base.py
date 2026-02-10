@@ -25,7 +25,7 @@ def _is_embed_style(marker: Optional[str]) -> bool:
     return marker is not None and marker.strip("*") in _EMBED_STYLES
 
 
-def is_private_use_marker(marker: str):
+def _is_private_use_marker(marker: str) -> bool:
     return marker is not None and marker.startswith("z")
 
 
@@ -82,7 +82,7 @@ class ScriptureRefUsfmParserHandlerBase(UsfmParserHandler, ABC):
         attributes: Optional[Sequence[UsfmAttribute]],
     ) -> None:
         # ignore private-use markers
-        if is_private_use_marker(marker):
+        if _is_private_use_marker(marker):
             return
 
         if self._cur_verse_ref.is_default:
@@ -93,7 +93,7 @@ class ScriptureRefUsfmParserHandlerBase(UsfmParserHandler, ABC):
 
     def end_para(self, state: UsfmParserState, marker: str) -> None:
         # ignore private-use markers
-        if is_private_use_marker(marker):
+        if _is_private_use_marker(marker):
             return
 
         if self._current_text_type == ScriptureTextType.NONVERSE:
@@ -146,7 +146,7 @@ class ScriptureRefUsfmParserHandlerBase(UsfmParserHandler, ABC):
         self, state: UsfmParserState, marker: str, unknown: bool, attributes: Optional[Sequence[UsfmAttribute]]
     ) -> None:
         # ignore private-use markers
-        if is_private_use_marker(marker):
+        if _is_private_use_marker(marker):
             return
 
         # if we hit a character marker in a verse paragraph and we aren't in a verse, then start a non-verse segment
@@ -159,7 +159,7 @@ class ScriptureRefUsfmParserHandlerBase(UsfmParserHandler, ABC):
         self, state: UsfmParserState, marker: str, attributes: Optional[Sequence[UsfmAttribute]], closed: bool
     ) -> None:
         # ignore private-use markers
-        if is_private_use_marker(marker):
+        if _is_private_use_marker(marker):
             return
 
         if _is_embed_style(marker):
@@ -277,7 +277,7 @@ class ScriptureRefUsfmParserHandlerBase(UsfmParserHandler, ABC):
             and state.is_verse_para
             and self._cur_verse_ref.verse_num == 0
             and not state.chapter_has_verse_zero
-            and not is_private_use_marker(para_tag.marker)
+            and not _is_private_use_marker(para_tag.marker)
         ):
             self._start_parent_element(para_tag.marker)
             self._start_non_verse_text_wrapper(state)

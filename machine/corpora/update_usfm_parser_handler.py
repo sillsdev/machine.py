@@ -38,7 +38,7 @@ class UpdateUsfmRow:
         self.metadata = metadata
 
 
-def sanitize_verse_data(verse_data: str) -> str:
+def _sanitize_verse_data(verse_data: str) -> str:
     return verse_data.replace("\u200F", "")
 
 
@@ -395,7 +395,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
         while self._token_index <= state.index + state.special_token_count:
             token = state.tokens[self._token_index]
             if token.type == UsfmTokenType.VERSE and token.data is not None:
-                token.data = sanitize_verse_data(token.data)
+                token.data = _sanitize_verse_data(token.data)
             if self._current_text_type == ScriptureTextType.EMBED:
                 self._embed_tokens.append(token)
             elif (

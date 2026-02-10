@@ -149,6 +149,8 @@ class VerseRef(Comparable):
 
     @verse_num.setter
     def verse_num(self, value: int) -> None:
+        if value < 0:
+            raise ValueError("The verse number cannot be negative.")
         self._verse_num = value
         self._verse = None
 
