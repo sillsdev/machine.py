@@ -916,6 +916,42 @@ def test_update_block_verse_range() -> None:
     )
 
 
+def test_update_block_verse_range_right_to_left_marker() -> None:
+    rows = [
+        UpdateUsfmRow(
+            scr_ref("MAT 1:1", "MAT 1:2", "MAT 1:3"),
+            str("Update 1-3"),
+        ),
+    ]
+    usfm = (
+        r"""\id MAT - Test
+\c 1
+\v 1"""
+        + "\u200f"
+        + """-3 verse 1 through 3
+"""
+    )
+
+    update_block_handler = _TestUsfmUpdateBlockHandler()
+    updated_usfm = update_usfm(
+        rows, usfm, embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE, update_block_handlers=[update_block_handler]
+    )
+    expected_usfm = r"""\id MAT - Test
+\c 1
+\v 1-3 Update 1-3
+"""
+    assert_usfm_equals(updated_usfm, expected_usfm)
+    assert len(update_block_handler.blocks) == 1
+
+    update_block = update_block_handler.blocks[0]
+    assert_update_block_equals(
+        update_block,
+        ["MAT 1:1", "MAT 1:2", "MAT 1:3"],
+        (UsfmUpdateBlockElementType.TEXT, "Update 1-3 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "verse 1 through 3 ", True),
+    )
+
+
 def test_update_block_footnote_preserve_embeds() -> None:
     rows = [
         UpdateUsfmRow(
@@ -1379,6 +1415,83 @@ def test_pass_remark():
 """
 
     assert_usfm_equals(target, result)
+
+
+def test_update_block_footnote_in_published_chapter_number():
+    rows = [UpdateUsfmRow(scr_ref("ESG 1:0/2:s"), "Update 1")]
+    usfm = r"""\id ESG - Test
+\c 1
+\cp A \f + \fr A.1-3: \ft Some note.\f*
+\s Heading 1
+"""
+    update_block_handler = _TestUsfmUpdateBlockHandler()
+    target = update_usfm(
+        rows,
+        usfm,
+        update_block_handlers=[update_block_handler],
+        text_behavior=UpdateUsfmTextBehavior.STRIP_EXISTING,
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+    )
+
+    result = r"""\id ESG
+\c 1
+\cp A \f + \fr A.1-3: \ft Some note.\f*
+\s Update 1
+"""
+    assert_usfm_equals(target, result)
+
+    assert len(update_block_handler.blocks) == 2
+    assert_update_block_equals(
+        update_block_handler.blocks[0],
+        ["ESG 1:0/1:f"],
+        (UsfmUpdateBlockElementType.EMBED, r"\f + \fr A.1-3: \ft Some note.\f*", False),
+    )
+    assert_update_block_equals(
+        update_block_handler.blocks[1],
+        ["ESG 1:0/2:s"],
+        (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Heading 1 ", True),
+    )
+
+
+def test_update_block_footnote_at_start_of_chapter_with_preceding_text():
+    rows = [UpdateUsfmRow(scr_ref("ESG 1:0/2:s"), "Update 1")]
+    usfm = r"""\id ESG - Test
+\c 1
+Text 1\f + \fr A.1-3: \ft Some note.\f*
+\s Heading 1
+"""
+    update_block_handler = _TestUsfmUpdateBlockHandler()
+    target = update_usfm(
+        rows,
+        usfm,
+        update_block_handlers=[update_block_handler],
+        text_behavior=UpdateUsfmTextBehavior.PREFER_NEW,
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        embed_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+    )
+
+    result = r"""\id ESG - Test
+\c 1 Text 1\f + \fr A.1-3: \ft Some note.\f*
+\s Update 1
+"""
+    assert_usfm_equals(target, result)
+
+    assert len(update_block_handler.blocks) == 2
+    assert_update_block_equals(
+        update_block_handler.blocks[0],
+        ["ESG 1:0/1:f"],
+        (UsfmUpdateBlockElementType.EMBED, r"\f + \fr A.1-3: \ft Some note.\f*", False),
+    )
+    assert_update_block_equals(
+        update_block_handler.blocks[1],
+        ["ESG 1:0/2:s"],
+        (UsfmUpdateBlockElementType.TEXT, "Update 1 ", False),
+        (UsfmUpdateBlockElementType.TEXT, "Heading 1 ", True),
+    )
 
 
 def scr_ref(*refs: str) -> List[ScriptureRef]:

@@ -223,6 +223,8 @@ class UsfmParser:
             verse_ref = self.state.verse_ref
             verse_ref.chapter = token.data
             verse_ref.verse_num = 0
+            self.state.chapter_has_verse_zero = False
+
             # Verse offset is not zeroed for chapter 1, as it is part of intro
             if verse_ref.chapter_num != 1:
                 self.state.verse_offset = 0
@@ -261,7 +263,12 @@ class UsfmParser:
 
             assert token.data is not None
             verse_ref = self.state.verse_ref
+            prev_verse_num = verse_ref.verse_num
             verse_ref.verse = token.data
+            if verse_ref.verse_num == 0:  # This token is \v 0
+                self.state.chapter_has_verse_zero = True
+            elif verse_ref.verse_num == -1:  # Ignore invalid verse numbers
+                verse_ref.verse_num = prev_verse_num
             self.state.verse_offset = 0
 
             if self.handler is not None:
