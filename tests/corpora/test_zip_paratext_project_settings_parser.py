@@ -18,6 +18,14 @@ def test_parse_custom_stylesheet() -> None:
         assert test_tag.text_type is UsfmTextType.OTHER
 
 
+def test_is_daughter_project() -> None:
+    with _TestEnvironment() as env:
+        settings = env.parser.parse()
+        assert settings.has_parent()
+        assert settings.is_daughter_project_of(settings)
+        assert settings.translation_type == "Standard"
+
+
 class _TestEnvironment(ContextManager["_TestEnvironment"]):
     def __init__(self) -> None:
         self._temp_dir = TemporaryDirectory()

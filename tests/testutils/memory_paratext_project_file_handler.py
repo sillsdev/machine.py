@@ -26,6 +26,7 @@ class MemoryParatextProjectFileHandler(ParatextProjectFileHandler):
 class DefaultParatextProjectSettings(ParatextProjectSettings):
     def __init__(
         self,
+        guid: str = "id",
         name: str = "Test",
         full_name: str = "TestProject",
         encoding: Optional[str] = None,
@@ -38,9 +39,13 @@ class DefaultParatextProjectSettings(ParatextProjectSettings):
         biblical_terms_project_name: str = "Test",
         biblical_terms_file_name: str = "ProjectBiblicalTerms.xml",
         language_code: str = "en",
+        translation_type: str = "Standard",
+        parent_guid: Optional[str] = None,
+        parent_name: Optional[str] = None,
     ):
 
         super().__init__(
+            guid,
             name,
             full_name,
             encoding if encoding is not None else "utf-8",
@@ -53,4 +58,7 @@ class DefaultParatextProjectSettings(ParatextProjectSettings):
             biblical_terms_project_name,
             biblical_terms_file_name,
             language_code,
+            translation_type,
+            parent_guid,
+            parent_name,
         )
