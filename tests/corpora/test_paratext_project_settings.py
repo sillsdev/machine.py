@@ -115,6 +115,7 @@ def test_get_book_id_wrong_book_part_book_num_book_id() -> None:
 
 def _create_settings(file_name_form: str) -> ParatextProjectSettings:
     return ParatextProjectSettings(
+        "id",
         "Name",
         "Name",
         "utf-8",
@@ -127,4 +128,5 @@ def _create_settings(file_name_form: str) -> ParatextProjectSettings:
         "",
         "BiblicalTerms.xml",
         "en",
+        "Standard",
     )
