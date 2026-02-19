@@ -24,6 +24,7 @@ class ParatextProjectSettings:
     translation_type: str
     parent_guid: Optional[str] = None
     parent_name: Optional[str] = None
+    _parent_has_been_set: bool = False
 
     def get_book_id(self, file_name: str) -> Optional[str]:
         """Returns None when the file name doesn't match the pattern of a book file name for the project."""
@@ -61,17 +62,23 @@ class ParatextProjectSettings:
         for book_id in get_scripture_books():
             yield book_id
 
+    @property
     def has_parent(self) -> bool:
         return self.parent_guid is not None
 
+    @property
+    def parent_has_been_set(self) -> bool:
+        return self._parent_has_been_set
+
     def is_daughter_project_of(self, other_project: "ParatextProjectSettings") -> bool:
-        if not self.has_parent():
+        if not self.has_parent:
             return False
         return self.parent_guid == other_project.guid
 
     def set_parent_project(self, other_project: "ParatextProjectSettings"):
         # TODO anything else we should set? From what I can tell, stylesheets are not inherited
         self.versification = other_project.versification
+        self._parent_has_been_set = True
 
 
 def _get_book_file_name_digits(book_id: str) -> str:

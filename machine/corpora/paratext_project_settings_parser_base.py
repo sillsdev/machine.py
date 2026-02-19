@@ -13,10 +13,10 @@ class ParatextProjectSettingsParserBase(ABC):
     def __init__(
         self,
         paratext_project_file_handler: ParatextProjectFileHandler,
-        parent_paratext_project_file_handler: Optional[ParatextProjectFileHandler] = None,
+        parent_paratext_project_settings: Optional[ParatextProjectSettings] = None,
     ):
         self._paratext_project_file_handler = paratext_project_file_handler
-        self._parent_paratext_project_file_handler = parent_paratext_project_file_handler
+        self.parent_paratext_project_settings = parent_paratext_project_settings
 
     def parse(self) -> ParatextProjectSettings:
         settings_file_name = "Settings.xml"
@@ -98,7 +98,7 @@ class ParatextProjectSettingsParserBase(ABC):
             parent_name = translation_info_setting_parts[1] if translation_info_setting_parts[1] != "" else None
             parent_guid = translation_info_setting_parts[2] if translation_info_setting_parts[2] != "" else None
 
-        return ParatextProjectSettings(
+        settings = ParatextProjectSettings(
             guid,
             name,
             full_name,
@@ -116,3 +116,12 @@ class ParatextProjectSettingsParserBase(ABC):
             parent_guid,
             parent_name,
         )
+
+        if self.parent_paratext_project_settings is not None and settings.has_parent:
+            if not settings.is_daughter_project_of(self.parent_paratext_project_settings):
+                raise ValueError(
+                    f"Project {self.parent_paratext_project_settings.name} is not the parent project of project {settings.name}."
+                )
+            settings.set_parent_project(self.parent_paratext_project_settings)
+
+        return settings

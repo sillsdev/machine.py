@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from zipfile import ZipFile
 
 from ..utils.typeshed import StrPath
@@ -8,9 +8,22 @@ from .zip_paratext_project_settings_parser import ZipParatextProjectSettingsPars
 
 
 class ParatextBackupTextCorpus(ScriptureTextCorpus):
-    def __init__(self, filename: StrPath, include_markers: bool = False, include_all_text: bool = False) -> None:
+    def __init__(
+        self,
+        filename: StrPath,
+        include_markers: bool = False,
+        include_all_text: bool = False,
+        parent_filename: Optional[StrPath] = None,
+    ) -> None:
+
+        parent_settings = None
+        if parent_filename is not None:
+            with ZipFile(parent_filename, "r") as parent_archive:
+                parent_parser = ZipParatextProjectSettingsParser(parent_archive)
+                parent_settings = parent_parser.parse()
+
         with ZipFile(filename, "r") as archive:
-            parser = ZipParatextProjectSettingsParser(archive)
+            parser = ZipParatextProjectSettingsParser(archive, parent_settings)
             settings = parser.parse()
 
             versification = settings.versification
