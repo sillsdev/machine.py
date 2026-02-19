@@ -120,8 +120,8 @@ class ParatextProjectSettingsParserBase(ABC):
         if self.parent_paratext_project_settings is not None and settings.has_parent:
             if not settings.is_daughter_project_of(self.parent_paratext_project_settings):
                 raise ValueError(
-                    f"Project {self.parent_paratext_project_settings.name} is \
-                        not the parent project of project {settings.name}."
+                    f"Project {self.parent_paratext_project_settings.name} is "
+                    f"not the parent project of project {settings.name}."
                 )
             settings.set_parent_project(self.parent_paratext_project_settings)
 
