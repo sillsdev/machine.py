@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, ContextManager, Optional
+from typing import Any, ContextManager
 from zipfile import ZipFile
 
 from testutils.corpora_test_helpers import create_test_paratext_backup
 
-from machine.corpora import ParatextProjectSettings, UsfmStyleType, UsfmTextType, ZipParatextProjectSettingsParser
+from machine.corpora import UsfmStyleType, UsfmTextType, ZipParatextProjectSettingsParser
 
 
 def test_parse_custom_stylesheet() -> None:

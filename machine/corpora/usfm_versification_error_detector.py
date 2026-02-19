@@ -111,10 +111,14 @@ class UsfmVersificationError:
             if first_verse == last_verse:
                 return str(first_verse)
             elif (
-                corrected_verse_range_ref := VerseRef.try_from_string(
-                    f"{canon.book_number_to_id(self._book_num)} {self._expected_chapter}:{first_verse.verse_num}-{last_verse.verse_num}"
+                (
+                    corrected_verse_range_ref := VerseRef.try_from_string(
+                        f"{canon.book_number_to_id(self._book_num)} \
+                    {self._expected_chapter}:{first_verse.verse_num}-{last_verse.verse_num}"
+                    )
                 )
-            ) is not None:
+                is not None
+            ):
                 return str(corrected_verse_range_ref)
         return str(default_verse_ref)
 
