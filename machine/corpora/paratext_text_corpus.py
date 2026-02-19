@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from ..utils.typeshed import StrPath
 from .file_paratext_project_settings_parser import FileParatextProjectSettingsParser
@@ -8,8 +8,20 @@ from .usfm_file_text import UsfmFileText
 
 
 class ParatextTextCorpus(ScriptureTextCorpus):
-    def __init__(self, project_dir: StrPath, include_markers: bool = False, include_all_text: bool = False) -> None:
-        parser = FileParatextProjectSettingsParser(project_dir)
+    def __init__(
+        self,
+        project_dir: StrPath,
+        include_markers: bool = False,
+        include_all_text: bool = False,
+        parent_project_dir: Optional[StrPath] = None,
+    ) -> None:
+
+        parent_settings = None
+        if parent_project_dir is not None:
+            parent_parser = FileParatextProjectSettingsParser(parent_project_dir)
+            parent_settings = parent_parser.parse()
+
+        parser = FileParatextProjectSettingsParser(project_dir, parent_settings)
         settings = parser.parse()
 
         versification = settings.versification

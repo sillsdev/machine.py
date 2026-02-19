@@ -10,7 +10,7 @@ from machine.corpora import ParatextProjectSettings, UsfmVersificationError, Usf
 from machine.scripture import ORIGINAL_VERSIFICATION, Versification
 
 
-def get_usfm_versification_errors_no_errors():
+def test_get_usfm_versification_errors_no_errors():
     env = _TestEnvironment(
         files={
             "653JNTest.SFM": r"""\id 3JN
@@ -36,7 +36,7 @@ def get_usfm_versification_errors_no_errors():
     assert len(env.get_usfm_versification_errors()) == 0
 
 
-def get_usfm_versification_errors_missing_verse():
+def test_get_usfm_versification_errors_missing_verse():
     env = _TestEnvironment(
         files={
             "653JNTest.SFM": r"""\id 3JN
@@ -65,7 +65,7 @@ def get_usfm_versification_errors_missing_verse():
     assert errors[0].actual_verse_ref == "3JN 1:14"
 
 
-def get_usfm_versification_missing_chapter():
+def test_get_usfm_versification_missing_chapter():
     env = _TestEnvironment(
         files={
             "653JNTest.SFM": r"""\id 3JN
@@ -79,7 +79,7 @@ def get_usfm_versification_missing_chapter():
     assert errors[0].actual_verse_ref == "3JN 0:0"
 
 
-def get_usfm_versification_errors_extra_verse():
+def test_get_usfm_versification_errors_extra_verse():
     env = _TestEnvironment(
         files={
             "653JNTest.SFM": r"""\id 3JN
@@ -110,7 +110,7 @@ def get_usfm_versification_errors_extra_verse():
     assert errors[0].actual_verse_ref == "3JN 1:16"
 
 
-def get_usfm_versification_errors_invalid_verse():
+def test_get_usfm_versification_errors_invalid_verse():
     env = _TestEnvironment(
         files={
             "653JNTest.SFM": r"""\id 3JN
@@ -139,7 +139,7 @@ def get_usfm_versification_errors_invalid_verse():
     assert errors[0].actual_verse_ref == "3JN 1:13-12"
 
 
-def get_usfm_versification_errors_extra_verse_segment():
+def test_get_usfm_versification_errors_extra_verse_segment():
     env = _TestEnvironment(
         files={
             "653JNTest.SFM": r"""\id 3JN
@@ -164,13 +164,13 @@ def get_usfm_versification_errors_extra_verse_segment():
         }
     )
     errors = env.get_usfm_versification_errors()
-    assert len(errors) == 1
+    assert len(errors) == 2
     assert errors[0].type == UsfmVersificationErrorType.EXTRA_VERSE_SEGMENT
     assert errors[0].expected_verse_ref == "3JN 1:14"
     assert errors[0].actual_verse_ref == "3JN 1:14a"
 
 
-def get_usfm_versification_errors_missing_verse_segments():
+def test_get_usfm_versification_errors_missing_verse_segments():
     env = _TestEnvironment(
         files={
             "653JNTest.SFM": r"""\id 3JN
@@ -191,7 +191,8 @@ def get_usfm_versification_errors_missing_verse_segments():
     \v 14
     \v 15
     """
-        }
+        },
+        settings=DefaultParatextProjectSettings(versification=get_custom_versification(r"*3JN 1:13,a,b")),
     )
     errors = env.get_usfm_versification_errors()
     assert len(errors) == 1
@@ -200,7 +201,7 @@ def get_usfm_versification_errors_missing_verse_segments():
     assert errors[0].actual_verse_ref == "3JN 1:13"
 
 
-def get_usfm_versification_errors_ignore_noncanonicals():
+def test_get_usfm_versification_errors_ignore_noncanonicals():
     env = _TestEnvironment(
         files={
             "98XXETest.SFM": r"""\id XXE
@@ -212,7 +213,7 @@ def get_usfm_versification_errors_ignore_noncanonicals():
     assert len(env.get_usfm_versification_errors()) == 0
 
 
-def get_usfm_versification_errors_excluded_in_custom_vrs():
+def test_get_usfm_versification_errors_excluded_in_custom_vrs():
     env = _TestEnvironment(
         files={
             "653JNTest.SFM": r"""\id 3JN
@@ -243,7 +244,7 @@ def get_usfm_versification_errors_excluded_in_custom_vrs():
     assert errors[0].actual_verse_ref == "3JN 1:13"
 
 
-def get_usfm_versification_errors_multiple_books():
+def test_get_usfm_versification_errors_multiple_books():
     env = _TestEnvironment(
         files={
             "642JNTest.SFM": r"""\id 2JN
@@ -288,7 +289,7 @@ def get_usfm_versification_errors_multiple_books():
     assert errors[0].actual_verse_ref == "2JN 1:12"
 
 
-def get_usfm_versification_errors_multiple_chapters():
+def test_get_usfm_versification_errors_multiple_chapters():
     env = _TestEnvironment(
         files={
             "642JNTest.SFM": r"""\id 2JN
@@ -313,11 +314,48 @@ def get_usfm_versification_errors_multiple_chapters():
     errors = env.get_usfm_versification_errors()
     assert len(errors) == 2
     assert errors[0].type == UsfmVersificationErrorType.MISSING_VERSE
-    assert errors[0].type == UsfmVersificationErrorType.EXTRA_VERSE
+    assert errors[1].type == UsfmVersificationErrorType.EXTRA_VERSE
     assert errors[0].expected_verse_ref == "2JN 1:13"
     assert errors[0].actual_verse_ref == "2JN 1:12"
     assert errors[1].expected_verse_ref == ""
     assert errors[1].actual_verse_ref == "2JN 2:1"
+
+
+def test_get_usfm_versification_errors_invalid_chapter_number():
+    env = _TestEnvironment(
+        files={
+            "653JNTest.SFM": r"""\id 3JN
+        \c 1.
+        """
+        }
+    )
+    errors = env.get_usfm_versification_errors()
+    assert len(errors) == 2
+    assert errors[0].type == UsfmVersificationErrorType.INVALID_CHAPTER_NUMBER
+    assert errors[1].type == UsfmVersificationErrorType.MISSING_CHAPTER
+    assert errors[0].expected_verse_ref == ""
+    assert errors[0].actual_verse_ref == "3JN 1."
+    assert errors[1].expected_verse_ref == "3JN 1:15"
+    assert errors[1].actual_verse_ref == "3JN -1:0"
+
+
+def test_get_usfm_versification_errors_invalid_verse_number():
+    env = _TestEnvironment(
+        files={
+            "653JNTest.SFM": r"""\id 3JN
+        \c 1
+        \v v1
+        """
+        }
+    )
+    errors = env.get_usfm_versification_errors()
+    assert len(errors) == 2
+    assert errors[0].type == UsfmVersificationErrorType.INVALID_VERSE_NUMBER
+    assert errors[1].type == UsfmVersificationErrorType.MISSING_VERSE
+    assert errors[0].expected_verse_ref == ""
+    assert errors[0].actual_verse_ref == "3JN 1:v1"
+    assert errors[1].expected_verse_ref == "3JN 1:15"
+    assert errors[1].actual_verse_ref == "3JN 1:0"
 
 
 class _TestEnvironment:

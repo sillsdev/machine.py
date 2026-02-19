@@ -238,7 +238,7 @@ class VerseRef(Comparable):
 
     @property
     def has_segments_defined(self):
-        return self.versification is not None and self.versification.verse_segments[self.bbbcccvvv] is not None
+        return self.versification is not None and self.versification.verse_segments.get(self.bbbcccvvv) is not None
 
     def get_segments(self, default_segments: Optional[Set[str]] = None) -> Optional[Set[str]]:
         if self.versification is None:
