@@ -27,10 +27,10 @@ class ParatextProjectSettingsParserBase(ABC):
         with self._paratext_project_file_handler.open(settings_file_name) as stream:
             settings_tree = ElementTree.parse(stream)
 
-        guid = settings_tree.getroot().findtext("Guid", "")
-        name = settings_tree.getroot().findtext("Name", "")
-        full_name = settings_tree.getroot().findtext("FullName", "")
-        encoding_str = settings_tree.getroot().findtext("Encoding", "65001")
+        guid: str = settings_tree.getroot().findtext("Guid", "")
+        name: str = settings_tree.getroot().findtext("Name", "")
+        full_name: str = settings_tree.getroot().findtext("FullName", "")
+        encoding_str: str = settings_tree.getroot().findtext("Encoding", "65001")
         code_page = parse_integer(encoding_str)
         if code_page is None:
             raise NotImplementedError(
@@ -49,7 +49,7 @@ class ParatextProjectSettingsParserBase(ABC):
                 versification,
                 versification_name,
             )
-        stylesheet_file_name = settings_tree.getroot().findtext("StyleSheet", "usfm.sty")
+        stylesheet_file_name: str = settings_tree.getroot().findtext("StyleSheet", "usfm.sty")
         if (
             not self._paratext_project_file_handler.exists(stylesheet_file_name)
             and stylesheet_file_name != "usfm_sb.sty"
@@ -71,7 +71,7 @@ class ParatextProjectSettingsParserBase(ABC):
             post_part = naming_elem.get("PostPart")
             if post_part:
                 suffix = post_part
-        biblical_terms_list_setting = settings_tree.getroot().findtext("BiblicalTermsListSetting")
+        biblical_terms_list_setting: Optional[str] = settings_tree.getroot().findtext("BiblicalTermsListSetting")
         if biblical_terms_list_setting is None:
             # Default to Major::BiblicalTerms.xml to mirror Paratext behavior
             biblical_terms_list_setting = "Major::BiblicalTerms.xml"
@@ -82,13 +82,13 @@ class ParatextProjectSettingsParserBase(ABC):
                 f" is not in the expected format (e.g., Major::BiblicalTerms.xml) but is {biblical_terms_list_setting}."
             )
         language_code = None
-        language_iso_code_setting = settings_tree.getroot().findtext("LanguageIsoCode", "")
+        language_iso_code_setting: Optional[str] = settings_tree.getroot().findtext("LanguageIsoCode", "")
         if language_iso_code_setting is not None:
             language_iso_code_setting_parts = language_iso_code_setting.split(":")
             if language_iso_code_setting_parts:
                 language_code = language_iso_code_setting_parts[0]
 
-        translation_info_setting = settings_tree.getroot().findtext("TranslationInfo")
+        translation_info_setting: Optional[str] = settings_tree.getroot().findtext("TranslationInfo")
         translation_type = "Standard"
         parent_name = None
         parent_guid = None
