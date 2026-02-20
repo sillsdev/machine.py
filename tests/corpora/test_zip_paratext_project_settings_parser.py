@@ -24,7 +24,7 @@ def test_is_daughter_project() -> None:
         assert settings.has_parent
         assert settings.is_daughter_project_of(settings)
         assert settings.translation_type == "Standard"
-        assert not settings.parent_has_been_set
+        assert settings.parent is None
 
         env.parser = ZipParatextProjectSettingsParser(env.zip_file, settings)
 
@@ -32,7 +32,7 @@ def test_is_daughter_project() -> None:
         assert settings.has_parent
         assert settings.is_daughter_project_of(settings)
         assert settings.translation_type == "Standard"
-        assert settings.parent_has_been_set
+        assert settings.parent is not None
 
 
 class _TestEnvironment(ContextManager["_TestEnvironment"]):
