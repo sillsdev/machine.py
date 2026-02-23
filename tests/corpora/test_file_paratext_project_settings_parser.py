@@ -9,3 +9,19 @@ def test_parse_custom_stylesheet() -> None:
     test_tag = settings.stylesheet.get_tag("test")
     assert test_tag.style_type is UsfmStyleType.CHARACTER
     assert test_tag.text_type is UsfmTextType.OTHER
+
+
+def test_is_daughter_project() -> None:
+    parser = FileParatextProjectSettingsParser(USFM_TEST_PROJECT_PATH)
+    settings = parser.parse()
+    assert settings.has_parent
+    assert settings.is_daughter_project_of(settings)
+    assert settings.translation_type == "Standard"
+    assert settings.parent is None
+
+    parser = FileParatextProjectSettingsParser(USFM_TEST_PROJECT_PATH, settings)
+    settings = parser.parse()
+    assert settings.has_parent
+    assert settings.is_daughter_project_of(settings)
+    assert settings.translation_type == "Standard"
+    assert settings.parent is not None

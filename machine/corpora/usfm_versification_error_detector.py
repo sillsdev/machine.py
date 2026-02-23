@@ -16,18 +16,22 @@ class UsfmVersificationErrorType(Enum):
     INVALID_VERSE_RANGE = auto()
     MISSING_VERSE_SEGMENT = auto()
     EXTRA_VERSE_SEGMENT = auto()
+    INVALID_CHAPTER_NUMBER = auto()
+    INVALID_VERSE_NUMBER = auto()
 
 
 class UsfmVersificationError:
     def __init__(
         self,
-        book_num: int,
-        expected_chapter: int,
-        expected_verse: int,
-        actual_chapter: int,
-        actual_verse: int,
-        project_name: str,
+        book_num: int = 0,
+        expected_chapter: int = 0,
+        expected_verse: int = 0,
+        actual_chapter: int = 0,
+        actual_verse: int = 0,
+        project_name: str = "",
         verse_ref: Optional[VerseRef] = None,
+        actual_value: Optional[str] = None,
+        usfm_versification_error_type: Optional[UsfmVersificationErrorType] = None,
     ):
         self._book_num = book_num
         self._expected_chapter = expected_chapter
@@ -36,6 +40,9 @@ class UsfmVersificationError:
         self._actual_verse = actual_verse
         self._verse_ref = verse_ref
         self._type: UsfmVersificationErrorType
+        if usfm_versification_error_type is not None:
+            self._type = usfm_versification_error_type
+        self._actual_value = actual_value or ""
         self._project_name = project_name
 
     @property
@@ -78,22 +85,24 @@ class UsfmVersificationError:
 
     @property
     def expected_verse_ref(self) -> str:
-        if self._type == UsfmVersificationErrorType.EXTRA_VERSE:
+        if self._type in [
+            UsfmVersificationErrorType.EXTRA_VERSE,
+            UsfmVersificationErrorType.INVALID_CHAPTER_NUMBER,
+            UsfmVersificationErrorType.INVALID_VERSE_NUMBER,
+        ]:
             return ""
         if (
             default_verse_ref := VerseRef.try_from_string(
                 f"{canon.book_number_to_id(self._book_num)} {self._expected_chapter}:{self._expected_verse}"
             )
-            is None
-        ):
+        ) is None:
             return self.default_verse(self._expected_chapter, self._expected_verse)
         if self._type == UsfmVersificationErrorType.MISSING_VERSE_SEGMENT:
             if (
                 verse_ref_with_segment := VerseRef.try_from_string(
-                    f"{self._book_num} {self._expected_chapter}:{self._expected_verse}a"
+                    f"{canon.book_number_to_id(self._book_num)} {self._expected_chapter}:{self._expected_verse}a"
                 )
-                is not None
-            ):
+            ) is not None:
                 return str(verse_ref_with_segment)
         if self._type == UsfmVersificationErrorType.INVALID_VERSE_RANGE and self._verse_ref is not None:
             sorted_all_unique_verses = sorted(set(self._verse_ref.all_verses()))
@@ -103,19 +112,23 @@ class UsfmVersificationError:
                 return str(first_verse)
             elif (
                 corrected_verse_range_ref := VerseRef.try_from_string(
-                    f"{canon.book_number_to_id(self._book_num)} {self._expected_chapter}:{first_verse}-{last_verse}"
+                    f"{canon.book_number_to_id(self._book_num)} "
+                    f"{self._expected_chapter}:{first_verse.verse_num}-{last_verse.verse_num}"
                 )
-                is not None
-            ):
+            ) is not None:
                 return str(corrected_verse_range_ref)
         return str(default_verse_ref)
 
     @property
     def actual_verse_ref(self) -> str:
+        if self.type == UsfmVersificationErrorType.INVALID_CHAPTER_NUMBER:
+            return f"{canon.book_number_to_id(self._book_num)} {self._actual_value}"
+        if self.type == UsfmVersificationErrorType.INVALID_VERSE_NUMBER:
+            return f"{canon.book_number_to_id(self._book_num)} {self._expected_chapter}:{self._actual_value}"
         if self._verse_ref is not None:
             return str(self._verse_ref)
         if actual_verse_ref := VerseRef.try_from_string(
-            f"{self._book_num} {self._actual_chapter}:{self._actual_verse}"
+            f"{canon.book_number_to_id(self._book_num)} {self._actual_chapter}:{self._actual_verse}"
         ):
             return str(actual_verse_ref)
         return self.default_verse(self._actual_chapter, self._actual_verse)
@@ -173,9 +186,28 @@ class UsfmVersificationErrorDetector(UsfmParserHandler):
             if versification_error.check_error():
                 self._errors.append(versification_error)
 
+        self._current_chapter = state.verse_ref.chapter_num
+        self._current_verse = VerseRef()
+
+        # See whether the chapter number is invalid
+        verse_ref = state.verse_ref.copy()
+        verse_ref.chapter = number
+        if verse_ref.chapter_num == -1:
+            self._errors.append(
+                UsfmVersificationError(
+                    book_num=self._current_book,
+                    expected_chapter=self._current_chapter,
+                    actual_value=number,
+                    project_name=self._project_name,
+                    usfm_versification_error_type=UsfmVersificationErrorType.INVALID_CHAPTER_NUMBER,
+                )
+            )
+
     def verse(
         self, state: UsfmParserState, number: str, marker: str, alt_number: Optional[str], pub_number: Optional[str]
     ) -> None:
+        verse_in_error = False
+        self._current_verse = state.verse_ref.copy()
         if self._current_book > 0 and canon.is_canonical(self._current_book) and self._current_chapter > 0:
             versification_error = UsfmVersificationError(
                 self._current_book,
@@ -188,3 +220,19 @@ class UsfmVersificationErrorDetector(UsfmParserHandler):
             )
             if versification_error.check_error():
                 self._errors.append(versification_error)
+                verse_in_error = True
+
+        if not verse_in_error:
+            # See whether the verse number is invalid
+            verse_ref = self._current_verse.copy()
+            verse_ref.verse = number
+            if verse_ref.verse_num == -1:
+                self._errors.append(
+                    UsfmVersificationError(
+                        book_num=self._current_book,
+                        expected_chapter=self._current_chapter,
+                        actual_value=number,
+                        project_name=self._project_name,
+                        usfm_versification_error_type=UsfmVersificationErrorType.INVALID_VERSE_NUMBER,
+                    )
+                )

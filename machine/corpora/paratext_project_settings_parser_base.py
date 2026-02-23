@@ -1,4 +1,5 @@
 from abc import ABC
+from typing import Optional
 from xml.etree import ElementTree
 
 from ..scripture.verse_ref import Versification
@@ -9,8 +10,13 @@ from .paratext_project_settings import ParatextProjectSettings
 
 
 class ParatextProjectSettingsParserBase(ABC):
-    def __init__(self, paratext_project_file_handler: ParatextProjectFileHandler):
+    def __init__(
+        self,
+        paratext_project_file_handler: ParatextProjectFileHandler,
+        parent_paratext_project_settings: Optional[ParatextProjectSettings] = None,
+    ):
         self._paratext_project_file_handler = paratext_project_file_handler
+        self.parent_paratext_project_settings = parent_paratext_project_settings
 
     def parse(self) -> ParatextProjectSettings:
         settings_file_name = "Settings.xml"
@@ -21,9 +27,10 @@ class ParatextProjectSettingsParserBase(ABC):
         with self._paratext_project_file_handler.open(settings_file_name) as stream:
             settings_tree = ElementTree.parse(stream)
 
-        name = settings_tree.getroot().findtext("Name", "")
-        full_name = settings_tree.getroot().findtext("FullName", "")
-        encoding_str = settings_tree.getroot().findtext("Encoding", "65001")
+        guid: str = settings_tree.getroot().findtext("Guid", "")
+        name: str = settings_tree.getroot().findtext("Name", "")
+        full_name: str = settings_tree.getroot().findtext("FullName", "")
+        encoding_str: str = settings_tree.getroot().findtext("Encoding", "65001")
         code_page = parse_integer(encoding_str)
         if code_page is None:
             raise NotImplementedError(
@@ -36,14 +43,13 @@ class ParatextProjectSettingsParserBase(ABC):
         versification_type = int(settings_tree.getroot().findtext("Versification", "4"))
         versification = Versification.get_builtin(versification_type)
         if self._paratext_project_file_handler.exists("custom.vrs"):
-            guid = settings_tree.getroot().findtext("Guid", "")
             versification_name = f"{versification.name}-{guid}"
             versification = Versification.load(
                 self._paratext_project_file_handler.open("custom.vrs"),
                 versification,
                 versification_name,
             )
-        stylesheet_file_name = settings_tree.getroot().findtext("StyleSheet", "usfm.sty")
+        stylesheet_file_name: str = settings_tree.getroot().findtext("StyleSheet", "usfm.sty")
         if (
             not self._paratext_project_file_handler.exists(stylesheet_file_name)
             and stylesheet_file_name != "usfm_sb.sty"
@@ -65,7 +71,7 @@ class ParatextProjectSettingsParserBase(ABC):
             post_part = naming_elem.get("PostPart")
             if post_part:
                 suffix = post_part
-        biblical_terms_list_setting = settings_tree.getroot().findtext("BiblicalTermsListSetting")
+        biblical_terms_list_setting: Optional[str] = settings_tree.getroot().findtext("BiblicalTermsListSetting")
         if biblical_terms_list_setting is None:
             # Default to Major::BiblicalTerms.xml to mirror Paratext behavior
             biblical_terms_list_setting = "Major::BiblicalTerms.xml"
@@ -76,13 +82,24 @@ class ParatextProjectSettingsParserBase(ABC):
                 f" is not in the expected format (e.g., Major::BiblicalTerms.xml) but is {biblical_terms_list_setting}."
             )
         language_code = None
-        language_iso_code_setting = settings_tree.getroot().findtext("LanguageIsoCode", "")
-        if language_iso_code_setting:
-            language_iso_code_setting_parts = settings_tree.getroot().findtext("LanguageIsoCode", "").split(":")
+        language_iso_code_setting: Optional[str] = settings_tree.getroot().findtext("LanguageIsoCode", "")
+        if language_iso_code_setting is not None:
+            language_iso_code_setting_parts = language_iso_code_setting.split(":")
             if language_iso_code_setting_parts:
                 language_code = language_iso_code_setting_parts[0]
 
-        return ParatextProjectSettings(
+        translation_info_setting: Optional[str] = settings_tree.getroot().findtext("TranslationInfo")
+        translation_type = "Standard"
+        parent_name = None
+        parent_guid = None
+        if translation_info_setting is not None:
+            translation_info_setting_parts = translation_info_setting.split(":")
+            translation_type = translation_info_setting_parts[0]
+            parent_name = translation_info_setting_parts[1] if translation_info_setting_parts[1] != "" else None
+            parent_guid = translation_info_setting_parts[2] if translation_info_setting_parts[2] != "" else None
+
+        settings = ParatextProjectSettings(
+            guid,
             name,
             full_name,
             encoding,
@@ -95,4 +112,12 @@ class ParatextProjectSettingsParserBase(ABC):
             parts[1],
             parts[2],
             language_code,
+            translation_type,
+            parent_guid,
+            parent_name,
         )
+
+        if self.parent_paratext_project_settings is not None and settings.has_parent:
+            settings.parent = self.parent_paratext_project_settings
+
+        return settings
