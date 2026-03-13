@@ -141,7 +141,7 @@ class _TestEnvironment:
                             sourceTokens=[],
                             translationTokens=[],
                             alignment="",
-                            sequence_confidence=0.5,
+                            sequenceConfidence=0.5,
                         )
                     ]
                 )
