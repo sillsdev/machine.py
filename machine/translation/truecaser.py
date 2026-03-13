@@ -29,6 +29,7 @@ class Truecaser(ABC):
             result.source_tokens,
             target_tokens,
             result.confidences,
+            result.sequence_confidence,
             result.sources,
             result.alignment,
             result.phrases,

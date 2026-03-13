@@ -115,6 +115,7 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
                     check_canceled()
                 for i, result in enumerate(engine.translate_batch(seg_batch)):
                     pretranslations[current_inference_step + i]["translation"] = result.translation
+                    pretranslations[current_inference_step + i]["sequenceConfidence"] = result.sequence_confidence or -1
                 current_inference_step += len(seg_batch)
                 phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
 

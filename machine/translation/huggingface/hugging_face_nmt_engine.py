@@ -164,6 +164,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
                 builder = TranslationResultBuilder(input_tokens)
                 for token, score in zip(output["translation_tokens"], output["token_scores"]):
                     builder.append_token(token, TranslationSources.NMT, exp(score))
+                builder.set_sequence_confidence(exp(output["sequence_score"]))
                 word_pairs: Optional[Collection[Union[AlignedWordPair, Tuple[int, int]]]] = None
                 if output.get("token_attentions") is not None:
                     src_indices = torch.argmax(output["token_attentions"], dim=1).tolist()
@@ -257,36 +258,56 @@ class _TranslationPipeline(TranslationPipeline):
             output_ids = output.sequences
             beam_indices = output.beam_indices
             scores = output.scores
+            assert scores is not None and beam_indices is not None
+            sequences_scores = output.sequences_scores
             attentions = output.cross_attentions
         elif isinstance(output, GreedySearchEncoderDecoderOutput):
             output_ids = output.sequences
-            beam_indices = torch.zeros_like(output_ids)
+            beam_indices = None
             assert output.scores is not None
-            scores = tuple(torch.nn.functional.log_softmax(logits, dim=-1) for logits in output.scores)
+            scores = output.scores
+            sequences_scores = None
             attentions = output.cross_attentions
         else:
             raise RuntimeError("Cannot postprocess the output of the model.")
 
-        assert beam_indices is not None and scores is not None
-        out_b = output_ids.shape[0]
+        transition_scores = cast(
+            torch.Tensor,
+            self.model.compute_transition_scores(
+                output_ids,  # type: ignore
+                scores,  # type: ignore
+                beam_indices,  # type: ignore
+                normalize_logits=True,
+            ),
+        )
+
+        if beam_indices is None:
+            beam_indices = torch.zeros_like(output_ids)
+
+        out_b, seq_len = output_ids.shape
         num_beams = scores[0].shape[0] // in_b
         n_sequences = out_b // in_b
+
+        ts_len = transition_scores.shape[1]
+        if ts_len == seq_len:
+            token_logprobs = transition_scores
+        elif ts_len == seq_len - 1:
+            token_logprobs = torch.cat(
+                [
+                    torch.zeros(out_b, 1, device=transition_scores.device, dtype=transition_scores.dtype),
+                    transition_scores,
+                ],
+                dim=1,
+            )
+        else:
+            raise RuntimeError(
+                f"Unexpected transition_scores length {ts_len} for sequences length {seq_len}. "
+                "Cannot align token scores robustly."
+            )
+
         start_index = 0
         if self.model.config.decoder_start_token_id is not None:
             start_index = 1
-        indices = torch.stack(
-            (
-                torch.arange(output_ids.shape[1] - start_index, device=output_ids.device).expand(in_b, n_sequences, -1),
-                torch.reshape(beam_indices[:, start_index:] % num_beams, (in_b, n_sequences, -1)),
-                torch.reshape(output_ids[:, start_index:], (in_b, n_sequences, -1)),
-            ),
-            dim=3,
-        )
-        scores = torch.stack(scores, dim=0).reshape(len(scores), in_b, num_beams, -1).transpose(0, 1)
-        scores = torch_gather_nd(scores, indices, 1)
-        if self.model.config.decoder_start_token_id is not None:
-            scores = torch.cat((torch.zeros(scores.shape[0], scores.shape[1], 1, device=scores.device), scores), dim=2)
-
         if generate_kwargs["output_attentions"] is True:
             assert attentions is not None
             num_heads = attentions[0][0].shape[1]
@@ -320,13 +341,15 @@ class _TranslationPipeline(TranslationPipeline):
                     ),
                     dim=2,
                 )
+        output_ids = output_ids.reshape(in_b, n_sequences, seq_len)
+        token_logprobs = token_logprobs.reshape(in_b, n_sequences, seq_len)
 
-        output_ids = output_ids.reshape(in_b, n_sequences, *output_ids.shape[1:])
         return {
             "input_ids": model_inputs["input_ids"],
             "input_tokens": input_tokens,
             "output_ids": output_ids,
-            "scores": scores,
+            "scores": token_logprobs,
+            "sequences_scores": sequences_scores,
             "attentions": attentions,
         }
 
@@ -346,24 +369,17 @@ class _TranslationPipeline(TranslationPipeline):
         records = []
 
         has_attentions = model_outputs.get("attentions") is not None and model_outputs["attentions"][0] is not None
-        if has_attentions:
-            zipped = zip(
-                model_outputs["output_ids"][0],
-                model_outputs["scores"][0],
-                model_outputs["attentions"][0],
-            )
-        else:
-            zipped = zip(
-                model_outputs["output_ids"][0],
-                model_outputs["scores"][0],
-            )
-
+        has_sequence_scores = model_outputs["sequences_scores"] is not None
+        zipped = zip(
+            model_outputs["output_ids"][0],
+            model_outputs["scores"][0],
+            model_outputs["sequences_scores"] if has_sequence_scores else iter(lambda: None, 1),
+            model_outputs["attentions"][0] if has_attentions else iter(lambda: None, 1),
+        )
         for item in zipped:
-            if has_attentions:
-                output_ids, scores, attentions = cast(Tuple[torch.Tensor, torch.Tensor, torch.Tensor], item)
-            else:
-                output_ids, scores = cast(Tuple[torch.Tensor, torch.Tensor], item)
-                attentions = None
+            output_ids, scores, sequence_score, attentions = cast(
+                Tuple[torch.Tensor, torch.Tensor, Optional[float], Optional[torch.Tensor]], item
+            )
 
             output_tokens: List[str] = []
             output_indices: List[int] = []
@@ -379,6 +395,7 @@ class _TranslationPipeline(TranslationPipeline):
                 "input_tokens": input_tokens,
                 "translation_tokens": output_tokens,
                 "token_scores": scores,
+                "sequence_score": sequence_score,
                 "translation_text": self.tokenizer.decode(
                     output_ids,
                     skip_special_tokens=True,
