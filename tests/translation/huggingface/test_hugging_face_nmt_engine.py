@@ -5,8 +5,9 @@ if sys.platform == "darwin":
 
     skip("skipping Hugging Face tests on MacOS", allow_module_level=True)
 
+from math import exp, log
+
 from pytest import approx, mark, raises
-from math import log, exp
 
 from machine.translation.huggingface import HuggingFaceNmtEngine
 from machine.translation.translation_result import TranslationResult
