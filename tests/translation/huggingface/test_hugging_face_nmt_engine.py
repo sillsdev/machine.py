@@ -6,6 +6,7 @@ if sys.platform == "darwin":
     skip("skipping Hugging Face tests on MacOS", allow_module_level=True)
 
 from pytest import approx, mark, raises
+from math import log, exp
 
 from machine.translation.huggingface import HuggingFaceNmtEngine
 from machine.translation.translation_result import TranslationResult
@@ -54,7 +55,7 @@ def test_translate_greedy(output_attentions: bool) -> None:
         result = engine.translate("This is a test string")
         assert result.translation == "skaberskaber Dollar Dollar Dollar ፤ gerekir gerekir"
         assert result.confidences[0] == approx(1.08e-05, 0.01)
-        assert result.sequence_confidence == approx(_get_sequence_confidence(result), 0.01)
+        assert result.sequence_confidence == -1.0
         assert str(result.alignment) == ("2-0 2-1 2-2 2-3 4-4 4-5 4-6 4-7" if output_attentions else "")
 
 
@@ -66,4 +67,4 @@ def test_construct_invalid_lang(output_attentions: bool) -> None:
 
 def _get_sequence_confidence(result: TranslationResult) -> float:
     # Inject a 0 score for the BOS token
-    return sum(list(result.confidences) + [0]) / (len(result.confidences) + 1)
+    return exp(sum([log(c) for c in result.confidences] + [0]) / (len(result.confidences) + 1))
