@@ -164,9 +164,8 @@ class HuggingFaceNmtEngine(TranslationEngine):
                 builder = TranslationResultBuilder(input_tokens)
                 for token, score in zip(output["translation_tokens"], output["token_scores"]):
                     builder.append_token(token, TranslationSources.NMT, exp(score))
-                builder.set_sequence_confidence(
-                    exp(output["sequence_score"]) if output["sequence_score"] is not None else -1
-                )
+                if output["sequence_score"] is not None:
+                    builder.set_sequence_confidence(exp(output["sequence_score"]))
                 word_pairs: Optional[Collection[Union[AlignedWordPair, Tuple[int, int]]]] = None
                 if output.get("token_attentions") is not None:
                     src_indices = torch.argmax(output["token_attentions"], dim=1).tolist()
