@@ -1,4 +1,4 @@
-from typing import Iterable, Optional, Sequence
+from typing import Iterable, Sequence
 
 from .phrase import Phrase
 from .translation_sources import TranslationSources
@@ -12,7 +12,7 @@ class TranslationResult:
         source_tokens: Iterable[str],
         target_tokens: Iterable[str],
         confidences: Iterable[float],
-        sequence_confidence: Optional[float],
+        sequence_confidence: float,
         sources: Iterable[TranslationSources],
         alignment: WordAlignmentMatrix,
         phrases: Iterable[Phrase],
@@ -52,7 +52,7 @@ class TranslationResult:
         return self._confidences
 
     @property
-    def sequence_confidence(self) -> Optional[float]:
+    def sequence_confidence(self) -> float:
         return self._sequence_confidence
 
     @property

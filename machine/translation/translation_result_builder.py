@@ -28,7 +28,7 @@ class TranslationResultBuilder:
         self._confidences: List[float] = []
         self._sources: List[TranslationSources] = []
         self._phrases: List[PhraseInfo] = []
-        self._sequence_confidence: Optional[float] = None
+        self._sequence_confidence: float = -1.0
 
     @property
     def source_tokens(self) -> Sequence[str]:
@@ -51,7 +51,7 @@ class TranslationResultBuilder:
         return self._phrases
 
     @property
-    def sequence_confidence(self) -> Optional[float]:
+    def sequence_confidence(self) -> float:
         return self.sequence_confidence
 
     def append_token(self, token: str, source: TranslationSources, confidence: float) -> None:
