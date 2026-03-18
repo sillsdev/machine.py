@@ -12,6 +12,7 @@ class TranslationResult:
         source_tokens: Iterable[str],
         target_tokens: Iterable[str],
         confidences: Iterable[float],
+        sequence_confidence: float,
         sources: Iterable[TranslationSources],
         alignment: WordAlignmentMatrix,
         phrases: Iterable[Phrase],
@@ -20,6 +21,7 @@ class TranslationResult:
         self._source_tokens = list(source_tokens)
         self._target_tokens = list(target_tokens)
         self._confidences = list(confidences)
+        self._sequence_confidence = sequence_confidence
         self._sources = list(sources)
         self._alignment = alignment
         self._phrases = list(phrases)
@@ -48,6 +50,10 @@ class TranslationResult:
     @property
     def confidences(self) -> Sequence[float]:
         return self._confidences
+
+    @property
+    def sequence_confidence(self) -> float:
+        return self._sequence_confidence
 
     @property
     def sources(self) -> Sequence[TranslationSources]:

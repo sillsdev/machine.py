@@ -28,6 +28,7 @@ class TranslationResultBuilder:
         self._confidences: List[float] = []
         self._sources: List[TranslationSources] = []
         self._phrases: List[PhraseInfo] = []
+        self._sequence_confidence: float = -1.0
 
     @property
     def source_tokens(self) -> Sequence[str]:
@@ -49,6 +50,10 @@ class TranslationResultBuilder:
     def phrases(self) -> Sequence[PhraseInfo]:
         return self._phrases
 
+    @property
+    def sequence_confidence(self) -> float:
+        return self.sequence_confidence
+
     def append_token(self, token: str, source: TranslationSources, confidence: float) -> None:
         self._target_tokens.append(token)
         self._sources.append(source)
@@ -59,6 +64,9 @@ class TranslationResultBuilder:
 
     def set_confidence(self, index: int, confidence: float) -> None:
         self._confidences[index] = confidence
+
+    def set_sequence_confidence(self, sequence_confidence: float):
+        self._sequence_confidence = sequence_confidence
 
     def correct_prefix(
         self,
@@ -165,6 +173,7 @@ class TranslationResultBuilder:
             self._source_tokens,
             self._target_tokens,
             self._confidences,
+            self._sequence_confidence,
             sources,
             alignment,
             phrases,

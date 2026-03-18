@@ -65,6 +65,7 @@ class _TestEnvironment:
                     source_tokens="Por favor , tengo reservada una habitación .".split(),
                     target_tokens="Please , I have booked a room .".split(),
                     confidences=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+                    sequence_confidence=0.5,
                     sources=[
                         TranslationSources.SMT,
                         TranslationSources.SMT,
@@ -140,6 +141,7 @@ class _TestEnvironment:
                             sourceTokens=[],
                             translationTokens=[],
                             alignment="",
+                            sequenceConfidence=0.5,
                         )
                     ]
                 )

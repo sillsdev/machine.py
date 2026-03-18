@@ -50,10 +50,12 @@ def test_run(decoy: Decoy) -> None:
         ]
         assert pretranslations[0]["translationTokens"] == ["Please", ",", "I", "have", "booked", "a", "room", "."]
         assert len(pretranslations[0]["alignment"]) > 0
+        assert pretranslations[0]["sequenceConfidence"] == 0.5
     else:
         assert pretranslations[0]["sourceTokens"] == []
         assert pretranslations[0]["translationTokens"] == []
         assert len(pretranslations[0]["alignment"]) == 0
+        assert pretranslations[0]["sequenceConfidence"] == 0.5
     decoy.verify(env.translation_file_service.save_model(Path("model.tar.gz"), "models/save-model.tar.gz"), times=1)
 
 
@@ -86,6 +88,7 @@ class _TestEnvironment:
                     source_tokens="Por favor , tengo reservada una habitación .".split(),
                     target_tokens="Please , I have booked a room .".split(),
                     confidences=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+                    sequence_confidence=0.5,
                     sources=[
                         TranslationSources.NMT,
                         TranslationSources.NMT,
@@ -135,6 +138,7 @@ class _TestEnvironment:
                             sourceTokens=[],
                             translationTokens=[],
                             alignment="",
+                            sequenceConfidence=0.5,
                         )
                     ]
                 )

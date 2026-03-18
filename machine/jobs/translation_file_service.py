@@ -20,6 +20,7 @@ class PretranslationInfo(TypedDict):
     sourceTokens: List[str]  # noqa: N815
     translationTokens: List[str]  # noqa: N815
     alignment: str
+    sequenceConfidence: float  # noqa: N815
 
 
 class TranslationFileService:
@@ -98,6 +99,7 @@ class TranslationFileService:
                         sourceTokens=list(),
                         translationTokens=list(),
                         alignment="",
+                        sequenceConfidence=0,
                     )
 
         return ContextManagedGenerator(generator())
