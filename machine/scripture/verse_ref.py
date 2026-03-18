@@ -592,7 +592,7 @@ def _get_verse_num(verse: Optional[str]) -> Tuple[bool, int]:
 
 class IgnoreSegmentsVerseRef(VerseRef):
     def __init__(self, verse_ref: VerseRef):
-        super().__init__(verse_ref.book_num, verse_ref.chapter_num, verse_ref.verse_num, verse_ref.versification)
+        super().__init__(verse_ref.book_num, verse_ref.chapter, verse_ref.verse_num, verse_ref.versification)
 
     def __eq__(self, other):
         if not isinstance(other, VerseRef):
