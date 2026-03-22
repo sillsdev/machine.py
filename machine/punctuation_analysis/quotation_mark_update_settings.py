@@ -12,6 +12,6 @@ class QuotationMarkUpdateSettings:
         self._chapter_strategies = chapter_strategies
 
     def get_action_for_chapter(self, chapter_number: int) -> QuotationMarkUpdateStrategy:
-        if chapter_number <= len(self._chapter_strategies):
+        if chapter_number > -1 and chapter_number <= len(self._chapter_strategies):
             return self._chapter_strategies[chapter_number - 1]
         return self._default_chapter_strategy

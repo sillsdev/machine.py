@@ -775,6 +775,27 @@ def test_start_new_chapter() -> None:
     assert quote_convention_changer._current_strategy == QuotationMarkUpdateStrategy.APPLY_FALLBACK
 
 
+def test_invalid_chapter_number() -> None:
+    input_usfm = """\\c 1
+    \\p
+    \\v 1 Chapter 1, "Verse 1"
+    \\c 2.
+    \\p
+    \\v v1 Chapter 2, "Invalid Verse 1"
+    """
+    expected_usfm = (
+        "\\c 1\n"
+        + "\\p\n"
+        + "\\v 1 Chapter 1, “Verse 1”\n"
+        + "\\c 2.\n"
+        + "\\p\n"
+        + "\\v v1 Chapter 2, “Invalid Verse 1”"
+    )
+
+    observed_usfm = change_quotation_marks(input_usfm, "typewriter_english", "standard_english")
+    assert_usfm_equal(observed_usfm, expected_usfm)
+
+
 def change_quotation_marks(
     normalized_usfm: str,
     source_quote_convention_name: str,
