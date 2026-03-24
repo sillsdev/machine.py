@@ -52,7 +52,7 @@ class TranslationResultBuilder:
 
     @property
     def sequence_confidence(self) -> float:
-        return self.sequence_confidence
+        return self._sequence_confidence
 
     def append_token(self, token: str, source: TranslationSources, confidence: float) -> None:
         self._target_tokens.append(token)
