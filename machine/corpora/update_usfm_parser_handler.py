@@ -334,26 +334,42 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
         if embed_outside_of_block:
             self._end_update_block(state, [scripture_ref])
 
-    def get_usfm(self, stylesheet: Union[str, UsfmStylesheet] = "usfm.sty") -> str:
+    def get_usfm(
+        self, stylesheet: Union[str, UsfmStylesheet] = "usfm.sty", chapters: Optional[Sequence[int]] = None
+    ) -> str:
         if isinstance(stylesheet, str):
             stylesheet = UsfmStylesheet(stylesheet)
         tokenizer = UsfmTokenizer(stylesheet)
         tokens = list(self._tokens)
+        if chapters is not None:
+            tokens = self._get_incremental_draft_tokens(tokens, chapters)
         if len(self._remarks) > 0:
             remark_tokens: List[UsfmToken] = []
             for remark in self._remarks:
                 remark_tokens.append(UsfmToken(UsfmTokenType.PARAGRAPH, "rem"))
                 remark_tokens.append(UsfmToken(UsfmTokenType.TEXT, text=remark))
             if len(tokens) > 0:
-                index = 0
-                markers_to_skip = {"id", "ide", "rem"}
-                while tokens[index].marker in markers_to_skip:
-                    index += 1
-                    if len(tokens) > index and tokens[index].type == UsfmTokenType.TEXT:
-                        index += 1
-                for remark_token in reversed(remark_tokens):
-                    tokens.insert(index, remark_token)
+                for index, token in enumerate(tokens):
+                    if token.type == UsfmTokenType.CHAPTER:
+                        tokens[index + 1 : index + 1] = remark_tokens
         return tokenizer.detokenize(tokens)
+
+    def _get_incremental_draft_tokens(self, tokens: List[UsfmToken], chapters: Sequence[int]) -> List[UsfmToken]:
+        incremental_draft_tokens: List[UsfmToken] = []
+        in_chapter: bool = False
+        for index, token in enumerate(tokens):
+            if index == 0 and token.marker == "id":
+                incremental_draft_tokens.append(token)
+                continue
+            elif token.type == UsfmTokenType.CHAPTER:
+                if token.data and int(token.data) in chapters:
+                    in_chapter = True
+                    incremental_draft_tokens.append(token)
+                else:
+                    in_chapter = False
+            elif in_chapter:
+                incremental_draft_tokens.append(token)
+        return incremental_draft_tokens
 
     def _advance_rows(self, seg_scr_refs: Sequence[ScriptureRef]) -> Tuple[List[str], Optional[dict[str, object]]]:
         row_texts: List[str] = []

@@ -29,6 +29,7 @@ class ParatextProjectTextUpdaterBase(ABC):
     def update_usfm(
         self,
         book_id: str,
+        chapters: Optional[Sequence[int]] = None,
         rows: Optional[Sequence[UpdateUsfmRow]] = None,
         full_name: Optional[str] = None,
         text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_EXISTING,
@@ -61,7 +62,7 @@ class ParatextProjectTextUpdaterBase(ABC):
         )
         try:
             parse_usfm(usfm, handler, self._settings.stylesheet, self._settings.versification)
-            return handler.get_usfm(self._settings.stylesheet)
+            return handler.get_usfm(self._settings.stylesheet, chapters)
         except Exception as e:
             error_message = (
                 f"An error occurred while parsing the usfm for '{book_id}'"
