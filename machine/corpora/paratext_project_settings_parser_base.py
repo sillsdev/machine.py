@@ -94,9 +94,10 @@ class ParatextProjectSettingsParserBase(ABC):
         parent_guid = None
         if translation_info_setting is not None:
             translation_info_setting_parts = translation_info_setting.split(":")
-            translation_type = translation_info_setting_parts[0]
-            parent_name = translation_info_setting_parts[1] if translation_info_setting_parts[1] != "" else None
-            parent_guid = translation_info_setting_parts[2] if translation_info_setting_parts[2] != "" else None
+            if len(translation_info_setting_parts) == 3:
+                translation_type = translation_info_setting_parts[0]
+                parent_name = translation_info_setting_parts[1] if translation_info_setting_parts[1] != "" else None
+                parent_guid = translation_info_setting_parts[2] if translation_info_setting_parts[2] != "" else None
 
         settings = ParatextProjectSettings(
             guid,
