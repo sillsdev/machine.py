@@ -9,10 +9,12 @@ from machine.corpora import (
     UpdateUsfmParserHandler,
     UpdateUsfmRow,
     UpdateUsfmTextBehavior,
+    UsfmParser,
+    UsfmTokenizer,
     UsfmUpdateBlock,
     UsfmUpdateBlockElementType,
     UsfmUpdateBlockHandler,
-    parse_usfm,
+    filter_tokens_by_chapter,
 )
 
 
@@ -1494,6 +1496,31 @@ Text 1\f + \fr A.1-3: \ft Some note.\f*
     )
 
 
+def test_filter_chapters() -> None:
+    usfm = r"""\id MAT - Test
+\h Matthew
+\c 1
+\v 1 Some text
+\v 2
+\v 3 Other text
+\c 2
+\v 1 Some text
+\c 3
+\v 1 Some text
+\c 4
+\v 1 Some text
+"""
+    chapters = [2, 4]
+    target = update_usfm(chapters=chapters, source=usfm)
+    result = r"""\id MAT
+\c 2
+\v 1 Some text
+\c 4
+\v 1 Some text
+"""
+    assert_usfm_equals(target, result)
+
+
 def scr_ref(*refs: str) -> List[ScriptureRef]:
     return [ScriptureRef.parse(ref) for ref in refs]
 
@@ -1501,6 +1528,7 @@ def scr_ref(*refs: str) -> List[ScriptureRef]:
 def update_usfm(
     rows: Optional[Sequence[UpdateUsfmRow]] = None,
     source: Optional[str] = None,
+    chapters: Optional[Sequence[int]] = None,
     id_text: Optional[str] = None,
     text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_NEW,
     paragraph_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
@@ -1516,6 +1544,7 @@ def update_usfm(
         return updater.update_usfm(
             "MAT",
             rows,
+            chapters,
             id_text,
             text_behavior,
             paragraph_behavior,
@@ -1542,7 +1571,11 @@ def update_usfm(
             lambda _: False,
             compare_segments,
         )
-        parse_usfm(source, updater)
+        tokenizer = UsfmTokenizer()
+        tokens = tokenizer.tokenize(source)
+        tokens = filter_tokens_by_chapter(tokens, chapters)
+        parser = UsfmParser(tokens, updater)
+        parser.process_tokens()
         return updater.get_usfm()
 
 

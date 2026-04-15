@@ -31,8 +31,8 @@ class ParatextProjectTextUpdaterBase(ABC):
     def update_usfm(
         self,
         book_id: str,
-        chapters: Optional[Sequence[int]] = None,
         rows: Optional[Sequence[UpdateUsfmRow]] = None,
+        chapters: Optional[Sequence[int]] = None,
         full_name: Optional[str] = None,
         text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_EXISTING,
         paragraph_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
@@ -65,7 +65,7 @@ class ParatextProjectTextUpdaterBase(ABC):
         try:
             tokenizer = UsfmTokenizer(self._settings.stylesheet)
             tokens = tokenizer.tokenize(usfm)
-            tokens = self.filter_tokens_by_chapter(tokens, chapters)
+            tokens = filter_tokens_by_chapter(tokens, chapters)
             parser = UsfmParser(tokens, handler, self._settings.stylesheet, self._settings.versification)
             parser.process_tokens()
             return handler.get_usfm(self._settings.stylesheet)
@@ -77,24 +77,25 @@ class ParatextProjectTextUpdaterBase(ABC):
             )
             raise RuntimeError(error_message) from e
 
-    def filter_tokens_by_chapter(
-        self, tokens: Sequence[UsfmToken], chapters: Optional[Sequence[int]] = None
-    ) -> Sequence[UsfmToken]:
-        if chapters is None:
-            return tokens
-        tokens_within_chapters: List[UsfmToken] = []
-        in_chapter: bool = False
-        for index, token in enumerate(tokens):
-            if index == 0 and token.marker == "id":
+
+def filter_tokens_by_chapter(
+    tokens: Sequence[UsfmToken], chapters: Optional[Sequence[int]] = None
+) -> Sequence[UsfmToken]:
+    if chapters is None:
+        return tokens
+    tokens_within_chapters: List[UsfmToken] = []
+    in_chapter: bool = False
+    for index, token in enumerate(tokens):
+        if index == 0 and token.marker == "id":
+            tokens_within_chapters.append(token)
+            if 1 in chapters:
+                in_chapter = True
+        elif token.type == UsfmTokenType.CHAPTER:
+            if token.data and int(token.data) in chapters:
+                in_chapter = True
                 tokens_within_chapters.append(token)
-                if 1 in chapters:
-                    in_chapter = True
-            elif token.type == UsfmTokenType.CHAPTER:
-                if token.data and int(token.data) in chapters:
-                    in_chapter = True
-                    tokens_within_chapters.append(token)
-                else:
-                    in_chapter = False
-            elif in_chapter:
-                tokens_within_chapters.append(token)
-        return tokens_within_chapters
+            else:
+                in_chapter = False
+        elif in_chapter:
+            tokens_within_chapters.append(token)
+    return tokens_within_chapters
