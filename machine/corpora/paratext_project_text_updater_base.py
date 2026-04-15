@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Callable, Iterable, Optional, Sequence, Union
+from typing import Callable, Iterable, List, Optional, Sequence, Union
 
 from .paratext_project_file_handler import ParatextProjectFileHandler
 from .paratext_project_settings import ParatextProjectSettings
@@ -10,7 +10,9 @@ from .update_usfm_parser_handler import (
     UpdateUsfmRow,
     UpdateUsfmTextBehavior,
 )
-from .usfm_parser import parse_usfm
+from .usfm_parser import UsfmParser
+from .usfm_token import UsfmTokenType
+from .usfm_tokenizer import UsfmToken, UsfmTokenizer
 from .usfm_update_block_handler import UsfmUpdateBlockHandler, UsfmUpdateBlockHandlerError
 
 
@@ -61,8 +63,12 @@ class ParatextProjectTextUpdaterBase(ABC):
             compare_segments=compare_segments,
         )
         try:
-            parse_usfm(usfm, handler, self._settings.stylesheet, self._settings.versification)
-            return handler.get_usfm(self._settings.stylesheet, chapters)
+            tokenizer = UsfmTokenizer(self._settings.stylesheet)
+            tokens = tokenizer.tokenize(usfm)
+            tokens = self.filter_tokens_by_chapter(tokens, chapters)
+            parser = UsfmParser(tokens, handler, self._settings.stylesheet, self._settings.versification)
+            parser.process_tokens()
+            return handler.get_usfm(self._settings.stylesheet)
         except Exception as e:
             error_message = (
                 f"An error occurred while parsing the usfm for '{book_id}'"
@@ -70,3 +76,25 @@ class ParatextProjectTextUpdaterBase(ABC):
                 f". Error: '{e}'"
             )
             raise RuntimeError(error_message) from e
+
+    def filter_tokens_by_chapter(
+        self, tokens: Sequence[UsfmToken], chapters: Optional[Sequence[int]] = None
+    ) -> Sequence[UsfmToken]:
+        if chapters is None:
+            return tokens
+        tokens_within_chapters: List[UsfmToken] = []
+        in_chapter: bool = False
+        for index, token in enumerate(tokens):
+            if index == 0 and token.marker == "id":
+                tokens_within_chapters.append(token)
+                if 1 in chapters:
+                    in_chapter = True
+            elif token.type == UsfmTokenType.CHAPTER:
+                if token.data and int(token.data) in chapters:
+                    in_chapter = True
+                    tokens_within_chapters.append(token)
+                else:
+                    in_chapter = False
+            elif in_chapter:
+                tokens_within_chapters.append(token)
+        return tokens_within_chapters
