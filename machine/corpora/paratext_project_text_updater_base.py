@@ -85,17 +85,20 @@ def filter_tokens_by_chapter(
         return tokens
     tokens_within_chapters: List[UsfmToken] = []
     in_chapter: bool = False
+    in_id_marker: bool = False
     for index, token in enumerate(tokens):
         if index == 0 and token.marker == "id":
-            tokens_within_chapters.append(token)
+            in_id_marker = True
             if 1 in chapters:
                 in_chapter = True
+        elif in_id_marker and token.marker is not None and token.marker != "id":
+            in_id_marker = False
         elif token.type == UsfmTokenType.CHAPTER:
             if token.data and int(token.data) in chapters:
                 in_chapter = True
-                tokens_within_chapters.append(token)
             else:
                 in_chapter = False
-        elif in_chapter:
+
+        if in_id_marker or in_chapter:
             tokens_within_chapters.append(token)
     return tokens_within_chapters

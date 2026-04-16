@@ -1512,7 +1512,7 @@ def test_filter_chapters() -> None:
 """
     chapters = [2, 4]
     target = update_usfm(chapters=chapters, source=usfm)
-    result = r"""\id MAT
+    result = r"""\id MAT - Test
 \c 2
 \v 1 Some text
 \c 4
