@@ -347,7 +347,12 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
             if len(tokens) > 0:
                 for index, token in enumerate(tokens):
                     if token.type == UsfmTokenType.CHAPTER:
-                        tokens[index + 1 : index + 1] = remark_tokens
+                        insertion_index = index + 1
+                        while insertion_index < len(tokens) and tokens[insertion_index].marker == "rem":
+                            insertion_index += 1
+                            if insertion_index < len(tokens) and tokens[insertion_index].type == UsfmTokenType.TEXT:
+                                insertion_index += 1
+                        tokens[insertion_index:insertion_index] = remark_tokens
         return tokenizer.detokenize(tokens)
 
     def _advance_rows(self, seg_scr_refs: Sequence[ScriptureRef]) -> Tuple[List[str], Optional[dict[str, object]]]:
