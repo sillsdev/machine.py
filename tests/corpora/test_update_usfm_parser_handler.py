@@ -1530,6 +1530,34 @@ def test_filter_chapters() -> None:
     assert_usfm_equals(target, result)
 
 
+def test_filter_chapters_with_chapter_1_and_header() -> None:
+    usfm = r"""\id MAT - Test
+\h Matthew
+\c 1
+\v 1 Some text
+\v 2
+\v 3 Other text
+\c 2
+\v 1 Some text
+\c 3
+\v 1 Some text
+\c 4
+\v 1 Some text
+"""
+    chapters = [1, 3]
+    target = update_usfm(chapters=chapters, source=usfm)
+    result = r"""\id MAT - Test
+\h Matthew
+\c 1
+\v 1 Some text
+\v 2
+\v 3 Other text
+\c 3
+\v 1 Some text
+"""
+    assert_usfm_equals(target, result)
+
+
 def scr_ref(*refs: str) -> List[ScriptureRef]:
     return [ScriptureRef.parse(ref) for ref in refs]
 
