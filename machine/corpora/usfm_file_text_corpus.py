@@ -42,7 +42,10 @@ def _get_id(filename: StrPath, encoding: str) -> Optional[str]:
             if line.startswith("\\id "):
                 id = line[4:]
                 index = id.find(" ")
+                # If the id is longer than 3 characters, truncate it to 3 characters.
+                if (index == -1 or index > 3) and len(id) >= 3:
+                    index = 3
                 if index != -1:
-                    id = id[:index]
-                return id.strip().upper()
+                    id = id[:index].upper()
+                return id.strip()
     return None
