@@ -467,7 +467,7 @@ def test_get_rows_incomplete_verse_range():
 
 
 def test_get_rows_book_code_different_to_filename() -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(RuntimeError):
         get_rows(
             r"""\id LUK - Test
 \c 1
@@ -478,7 +478,7 @@ def test_get_rows_book_code_different_to_filename() -> None:
 
 
 def test_get_rows_book_code_invalid() -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(RuntimeError):
         get_rows(
             r"""\id ZZZ - Test
 \c 1
@@ -489,7 +489,7 @@ def test_get_rows_book_code_invalid() -> None:
 
 
 def test_get_rows_book_code_truncated() -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(RuntimeError):
         get_rows(
             r"""\id MA
 \c 1
