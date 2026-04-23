@@ -47,5 +47,5 @@ def _get_id(filename: StrPath, encoding: str) -> Optional[str]:
                     index = 3
                 if index != -1:
                     id = id[:index].upper()
-                return id.strip()
+                return id.strip().upper()
     return None
