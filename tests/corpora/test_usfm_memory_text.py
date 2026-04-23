@@ -1,5 +1,6 @@
 from typing import List
 
+import pytest
 from testutils.corpora_test_helpers import scripture_ref
 
 from machine.corpora import ScriptureRef, TextRow, UsfmMemoryText
@@ -466,8 +467,6 @@ def test_get_rows_incomplete_verse_range():
 
 
 def test_get_rows_book_code_different_to_filename() -> None:
-    import pytest
-
     with pytest.raises(Exception):
         get_rows(
             r"""\id LUK - Test
@@ -479,8 +478,6 @@ def test_get_rows_book_code_different_to_filename() -> None:
 
 
 def test_get_rows_book_code_invalid() -> None:
-    import pytest
-
     with pytest.raises(Exception):
         get_rows(
             r"""\id ZZZ - Test
@@ -492,8 +489,6 @@ def test_get_rows_book_code_invalid() -> None:
 
 
 def test_get_rows_book_code_truncated() -> None:
-    import pytest
-
     with pytest.raises(Exception):
         get_rows(
             r"""\id MA
