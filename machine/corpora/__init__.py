@@ -115,6 +115,7 @@ __all__ = [
     "FileParatextProjectTermsParser",
     "FileParatextProjectTextUpdater",
     "FileParatextProjectVersificationErrorDetector",
+    "filter_tokens_by_chapter",
     "flatten",
     "is_scripture",
     "KeyTerm",
