@@ -14,6 +14,7 @@ from .usfm_parser import UsfmParser
 from .usfm_token import UsfmTokenType
 from .usfm_tokenizer import UsfmToken, UsfmTokenizer
 from .usfm_update_block_handler import UsfmUpdateBlockHandler, UsfmUpdateBlockHandlerError
+from ..utils.string_utils import parse_integer
 
 
 class ParatextProjectTextUpdaterBase(ABC):
@@ -94,7 +95,8 @@ def filter_tokens_by_chapter(
         elif in_id_marker and token.marker is not None and token.marker != "id":
             in_id_marker = False
         elif token.type == UsfmTokenType.CHAPTER:
-            if token.data and int(token.data) in chapters:
+            chapter_num = parse_integer(token.data) if token.data else None
+            if chapter_num is not None and chapter_num in chapters:
                 in_chapter = True
             else:
                 in_chapter = False
