@@ -1,6 +1,7 @@
 from abc import ABC
 from typing import Callable, Iterable, List, Optional, Sequence, Tuple, Union
 
+from ..utils.string_utils import parse_integer
 from .paratext_project_file_handler import ParatextProjectFileHandler
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
@@ -10,11 +11,10 @@ from .update_usfm_parser_handler import (
     UpdateUsfmRow,
     UpdateUsfmTextBehavior,
 )
-from .usfm_parser import UsfmParser
+from .usfm_parser import parse_usfm
 from .usfm_token import UsfmTokenType
 from .usfm_tokenizer import UsfmToken, UsfmTokenizer
 from .usfm_update_block_handler import UsfmUpdateBlockHandler, UsfmUpdateBlockHandlerError
-from ..utils.string_utils import parse_integer
 
 
 class ParatextProjectTextUpdaterBase(ABC):
@@ -67,8 +67,7 @@ class ParatextProjectTextUpdaterBase(ABC):
             tokenizer = UsfmTokenizer(self._settings.stylesheet)
             tokens = tokenizer.tokenize(usfm)
             tokens = filter_tokens_by_chapter(tokens, chapters)
-            parser = UsfmParser(tokens, handler, self._settings.stylesheet, self._settings.versification)
-            parser.process_tokens()
+            parse_usfm(tokens, handler, self._settings.stylesheet, self._settings.versification)
             return handler.get_usfm(self._settings.stylesheet)
         except Exception as e:
             error_message = (

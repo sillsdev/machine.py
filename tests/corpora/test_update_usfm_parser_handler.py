@@ -9,12 +9,12 @@ from machine.corpora import (
     UpdateUsfmParserHandler,
     UpdateUsfmRow,
     UpdateUsfmTextBehavior,
-    UsfmParser,
     UsfmTokenizer,
     UsfmUpdateBlock,
     UsfmUpdateBlockElementType,
     UsfmUpdateBlockHandler,
     filter_tokens_by_chapter,
+    parse_usfm,
 )
 
 
@@ -1389,7 +1389,7 @@ def test_pass_remark():
 \v 1 Some text
 \v 2
 \v 3 Other text
-\c 2.
+\c 2
 \rem Existing remark
 \v 1 More text
 \c 3
@@ -1410,7 +1410,7 @@ def test_pass_remark():
 \v 1 Some text
 \v 2 Update 2
 \v 3 Other text
-\c 2.
+\c 2
 \rem Existing remark
 \rem New remark 2
 \v 1 More text
@@ -1701,8 +1701,7 @@ def update_usfm(
         tokenizer = UsfmTokenizer()
         tokens = tokenizer.tokenize(source)
         tokens = filter_tokens_by_chapter(tokens, chapters)
-        parser = UsfmParser(tokens, updater)
-        parser.process_tokens()
+        parse_usfm(tokens, updater)
         return updater.get_usfm()
 
 
