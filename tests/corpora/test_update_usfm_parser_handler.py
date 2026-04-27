@@ -1393,14 +1393,13 @@ def test_pass_remark():
 \rem Existing remark
 \v 1 More text
 \c 3
-\v 1 Additional text
 """
 
     target = update_usfm(
         rows,
         usfm,
         text_behavior=UpdateUsfmTextBehavior.PREFER_EXISTING,
-        remarks=[(0, "New remark 0"), (1, "New remark 1"), (2, "New remark 2")],
+        remarks=[(0, "New remark 0"), (1, "New remark 1"), (2, "New remark 2"), (3, "New remark 3")],
     )
     result = r"""\id MAT - Test
 \ide UTF-8
@@ -1416,7 +1415,7 @@ def test_pass_remark():
 \rem New remark 2
 \v 1 More text
 \c 3
-\v 1 Additional text
+\rem New remark 3
 """
 
     assert_usfm_equals(target, result)
