@@ -1457,6 +1457,48 @@ def test_pass_remark_0_no_existing_remark():
     assert_usfm_equals(target, result)
 
 
+def test_pass_multiple_remarks_same_chapter() -> None:
+    rows = [
+        UpdateUsfmRow(
+            scr_ref("MAT 1:1"),
+            "Update 1",
+        ),
+        UpdateUsfmRow(
+            scr_ref("MAT 1:2"),
+            "Update 2",
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\ide UTF-8
+\rem Existing remark
+\c 1
+\v 1 Some text
+\v 2
+\v 3 Other text
+"""
+
+    target = update_usfm(
+        rows,
+        usfm,
+        text_behavior=UpdateUsfmTextBehavior.PREFER_EXISTING,
+        remarks=[(0, "New remark 0.1"), (0, "New remark 0.2"), (1, "New remark 1.1"), (1, "New remark 1.2")],
+    )
+    result = r"""\id MAT - Test
+\ide UTF-8
+\rem Existing remark
+\rem New remark 0.1
+\rem New remark 0.2
+\c 1
+\rem New remark 1.1
+\rem New remark 1.2
+\v 1 Some text
+\v 2 Update 2
+\v 3 Other text
+"""
+
+    assert_usfm_equals(target, result)
+
+
 def test_update_block_footnote_in_published_chapter_number():
     rows = [UpdateUsfmRow(scr_ref("ESG 1:0/2:s"), "Update 1")]
     usfm = r"""\id ESG - Test
