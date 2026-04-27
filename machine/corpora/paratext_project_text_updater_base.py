@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Callable, Iterable, List, Optional, Sequence, Union
+from typing import Callable, Iterable, List, Optional, Sequence, Tuple, Union
 
 from .paratext_project_file_handler import ParatextProjectFileHandler
 from .paratext_project_settings import ParatextProjectSettings
@@ -40,7 +40,7 @@ class ParatextProjectTextUpdaterBase(ABC):
         style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
         preserve_paragraph_styles: Optional[Union[Iterable[str], str]] = None,
         update_block_handlers: Optional[Iterable[UsfmUpdateBlockHandler]] = None,
-        remarks: Optional[Iterable[str]] = None,
+        remarks: Optional[Iterable[Tuple[int, str]]] = None,
         error_handler: Optional[Callable[[UsfmUpdateBlockHandlerError], bool]] = None,
         compare_segments: bool = False,
     ) -> Optional[str]:

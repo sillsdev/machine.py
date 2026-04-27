@@ -1,4 +1,4 @@
-from typing import Iterable, List, Optional, Sequence, Union
+from typing import Iterable, List, Optional, Sequence, Tuple, Union
 
 from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH, ignore_line_endings
 
@@ -1390,41 +1390,70 @@ def test_pass_remark():
 \v 2
 \v 3 Other text
 \c 2
+\rem Existing remark
 \v 1 More text
+\c 3
+\v 1 Additional text
 """
 
-    target = update_usfm(rows, usfm, text_behavior=UpdateUsfmTextBehavior.PREFER_EXISTING, remarks=["New remark"])
+    target = update_usfm(
+        rows,
+        usfm,
+        text_behavior=UpdateUsfmTextBehavior.PREFER_EXISTING,
+        remarks=[(0, "New remark 0"), (1, "New remark 1"), (2, "New remark 2")],
+    )
     result = r"""\id MAT - Test
 \ide UTF-8
 \rem Existing remark
+\rem New remark 0
 \c 1
-\rem New remark
+\rem New remark 1
 \v 1 Some text
 \v 2 Update 2
 \v 3 Other text
 \c 2
-\rem New remark
+\rem Existing remark
+\rem New remark 2
 \v 1 More text
+\c 3
+\v 1 Additional text
 """
 
     assert_usfm_equals(target, result)
 
-    target = update_usfm(rows, target, text_behavior=UpdateUsfmTextBehavior.PREFER_EXISTING, remarks=["New remark 2"])
+
+def test_pass_remark_0_no_existing_remark():
+    rows = [
+        UpdateUsfmRow(
+            scr_ref("MAT 1:1"),
+            "Update 1",
+        ),
+        UpdateUsfmRow(
+            scr_ref("MAT 1:2"),
+            "Update 2",
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\ide UTF-8
+\c 1
+\v 1 Some text
+\v 2
+\v 3 Other text
+"""
+    target = update_usfm(
+        rows,
+        usfm,
+        text_behavior=UpdateUsfmTextBehavior.PREFER_EXISTING,
+        remarks=[(0, "New remark 0")],
+    )
     result = r"""\id MAT - Test
 \ide UTF-8
-\rem Existing remark
+\rem New remark 0
 \c 1
-\rem New remark
-\rem New remark 2
 \v 1 Some text
 \v 2 Update 2
 \v 3 Other text
-\c 2
-\rem New remark
-\rem New remark 2
-\v 1 More text
 """
-
     assert_usfm_equals(target, result)
 
 
@@ -1573,7 +1602,7 @@ def update_usfm(
     style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
     preserve_paragraph_styles: Optional[Iterable[str]] = None,
     update_block_handlers: Optional[Iterable[UsfmUpdateBlockHandler]] = None,
-    remarks: Optional[Iterable[str]] = None,
+    remarks: Optional[Iterable[Tuple[int, str]]] = None,
     compare_segments: bool = False,
 ) -> Optional[str]:
     if source is None:

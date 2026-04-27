@@ -53,7 +53,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
         style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
         preserve_paragraph_styles: Optional[Union[Iterable[str], str]] = None,
         update_block_handlers: Optional[Iterable[UsfmUpdateBlockHandler]] = None,
-        remarks: Optional[Iterable[str]] = None,
+        remarks: Optional[Iterable[Tuple[int, str]]] = None,
         error_handler: Optional[Callable[[UsfmUpdateBlockHandlerError], bool]] = None,
         compare_segments: bool = False,
     ) -> None:
@@ -340,19 +340,42 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
         tokenizer = UsfmTokenizer(stylesheet)
         tokens = list(self._tokens)
         if len(self._remarks) > 0:
-            remark_tokens: List[UsfmToken] = []
-            for remark in self._remarks:
-                remark_tokens.append(UsfmToken(UsfmTokenType.PARAGRAPH, "rem"))
-                remark_tokens.append(UsfmToken(UsfmTokenType.TEXT, text=remark))
+            remark_tokens_by_chapter: Dict[int, List[UsfmToken]] = {}
+            for chapter_num, remark in self._remarks:
+                chapter_tokens = remark_tokens_by_chapter.setdefault(chapter_num, [])
+                chapter_tokens.append(UsfmToken(UsfmTokenType.PARAGRAPH, "rem"))
+                chapter_tokens.append(UsfmToken(UsfmTokenType.TEXT, text=remark))
             if len(tokens) > 0:
-                for index, token in enumerate(tokens):
-                    if token.type == UsfmTokenType.CHAPTER:
-                        insertion_index = index + 1
-                        while insertion_index < len(tokens) and tokens[insertion_index].marker == "rem":
-                            insertion_index += 1
-                            if insertion_index < len(tokens) and tokens[insertion_index].type == UsfmTokenType.TEXT:
-                                insertion_index += 1
-                        tokens[insertion_index:insertion_index] = remark_tokens
+                for chapter_num, remark_tokens in remark_tokens_by_chapter.items():
+                    if chapter_num == 0:
+                        index = 0
+                        markers_to_skip = {"id", "ide", "rem"}
+                    else:
+                        index = next(
+                            (
+                                i
+                                for i, token in enumerate(tokens)
+                                if token.type == UsfmTokenType.CHAPTER
+                                and token.data is not None
+                                and str(token.data).isdigit()
+                                and int(token.data) == chapter_num
+                            ),
+                            -1,
+                        )
+                        if index == -1:
+                            continue
+                        index += 1
+                        markers_to_skip = {"rem"}
+
+                    if index >= len(tokens):
+                        tokens.extend(remark_tokens)
+                    else:
+                        while index < len(tokens) and tokens[index].marker in markers_to_skip:
+                            index += 1
+                            if index < len(tokens) and tokens[index].type == UsfmTokenType.TEXT:
+                                index += 1
+
+                        tokens[index:index] = remark_tokens
         return tokenizer.detokenize(tokens)
 
     def _advance_rows(self, seg_scr_refs: Sequence[ScriptureRef]) -> Tuple[List[str], Optional[dict[str, object]]]:
