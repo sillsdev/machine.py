@@ -91,6 +91,9 @@ class _TextRowCollector(ScriptureRefUsfmParserHandlerBase):
 
     def start_book(self, state: UsfmParserState, marker: str, code: str) -> None:
         super().start_book(state, marker, code)
+        if state.verse_ref.book != "" and state.verse_ref.book != code:
+            # Ignore \id markers that don't match the book code in the verse ref, if it was set
+            return
         if code not in ALL_BOOK_IDS:
             raise ValueError(f"The book {code} is not a valid book id.")
         if code != self._text.id:

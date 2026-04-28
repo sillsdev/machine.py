@@ -176,6 +176,8 @@ class UsfmParser:
             # Code is always upper case
             assert token.data is not None
             code = token.data.upper()
+            if len(code) > 3:
+                code = code[:3]
 
             # Update verse ref. Leave book alone if not empty to prevent parsing errors on books with bad id lines.
             verse_ref = self.state.verse_ref

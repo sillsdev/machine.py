@@ -1,5 +1,6 @@
 from typing import List
 
+import pytest
 from testutils.corpora_test_helpers import scripture_ref
 
 from machine.corpora import ScriptureRef, TextRow, UsfmMemoryText
@@ -463,6 +464,70 @@ def test_get_rows_incomplete_verse_range():
 
     assert rows[3].ref == ScriptureRef.parse("MAT 1:1/4:q1")
     assert rows[3].text == "verse 1 text"
+
+
+def test_get_rows_book_code_different_to_filename() -> None:
+    with pytest.raises(RuntimeError):
+        get_rows(
+            r"""\id LUK - Test
+\c 1
+\v 1 Verse 1 Text
+""",
+            include_all_text=True,
+        )
+
+
+def test_get_rows_book_code_invalid() -> None:
+    with pytest.raises(RuntimeError):
+        get_rows(
+            r"""\id ZZZ - Test
+\c 1
+\v 1 Verse 1 Text
+""",
+            include_all_text=True,
+        )
+
+
+def test_get_rows_book_code_truncated() -> None:
+    with pytest.raises(RuntimeError):
+        get_rows(
+            r"""\id MA
+\c 1
+\v 1 Verse 1 Text
+""",
+            include_all_text=True,
+        )
+
+
+def test_get_rows_book_code_multiple() -> None:
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT
+\id LUK
+\c 1
+\v 1 Verse 1 Text
+""",
+        include_all_text=True,
+    )
+
+    assert len(rows) == 1
+
+    assert rows[0].ref == ScriptureRef.parse("MAT 1:1"), str.join(",", [str(tr.ref) for tr in rows])
+    assert rows[0].text == "Verse 1 Text", str.join(",", [tr.text for tr in rows])
+
+
+def test_get_rows_book_code_no_space() -> None:
+    rows: List[TextRow] = get_rows(
+        r"""\id Matthew
+\c 1
+\v 1 Verse 1 Text
+""",
+        include_all_text=True,
+    )
+
+    assert len(rows) == 1
+
+    assert rows[0].ref == ScriptureRef.parse("MAT 1:1"), str.join(",", [str(tr.ref) for tr in rows])
+    assert rows[0].text == "Verse 1 Text", str.join(",", [tr.text for tr in rows])
 
 
 def get_rows(usfm: str, include_markers: bool = False, include_all_text: bool = False) -> List[TextRow]:
