@@ -1,6 +1,7 @@
 from abc import ABC
-from typing import Callable, Iterable, Optional, Sequence, Union
+from typing import Callable, Iterable, List, Optional, Sequence, Tuple, Union
 
+from ..utils.string_utils import parse_integer
 from .paratext_project_file_handler import ParatextProjectFileHandler
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
@@ -11,6 +12,8 @@ from .update_usfm_parser_handler import (
     UpdateUsfmTextBehavior,
 )
 from .usfm_parser import parse_usfm
+from .usfm_token import UsfmTokenType
+from .usfm_tokenizer import UsfmToken, UsfmTokenizer
 from .usfm_update_block_handler import UsfmUpdateBlockHandler, UsfmUpdateBlockHandlerError
 
 
@@ -30,6 +33,7 @@ class ParatextProjectTextUpdaterBase(ABC):
         self,
         book_id: str,
         rows: Optional[Sequence[UpdateUsfmRow]] = None,
+        chapters: Optional[Sequence[int]] = None,
         full_name: Optional[str] = None,
         text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_EXISTING,
         paragraph_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
@@ -37,7 +41,7 @@ class ParatextProjectTextUpdaterBase(ABC):
         style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
         preserve_paragraph_styles: Optional[Union[Iterable[str], str]] = None,
         update_block_handlers: Optional[Iterable[UsfmUpdateBlockHandler]] = None,
-        remarks: Optional[Iterable[str]] = None,
+        remarks: Optional[Iterable[Tuple[int, str]]] = None,
         error_handler: Optional[Callable[[UsfmUpdateBlockHandlerError], bool]] = None,
         compare_segments: bool = False,
     ) -> Optional[str]:
@@ -60,7 +64,10 @@ class ParatextProjectTextUpdaterBase(ABC):
             compare_segments=compare_segments,
         )
         try:
-            parse_usfm(usfm, handler, self._settings.stylesheet, self._settings.versification)
+            tokenizer = UsfmTokenizer(self._settings.stylesheet)
+            tokens = tokenizer.tokenize(usfm)
+            tokens = filter_tokens_by_chapter(tokens, chapters)
+            parse_usfm(tokens, handler, self._settings.stylesheet, self._settings.versification)
             return handler.get_usfm(self._settings.stylesheet)
         except Exception as e:
             error_message = (
@@ -69,3 +76,30 @@ class ParatextProjectTextUpdaterBase(ABC):
                 f". Error: '{e}'"
             )
             raise RuntimeError(error_message) from e
+
+
+def filter_tokens_by_chapter(
+    tokens: Sequence[UsfmToken], chapters: Optional[Sequence[int]] = None
+) -> Sequence[UsfmToken]:
+    if chapters is None:
+        return tokens
+    tokens_within_chapters: List[UsfmToken] = []
+    in_chapter: bool = False
+    in_id_marker: bool = False
+    for index, token in enumerate(tokens):
+        if index == 0 and token.marker == "id":
+            in_id_marker = True
+            if 1 in chapters:
+                in_chapter = True
+        elif in_id_marker and token.marker is not None and token.marker != "id":
+            in_id_marker = False
+        elif token.type == UsfmTokenType.CHAPTER:
+            chapter_num = parse_integer(token.data) if token.data else None
+            if chapter_num is not None and chapter_num in chapters:
+                in_chapter = True
+            else:
+                in_chapter = False
+
+        if in_id_marker or in_chapter:
+            tokens_within_chapters.append(token)
+    return tokens_within_chapters

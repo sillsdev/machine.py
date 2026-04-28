@@ -1,4 +1,4 @@
-from typing import Iterable, List, Optional, Sequence, Union
+from typing import Iterable, List, Optional, Sequence, Tuple, Union
 
 from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH, ignore_line_endings
 
@@ -9,9 +9,11 @@ from machine.corpora import (
     UpdateUsfmParserHandler,
     UpdateUsfmRow,
     UpdateUsfmTextBehavior,
+    UsfmTokenizer,
     UsfmUpdateBlock,
     UsfmUpdateBlockElementType,
     UsfmUpdateBlockHandler,
+    filter_tokens_by_chapter,
     parse_usfm,
 )
 
@@ -1387,28 +1389,107 @@ def test_pass_remark():
 \v 1 Some text
 \v 2
 \v 3 Other text
+\c 2
+\rem Existing remark
+\v 1 More text
+\c 3
 """
 
-    target = update_usfm(rows, usfm, text_behavior=UpdateUsfmTextBehavior.PREFER_EXISTING, remarks=["New remark"])
+    target = update_usfm(
+        rows,
+        usfm,
+        text_behavior=UpdateUsfmTextBehavior.PREFER_EXISTING,
+        remarks=[(0, "New remark 0"), (1, "New remark 1"), (2, "New remark 2"), (3, "New remark 3")],
+    )
     result = r"""\id MAT - Test
 \ide UTF-8
 \rem Existing remark
-\rem New remark
+\rem New remark 0
+\c 1
+\rem New remark 1
+\v 1 Some text
+\v 2 Update 2
+\v 3 Other text
+\c 2
+\rem Existing remark
+\rem New remark 2
+\v 1 More text
+\c 3
+\rem New remark 3
+"""
+
+    assert_usfm_equals(target, result)
+
+
+def test_pass_remark_0_no_existing_remark():
+    rows = [
+        UpdateUsfmRow(
+            scr_ref("MAT 1:1"),
+            "Update 1",
+        ),
+        UpdateUsfmRow(
+            scr_ref("MAT 1:2"),
+            "Update 2",
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\ide UTF-8
+\c 1
+\v 1 Some text
+\v 2
+\v 3 Other text
+"""
+    target = update_usfm(
+        rows,
+        usfm,
+        text_behavior=UpdateUsfmTextBehavior.PREFER_EXISTING,
+        remarks=[(0, "New remark 0")],
+    )
+    result = r"""\id MAT - Test
+\ide UTF-8
+\rem New remark 0
 \c 1
 \v 1 Some text
 \v 2 Update 2
 \v 3 Other text
 """
-
     assert_usfm_equals(target, result)
 
-    target = update_usfm(rows, target, text_behavior=UpdateUsfmTextBehavior.PREFER_EXISTING, remarks=["New remark 2"])
+
+def test_pass_multiple_remarks_same_chapter() -> None:
+    rows = [
+        UpdateUsfmRow(
+            scr_ref("MAT 1:1"),
+            "Update 1",
+        ),
+        UpdateUsfmRow(
+            scr_ref("MAT 1:2"),
+            "Update 2",
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\ide UTF-8
+\rem Existing remark
+\c 1
+\v 1 Some text
+\v 2
+\v 3 Other text
+"""
+
+    target = update_usfm(
+        rows,
+        usfm,
+        text_behavior=UpdateUsfmTextBehavior.PREFER_EXISTING,
+        remarks=[(0, "New remark 0.1"), (0, "New remark 0.2"), (1, "New remark 1.1"), (1, "New remark 1.2")],
+    )
     result = r"""\id MAT - Test
 \ide UTF-8
 \rem Existing remark
-\rem New remark
-\rem New remark 2
+\rem New remark 0.1
+\rem New remark 0.2
 \c 1
+\rem New remark 1.1
+\rem New remark 1.2
 \v 1 Some text
 \v 2 Update 2
 \v 3 Other text
@@ -1494,6 +1575,79 @@ Text 1\f + \fr A.1-3: \ft Some note.\f*
     )
 
 
+def test_filter_chapters() -> None:
+    usfm = r"""\id MAT - Test
+\h Matthew
+\c 1
+\v 1 Some text
+\v 2
+\v 3 Other text
+\c 2
+\v 1 Some text
+\c 3
+\v 1 Some text
+\c 4
+\v 1 Some text
+"""
+    chapters = [2, 4]
+    target = update_usfm(chapters=chapters, source=usfm)
+    result = r"""\id MAT - Test
+\c 2
+\v 1 Some text
+\c 4
+\v 1 Some text
+"""
+    assert_usfm_equals(target, result)
+
+
+def test_filter_chapters_with_chapter_1_and_header() -> None:
+    usfm = r"""\id MAT - Test
+\h Matthew
+\c 1
+\v 1 Some text
+\v 2
+\v 3 Other text
+\c 2
+\v 1 Some text
+\c 3
+\v 1 Some text
+\c 4
+\v 1 Some text
+"""
+    chapters = [1, 3]
+    target = update_usfm(chapters=chapters, source=usfm)
+    result = r"""\id MAT - Test
+\h Matthew
+\c 1
+\v 1 Some text
+\v 2
+\v 3 Other text
+\c 3
+\v 1 Some text
+"""
+    assert_usfm_equals(target, result)
+
+
+def test_filter_chapters_with_bad_chapter_reference() -> None:
+    usfm = r"""\id MAT - Test
+\c 1.
+\v 1 Some text
+\c 2.
+\v 1 Some text
+\c 3
+\v 1 Some text with good chapter reference
+\c 4
+\v 1 Some text with good chapter reference
+"""
+    chapters = [2, 4]
+    target = update_usfm(chapters=chapters, source=usfm)
+    result = r"""\id MAT - Test
+\c 4
+\v 1 Some text with good chapter reference
+"""
+    assert_usfm_equals(target, result)
+
+
 def scr_ref(*refs: str) -> List[ScriptureRef]:
     return [ScriptureRef.parse(ref) for ref in refs]
 
@@ -1501,6 +1655,7 @@ def scr_ref(*refs: str) -> List[ScriptureRef]:
 def update_usfm(
     rows: Optional[Sequence[UpdateUsfmRow]] = None,
     source: Optional[str] = None,
+    chapters: Optional[Sequence[int]] = None,
     id_text: Optional[str] = None,
     text_behavior: UpdateUsfmTextBehavior = UpdateUsfmTextBehavior.PREFER_NEW,
     paragraph_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.PRESERVE,
@@ -1508,7 +1663,7 @@ def update_usfm(
     style_behavior: UpdateUsfmMarkerBehavior = UpdateUsfmMarkerBehavior.STRIP,
     preserve_paragraph_styles: Optional[Iterable[str]] = None,
     update_block_handlers: Optional[Iterable[UsfmUpdateBlockHandler]] = None,
-    remarks: Optional[Iterable[str]] = None,
+    remarks: Optional[Iterable[Tuple[int, str]]] = None,
     compare_segments: bool = False,
 ) -> Optional[str]:
     if source is None:
@@ -1516,6 +1671,7 @@ def update_usfm(
         return updater.update_usfm(
             "MAT",
             rows,
+            chapters,
             id_text,
             text_behavior,
             paragraph_behavior,
@@ -1542,7 +1698,10 @@ def update_usfm(
             lambda _: False,
             compare_segments,
         )
-        parse_usfm(source, updater)
+        tokenizer = UsfmTokenizer()
+        tokens = tokenizer.tokenize(source)
+        tokens = filter_tokens_by_chapter(tokens, chapters)
+        parse_usfm(tokens, updater)
         return updater.get_usfm()
 
 
