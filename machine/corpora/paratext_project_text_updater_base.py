@@ -81,7 +81,7 @@ class ParatextProjectTextUpdaterBase(ABC):
 def filter_tokens_by_chapter(
     tokens: Sequence[UsfmToken], chapters: Optional[Sequence[int]] = None
 ) -> Sequence[UsfmToken]:
-    if chapters is None:
+    if not chapters:
         return tokens
     tokens_within_chapters: List[UsfmToken] = []
     in_chapter: bool = False
