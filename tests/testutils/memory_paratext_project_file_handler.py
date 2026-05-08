@@ -1,7 +1,34 @@
-from typing import Optional
+from io import BytesIO
+from typing import BinaryIO, Dict, Optional
 
-from machine.corpora import ParatextProjectSettings, UsfmStylesheet
+from machine.corpora import ParatextProjectFileHandler, ParatextProjectSettings, UsfmStylesheet
+from machine.corpora.paratext_project_text_updater_base import ParatextProjectTextUpdaterBase
 from machine.scripture import ORIGINAL_VERSIFICATION, Versification
+
+
+class MemoryParatextProjectFileHandler(ParatextProjectFileHandler):
+    def __init__(self, files: Dict[str, str]) -> None:
+        self.files = files
+
+    def exists(self, file_name: str) -> bool:
+        return file_name in self.files
+
+    def open(self, file_name: str) -> BinaryIO:
+        return BytesIO(self.files[file_name].encode("utf-8"))
+
+    def find(self, extension: str) -> Optional[str]:
+        for name in self.files:
+            if name.endswith(extension):
+                return name
+        return None
+
+    def create_stylesheet(self, file_name: str) -> UsfmStylesheet:
+        return UsfmStylesheet(file_name)
+
+
+class MemoryParatextProjectTextUpdater(ParatextProjectTextUpdaterBase):
+    def __init__(self, files: Dict[str, str], settings: ParatextProjectSettings) -> None:
+        super().__init__(MemoryParatextProjectFileHandler(files), settings)
 
 
 class DefaultParatextProjectSettings(ParatextProjectSettings):

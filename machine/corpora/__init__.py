@@ -14,8 +14,6 @@ from .file_paratext_project_text_updater import FileParatextProjectTextUpdater
 from .file_paratext_project_versification_error_detector import FileParatextProjectVersificationErrorDetector
 from .flatten import flatten
 from .memory_alignment_collection import MemoryAlignmentCollection
-from .memory_paratext_project_file_handler import MemoryParatextProjectFileHandler
-from .memory_paratext_project_text_updater import MemoryParatextProjectTextUpdater
 from .memory_stream_container import MemoryStreamContainer
 from .memory_text import MemoryText
 from .multi_key_ref import MultiKeyRef
@@ -29,7 +27,7 @@ from .paratext_project_file_handler import ParatextProjectFileHandler
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
 from .paratext_project_terms_parser_base import KeyTerm, ParatextProjectTermsParserBase
-from .paratext_project_text_updater_base import ParatextProjectTextUpdaterBase, filter_tokens_by_chapter
+from .paratext_project_text_updater_base import ParatextProjectTextUpdaterBase
 from .paratext_project_versification_error_detector_base import ParatextProjectVersificationErrorDetectorBase
 from .paratext_text_corpus import ParatextTextCorpus
 from .place_markers_usfm_update_block_handler import PlaceMarkersAlignmentInfo, PlaceMarkersUsfmUpdateBlockHandler
@@ -117,14 +115,11 @@ __all__ = [
     "FileParatextProjectTermsParser",
     "FileParatextProjectTextUpdater",
     "FileParatextProjectVersificationErrorDetector",
-    "filter_tokens_by_chapter",
     "flatten",
     "is_scripture",
     "KeyTerm",
     "lowercase",
     "MemoryAlignmentCollection",
-    "MemoryParatextProjectFileHandler",
-    "MemoryParatextProjectTextUpdater",
     "MemoryStreamContainer",
     "MemoryText",
     "MultiKeyRef",

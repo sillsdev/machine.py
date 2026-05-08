@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 
-from testutils.default_paratext_project_settings import DefaultParatextProjectSettings
+from testutils.memory_paratext_project_file_handler import DefaultParatextProjectSettings
 from testutils.memory_paratext_project_terms_parser import MemoryParatextProjectTermsParser
 
 from machine.corpora import KeyTerm, ParatextProjectSettings, ParatextProjectTermsParserBase

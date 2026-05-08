@@ -1,12 +1,11 @@
 from typing import Dict, Optional
 
 from machine.corpora import (
-    MemoryParatextProjectFileHandler,
     ParatextProjectSettings,
     ParatextProjectVersificationErrorDetectorBase,
 )
 
-from .default_paratext_project_settings import DefaultParatextProjectSettings
+from .memory_paratext_project_file_handler import DefaultParatextProjectSettings, MemoryParatextProjectFileHandler
 
 
 class MemoryParatextProjectVersificationErrorDetector(ParatextProjectVersificationErrorDetectorBase):
