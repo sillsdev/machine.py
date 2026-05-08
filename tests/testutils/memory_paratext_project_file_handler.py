@@ -23,7 +23,9 @@ class MemoryParatextProjectFileHandler(ParatextProjectFileHandler):
         return None
 
     def create_stylesheet(self, file_name: str) -> UsfmStylesheet:
-        return UsfmStylesheet(file_name)
+        if file_name in ("usfm.sty", "usfm_sb.sty"):
+            return UsfmStylesheet(file_name)
+        raise NotImplementedError
 
 
 class MemoryParatextProjectTextUpdater(ParatextProjectTextUpdaterBase):
