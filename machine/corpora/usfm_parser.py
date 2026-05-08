@@ -17,7 +17,7 @@ _OPT_BREAK_SPLITTER = re.compile(r"(//)")
 
 
 def parse_usfm(
-    usfm: str,
+    usfm: Union[str, Sequence[UsfmToken]],
     handler: UsfmParserHandler,
     stylesheet: Union[StrPath, UsfmStylesheet] = "usfm.sty",
     versification: Optional[Versification] = None,
