@@ -1,7 +1,10 @@
 from typing import Iterable, List, Optional, Sequence, Tuple, Union
 
 from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH, ignore_line_endings
-from testutils.memory_paratext_project_file_handler import DefaultParatextProjectSettings, MemoryParatextProjectTextUpdater
+from testutils.memory_paratext_project_file_handler import (
+    DefaultParatextProjectSettings,
+    MemoryParatextProjectTextUpdater,
+)
 
 from machine.corpora import (
     FileParatextProjectTextUpdater,

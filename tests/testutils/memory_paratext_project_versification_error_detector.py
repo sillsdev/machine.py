@@ -1,9 +1,6 @@
 from typing import Dict, Optional
 
-from machine.corpora import (
-    ParatextProjectSettings,
-    ParatextProjectVersificationErrorDetectorBase,
-)
+from machine.corpora import ParatextProjectSettings, ParatextProjectVersificationErrorDetectorBase
 
 from .memory_paratext_project_file_handler import DefaultParatextProjectSettings, MemoryParatextProjectFileHandler
 
