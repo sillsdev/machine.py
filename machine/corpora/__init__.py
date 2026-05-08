@@ -14,6 +14,8 @@ from .file_paratext_project_text_updater import FileParatextProjectTextUpdater
 from .file_paratext_project_versification_error_detector import FileParatextProjectVersificationErrorDetector
 from .flatten import flatten
 from .memory_alignment_collection import MemoryAlignmentCollection
+from .memory_paratext_project_file_handler import MemoryParatextProjectFileHandler
+from .memory_paratext_project_text_updater import MemoryParatextProjectTextUpdater
 from .memory_stream_container import MemoryStreamContainer
 from .memory_text import MemoryText
 from .multi_key_ref import MultiKeyRef
@@ -121,6 +123,8 @@ __all__ = [
     "KeyTerm",
     "lowercase",
     "MemoryAlignmentCollection",
+    "MemoryParatextProjectFileHandler",
+    "MemoryParatextProjectTextUpdater",
     "MemoryStreamContainer",
     "MemoryText",
     "MultiKeyRef",

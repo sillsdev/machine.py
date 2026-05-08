@@ -1,20 +1,18 @@
 from typing import Iterable, List, Optional, Sequence, Tuple, Union
 
 from testutils.corpora_test_helpers import USFM_TEST_PROJECT_PATH, ignore_line_endings
+from testutils.default_paratext_project_settings import DefaultParatextProjectSettings
 
 from machine.corpora import (
     FileParatextProjectTextUpdater,
+    MemoryParatextProjectTextUpdater,
     ScriptureRef,
     UpdateUsfmMarkerBehavior,
-    UpdateUsfmParserHandler,
     UpdateUsfmRow,
     UpdateUsfmTextBehavior,
-    UsfmTokenizer,
     UsfmUpdateBlock,
     UsfmUpdateBlockElementType,
     UsfmUpdateBlockHandler,
-    filter_tokens_by_chapter,
-    parse_usfm,
 )
 
 
@@ -1685,8 +1683,12 @@ def update_usfm(
         )
     else:
         source = source.strip().replace("\r\n", "\n") + "\r\n"
-        updater = UpdateUsfmParserHandler(
+        settings = DefaultParatextProjectSettings(file_name_form="MAT", file_name_suffix="")
+        updater = MemoryParatextProjectTextUpdater({"MAT": source}, settings)
+        return updater.update_usfm(
+            "MAT",
             rows,
+            chapters,
             id_text,
             text_behavior,
             paragraph_behavior,
@@ -1698,11 +1700,6 @@ def update_usfm(
             lambda _: False,
             compare_segments,
         )
-        tokenizer = UsfmTokenizer()
-        tokens = tokenizer.tokenize(source)
-        tokens = filter_tokens_by_chapter(tokens, chapters)
-        parse_usfm(tokens, updater)
-        return updater.get_usfm()
 
 
 def assert_usfm_equals(target: Optional[str], truth: str) -> None:

@@ -1,9 +1,9 @@
 from typing import Dict
 
-from machine.corpora import ParatextProjectSettings
+from machine.corpora import MemoryParatextProjectFileHandler, ParatextProjectSettings
 from machine.punctuation_analysis import ParatextProjectQuoteConventionDetector
 
-from .memory_paratext_project_file_handler import DefaultParatextProjectSettings, MemoryParatextProjectFileHandler
+from .default_paratext_project_settings import DefaultParatextProjectSettings
 
 
 class MemoryParatextProjectQuoteConventionDetector(ParatextProjectQuoteConventionDetector):

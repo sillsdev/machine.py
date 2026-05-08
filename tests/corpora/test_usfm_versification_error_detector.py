@@ -1,7 +1,7 @@
 from io import StringIO
 from typing import Dict, List, Optional
 
-from testutils.memory_paratext_project_file_handler import DefaultParatextProjectSettings
+from testutils.default_paratext_project_settings import DefaultParatextProjectSettings
 from testutils.memory_paratext_project_versification_error_detector import (
     MemoryParatextProjectVersificationErrorDetector,
 )

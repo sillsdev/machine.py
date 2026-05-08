@@ -1,26 +1,7 @@
-from io import BytesIO
-from typing import BinaryIO, Dict, Optional
+from typing import Optional
 
-from machine.corpora import ParatextProjectFileHandler, ParatextProjectSettings, UsfmStylesheet
+from machine.corpora import ParatextProjectSettings, UsfmStylesheet
 from machine.scripture import ORIGINAL_VERSIFICATION, Versification
-
-
-class MemoryParatextProjectFileHandler(ParatextProjectFileHandler):
-    def __init__(self, files: Dict[str, str]) -> None:
-
-        self.files = files
-
-    def exists(self, file_name: str) -> bool:
-        return file_name in self.files
-
-    def open(self, file_name: str) -> BinaryIO:
-        return BytesIO(self.files[file_name].encode("utf-8"))
-
-    def find(self, extension):
-        raise NotImplementedError
-
-    def create_stylesheet(self, file_name):
-        raise NotImplementedError
 
 
 class DefaultParatextProjectSettings(ParatextProjectSettings):

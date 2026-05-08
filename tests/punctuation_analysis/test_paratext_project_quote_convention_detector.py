@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 
-from testutils.memory_paratext_project_file_handler import DefaultParatextProjectSettings
+from testutils.default_paratext_project_settings import DefaultParatextProjectSettings
 from testutils.memory_paratext_project_quote_convention_detector import MemoryParatextProjectQuoteConventionDetector
 
 from machine.corpora import ParatextProjectSettings
