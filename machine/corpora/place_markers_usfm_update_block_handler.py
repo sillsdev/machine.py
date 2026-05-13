@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import List, TypedDict, cast
 
 from ..translation.word_alignment_matrix import WordAlignmentMatrix
+from .segment_boundary_adjuster import SegmentBoundaryAdjuster
 from .update_usfm_parser_handler import UpdateUsfmMarkerBehavior
 from .usfm_token import UsfmToken, UsfmTokenType
 from .usfm_update_block import UsfmUpdateBlock
@@ -136,6 +137,10 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         to_insert = []
         for element, adj_src_tok in zip(to_place, adj_src_toks):
             adj_trg_tok = self._predict_marker_location(alignment_info["alignment"], adj_src_tok, src_toks, trg_toks)
+
+            # If inserting a paragraph marker, make small adjustments to place it in a more natural location
+            if element.type == UsfmUpdateBlockElementType.PARAGRAPH:
+                adj_trg_tok = SegmentBoundaryAdjuster().adjust_tokenized_segment_pair_boundaries(adj_trg_tok, trg_toks)
 
             if (
                 adj_trg_tok > 0

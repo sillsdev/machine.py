@@ -692,6 +692,43 @@ def test_support_verse_zero():
     assert_usfm_equals(target, result)
 
 
+def test_adjustment_of_placed_paragraph_marker() -> None:
+    source = "This is the first paragraph. This text is in English and this test is for paragraph markers."
+    pretranslation = (
+        "Este es el primer párrafo. Este texto está en inglés, y esta prueba es para marcadores de párrafo."
+    )
+    align_info = PlaceMarkersAlignmentInfo(
+        source_tokens=[t for t in TOKENIZER.tokenize(source)],
+        translation_tokens=[t for t in TOKENIZER.tokenize(pretranslation)],
+        alignment=to_word_alignment_matrix(
+            "0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10 11-11 11-12 12-13 13-14 14-15 15-16 16-19 17-17 18-20"
+        ),
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.STRIP,
+    )
+    rows = [UpdateUsfmRow(scr_ref("MAT 1:1"), str(pretranslation), {"alignment_info": align_info})]
+    usfm = r"""\id MAT
+\c 1
+\v 1 This is the first paragraph.
+\p This text is in English
+\p and this test is for paragraph markers.
+"""
+
+    target = update_usfm(
+        rows,
+        usfm,
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
+    )
+    result = r"""\id MAT
+\c 1
+\v 1 Este es el primer párrafo.
+\p Este texto está en inglés,
+\p y esta prueba es para marcadores de párrafo.
+"""
+    assert_usfm_equals(target, result)
+
+
 def scr_ref(*refs: str) -> List[ScriptureRef]:
     return [ScriptureRef.parse(ref) for ref in refs]
 
