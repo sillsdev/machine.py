@@ -22,6 +22,9 @@ class PlaceMarkersAlignmentInfo(TypedDict):
 
 
 class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
+    def __init__(self, *args):
+        super().__init__(*args)
+        self._segment_boundary_adjuster = SegmentBoundaryAdjuster()
 
     def process_block(self, block: UsfmUpdateBlock) -> UsfmUpdateBlock:
         elements = list(block.elements)
@@ -140,7 +143,9 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
 
             # If inserting a paragraph marker, make small adjustments to place it in a more natural location
             if element.type == UsfmUpdateBlockElementType.PARAGRAPH:
-                adj_trg_tok = SegmentBoundaryAdjuster().adjust_tokenized_segment_pair_boundaries(adj_trg_tok, trg_toks)
+                adj_trg_tok = self._segment_boundary_adjuster.adjust_tokenized_segment_pair_boundaries(
+                    adj_trg_tok, trg_toks
+                )
 
             if (
                 adj_trg_tok > 0
