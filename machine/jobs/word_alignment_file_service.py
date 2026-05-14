@@ -13,7 +13,8 @@ from .shared_file_service_factory import SharedFileServiceType, get_shared_file_
 class WordAlignmentInput(TypedDict):
     corpusId: str  # noqa: N815
     textId: str  # noqa: N815
-    refs: List[str]
+    sourceRefs: List[str]  # noqa: N815
+    targetRefs: List[str]  # noqa: N815
     source: str
     target: str
 
@@ -62,7 +63,8 @@ class WordAlignmentFileService:
                 WordAlignmentInput(
                     corpusId=pi["corpusId"],
                     textId=pi["textId"],
-                    refs=list(pi["refs"]),
+                    sourceRefs=list(pi["sourceRefs"]),
+                    targetRefs=list(pi["targetRefs"]),
                     source=pi["source"],
                     target=pi["target"],
                 )

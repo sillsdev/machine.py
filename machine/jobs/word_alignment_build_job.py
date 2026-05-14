@@ -105,8 +105,8 @@ class WordAlignmentBuildJob:
                 [
                     ParallelTextRow(
                         ii["textId"],
-                        ii["refs"],
-                        ii["refs"],
+                        ii["sourceRefs"],
+                        ii["targetRefs"],
                         list(self._tokenizer.tokenize(ii["source"])),
                         list(self._tokenizer.tokenize(ii["target"])),
                     )
@@ -132,7 +132,8 @@ class WordAlignmentBuildJob:
                 word_alignment_info = {
                     "corpusId": inference_input["corpusId"],
                     "textId": inference_input["textId"],
-                    "refs": [str(ref) for ref in inference_input["refs"]],
+                    "sourceRefs": [str(ref) for ref in inference_input["sourceRefs"]],
+                    "targetRefs": [str(ref) for ref in inference_input["targetRefs"]],
                     "sourceTokens": parallel_text_row.source_segment,
                     "targetTokens": parallel_text_row.target_segment,
                     "alignment": AlignedWordPair.to_string(word_pairs),
