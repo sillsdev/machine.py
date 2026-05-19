@@ -1061,7 +1061,7 @@ def test_get_rows_different_versifications_with_verse_segments():
     parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus)
     rows = list(parallel_corpus.get_rows())
 
-    assert len(rows) == 0
+    assert len(rows) == 6
 
     assert rows[0].source_refs == [ScriptureRef.parse("NUM 17:1a", ORIGINAL_VERSIFICATION)]
     assert rows[0].target_refs == [ScriptureRef.parse("NUM 16:36", ENGLISH_VERSIFICATION)]
