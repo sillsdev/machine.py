@@ -1022,6 +1022,8 @@ def test_get_rows_different_versifications_with_verse_segments():
             ],
         )
     )
+    source_corpus.versification = ORIGINAL_VERSIFICATION
+
     target_corpus = DictionaryTextCorpus(
         MemoryText(
             "NUM",
@@ -1054,6 +1056,7 @@ def test_get_rows_different_versifications_with_verse_segments():
             ],
         )
     )
+    target_corpus.versification = ENGLISH_VERSIFICATION
 
     # English vs. Original
     # NUM 16:36-50 = NUM 17:1-15
