@@ -988,6 +988,133 @@ def test_get_rows_verse_ref_out_of_order() -> None:
     assert rows[3].source_segment == "source chapter one, verse four .".split()
     assert rows[3].target_segment == "target chapter one, verse four . target chapter one, verse five .".split()
 
+    def test_get_rows_different_versifications_with_verse_segments():
+        sourceCorpus = DictionaryTextCorpus(
+            MemoryText(
+                "NUM",
+                [
+                    TextRow(
+                        "NUM",
+                        ScriptureRef.parse("NUM 17:1a", ORIGINAL_VERSIFICATION),
+                        "source chapter seventeen, verse one a .",
+                    ),
+                    TextRow(
+                        "NUM",
+                        ScriptureRef.parse("NUM 17:1b", ORIGINAL_VERSIFICATION),
+                        "source chapter seventeen, verse one b .",
+                    ),
+                    TextRow(
+                        "NUM",
+                        ScriptureRef.parse("NUM 17:2", ORIGINAL_VERSIFICATION),
+                        "source chapter seventeen, verse two .",
+                    ),
+                    TextRow(
+                        "NUM",
+                        ScriptureRef.parse("NUM 17:3", ORIGINAL_VERSIFICATION),
+                        "source chapter seventeen, verse three .",
+                    ),
+                    TextRow(
+                        "NUM",
+                        ScriptureRef.parse("NUM 17:4", ORIGINAL_VERSIFICATION),
+                        "source chapter seventeen, verse four .",
+                    ),
+                ],
+            )
+        )
+        targetCorpus = DictionaryTextCorpus(
+            MemoryText(
+                "NUM",
+                [
+                    TextRow(
+                        "NUM",
+                        ScriptureRef.parse("NUM 16:36", ENGLISH_VERSIFICATION),
+                        "target chapter sixteen, verse thirty six .",
+                    ),
+                    TextRow(
+                        "NUM",
+                        ScriptureRef.parse("NUM 16:37", ENGLISH_VERSIFICATION),
+                        "target chapter sixteen, verse thirty seven .",
+                    ),
+                    TextRow(
+                        "NUM",
+                        ScriptureRef.parse("NUM 16:38", ENGLISH_VERSIFICATION),
+                        "target chapter sixteen, verse thirty eight .",
+                    ),
+                    TextRow(
+                        "NUM",
+                        ScriptureRef.parse("NUM 16:39a", ENGLISH_VERSIFICATION),
+                        "target chapter sixteen, verse thirty nine a .",
+                    ),
+                    TextRow(
+                        "NUM",
+                        ScriptureRef.parse("NUM 16:39b", ENGLISH_VERSIFICATION),
+                        "target chapter sixteen, verse thirty nine b .",
+                    ),
+                ],
+            )
+        )
+
+        # English vs. Original
+        # NUM 16:36-50 = NUM 17:1-15
+        # NUM 17:1-13 = NUM 17:16-28
+        parallelCorpus = StandardParallelTextCorpus(sourceCorpus, targetCorpus)
+        rows = list(parallelCorpus.get_rows())
+
+        # port below code from c# to python
+        assert len(rows) == 0
+
+        assert rows[0].source_refs == [ScriptureRef.parse("NUM 17:1a", ORIGINAL_VERSIFICATION)]
+        assert rows[0].target_refs == [ScriptureRef.parse("NUM 16:36", ENGLISH_VERSIFICATION)]
+        # Assert.That(rows[0].SourceSegment, Is.EqualTo("source chapter seventeen, verse one a .".Split()));
+        assert rows[0].source_segment == "source chapter seventeen, verse one a .".split()
+        # Assert.That(rows[0].TargetSegment, Is.EqualTo("target chapter sixteen, verse thirty six .".Split()));
+        assert rows[0].target_segment == "target chapter sixteen, verse thirty six .".split()
+
+        # Assert.That(rows[1].SourceRefs, Is.EqualTo([ScriptureRef.Parse("NUM 17:1b", ScrVers.Original)]));
+        assert rows[1].source_refs == [ScriptureRef.parse("NUM 17:1b", ORIGINAL_VERSIFICATION)]
+        # Assert.That(rows[1].TargetRefs, Is.EqualTo([ScriptureRef.Parse("NUM 16:36", ScrVers.English)]));
+        assert rows[1].target_refs == [ScriptureRef.parse("NUM 16:36", ENGLISH_VERSIFICATION)]
+        # Assert.That(rows[1].SourceSegment, Is.EqualTo("source chapter seventeen, verse one b .".Split()));
+        assert rows[1].source_segment == "source chapter seventeen, verse one b .".split()
+        # Assert.That(rows[1].TargetSegment, Is.EqualTo("target chapter sixteen, verse thirty six .".Split()));
+        assert rows[1].target_segment == "target chapter sixteen, verse thirty six .".split()
+
+        # Assert.That(rows[2].SourceRefs, Is.EqualTo([ScriptureRef.Parse("NUM 17:2", ScrVers.Original)]));
+        assert rows[2].source_refs == [ScriptureRef.parse("NUM 17:2", ORIGINAL_VERSIFICATION)]
+        # Assert.That(rows[2].TargetRefs, Is.EqualTo([ScriptureRef.Parse("NUM 16:37", ScrVers.English)]));
+        assert rows[2].target_refs == [ScriptureRef.parse("NUM 16:37", ENGLISH_VERSIFICATION)]
+        # Assert.That(rows[2].SourceSegment, Is.EqualTo("source chapter seventeen, verse two .".Split()));
+        assert rows[2].source_segment == "source chapter seventeen, verse two .".split()
+        # Assert.That(rows[2].TargetSegment, Is.EqualTo("target chapter sixteen, verse thirty seven .".Split()));
+        assert rows[2].target_segment == "target chapter sixteen, verse thirty seven .".split()
+
+        # Assert.That(rows[3].SourceRefs, Is.EqualTo([ScriptureRef.Parse("NUM 17:3", ScrVers.Original)]));
+        assert rows[3].source_refs == [ScriptureRef.parse("NUM 17:3", ORIGINAL_VERSIFICATION)]
+        # Assert.That(rows[3].TargetRefs, Is.EqualTo([ScriptureRef.Parse("NUM 16:38", ScrVers.English)]));
+        assert rows[3].target_refs == [ScriptureRef.parse("NUM 16:38", ENGLISH_VERSIFICATION)]
+        # Assert.That(rows[3].SourceSegment, Is.EqualTo("source chapter seventeen, verse three .".Split()));
+        assert rows[3].source_segment == "source chapter seventeen, verse three .".split()
+        # Assert.That(rows[3].TargetSegment, Is.EqualTo("target chapter sixteen, verse thirty eight .".Split()));
+        assert rows[3].target_segment == "target chapter sixteen, verse thirty eight .".split()
+
+        # Assert.That(rows[4].SourceRefs, Is.EqualTo([ScriptureRef.Parse("NUM 17:4", ScrVers.Original)]));
+        assert rows[4].source_refs == [ScriptureRef.parse("NUM 17:4", ORIGINAL_VERSIFICATION)]
+        # Assert.That(rows[4].TargetRefs, Is.EqualTo([ScriptureRef.Parse("NUM 16:39a", ScrVers.English)]));
+        assert rows[4].target_refs == [ScriptureRef.parse("NUM 16:39a", ENGLISH_VERSIFICATION)]
+        # Assert.That(rows[4].SourceSegment, Is.EqualTo("source chapter seventeen, verse four .".Split()));
+        assert rows[4].source_segment == "source chapter seventeen, verse four .".split()
+        # Assert.That(rows[4].TargetSegment, Is.EqualTo("target chapter sixteen, verse thirty nine a .".Split()));
+        assert rows[4].target_segment == "target chapter sixteen, verse thirty nine a .".split()
+
+        # Assert.That(rows[5].SourceRefs, Is.EqualTo([ScriptureRef.Parse("NUM 17:4", ScrVers.Original)]));
+        assert rows[5].source_refs == [ScriptureRef.parse("NUM 17:4", ORIGINAL_VERSIFICATION)]
+        # Assert.That(rows[5].TargetRefs, Is.EqualTo([ScriptureRef.Parse("NUM 16:39b", ScrVers.English)]));
+        assert rows[5].target_refs == [ScriptureRef.parse("NUM 16:39b", ENGLISH_VERSIFICATION)]
+        # Assert.That(rows[5].SourceSegment, Is.EqualTo("source chapter seventeen, verse four .".Split()));
+        assert rows[5].source_segment == "source chapter seventeen, verse four .".split()
+        # Assert.That(rows[5].TargetSegment, Is.EqualTo("target chapter sixteen, verse thirty nine b .".Split()));
+        assert rows[5].target_segment == "target chapter sixteen, verse thirty nine b .".split()
+
 
 def test_to_pandas() -> None:
     source_corpus = DictionaryTextCorpus(

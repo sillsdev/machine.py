@@ -757,3 +757,54 @@ def test_unbridge() -> None:
     assert VerseRef.from_string("EXO 6:9a,9b").unbridge() == VerseRef.from_string("EXO 6:9a")
     assert VerseRef.from_string("EXO 6:4-10").unbridge() == VerseRef.from_string("EXO 6:4")
     assert VerseRef.from_string("EXO 6:150monkeys").unbridge() == VerseRef.from_string("EXO 6:150monkeys")
+
+
+def test_remove_segments() -> None:
+    assert VerseRef.from_string("MAT 1:1").remove_segments() == VerseRef.from_string("MAT 1:1")
+    assert VerseRef.from_string("MAT 1:1a").remove_segments() == VerseRef.from_string("MAT 1:1")
+    assert VerseRef.from_string("MAT 1:1a-2b,5a").remove_segments() == VerseRef.from_string("MAT 1:1,2,5")
+    assert VerseRef.from_string("MAT 1:1a-3b").remove_segments() == VerseRef.from_string("MAT 1:1,2,3")
+
+
+def test_change_versification_with_segments() -> None:
+
+    # English vs. Original
+    # NUM 16:36-50 = NUM 17:1-15
+    # NUM 17:1-13 = NUM 17:16-28
+    # ESG 1:1 = ESG 1:1a
+    # ESG 1:2 = ESG 1:1b
+
+    verse_ref = VerseRef.from_string("NUM 17:1", ENGLISH_VERSIFICATION)
+    verse_ref.change_versification(ORIGINAL_VERSIFICATION)
+    assert verse_ref.versification == ORIGINAL_VERSIFICATION
+    assert str(verse_ref) == "NUM 17:16"
+
+    verse_ref = VerseRef.from_string("NUM 17:1a", ENGLISH_VERSIFICATION)
+    verse_ref.change_versification(ORIGINAL_VERSIFICATION)
+    assert verse_ref.versification == ORIGINAL_VERSIFICATION
+    assert str(verse_ref) == "NUM 17:16a"
+
+    verse_ref = VerseRef.from_string("NUM 17:1a-2b,5a", ENGLISH_VERSIFICATION)
+    verse_ref.change_versification(ORIGINAL_VERSIFICATION)
+    assert verse_ref.versification == ORIGINAL_VERSIFICATION
+    assert str(verse_ref) == "NUM 17:16a-17b,20a"
+
+    verse_ref = VerseRef.from_string("NUM 17:13a-15a", ORIGINAL_VERSIFICATION)
+    verse_ref.change_versification(ENGLISH_VERSIFICATION)
+    assert verse_ref.versification == ENGLISH_VERSIFICATION
+    assert str(verse_ref) == "NUM 16:48a-50a"
+
+    verse_ref = VerseRef.from_string("NUM 17:1a", ENGLISH_VERSIFICATION)
+    verse_ref.change_versification(ENGLISH_VERSIFICATION)
+    assert verse_ref.versification == ENGLISH_VERSIFICATION
+    assert str(verse_ref) == "NUM 17:1a"
+
+    verse_ref = VerseRef.from_string("ESG 1:1b", ORIGINAL_VERSIFICATION)
+    verse_ref.change_versification(ENGLISH_VERSIFICATION)
+    assert verse_ref.versification == ENGLISH_VERSIFICATION
+    assert str(verse_ref) == "ESG 1:2"
+
+    verse_ref = VerseRef.from_string("ESG 1:2", ENGLISH_VERSIFICATION)
+    verse_ref.change_versification(ORIGINAL_VERSIFICATION)
+    assert verse_ref.versification == ORIGINAL_VERSIFICATION
+    assert str(verse_ref) == "ESG 1:1b"

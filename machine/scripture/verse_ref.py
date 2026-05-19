@@ -95,9 +95,9 @@ class VerseRef(Comparable):
         return VerseRef(b_cv[0], c_v[0], c_v[1], versification)
 
     @classmethod
-    def try_from_string(cls, verse_str: str) -> Optional[VerseRef]:
+    def try_from_string(cls, verse_str: str, versification: Optional[Versification] = None) -> Optional[VerseRef]:
         try:
-            return cls.from_string(verse_str)
+            return cls.from_string(verse_str, versification)
         except ValueError:
             return None
 
@@ -401,6 +401,18 @@ class VerseRef(Comparable):
             and self.verse == other.verse
             and self.versification == other.versification
         )
+
+    def remove_segments(self) -> VerseRef:
+        if not self.segment():
+            return self.copy()
+        vr = VerseRef.try_from_string(
+            f"{self.book} {self.chapter_num}:{','.join([str(v.verse_num) for v in self.all_verses()])}",
+            self.versification,
+        )
+        if vr is None:
+            vr = self.copy()
+            vr.simplify()
+        return vr
 
     def __eq__(self, other):
         if not isinstance(other, VerseRef):
@@ -816,9 +828,11 @@ class Versification:
     def is_excluded(self, bbbcccvvv: int) -> bool:
         return bbbcccvvv in self.excluded_verses
 
-    def change_versification(self, vref: VerseRef) -> bool:
+    def change_versification(self, vref: VerseRef, ignore_segments: bool = False) -> bool:
         if vref.has_multiple:
             return self._change_versification_with_ranges(vref)
+        if vref.segment() and not ignore_segments:
+            return self._change_versification_with_segments(vref)
 
         if vref.versification == NULL_VERSIFICATION:
             vref.versification = self
@@ -903,6 +917,33 @@ class Versification:
         vref.copy_from(new_vref)
 
         return all_same_chapter
+
+    def _change_versification_with_segments(self, orig_vref: VerseRef) -> bool:
+        vref = orig_vref.copy()
+        all_in_one_chapter = self.change_versification(vref, ignore_segments=True)
+        if not vref.segment():
+            orig_vref.copy_from(vref)
+            return all_in_one_chapter
+
+        vref_without_segments = orig_vref.remove_segments()
+        all_in_one_chapter = self.change_versification(vref_without_segments, ignore_segments=True)
+        if vref_without_segments != vref.remove_segments():
+            verses = [
+                v_with_correct_number.verse + v_with_segments.segment()
+                for (v_with_segments, v_with_correct_number) in zip(
+                    orig_vref.all_verses(), vref_without_segments.all_verses()
+                )
+            ]
+
+            combined_vr = VerseRef.try_from_string(
+                f"{vref_without_segments.book} {vref_without_segments.chapter_num}:{','.join(verses)}", self
+            )
+            if combined_vr is not None:
+                orig_vref.copy_from(combined_vr)
+                return all_in_one_chapter
+
+        orig_vref.copy_from(vref)
+        return all_in_one_chapter
 
 
 class VerseMappings:
