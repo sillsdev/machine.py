@@ -994,27 +994,27 @@ def test_get_rows_different_versifications_with_verse_segments():
         MemoryText(
             "NUM",
             [
-                TextRow(
+                text_row(
                     "NUM",
                     ScriptureRef.parse("NUM 17:1a", ORIGINAL_VERSIFICATION),
                     "source chapter seventeen, verse one a .",
                 ),
-                TextRow(
+                text_row(
                     "NUM",
                     ScriptureRef.parse("NUM 17:1b", ORIGINAL_VERSIFICATION),
                     "source chapter seventeen, verse one b .",
                 ),
-                TextRow(
+                text_row(
                     "NUM",
                     ScriptureRef.parse("NUM 17:2", ORIGINAL_VERSIFICATION),
                     "source chapter seventeen, verse two .",
                 ),
-                TextRow(
+                text_row(
                     "NUM",
                     ScriptureRef.parse("NUM 17:3", ORIGINAL_VERSIFICATION),
                     "source chapter seventeen, verse three .",
                 ),
-                TextRow(
+                text_row(
                     "NUM",
                     ScriptureRef.parse("NUM 17:4", ORIGINAL_VERSIFICATION),
                     "source chapter seventeen, verse four .",
@@ -1028,27 +1028,27 @@ def test_get_rows_different_versifications_with_verse_segments():
         MemoryText(
             "NUM",
             [
-                TextRow(
+                text_row(
                     "NUM",
                     ScriptureRef.parse("NUM 16:36", ENGLISH_VERSIFICATION),
                     "target chapter sixteen, verse thirty six .",
                 ),
-                TextRow(
+                text_row(
                     "NUM",
                     ScriptureRef.parse("NUM 16:37", ENGLISH_VERSIFICATION),
                     "target chapter sixteen, verse thirty seven .",
                 ),
-                TextRow(
+                text_row(
                     "NUM",
                     ScriptureRef.parse("NUM 16:38", ENGLISH_VERSIFICATION),
                     "target chapter sixteen, verse thirty eight .",
                 ),
-                TextRow(
+                text_row(
                     "NUM",
                     ScriptureRef.parse("NUM 16:39a", ENGLISH_VERSIFICATION),
                     "target chapter sixteen, verse thirty nine a .",
                 ),
-                TextRow(
+                text_row(
                     "NUM",
                     ScriptureRef.parse("NUM 16:39b", ENGLISH_VERSIFICATION),
                     "target chapter sixteen, verse thirty nine b .",
