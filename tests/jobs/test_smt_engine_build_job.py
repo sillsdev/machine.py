@@ -136,7 +136,8 @@ class _TestEnvironment:
                         PretranslationInfo(
                             corpusId="corpus1",
                             textId="text1",
-                            refs=["ref1"],
+                            sourceRefs=["ref1"],
+                            targetRefs=["ref1"],
                             translation="Por favor, tengo reservada una habitación.",
                             sourceTokens=[],
                             translationTokens=[],

@@ -15,7 +15,8 @@ from .shared_file_service_factory import SharedFileServiceType, get_shared_file_
 class PretranslationInfo(TypedDict):
     corpusId: str  # noqa: N815
     textId: str  # noqa: N815
-    refs: List[str]
+    sourceRefs: List[str]  # noqa: N815
+    targetRefs: List[str]  # noqa: N815
     translation: str
     sourceTokens: List[str]  # noqa: N815
     translationTokens: List[str]  # noqa: N815
@@ -94,7 +95,8 @@ class TranslationFileService:
                     yield PretranslationInfo(
                         corpusId=pi["corpusId"],
                         textId=pi["textId"],
-                        refs=list(pi["refs"]),
+                        sourceRefs=list(pi["sourceRefs"]),
+                        targetRefs=list(pi["targetRefs"]),
                         translation=pi["translation"],
                         sourceTokens=list(),
                         translationTokens=list(),
