@@ -307,7 +307,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
                 content_type = row.content_type
                 text_id = text_id or row.text_id
                 if self.corpora[i].is_scripture:
-                    refs[i] = self._correct_versification([row.ref] if row.ref is None else default_refs, i)
+                    refs[i] = self._correct_versification([row.ref] if row.ref is not None else default_refs, i)
                 else:
                     refs[i] = default_refs
                 flags[i] = row.flags

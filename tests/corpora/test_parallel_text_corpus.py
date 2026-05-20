@@ -989,6 +989,114 @@ def test_get_rows_verse_ref_out_of_order() -> None:
     assert rows[3].target_segment == "target chapter one, verse four . target chapter one, verse five .".split()
 
 
+def test_get_rows_different_versifications_with_verse_segments():
+    source_corpus = DictionaryTextCorpus(
+        MemoryText(
+            "NUM",
+            [
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:1a", ORIGINAL_VERSIFICATION),
+                    "source chapter seventeen, verse one a .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:1b", ORIGINAL_VERSIFICATION),
+                    "source chapter seventeen, verse one b .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:2", ORIGINAL_VERSIFICATION),
+                    "source chapter seventeen, verse two .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:3", ORIGINAL_VERSIFICATION),
+                    "source chapter seventeen, verse three .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:4", ORIGINAL_VERSIFICATION),
+                    "source chapter seventeen, verse four .",
+                ),
+            ],
+        )
+    )
+    source_corpus.versification = ORIGINAL_VERSIFICATION
+
+    target_corpus = DictionaryTextCorpus(
+        MemoryText(
+            "NUM",
+            [
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 16:36", ENGLISH_VERSIFICATION),
+                    "target chapter sixteen, verse thirty six .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 16:37", ENGLISH_VERSIFICATION),
+                    "target chapter sixteen, verse thirty seven .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 16:38", ENGLISH_VERSIFICATION),
+                    "target chapter sixteen, verse thirty eight .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 16:39a", ENGLISH_VERSIFICATION),
+                    "target chapter sixteen, verse thirty nine a .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 16:39b", ENGLISH_VERSIFICATION),
+                    "target chapter sixteen, verse thirty nine b .",
+                ),
+            ],
+        )
+    )
+    target_corpus.versification = ENGLISH_VERSIFICATION
+
+    # English vs. Original
+    # NUM 16:36-50 = NUM 17:1-15
+    # NUM 17:1-13 = NUM 17:16-28
+    parallel_corpus = StandardParallelTextCorpus(source_corpus, target_corpus)
+    rows = list(parallel_corpus.get_rows())
+
+    assert len(rows) == 6
+
+    assert rows[0].source_refs == [ScriptureRef.parse("NUM 17:1a", ORIGINAL_VERSIFICATION)]
+    assert rows[0].target_refs == [ScriptureRef.parse("NUM 16:36", ENGLISH_VERSIFICATION)]
+    assert rows[0].source_segment == "source chapter seventeen, verse one a .".split()
+    assert rows[0].target_segment == "target chapter sixteen, verse thirty six .".split()
+
+    assert rows[1].source_refs == [ScriptureRef.parse("NUM 17:1b", ORIGINAL_VERSIFICATION)]
+    assert rows[1].target_refs == [ScriptureRef.parse("NUM 16:36", ENGLISH_VERSIFICATION)]
+    assert rows[1].source_segment == "source chapter seventeen, verse one b .".split()
+    assert rows[1].target_segment == "target chapter sixteen, verse thirty six .".split()
+
+    assert rows[2].source_refs == [ScriptureRef.parse("NUM 17:2", ORIGINAL_VERSIFICATION)]
+    assert rows[2].target_refs == [ScriptureRef.parse("NUM 16:37", ENGLISH_VERSIFICATION)]
+    assert rows[2].source_segment == "source chapter seventeen, verse two .".split()
+    assert rows[2].target_segment == "target chapter sixteen, verse thirty seven .".split()
+
+    assert rows[3].source_refs == [ScriptureRef.parse("NUM 17:3", ORIGINAL_VERSIFICATION)]
+    assert rows[3].target_refs == [ScriptureRef.parse("NUM 16:38", ENGLISH_VERSIFICATION)]
+    assert rows[3].source_segment == "source chapter seventeen, verse three .".split()
+    assert rows[3].target_segment == "target chapter sixteen, verse thirty eight .".split()
+
+    assert rows[4].source_refs == [ScriptureRef.parse("NUM 17:4", ORIGINAL_VERSIFICATION)]
+    assert rows[4].target_refs == [ScriptureRef.parse("NUM 16:39a", ENGLISH_VERSIFICATION)]
+    assert rows[4].source_segment == "source chapter seventeen, verse four .".split()
+    assert rows[4].target_segment == "target chapter sixteen, verse thirty nine a .".split()
+
+    assert rows[5].source_refs == [ScriptureRef.parse("NUM 17:4", ORIGINAL_VERSIFICATION)]
+    assert rows[5].target_refs == [ScriptureRef.parse("NUM 16:39b", ENGLISH_VERSIFICATION)]
+    assert rows[5].source_segment == "source chapter seventeen, verse four .".split()
+    assert rows[5].target_segment == "target chapter sixteen, verse thirty nine b .".split()
+
+
 def test_to_pandas() -> None:
     source_corpus = DictionaryTextCorpus(
         MemoryText(
