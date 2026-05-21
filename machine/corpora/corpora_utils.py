@@ -15,6 +15,14 @@ from ..scripture.verse_ref import VERSE_RANGE_SEPARATOR, VERSE_SEQUENCE_INDICATO
 T = TypeVar("T")
 
 
+def alignment_exception(refs: Iterable[str]) -> TypeError:
+    return TypeError(
+        f'Invalid format in {", ".join(refs)}. '
+        "Mismatched key formats. There may be an extraneous tab, "
+        "missing ref, or inconsistent use of user-defined refs."
+    )
+
+
 def batch(iterable: Iterable[T], batch_size: int) -> Iterable[Sequence[T]]:
     if isinstance(iterable, Sequence) and len(iterable) <= batch_size:
         yield iterable

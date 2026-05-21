@@ -2,6 +2,7 @@ from contextlib import ExitStack
 from typing import Any, Callable, Iterable, List, Optional, Sequence, Set, cast
 
 from ..scripture.verse_ref import Versification
+from .corpora_utils import alignment_exception
 from .n_parallel_text_corpus_base import NParallelTextCorpusBase
 from .n_parallel_text_row import NParallelTextRow
 from .scripture_ref import ScriptureRef
@@ -181,7 +182,10 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
                         refs.append(row.ref)
                     else:
                         refs.append(None)
-                min_ref_indexes = self._min_ref_indexes(refs)
+                try:
+                    min_ref_indexes = self._min_ref_indexes(refs)
+                except TypeError as e:
+                    raise alignment_exception([str(r.ref) for r in current_rows if r is not None]) from e
                 non_min_ref_indexes = list(set(range(0, self.n)).difference(min_ref_indexes))
                 if (
                     len(min_ref_indexes) < num_remaining_rows
@@ -274,6 +278,8 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
                         if is_completed:
                             num_completed += 1
                             num_remaining_rows -= 1
+                else:
+                    raise alignment_exception([str(current_rows[i].ref) for i in min_ref_indexes])
 
             if range_info.is_in_range:
                 yield range_info.create_row()
@@ -362,9 +368,12 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
                 yield row
 
     def _check_same_ref_rows(self, same_ref_rows: List[TextRow], other_row: TextRow) -> bool:
-        if len(same_ref_rows) > 0 and self.row_ref_comparer(same_ref_rows[0].ref, other_row.ref) != 0:
-            same_ref_rows.clear()
-        return len(same_ref_rows) > 0
+        try:
+            if len(same_ref_rows) > 0 and self.row_ref_comparer(same_ref_rows[0].ref, other_row.ref) != 0:
+                same_ref_rows.clear()
+            return len(same_ref_rows) > 0
+        except TypeError as e:
+            raise alignment_exception([str(same_ref_rows[0].ref), str(other_row.ref)]) from e
 
     def _create_same_ref_rows(
         self,
