@@ -4,6 +4,7 @@ from contextlib import ExitStack
 from typing import Callable, Generator, Iterable, Optional
 
 from .alignment_corpus import AlignmentCorpus
+from .corpora_utils import alignment_exception
 from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
 from .n_parallel_text_corpus import NParallelTextCorpus, default_row_ref_comparer
 from .parallel_text_corpus import ParallelTextCorpus
@@ -68,7 +69,10 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
                 if self._alignment_corpus is not None and all([len(n) > 0 for n in n_row.n_segments]):
                     while True:
                         if alignment_row is not None:
-                            compare_alignment_corpus = self._row_ref_comparer(n_row.ref, alignment_row.ref)
+                            try:
+                                compare_alignment_corpus = self._row_ref_comparer(n_row.ref, alignment_row.ref)
+                            except TypeError as e:
+                                raise alignment_exception([str(r) for r in n_row.n_refs]) from e
                         else:
                             compare_alignment_corpus = 1
                         if compare_alignment_corpus >= 0:
