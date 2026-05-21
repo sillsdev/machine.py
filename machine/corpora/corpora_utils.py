@@ -15,6 +15,10 @@ from ..scripture.verse_ref import VERSE_RANGE_SEPARATOR, VERSE_SEQUENCE_INDICATO
 T = TypeVar("T")
 
 
+def alignment_exception(refs: Iterable[str]) -> RuntimeError:
+    return RuntimeError(f'Unable to align rows with refs: {", ".join(refs)}.')
+
+
 def batch(iterable: Iterable[T], batch_size: int) -> Iterable[Sequence[T]]:
     if isinstance(iterable, Sequence) and len(iterable) <= batch_size:
         yield iterable
