@@ -17,8 +17,6 @@ from machine.corpora import (
     TextRow,
     TextRowFlags,
 )
-from machine.corpora.paratext_text_corpus import ParatextTextCorpus
-from machine.corpora.scripture_text_corpus import create_versification_ref_corpus, extract_scripture_corpus
 from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, Versification
 
 
