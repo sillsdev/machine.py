@@ -6,8 +6,24 @@ import regex
 # This class is used by SegmentBoundaryAdjuster when it is dealing with tokenized text.
 class TokenRejoiner:
 
-    _NO_TRAILING_SPACE_CHARACTERS: Set[str] = {"(", "[", "{", "«", "‹", "“", "‘"}
-    _NO_LEADING_SPACE_CHARACTERS: Set[str] = {",", ";", ":", ".", "!", "?", ")", "]", "}", "”", "’", "»", "›"}
+    _NO_TRAILING_SPACE_CHARACTERS: Set[str] = {"(", "[", "{", "«", "‹", "“", "‘", "‚", "„", "<<", "<"}
+    _NO_LEADING_SPACE_CHARACTERS: Set[str] = {
+        ",",
+        ";",
+        ":",
+        ".",
+        "!",
+        "?",
+        ")",
+        "]",
+        "}",
+        "”",
+        "’",
+        "»",
+        "›",
+        ">",
+        ">>",
+    }
 
     def __init__(self) -> None:
         self._joined_text = ""
@@ -18,7 +34,11 @@ class TokenRejoiner:
         rejoiner = cls()
         for token in tokens:
             rejoiner.add_token_to_joined_text(token)
-        if len(rejoiner._joined_text) > 0 and rejoiner._joined_text[-1] not in cls._NO_TRAILING_SPACE_CHARACTERS:
+        if (
+            len(rejoiner._joined_text) > 0
+            and rejoiner._joined_text[-1] not in cls._NO_TRAILING_SPACE_CHARACTERS
+            and rejoiner._joined_text[-2:] not in cls._NO_TRAILING_SPACE_CHARACTERS
+        ):
             rejoiner._joined_text += " "
         return rejoiner._joined_text
 
@@ -27,6 +47,7 @@ class TokenRejoiner:
             if (
                 token not in self._NO_LEADING_SPACE_CHARACTERS
                 and self._joined_text[-1] not in self._NO_TRAILING_SPACE_CHARACTERS
+                and self._joined_text[-2:] not in self._NO_TRAILING_SPACE_CHARACTERS
             ):
                 self._joined_text += " "
         self._joined_text += token
@@ -35,6 +56,8 @@ class TokenRejoiner:
 
 
 class SegmentBoundaryAdjuster:
+    # Guillemets are not included in this list because they can be used as quote continuers
+    # in some contexts (e.g. Spanish)
     _PROHIBITED_VERSE_STARTING_CHARACTERS: Set[str] = {
         " ",
         ",",
