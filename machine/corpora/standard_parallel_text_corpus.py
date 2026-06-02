@@ -3,10 +3,12 @@ from __future__ import annotations
 from contextlib import ExitStack
 from typing import Callable, Generator, Iterable, Optional
 
+from ..scripture.constants import ORIGINAL_VERSIFICATION
+
 from .alignment_corpus import AlignmentCorpus
 from .corpora_utils import alignment_exception
 from .dictionary_alignment_corpus import DictionaryAlignmentCorpus
-from .n_parallel_text_corpus import NParallelTextCorpus, default_row_ref_comparer
+from .n_parallel_text_corpus import NParallelTextCorpus, default_row_ref_comparer_with_versification
 from .parallel_text_corpus import ParallelTextCorpus
 from .parallel_text_row import ParallelTextRow
 from .text_corpus import TextCorpus
@@ -29,7 +31,9 @@ class StandardParallelTextCorpus(ParallelTextCorpus):
         self._all_target_rows = all_target_rows
         self._n_parallel_text_corpus = NParallelTextCorpus([source_corpus, target_corpus])
         self._n_parallel_text_corpus.all_rows[:] = [self.all_source_rows, self.all_target_rows]
-        self._row_ref_comparer = row_ref_comparer or default_row_ref_comparer
+        self._row_ref_comparer = row_ref_comparer or default_row_ref_comparer_with_versification(
+            self._source_corpus.versification
+        )
 
     @property
     def is_source_tokenized(self) -> bool:
