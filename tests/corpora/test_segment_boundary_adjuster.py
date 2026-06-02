@@ -465,6 +465,11 @@ def test_join_tokens() -> None:
     )
 
     assert (
+        TokenRejoiner.join_tokens(["Il", "dit", "<<", "Venez", ">>", ".", "Maintenant"])
+        == "Il dit <<Venez>>. Maintenant "
+    )
+
+    assert (
         TokenRejoiner.join_tokens(
             ["J\u00e9sus", "s'\u00e9cria", "\u2039", "P\u00e8re", "!", "\u203a", ",", "puis", "partit"]
         )
