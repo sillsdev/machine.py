@@ -17,8 +17,6 @@ from machine.corpora import (
     TextRow,
     TextRowFlags,
 )
-from machine.corpora.scripture_text_corpus import create_versification_ref_corpus
-from machine.corpora.paratext_text_corpus import ParatextTextCorpus
 from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, Versification
 
 
@@ -1109,7 +1107,7 @@ def test_get_rows_different_versifications_with_extra_verse():
     assert len(rows) == 14
 
 
-def test_proj():
+def test_get_rows_different_versifications_with_double_mapping():
     source_corpus = DictionaryTextCorpus(
         MemoryText(
             "ESG",
@@ -1117,22 +1115,22 @@ def test_proj():
                 text_row(
                     "ESG",
                     ScriptureRef.parse("ESG 4:17", ORIGINAL_VERSIFICATION),
-                    "target chapter four, verse seventeen .",
+                    "source chapter four, verse seventeen .",
                 ),
                 text_row(
                     "ESG",
                     ScriptureRef.parse("ESG 4:18", ORIGINAL_VERSIFICATION),
-                    "target chapter four, verse eighteen .",
+                    "source chapter four, verse eighteen .",
                 ),
                 text_row(
                     "ESG",
                     ScriptureRef.parse("ESG 4:19", ORIGINAL_VERSIFICATION),
-                    "target chapter four, verse nineteen .",
+                    "source chapter four, verse nineteen .",
                 ),
                 text_row(
                     "ESG",
                     ScriptureRef.parse("ESG 4:20", ORIGINAL_VERSIFICATION),
-                    "target chapter four, verse twenty .",
+                    "source chapter four, verse twenty .",
                 ),
                 text_row(
                     "ESG",
@@ -1142,17 +1140,17 @@ def test_proj():
                 text_row(
                     "ESG",
                     ScriptureRef.parse("ESG 4:22", ORIGINAL_VERSIFICATION),
-                    "target chapter four, verse twenty two .",
+                    "source chapter four, verse twenty two .",
                 ),
                 text_row(
                     "ESG",
                     ScriptureRef.parse("ESG 4:23", ORIGINAL_VERSIFICATION),
-                    "target chapter four, verse twenty three .",
+                    "source chapter four, verse twenty three .",
                 ),
                 text_row(
                     "ESG",
                     ScriptureRef.parse("ESG 4:24", ORIGINAL_VERSIFICATION),
-                    "target chapter four, verse twenty four .",
+                    "source chapter four, verse twenty four .",
                 ),
             ],
         )
@@ -1219,7 +1217,9 @@ def test_proj():
     parallel_corpus = source_corpus.align_rows(target_corpus, all_source_rows=True)
     rows = list(parallel_corpus.get_rows())
 
-    assert len(rows) == 6
+    assert (
+        len(rows) == 8 + 7
+    )  # 17 aligns to every row (8) and then every other row also aligns to the row with the same reference (7)
 
 
 def test_get_rows_different_versifications_with_verse_segments():

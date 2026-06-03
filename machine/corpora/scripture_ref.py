@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import total_ordering
 from typing import List, Optional
 
-from ..scripture.constants import ENGLISH_VERSIFICATION
+from ..scripture.constants import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION
 from ..scripture.verse_ref import VerseRef, Versification
 from ..utils.comparable import Comparable
 from .scripture_element import ScriptureElement
@@ -96,6 +96,13 @@ class ScriptureRef(Comparable):
             return 0
 
         res = self.verse_ref.compare_to(other.verse_ref, compare_segments=compare_segments)
+        reverse_res = other.verse_ref.compare_to(self.verse_ref, compare_segments=compare_segments)
+        if res ^ reverse_res > 0 or (res != 0 and res == reverse_res):
+            # In some situations involving double mappings, this > other does not imply other <= this.
+            # In these situations, convert both to Original versification and then compare them.
+            res = self.verse_ref.to_versification(ORIGINAL_VERSIFICATION).compare_to(
+                other.verse_ref.to_versification(ORIGINAL_VERSIFICATION), compare_segments=compare_segments
+            )
         if res != 0:
             return res
 

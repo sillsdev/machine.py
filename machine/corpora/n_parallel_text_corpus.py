@@ -1,7 +1,6 @@
 from contextlib import ExitStack
 from typing import Any, Callable, Iterable, List, Optional, Sequence, Set, cast
 
-from ..scripture.constants import ORIGINAL_VERSIFICATION
 from ..scripture.verse_ref import Versification
 from .corpora_utils import alignment_exception
 from .n_parallel_text_corpus_base import NParallelTextCorpusBase
@@ -85,11 +84,7 @@ class _NRangeInfo:
 class NParallelTextCorpus(NParallelTextCorpusBase):
     def __init__(self, corpora: Sequence[TextCorpus], row_ref_comparer: Optional[Callable[[Any, Any], int]] = None):
         self._corpora = corpora
-        self._row_ref_comparer = (
-            row_ref_comparer
-            if row_ref_comparer is not None
-            else default_row_ref_comparer_with_versification(self._corpora[0].versification or ORIGINAL_VERSIFICATION)
-        )
+        self._row_ref_comparer = row_ref_comparer if row_ref_comparer is not None else default_row_ref_comparer
         self._all_rows: List[bool] = [False for _ in range(len(corpora))]
 
     def is_tokenized(self, i: int) -> bool:
@@ -153,7 +148,7 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
                 min_ref_indexes = [i]
             elif self.row_ref_comparer(refs[i], min_ref) == 0:
                 min_ref_indexes.append(i)
-        # In some situations involving invalid ScriptureRefs, the comparer may not be reliable (x > y does not imply y < x).
+        # In some situations involving invalid ScriptureRefs, the comparer may not be reliable (x > y does not imply y <= x).
         if min_ref_indexes == [0] and len(refs) > 1:
             invalid_vrefs = [isinstance(r, ScriptureRef) and not r.verse_ref.is_valid for r in refs]
             if self.row_ref_comparer(min_ref, refs[1]) >= 0 and any(invalid_vrefs):
@@ -408,28 +403,16 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
                             yield r
 
 
-def default_row_ref_comparer_with_versification(
-    reference_versification: Optional[Versification] = None,
-) -> Callable[[Any, Any], int]:
-    reference_versification = reference_versification or ORIGINAL_VERSIFICATION
-
-    def default_row_ref_comparer(x: Any, y: Any) -> int:
-        # Do not use the default comparer for ScriptureRef, since we want to ignore segments
-        if isinstance(x, ScriptureRef) and isinstance(y, ScriptureRef):
-            # Since double-mappings in versifications can cause unusual behavior where x == y does not imply y == x,
-            # change x and y to the reference versification which determines the order the verses are enumerated in
-            # prior to comparison for consistency
-            return x.change_versification(reference_versification).compare_to(
-                y.change_versification(reference_versification), False
-            )
-        if x is None and y is not None:
-            return 1
-        if x is not None and y is None:
-            return -1
-        if x == y:
-            return 0
-        if x < y:
-            return -1
+def default_row_ref_comparer(x: Any, y: Any) -> int:
+    # Do not use the default comparer for ScriptureRef, since we want to ignore segments
+    if isinstance(x, ScriptureRef) and isinstance(y, ScriptureRef):
+        return x.compare_to(y, False)
+    if x is None and y is not None:
         return 1
-
-    return default_row_ref_comparer
+    if x is not None and y is None:
+        return -1
+    if x == y:
+        return 0
+    if x < y:
+        return -1
+    return 1
