@@ -989,6 +989,239 @@ def test_get_rows_verse_ref_out_of_order() -> None:
     assert rows[3].target_segment == "target chapter one, verse four . target chapter one, verse five .".split()
 
 
+def test_get_rows_different_versifications_with_extra_verse():
+    source_corpus = DictionaryTextCorpus(
+        MemoryText(
+            "NUM",
+            [
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:16", ORIGINAL_VERSIFICATION),
+                    "source chapter seventeen, verse sixteen .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:17", ORIGINAL_VERSIFICATION),
+                    "source chapter seventeen, verse seventeen .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:18", ORIGINAL_VERSIFICATION),
+                    "source chapter seventeen, verse eighteen .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:19", ORIGINAL_VERSIFICATION),
+                    "source chapter seventeen, verse nineteen .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:20", ORIGINAL_VERSIFICATION),
+                    "source chapter seventeen, verse twenty .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:21", ORIGINAL_VERSIFICATION),
+                    "source chapter seventeen, verse twenty one .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:22", ORIGINAL_VERSIFICATION),
+                    "source chapter seventeen, verse twenty two .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:23", ORIGINAL_VERSIFICATION),
+                    "source chapter seventeen, verse twenty three .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:24", ORIGINAL_VERSIFICATION),
+                    "source chapter seventeen, verse twenty four .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:25", ORIGINAL_VERSIFICATION),
+                    "source chapter seventeen, verse twenty five .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:26", ORIGINAL_VERSIFICATION),
+                    "source chapter seventeen, verse twenty six .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:27", ORIGINAL_VERSIFICATION),
+                    "source chapter seventeen, verse twenty seven .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:28", ORIGINAL_VERSIFICATION),
+                    "source chapter seventeen, verse twenty eight .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 18:1", ORIGINAL_VERSIFICATION),
+                    "source chapter eighteen, verse one .",
+                ),
+            ],
+        )
+    )
+    source_corpus.versification = ORIGINAL_VERSIFICATION
+
+    target_corpus = DictionaryTextCorpus(
+        MemoryText(
+            "NUM",
+            [
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:12", ENGLISH_VERSIFICATION),
+                    "target chapter seventeen, verse twelve .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:13", ENGLISH_VERSIFICATION),
+                    "target chapter seventeen, verse thirteen .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 17:16", ENGLISH_VERSIFICATION),
+                    "target chapter seventeen, verse sixteen .",
+                ),
+                text_row(
+                    "NUM",
+                    ScriptureRef.parse("NUM 18:1", ENGLISH_VERSIFICATION),
+                    "target chapter eighteen, verse one .",
+                ),
+            ],
+        )
+    )
+    target_corpus.versification = ENGLISH_VERSIFICATION
+
+    # English vs. Original
+    # NUM 16:36-50 = NUM 17:1-15
+    # NUM 17:1-13 = NUM 17:16-28
+    parallel_corpus = source_corpus.align_rows(target_corpus, all_source_rows=True)
+    rows = list(parallel_corpus.get_rows())
+
+    assert len(rows) == 14
+
+
+def test_get_rows_different_versifications_with_double_mapping():
+    source_corpus = DictionaryTextCorpus(
+        MemoryText(
+            "ESG",
+            [
+                text_row(
+                    "ESG",
+                    ScriptureRef.parse("ESG 4:17", ORIGINAL_VERSIFICATION),
+                    "source chapter four, verse seventeen .",
+                ),
+                text_row(
+                    "ESG",
+                    ScriptureRef.parse("ESG 4:18", ORIGINAL_VERSIFICATION),
+                    "source chapter four, verse eighteen .",
+                ),
+                text_row(
+                    "ESG",
+                    ScriptureRef.parse("ESG 4:19", ORIGINAL_VERSIFICATION),
+                    "source chapter four, verse nineteen .",
+                ),
+                text_row(
+                    "ESG",
+                    ScriptureRef.parse("ESG 4:20", ORIGINAL_VERSIFICATION),
+                    "source chapter four, verse twenty .",
+                ),
+                text_row(
+                    "ESG",
+                    ScriptureRef.parse("ESG 4:21", ORIGINAL_VERSIFICATION),
+                    "target chapter four, verse twenty one .",
+                ),
+                text_row(
+                    "ESG",
+                    ScriptureRef.parse("ESG 4:22", ORIGINAL_VERSIFICATION),
+                    "source chapter four, verse twenty two .",
+                ),
+                text_row(
+                    "ESG",
+                    ScriptureRef.parse("ESG 4:23", ORIGINAL_VERSIFICATION),
+                    "source chapter four, verse twenty three .",
+                ),
+                text_row(
+                    "ESG",
+                    ScriptureRef.parse("ESG 4:24", ORIGINAL_VERSIFICATION),
+                    "source chapter four, verse twenty four .",
+                ),
+            ],
+        )
+    )
+    source_corpus.versification = ORIGINAL_VERSIFICATION
+
+    target_corpus = DictionaryTextCorpus(
+        MemoryText(
+            "ESG",
+            [
+                text_row(
+                    "ESG",
+                    ScriptureRef.parse("ESG 4:17", ENGLISH_VERSIFICATION),
+                    "target chapter four, verse seventeen .",
+                ),
+                text_row(
+                    "ESG",
+                    ScriptureRef.parse("ESG 4:18", ENGLISH_VERSIFICATION),
+                    "target chapter four, verse eighteen .",
+                ),
+                text_row(
+                    "ESG",
+                    ScriptureRef.parse("ESG 4:19", ENGLISH_VERSIFICATION),
+                    "target chapter four, verse nineteen .",
+                ),
+                text_row(
+                    "ESG",
+                    ScriptureRef.parse("ESG 4:20", ENGLISH_VERSIFICATION),
+                    "target chapter four, verse twenty .",
+                ),
+                text_row(
+                    "ESG",
+                    ScriptureRef.parse("ESG 4:21", ENGLISH_VERSIFICATION),
+                    "target chapter four, verse twenty one .",
+                ),
+                text_row(
+                    "ESG",
+                    ScriptureRef.parse("ESG 4:22", ENGLISH_VERSIFICATION),
+                    "target chapter four, verse twenty two .",
+                ),
+                text_row(
+                    "ESG",
+                    ScriptureRef.parse("ESG 4:23", ENGLISH_VERSIFICATION),
+                    "target chapter four, verse twenty three .",
+                ),
+                text_row(
+                    "ESG",
+                    ScriptureRef.parse("ESG 4:24", ENGLISH_VERSIFICATION),
+                    "target chapter four, verse twenty four .",
+                ),
+            ],
+        )
+    )
+    target_corpus.versification = ENGLISH_VERSIFICATION
+
+    # English vs. Original
+    # ESG 4:18 = ESG 4:17a
+    # ESG 4:19 = ESG 4:17b
+    # ESG 4:20 = ESG 4:17c
+    # ESG 4:21 = ESG 4:17c
+    # ESG 4:22 = ESG 4:17d
+    # ESG 4:23 = ESG 4:17d
+    # ESG 4:24 = ESG 4:17e
+    parallel_corpus = source_corpus.align_rows(target_corpus, all_source_rows=True)
+    rows = list(parallel_corpus.get_rows())
+
+    assert (
+        len(rows) == 8 + 7
+    )  # 17 aligns to every row (8) and then every other row also aligns to the row with the same reference (7)
+
+
 def test_get_rows_different_versifications_with_verse_segments():
     source_corpus = DictionaryTextCorpus(
         MemoryText(

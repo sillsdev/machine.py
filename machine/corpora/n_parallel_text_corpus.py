@@ -148,6 +148,11 @@ class NParallelTextCorpus(NParallelTextCorpusBase):
                 min_ref_indexes = [i]
             elif self.row_ref_comparer(refs[i], min_ref) == 0:
                 min_ref_indexes.append(i)
+        # In some situations involving invalid ScriptureRefs, the comparer may not be reliable (x > y does not imply y <= x).
+        if min_ref_indexes == [0] and len(refs) > 1:
+            invalid_vrefs = [isinstance(r, ScriptureRef) and not r.verse_ref.is_valid for r in refs]
+            if self.row_ref_comparer(min_ref, refs[1]) >= 0 and any(invalid_vrefs):
+                min_ref_indexes = [i for i in range(len(refs)) if invalid_vrefs[i]]
         return min_ref_indexes
 
     def _get_rows(self, generators: List[TextCorpusEnumerator]) -> Iterable[NParallelTextRow]:
