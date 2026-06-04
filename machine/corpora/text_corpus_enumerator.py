@@ -61,8 +61,6 @@ class TextCorpusEnumerator(ContextManager["TextCorpusEnumerator"], Generator[Tex
         while self._row is not None:
             row = cast(TextRow, self._row)
             ref = cast(ScriptureRef, row.ref)
-            if not prev_ref.is_empty and ref.book_num != prev_ref.book_num:
-                break
 
             ref = ref.change_versification(self._ref_versification)
             # convert one-to-many mapping to a verse range
