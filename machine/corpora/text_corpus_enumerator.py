@@ -55,14 +55,21 @@ class TextCorpusEnumerator(ContextManager["TextCorpusEnumerator"], Generator[Tex
     def _collect_verses(self):
         assert self._ref_versification is not None
         rows: List[Tuple[ScriptureRef, TextRow]] = []
-        out_of_order = False
+        verses_out_of_order = False
+        books_out_of_order = False
         prev_ref = EMPTY_SCRIPTURE_REF
         range_start_offset = -1
         while self._row is not None:
             row = cast(TextRow, self._row)
             ref = cast(ScriptureRef, row.ref)
-
+            orig_book_num = ref.book_num
             ref = ref.change_versification(self._ref_versification)
+            if not books_out_of_order:
+                if ref.book_num != orig_book_num:
+                    books_out_of_order = True
+                elif not prev_ref.is_empty and ref.book_num != prev_ref.book_num:
+                    break
+
             # convert one-to-many mapping to a verse range
             if ref == prev_ref:
                 range_start_ref, range_start_row = rows[range_start_offset]
@@ -86,12 +93,12 @@ class TextCorpusEnumerator(ContextManager["TextCorpusEnumerator"], Generator[Tex
             else:
                 range_start_offset = -1
             rows.append((ref, row))
-            if not out_of_order and ref < prev_ref:
-                out_of_order = True
+            if not verses_out_of_order and ref < prev_ref:
+                verses_out_of_order = True
             prev_ref = ref
             self._row = next(self._generator, None)
 
-        if out_of_order:
+        if verses_out_of_order:
             rows.sort(key=lambda t: t[0])
 
         for _, row in rows:
