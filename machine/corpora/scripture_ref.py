@@ -85,9 +85,7 @@ class ScriptureRef(Comparable):
         return ScriptureRef(self.verse_ref, [pe.to_relaxed() for pe in self.path])
 
     def change_versification(self, versification: Versification) -> ScriptureRef:
-        vr: VerseRef = self.verse_ref.copy()
-        vr.change_versification(versification)
-        return ScriptureRef(vr, self.path)
+        return ScriptureRef(self.verse_ref.to_versification(versification), self.path)
 
     def compare_to(self, other: object, compare_segments: bool = True) -> int:
         if not isinstance(other, ScriptureRef):

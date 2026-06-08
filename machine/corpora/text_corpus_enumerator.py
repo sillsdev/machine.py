@@ -15,6 +15,7 @@ class TextCorpusEnumerator(ContextManager["TextCorpusEnumerator"], Generator[Tex
         versification: Optional[Versification],
     ):
         self._generator = generator
+        self._versification = versification
         self._ref_versification = ref_versification
         self._is_scripture = (
             ref_versification is not None and versification is not None and ref_versification != versification
@@ -54,17 +55,19 @@ class TextCorpusEnumerator(ContextManager["TextCorpusEnumerator"], Generator[Tex
 
     def _collect_verses(self):
         assert self._ref_versification is not None
+        assert self._versification is not None
+        has_cross_book_mappings = self._versification.has_cross_book_mappings(self._ref_versification)
         rows: List[Tuple[ScriptureRef, TextRow]] = []
-        out_of_order = False
+        verses_out_of_order = False
         prev_ref = EMPTY_SCRIPTURE_REF
         range_start_offset = -1
         while self._row is not None:
             row = cast(TextRow, self._row)
             ref = cast(ScriptureRef, row.ref)
-            if not prev_ref.is_empty and ref.book_num != prev_ref.book_num:
+            ref = ref.change_versification(self._ref_versification)
+            if not has_cross_book_mappings and not prev_ref.is_empty and ref.book_num != prev_ref.book_num:
                 break
 
-            ref = ref.change_versification(self._ref_versification)
             # convert one-to-many mapping to a verse range
             if ref == prev_ref:
                 range_start_ref, range_start_row = rows[range_start_offset]
@@ -88,12 +91,12 @@ class TextCorpusEnumerator(ContextManager["TextCorpusEnumerator"], Generator[Tex
             else:
                 range_start_offset = -1
             rows.append((ref, row))
-            if not out_of_order and ref < prev_ref:
-                out_of_order = True
+            if not verses_out_of_order and ref < prev_ref:
+                verses_out_of_order = True
             prev_ref = ref
             self._row = next(self._generator, None)
 
-        if out_of_order:
+        if verses_out_of_order:
             rows.sort(key=lambda t: t[0])
 
         for _, row in rows:

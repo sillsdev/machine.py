@@ -17,7 +17,12 @@ from machine.corpora import (
     TextRow,
     TextRowFlags,
 )
-from machine.scripture import ENGLISH_VERSIFICATION, ORIGINAL_VERSIFICATION, Versification
+from machine.scripture import (
+    ENGLISH_VERSIFICATION,
+    ORIGINAL_VERSIFICATION,
+    RUSSIAN_ORTHODOX_VERSIFICATION,
+    Versification,
+)
 
 
 def test_get_rows_no_rows() -> None:
@@ -1328,6 +1333,104 @@ def test_get_rows_different_versifications_with_verse_segments():
     assert rows[5].target_refs == [ScriptureRef.parse("NUM 16:39b", ENGLISH_VERSIFICATION)]
     assert rows[5].source_segment == "source chapter seventeen, verse four .".split()
     assert rows[5].target_segment == "target chapter sixteen, verse thirty nine b .".split()
+
+
+def test_get_rows_different_versifications_with_cross_book_mappings():
+    source_corpus = DictionaryTextCorpus(
+        MemoryText(
+            "DAN",
+            [
+                text_row(
+                    "DAN",
+                    ScriptureRef.parse("DAN 3:23", ORIGINAL_VERSIFICATION),
+                    "DAN source chapter three, verse twenty three .",
+                ),
+                text_row(
+                    "DAN",
+                    ScriptureRef.parse("DAN 3:24", ORIGINAL_VERSIFICATION),
+                    "DAN source chapter three, verse twenty four .",
+                ),
+            ],
+        ),
+        MemoryText(
+            "S3Y",
+            [
+                text_row(
+                    "S3Y",
+                    ScriptureRef.parse("S3Y 1:1", ORIGINAL_VERSIFICATION),
+                    "S3Y source chapter one, verse one .",
+                ),
+                text_row(
+                    "S3Y",
+                    ScriptureRef.parse("S3Y 1:68", ORIGINAL_VERSIFICATION),
+                    "S3Y source chapter one, verse sixty eight .",
+                ),
+            ],
+        ),
+    )
+    source_corpus.versification = ORIGINAL_VERSIFICATION
+
+    target_corpus = DictionaryTextCorpus(
+        MemoryText(
+            "DAN",
+            [
+                text_row(
+                    "DAN",
+                    ScriptureRef.parse("DAN 3:23", RUSSIAN_ORTHODOX_VERSIFICATION),
+                    "DAN target chapter three, verse twenty three .",
+                ),
+                text_row(
+                    "DAN",
+                    ScriptureRef.parse("DAN 3:24", RUSSIAN_ORTHODOX_VERSIFICATION),
+                    "DAN target chapter three, verse twenty four .",
+                ),
+                text_row(
+                    "DAN",
+                    ScriptureRef.parse("DAN 3:90", RUSSIAN_ORTHODOX_VERSIFICATION),
+                    "DAN target chapter three, verse ninety .",
+                ),
+                text_row(
+                    "DAN",
+                    ScriptureRef.parse("DAN 3:91", RUSSIAN_ORTHODOX_VERSIFICATION),
+                    "DAN target chapter three, verse ninety one .",
+                ),
+            ],
+        )
+    )
+    target_corpus.versification = RUSSIAN_ORTHODOX_VERSIFICATION
+
+    # Russian Orthodox vs. Original
+    # DAN 3:24-90 = DAG 3:24-90
+    # DAN 3:91-100 = DAN 3:24-33
+    # Original
+    # S3Y 1:1-29 = DAG 3:24-52
+    # ...
+    # S3Y 1:38-68 = DAG 3:60-90
+
+    parallel_corpus = source_corpus.align_rows(target_corpus, all_source_rows=True)
+    rows = list(parallel_corpus.get_rows())
+
+    assert len(rows) == 4
+
+    assert rows[0].source_refs == [ScriptureRef.parse("DAN 3:23", ORIGINAL_VERSIFICATION)]
+    assert rows[0].target_refs == [ScriptureRef.parse("DAN 3:23", RUSSIAN_ORTHODOX_VERSIFICATION)]
+    assert rows[0].source_segment == "DAN source chapter three, verse twenty three .".split()
+    assert rows[0].target_segment == "DAN target chapter three, verse twenty three .".split()
+
+    assert rows[1].source_refs == [ScriptureRef.parse("DAN 3:24", ORIGINAL_VERSIFICATION)]
+    assert rows[1].target_refs == [ScriptureRef.parse("DAN 3:91", RUSSIAN_ORTHODOX_VERSIFICATION)]
+    assert rows[1].source_segment == "DAN source chapter three, verse twenty four .".split()
+    assert rows[1].target_segment == "DAN target chapter three, verse ninety one .".split()
+
+    assert rows[2].source_refs == [ScriptureRef.parse("S3Y 1:1", ORIGINAL_VERSIFICATION)]
+    assert rows[2].target_refs == [ScriptureRef.parse("DAN 3:24", RUSSIAN_ORTHODOX_VERSIFICATION)]
+    assert rows[2].source_segment == "S3Y source chapter one, verse one .".split()
+    assert rows[2].target_segment == "DAN target chapter three, verse twenty four .".split()
+
+    assert rows[3].source_refs == [ScriptureRef.parse("S3Y 1:68", ORIGINAL_VERSIFICATION)]
+    assert rows[3].target_refs == [ScriptureRef.parse("DAN 3:90", RUSSIAN_ORTHODOX_VERSIFICATION)]
+    assert rows[3].source_segment == "S3Y source chapter one, verse sixty eight .".split()
+    assert rows[3].target_segment == "DAN target chapter three, verse ninety .".split()
 
 
 def test_to_pandas() -> None:
