@@ -151,9 +151,9 @@ LAST_BOOK = len(ALL_BOOK_IDS)
 
 
 def book_number_to_id(number: int, error_value: str = "***") -> str:
-    if number < 1 or number >= len(ALL_BOOK_IDS):
-        return error_value
     index = number - 1
+    if index < 0 or index >= len(ALL_BOOK_IDS):
+        return error_value
     return ALL_BOOK_IDS[index]
 
 

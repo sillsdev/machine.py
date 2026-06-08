@@ -96,3 +96,24 @@ def test_builtin_versification_type() -> None:
     assert RUSSIAN_PROTESTANT_VERSIFICATION.type == VersificationType.RUSSIAN_PROTESTANT
     assert VULGATE_VERSIFICATION.type == VersificationType.VULGATE
     assert SEPTUAGINT_VERSIFICATION.type == VersificationType.SEPTUAGINT
+
+
+def test_all_included_verses() -> None:
+    original_verses = list(ORIGINAL_VERSIFICATION.all_included_verses())
+    assert len(original_verses) == 41899
+    assert original_verses[21899].bbbcccvvv == 27003024
+    english_verses = list(ENGLISH_VERSIFICATION.all_included_verses())
+    assert len(english_verses) == 38393
+    assert english_verses[-1].bbbcccvvv == 123001020
+    russian_orthodox_verses = list(RUSSIAN_ORTHODOX_VERSIFICATION.all_included_verses())
+    assert len(russian_orthodox_verses) == 37280
+    assert russian_orthodox_verses[-1].bbbcccvvv == 83001015
+
+
+def test_has_cross_book_mappings() -> None:
+    assert not ORIGINAL_VERSIFICATION.has_cross_book_mappings()
+    assert ENGLISH_VERSIFICATION.has_cross_book_mappings()
+    assert RUSSIAN_ORTHODOX_VERSIFICATION.has_cross_book_mappings()
+    assert not RUSSIAN_PROTESTANT_VERSIFICATION.has_cross_book_mappings()
+    assert VULGATE_VERSIFICATION.has_cross_book_mappings()
+    assert VULGATE_VERSIFICATION.has_cross_book_mappings(ENGLISH_VERSIFICATION)

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum, IntEnum, auto
 from io import TextIOWrapper
 from pathlib import Path, PurePath
-from typing import BinaryIO, Dict, Iterable, List, Optional, Set, TextIO, Tuple, Union, cast
+from typing import BinaryIO, Dict, Generator, Iterable, List, Optional, Set, TextIO, Tuple, Union, cast
 
 import regex as re
 
@@ -875,6 +875,32 @@ class Versification:
 
         vref.versification = self
         return True
+
+    def all_included_verses(self) -> Generator[VerseRef, None, None]:
+        for book, chapters in enumerate(self.book_list):
+            book = book + 1
+            if not is_canonical(book) or (book > 86 and book < 93):
+                continue
+            for chapter, last_verse in enumerate(chapters):
+                chapter = chapter + 1
+                first_verse = self.first_included_verse(book, chapter)
+                yielded_first_verse = False
+                for verse_number in range(2, last_verse + 1):
+                    verse = VerseRef(book=book, chapter=chapter, verse=verse_number, versification=self)
+                    if self.is_excluded(verse.bbbcccvvv):
+                        continue
+                    if not yielded_first_verse and first_verse is not None:
+                        yield first_verse
+                        yielded_first_verse = True
+                    yield verse
+
+    def has_cross_book_mappings(self, reference_versification: Optional[Versification] = None) -> bool:
+        reference_versification = reference_versification or Versification.get_builtin("Original")
+        for verse_ref in self.all_included_verses():
+            standard_ref = verse_ref.to_versification(reference_versification)
+            if verse_ref.book_num != standard_ref.book_num:
+                return True
+        return False
 
     def __eq__(self, other: Versification) -> bool:
         if self is other:
