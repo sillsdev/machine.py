@@ -10,6 +10,25 @@ from testutils.corpora_test_helpers import create_test_paratext_backup
 from machine.corpora import UsfmStyleType, UsfmTextType, ZipParatextProjectSettingsParser
 
 
+def test_parse() -> None:
+    with _TestEnvironment() as env:
+        settings = env.parser.parse()
+        assert settings.guid == "a7e0b3ce0200736062f9f810a444dbfbe64aca35"
+        assert settings.name == "Tes"
+        assert settings.full_name == "Test"
+        assert settings.encoding == "utf_8_sig"
+        assert settings.versification.name.startswith("English")
+        assert settings.file_name_prefix == ""
+        assert settings.file_name_form == "41MAT"
+        assert settings.file_name_suffix == "Tes.SFM"
+        assert settings.biblical_terms_list_type == "Project"
+        assert settings.biblical_terms_project_name == "Tes"
+        assert settings.biblical_terms_file_name == "ProjectBiblicalTerms.xml"
+        assert settings.language_code == "en"
+        assert settings.translation_type == "Standard"
+        assert settings.visibility == "Public"
+
+
 def test_parse_custom_stylesheet() -> None:
     with _TestEnvironment() as env:
         settings = env.parser.parse()
@@ -23,7 +42,6 @@ def test_is_daughter_project() -> None:
         settings = env.parser.parse()
         assert settings.has_parent
         assert settings.is_daughter_project_of(settings)
-        assert settings.translation_type == "Standard"
         assert settings.parent is None
 
         env.parser = ZipParatextProjectSettingsParser(env.zip_file, settings)
@@ -31,7 +49,6 @@ def test_is_daughter_project() -> None:
         settings = env.parser.parse()
         assert settings.has_parent
         assert settings.is_daughter_project_of(settings)
-        assert settings.translation_type == "Standard"
         assert settings.parent is not None
 
 
