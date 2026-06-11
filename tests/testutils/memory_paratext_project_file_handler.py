@@ -7,8 +7,8 @@ from machine.scripture import ORIGINAL_VERSIFICATION, Versification
 
 
 class MemoryParatextProjectFileHandler(ParatextProjectFileHandler):
-    def __init__(self, files: Dict[str, str]) -> None:
-        self.files = files
+    def __init__(self, files: Optional[Dict[str, str]]) -> None:
+        self.files = files or {}
 
     def exists(self, file_name: str) -> bool:
         return file_name in self.files
@@ -29,7 +29,7 @@ class MemoryParatextProjectFileHandler(ParatextProjectFileHandler):
 
 
 class MemoryParatextProjectTextUpdater(ParatextProjectTextUpdaterBase):
-    def __init__(self, files: Dict[str, str], settings: ParatextProjectSettings) -> None:
+    def __init__(self, files: Optional[Dict[str, str]], settings: ParatextProjectSettings) -> None:
         super().__init__(MemoryParatextProjectFileHandler(files), settings)
 
 
