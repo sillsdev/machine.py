@@ -6,5 +6,5 @@ from .memory_paratext_project_file_handler import DefaultParatextProjectSettings
 
 
 class MemoryParatextProjectTermsParser(ParatextProjectTermsParserBase):
-    def __init__(self, files: Dict[str, str], settings: Optional[ParatextProjectSettings]) -> None:
+    def __init__(self, files: Optional[Dict[str, str]], settings: Optional[ParatextProjectSettings]) -> None:
         super().__init__(MemoryParatextProjectFileHandler(files), settings or DefaultParatextProjectSettings())

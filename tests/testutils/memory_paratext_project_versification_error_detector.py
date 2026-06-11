@@ -6,5 +6,5 @@ from .memory_paratext_project_file_handler import DefaultParatextProjectSettings
 
 
 class MemoryParatextProjectVersificationErrorDetector(ParatextProjectVersificationErrorDetectorBase):
-    def __init__(self, settings: Optional[ParatextProjectSettings], files: Dict[str, str]) -> None:
+    def __init__(self, settings: Optional[ParatextProjectSettings], files: Optional[Dict[str, str]]) -> None:
         super().__init__(MemoryParatextProjectFileHandler(files), settings or DefaultParatextProjectSettings())
