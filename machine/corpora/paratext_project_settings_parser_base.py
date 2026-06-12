@@ -101,7 +101,7 @@ class ParatextProjectSettingsParserBase(ABC):
 
         normalization_form: str = settings_tree.getroot().findtext("NormalizationForm", "Off")
 
-        language: str = settings_tree.getroot().findtext("Language", "en")
+        language: str = settings_tree.getroot().findtext("Language", "")
 
         settings = ParatextProjectSettings(
             guid,
