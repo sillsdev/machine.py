@@ -102,7 +102,7 @@ class ParatextProjectSettingsParserBase(ABC):
         visibility: Optional[str] = settings_tree.getroot().findtext("Visibility")
         normalization_form: str = settings_tree.getroot().findtext("NormalizationForm", "Off")
 
-        language: str = settings_tree.getroot().findtext("Language", "en")
+        language: str = settings_tree.getroot().findtext("Language", "")
 
         settings = ParatextProjectSettings(
             guid,
