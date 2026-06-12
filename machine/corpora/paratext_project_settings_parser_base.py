@@ -100,6 +100,9 @@ class ParatextProjectSettingsParserBase(ABC):
                 parent_guid = translation_info_setting_parts[2] if translation_info_setting_parts[2] != "" else None
 
         visibility: Optional[str] = settings_tree.getroot().findtext("Visibility")
+        normalization_form: str = settings_tree.getroot().findtext("NormalizationForm", "Off")
+
+        language: str = settings_tree.getroot().findtext("Language", "en")
 
         settings = ParatextProjectSettings(
             guid,
@@ -117,6 +120,8 @@ class ParatextProjectSettingsParserBase(ABC):
             language_code,
             translation_type,
             visibility,
+            normalization_form,
+            language,
             parent_guid,
             parent_name,
         )
