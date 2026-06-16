@@ -50,6 +50,8 @@ class DefaultParatextProjectSettings(ParatextProjectSettings):
         biblical_terms_file_name: str = "ProjectBiblicalTerms.xml",
         language_code: str = "en",
         translation_type: str = "Standard",
+        normalization_form: str = "Undefined",
+        language: str = "",
         parent_guid: Optional[str] = None,
         parent_name: Optional[str] = None,
     ):
@@ -69,6 +71,8 @@ class DefaultParatextProjectSettings(ParatextProjectSettings):
             biblical_terms_file_name,
             language_code,
             translation_type,
+            normalization_form,
+            language,
             parent_guid,
             parent_name,
         )

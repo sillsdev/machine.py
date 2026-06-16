@@ -24,6 +24,11 @@ def test_translation_info_specified() -> None:
     assert settings.parent_name == "DEF"
     assert settings.parent_guid == "22222222222222222222222222222222"
 
+def test_normalization_form_default() -> None:
+    settings = _create_settings()
+
+    assert settings.normalization_form == "Undefined"
+
 
 def _create_settings(additional_settings_xml: str = ""):
     files = {

@@ -22,9 +22,9 @@ class ParatextProjectSettings:
     biblical_terms_file_name: str
     language_code: Optional[str]
     translation_type: str
-    visibility: Optional[str] = None
     normalization_form: str
     language: str
+    visibility: Optional[str] = None
     parent_guid: Optional[str] = None
     parent_name: Optional[str] = None
     _parent: Optional["ParatextProjectSettings"] = None

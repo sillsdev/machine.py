@@ -129,5 +129,7 @@ def _create_settings(file_name_form: str) -> ParatextProjectSettings:
         "BiblicalTerms.xml",
         "en",
         "Standard",
+        "Undefined",
+        "English",
         "Public",
     )
