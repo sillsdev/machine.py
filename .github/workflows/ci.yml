@@ -20,7 +20,7 @@ jobs:
         shell: bash
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Set up Python ${{ matrix.python-version }}
         id: setup-python
         uses: actions/setup-python@v6
@@ -55,7 +55,7 @@ jobs:
         env:
           EFLOMAL_PATH: /home/runner/work/machine.py/machine.py/.venv/lib/python${{ matrix.python-version }}/site-packages/eflomal/bin
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Set up Python 3.10
         id: setup-python
         uses: actions/setup-python@v6
@@ -80,7 +80,7 @@ jobs:
       - name: Build
         run: poetry build
       - name: Upload package
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: wheel
           path: dist/*.whl
