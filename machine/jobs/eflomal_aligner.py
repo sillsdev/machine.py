@@ -34,6 +34,8 @@ def execute_eflomal(
     target_path: Path,
     forward_links_path: Path,
     reverse_links_path: Path,
+    forward_scores_output: Path,
+    reverse_scores_output: Path,
     n_iterations: Tuple[int, int, int],
 ) -> None:
     if not is_eflomal_available():
@@ -49,6 +51,10 @@ def execute_eflomal(
         str(forward_links_path),
         "-r",
         str(reverse_links_path),
+        "-F",
+        str(forward_scores_output),
+        "-R",
+        str(reverse_scores_output),
         # "-q",
         "-m",
         "3",
@@ -107,6 +113,30 @@ def normalize_for_alignment(sent: Sequence[str]) -> str:
     return " ".join(lowercase(normalize("NFC", escape_spaces(sent))))
 
 
+def compute_aligned_word_pair_scores(
+    forward_matrix: WordAlignmentMatrix,
+    forward_sentence_score: float,
+    reverse_sentence_score: float,
+) -> str:
+    # Get the sentence score as 0.0-1.0, from the average logp sentence score
+    avg_logp = (forward_sentence_score + reverse_sentence_score) / 2.0
+    sentence_score = 1.0 / (1.0 + abs(avg_logp))
+
+    scored: List[AlignedWordPair] = []
+    forward_pairs = forward_matrix.to_aligned_word_pairs()
+    for word_pair in forward_pairs:
+        scored.append(
+            AlignedWordPair(
+                word_pair.source_index,
+                word_pair.target_index,
+                translation_score=-1,
+                alignment_score=sentence_score,
+            )
+        )
+
+    return " ".join(str(wp) for wp in scored)
+
+
 # From silnlp.alignment.eflomal
 class EflomalAligner:
     def __init__(self, model_dir: Path) -> None:
@@ -138,22 +168,30 @@ class EflomalAligner:
                 trg_eflomal_path,
                 self._model_dir / "forward-align.txt",
                 self._model_dir / "reverse-align.txt",
+                self._model_dir / "forward-scores.txt",
+                self._model_dir / "reverse-scores.txt",
                 n_iterations,
             )
 
     def align(self, sym_heuristic: str = "grow-diag-final-and") -> List[str]:
         forward_align_path = self._model_dir / "forward-align.txt"
         reverse_align_path = self._model_dir / "reverse-align.txt"
+        forward_scores_path = self._model_dir / "forward-scores.txt"
+        reverse_scores_path = self._model_dir / "reverse-scores.txt"
 
         alignments = []
         heuristic = SymmetrizationHeuristic[sym_heuristic.upper().replace("-", "_")]
         with ExitStack() as stack:
-            forward_file = stack.enter_context(forward_align_path.open("r", encoding="utf-8-sig"))
-            reverse_file = stack.enter_context(reverse_align_path.open("r", encoding="utf-8-sig"))
+            forward_align_file = stack.enter_context(forward_align_path.open("r", encoding="utf-8-sig"))
+            reverse_align_file = stack.enter_context(reverse_align_path.open("r", encoding="utf-8-sig"))
+            forward_scores_file = stack.enter_context(forward_scores_path.open("r", encoding="utf-8-sig"))
+            reverse_scores_file = stack.enter_context(reverse_scores_path.open("r", encoding="utf-8-sig"))
 
-            for forward_line, reverse_line in zip(forward_file, reverse_file):
-                forward_matrix = to_word_alignment_matrix(forward_line.strip())
-                reverse_matrix = to_word_alignment_matrix(reverse_line.strip())
+            for forward_align_line, reverse_align_line, forward_sentence_score, reverse_sentence_score in zip(
+                forward_align_file, reverse_align_file, forward_scores_file, reverse_scores_file
+            ):
+                forward_matrix = to_word_alignment_matrix(str(forward_align_line.strip()))
+                reverse_matrix = to_word_alignment_matrix(str(reverse_align_line.strip()))
                 src_len = max(forward_matrix.row_count, reverse_matrix.row_count)
                 trg_len = max(forward_matrix.column_count, reverse_matrix.column_count)
 
@@ -162,6 +200,12 @@ class EflomalAligner:
 
                 forward_matrix.symmetrize_with(reverse_matrix, heuristic)
 
-                alignments.append(str(forward_matrix))
+                scored_word_pairs = compute_aligned_word_pair_scores(
+                    forward_matrix,
+                    float(forward_sentence_score.strip()),
+                    float(reverse_sentence_score.strip()),
+                )
+
+                alignments.append(scored_word_pairs)
 
         return alignments
