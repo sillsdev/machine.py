@@ -91,6 +91,14 @@ class UsfmStructureExtractor(UsfmParserHandler):
         current_chapter_verses: list[Verse] = []
         current_verse_segments: list[TextSegment] = []
         for text_segment in self._text_segments:
+            if text_segment.marker_is_in_preceding_context(UsfmMarkerType.VERSE):
+                if len(current_verse_segments) > 0:
+                    current_chapter_verses.append(Verse(current_verse_segments))
+                current_verse_segments = []
+            if text_segment.marker_is_in_preceding_context(UsfmMarkerType.CHAPTER):
+                if len(current_chapter_verses) > 0:
+                    chapters.append(Chapter(current_chapter_verses, current_chapter))
+                current_chapter_verses = []
             if text_segment.book is not None:
                 current_book = book_id_to_number(text_segment.book)
             if text_segment.chapter is not None:
@@ -104,14 +112,6 @@ class UsfmStructureExtractor(UsfmParserHandler):
                     and current_chapter not in include_chapters[current_book]
                 ):
                     continue
-            if text_segment.marker_is_in_preceding_context(UsfmMarkerType.VERSE):
-                if len(current_verse_segments) > 0:
-                    current_chapter_verses.append(Verse(current_verse_segments))
-                current_verse_segments = []
-            if text_segment.marker_is_in_preceding_context(UsfmMarkerType.CHAPTER):
-                if len(current_chapter_verses) > 0:
-                    chapters.append(Chapter(current_chapter_verses, current_chapter))
-                current_chapter_verses = []
             current_verse_segments.append(text_segment)
         if len(current_verse_segments) > 0:
             current_chapter_verses.append(Verse(current_verse_segments))
