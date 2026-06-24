@@ -12,7 +12,13 @@ from machine.punctuation_analysis import (
 def test_full_quotation_denormalization_pipeline() -> None:
     normalized_usfm = """
     \\id GEN
-    \\c 1
+    \\c 2
+    \\v 1 Thus the heavens and the earth were completed in all their vast array.
+    \\v 2 And by the seventh day God had finished the work He had been doing;
+    so on that day He rested from all His work.
+    \\v 3 Then God blessed the seventh day and sanctified it,
+    because on that day He rested from all the work of creation that He had accomplished.
+    \\c 3
     \\v 1 Now the serpent was more subtle than any animal
     of the field which Yahweh God had made.
     He said to the woman, "Has God really said,
@@ -24,7 +30,11 @@ def test_full_quotation_denormalization_pipeline() -> None:
     """
 
     expected_denormalized_usfm = """\\id GEN
-\\c 1
+\\c 2
+\\v 1 Thus the heavens and the earth were completed in all their vast array.
+\\v 2 And by the seventh day God had finished the work He had been doing; so on that day He rested from all His work.
+\\v 3 Then God blessed the seventh day and sanctified it, because on that day He rested from all the work of creation that He had accomplished.
+\\c 3
 \\v 1 Now the serpent was more subtle than any animal of the field which Yahweh God had made. He said to the woman, “Has God really said, ‘You shall not eat of any tree of the garden’?”
 \\v 2 The woman said to the serpent, “We may eat fruit from the trees of the garden,
 \\v 3 but not the fruit of the tree which is in the middle of the garden. God has said, ‘You shall not eat of it. You shall not touch it, lest you die.’”
@@ -38,7 +48,7 @@ def test_full_quotation_denormalization_pipeline() -> None:
     parse_usfm(normalized_usfm, quotation_mark_denormalization_first_pass)
     best_chapter_strategies = quotation_mark_denormalization_first_pass.find_best_chapter_strategies()
 
-    assert [chapter for chapter, _ in best_chapter_strategies] == [1]
+    assert [chapter for chapter, _ in best_chapter_strategies] == [2, 3]
 
     quotation_mark_denormalizer = QuotationMarkDenormalizationUsfmUpdateBlockHandler(
         standard_english_quote_convention,

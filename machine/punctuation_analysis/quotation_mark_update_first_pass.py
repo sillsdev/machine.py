@@ -58,7 +58,7 @@ class QuotationMarkUpdateFirstPass(UsfmStructureExtractor):
         best_actions_by_chapter: List[Tuple[int, QuotationMarkUpdateStrategy]] = []
 
         for chapter in self.get_chapters():
-            best_actions_by_chapter.append((chapter.chatper_num, self._find_best_strategy_for_chapter(chapter)))
+            best_actions_by_chapter.append((chapter.chapter_num, self._find_best_strategy_for_chapter(chapter)))
 
         return best_actions_by_chapter
 

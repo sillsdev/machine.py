@@ -46,7 +46,8 @@ def test_get_chapters_filter_by_chapter():
                         .build()
                     ]
                 )
-            ]
+            ],
+            2,
         )
     ]
 
@@ -58,6 +59,7 @@ def test_get_chapters_filter_by_chapter():
 
 def test_chapter_and_verse_markers():
     usfm_structure_extractor = UsfmStructureExtractor()
+    verse_text_parser_state.verse_ref.chapter_num = 1
     usfm_structure_extractor.chapter(verse_text_parser_state, "1", "c", None, None)
     usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
     usfm_structure_extractor.text(verse_text_parser_state, "test")
@@ -74,7 +76,8 @@ def test_chapter_and_verse_markers():
                         .build()
                     ]
                 )
-            ]
+            ],
+            1,
         )
     ]
 
@@ -86,6 +89,7 @@ def test_chapter_and_verse_markers():
 
 def test_start_paragraph_marker():
     usfm_structure_extractor = UsfmStructureExtractor()
+    verse_text_parser_state.verse_ref.chapter_num = 1
     usfm_structure_extractor.chapter(verse_text_parser_state, "1", "c", None, None)
     usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
     usfm_structure_extractor.start_para(verse_text_parser_state, "p", False, None)
@@ -104,7 +108,8 @@ def test_start_paragraph_marker():
                         .build()
                     ]
                 )
-            ]
+            ],
+            1,
         )
     ]
 
@@ -116,6 +121,7 @@ def test_start_paragraph_marker():
 
 def test_start_character_marker():
     usfm_structure_extractor = UsfmStructureExtractor()
+    verse_text_parser_state.verse_ref.chapter_num = 1
     usfm_structure_extractor.chapter(verse_text_parser_state, "1", "c", None, None)
     usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
     usfm_structure_extractor.start_char(verse_text_parser_state, "k", False, None)
@@ -134,7 +140,8 @@ def test_start_character_marker():
                         .build()
                     ]
                 )
-            ]
+            ],
+            1,
         )
     ]
 
@@ -146,6 +153,7 @@ def test_start_character_marker():
 
 def test_end_character_marker():
     usfm_structure_extractor = UsfmStructureExtractor()
+    verse_text_parser_state.verse_ref.chapter_num = 1
     usfm_structure_extractor.chapter(verse_text_parser_state, "1", "c", None, None)
     usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
     usfm_structure_extractor.end_char(verse_text_parser_state, "k", None, False)
@@ -164,7 +172,8 @@ def test_end_character_marker():
                         .build()
                     ]
                 )
-            ]
+            ],
+            1,
         )
     ]
 
@@ -176,6 +185,7 @@ def test_end_character_marker():
 
 def test_end_note_marker():
     usfm_structure_extractor = UsfmStructureExtractor()
+    verse_text_parser_state.verse_ref.chapter_num = 1
     usfm_structure_extractor.chapter(verse_text_parser_state, "1", "c", None, None)
     usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
     usfm_structure_extractor.end_note(verse_text_parser_state, "f", False)
@@ -194,7 +204,8 @@ def test_end_note_marker():
                         .build()
                     ]
                 )
-            ]
+            ],
+            1,
         )
     ]
 
@@ -206,6 +217,7 @@ def test_end_note_marker():
 
 def test_end_table_marker():
     usfm_structure_extractor = UsfmStructureExtractor()
+    verse_text_parser_state.verse_ref.chapter_num = 1
     usfm_structure_extractor.chapter(verse_text_parser_state, "1", "c", None, None)
     usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
     usfm_structure_extractor.end_note(verse_text_parser_state, "tr", False)
@@ -224,7 +236,8 @@ def test_end_table_marker():
                         .build()
                     ]
                 )
-            ]
+            ],
+            1,
         )
     ]
 
@@ -236,6 +249,7 @@ def test_end_table_marker():
 
 def test_ref_marker():
     usfm_structure_extractor = UsfmStructureExtractor()
+    verse_text_parser_state.verse_ref.chapter_num = 1
     usfm_structure_extractor.chapter(verse_text_parser_state, "1", "c", None, None)
     usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
     usfm_structure_extractor.end_note(verse_text_parser_state, "x", False)
@@ -254,7 +268,8 @@ def test_ref_marker():
                         .build()
                     ]
                 )
-            ]
+            ],
+            1,
         )
     ]
 
@@ -266,6 +281,7 @@ def test_ref_marker():
 
 def test_sidebar_marker():
     usfm_structure_extractor = UsfmStructureExtractor()
+    verse_text_parser_state.verse_ref.chapter_num = 1
     usfm_structure_extractor.chapter(verse_text_parser_state, "1", "c", None, None)
     usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
     usfm_structure_extractor.end_note(verse_text_parser_state, "esb", False)
@@ -284,7 +300,8 @@ def test_sidebar_marker():
                         .build()
                     ]
                 )
-            ]
+            ],
+            1,
         )
     ]
 
@@ -296,6 +313,7 @@ def test_sidebar_marker():
 
 def test_multiple_verses():
     usfm_structure_extractor = UsfmStructureExtractor()
+    verse_text_parser_state.verse_ref.chapter_num = 1
     usfm_structure_extractor.chapter(verse_text_parser_state, "1", "c", None, None)
     usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
     usfm_structure_extractor.text(verse_text_parser_state, "test")
@@ -323,7 +341,8 @@ def test_multiple_verses():
                         .build()
                     ]
                 ),
-            ]
+            ],
+            1,
         )
     ]
 
@@ -337,9 +356,11 @@ def test_multiple_verses():
 
 def test_multiple_chapters():
     usfm_structure_extractor = UsfmStructureExtractor()
+    verse_text_parser_state.verse_ref.chapter_num = 1
     usfm_structure_extractor.chapter(verse_text_parser_state, "1", "c", None, None)
     usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
     usfm_structure_extractor.text(verse_text_parser_state, "test")
+    verse_text_parser_state.verse_ref.chapter_num = 2
     usfm_structure_extractor.chapter(verse_text_parser_state, "2", "c", None, None)
     usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
     usfm_structure_extractor.text(verse_text_parser_state, "test2")
@@ -356,7 +377,8 @@ def test_multiple_chapters():
                         .build()
                     ]
                 ),
-            ]
+            ],
+            1,
         ),
         Chapter(
             [
@@ -369,7 +391,8 @@ def test_multiple_chapters():
                         .build()
                     ]
                 ),
-            ]
+            ],
+            2,
         ),
     ]
 
@@ -383,6 +406,7 @@ def test_multiple_chapters():
 
 def test_character_marker_in_text():
     usfm_structure_extractor = UsfmStructureExtractor()
+    verse_text_parser_state.verse_ref.chapter_num = 1
     usfm_structure_extractor.chapter(verse_text_parser_state, "1", "c", None, None)
     usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
     usfm_structure_extractor.text(verse_text_parser_state, "test")
@@ -407,7 +431,8 @@ def test_character_marker_in_text():
                         .build(),
                     ]
                 ),
-            ]
+            ],
+            1,
         )
     ]
 
@@ -424,6 +449,7 @@ def test_character_marker_in_text():
 
 def test_empty_text():
     usfm_structure_extractor = UsfmStructureExtractor()
+    verse_text_parser_state.verse_ref.chapter_num = 1
     usfm_structure_extractor.chapter(verse_text_parser_state, "1", "c", None, None)
     usfm_structure_extractor.verse(verse_text_parser_state, "1", "v", None, None)
     usfm_structure_extractor.text(verse_text_parser_state, "test")
@@ -450,7 +476,8 @@ def test_empty_text():
                         .build(),
                     ]
                 ),
-            ]
+            ],
+            1,
         )
     ]
 
@@ -468,6 +495,7 @@ def test_empty_text():
 def assert_chapter_equal(expected_chapters: List[Chapter], actual_chapters: List[Chapter]):
     assert len(expected_chapters) == len(actual_chapters)
     for expected_chapter, actual_chapter in zip(expected_chapters, actual_chapters):
+        assert expected_chapter.chapter_num == actual_chapter.chapter_num
         assert len(expected_chapter.verses) == len(actual_chapter.verses)
         for expected_verse, actual_verse in zip(expected_chapter.verses, actual_chapter.verses):
             assert len(expected_verse._text_segments) == len(actual_verse._text_segments)
