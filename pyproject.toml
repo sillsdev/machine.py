@@ -62,7 +62,7 @@ charset-normalizer = "^2.1.1"
 urllib3 = "<2"
 
 sentencepiece = "^0.2.0"
-sil-thot = "^3.4.9"
+sil-thot = "^3.5.0"
 
 transformers = "4.46.2"
 datasets = "^2.4.0"

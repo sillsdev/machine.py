@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple, Union, overload
+from typing import Callable, List, Optional, Tuple, Union, cast, overload
 
 import thot.alignment as ta
 
@@ -65,12 +65,45 @@ class ThotWordAlignmentModelTrainer(Trainer):
         if isinstance(model_type, str):
             model_type = ThotWordAlignmentModelType[model_type.upper()]
         self._models: List[Tuple[ta.AlignmentModel, int]] = []
+        self._is_eflomal = False
         if model_type is ThotWordAlignmentModelType.FAST_ALIGN:
             fast_align = ta.FastAlignModel()
             fast_align.variational_bayes = parameters.get_variational_bayes(model_type)
             if parameters.fast_align_p0 is not None:
                 fast_align.fast_align_p0 = parameters.fast_align_p0
             self._models.append((fast_align, parameters.get_fast_align_iteration_count(model_type)))
+        elif model_type is ThotWordAlignmentModelType.EFLOMAL:
+            # Eflomal is a single model that runs its own Bayesian IBM1->HMM->fertility cascade.
+            self._is_eflomal = True
+            eflomal = ta.EflomalAlignmentModel()
+            if parameters.eflomal_seed is not None:
+                eflomal.seed = parameters.eflomal_seed
+            if parameters.eflomal_num_samplers is not None:
+                eflomal.num_samplers = parameters.eflomal_num_samplers
+            if parameters.eflomal_deterministic is not None:
+                eflomal.deterministic = parameters.eflomal_deterministic
+            if parameters.eflomal_lex_norm is not None:
+                eflomal.lex_norm = parameters.eflomal_lex_norm
+            if parameters.is_eflomal_schedule_specified:
+                # An explicit schedule turns off the model's automatic (corpus-scaled) schedule.
+                eflomal.set_iterations(
+                    parameters.get_eflomal_ibm1_iteration_count(),
+                    parameters.get_eflomal_hmm_iteration_count(),
+                    parameters.get_eflomal_fertility_iteration_count(),
+                )
+            if parameters.eflomal_lex_alpha is not None:
+                eflomal.alpha_lex = parameters.eflomal_lex_alpha
+            if parameters.eflomal_jump_alpha is not None:
+                eflomal.alpha_jump = parameters.eflomal_jump_alpha
+            if parameters.eflomal_fertility_alpha is not None:
+                eflomal.alpha_fertility = parameters.eflomal_fertility_alpha
+            if parameters.eflomal_p0 is not None:
+                eflomal.p0 = parameters.eflomal_p0
+            if parameters.eflomal_jump_window is not None:
+                eflomal.jump_window = parameters.eflomal_jump_window
+            # The iteration count is resolved from the model after start_training, since the
+            # automatic schedule depends on the corpus size (see train).
+            self._models.append((eflomal, 0))
         else:
             ibm1 = ta.Ibm1AlignmentModel()
             ibm1.variational_bayes = parameters.get_variational_bayes(model_type)
@@ -134,11 +167,22 @@ class ThotWordAlignmentModelTrainer(Trainer):
         progress: Optional[Callable[[ProgressStatus], None]] = None,
         check_canceled: Optional[Callable[[], None]] = None,
     ) -> None:
-        num_steps = sum(iterations + 1 for _, iterations in self._models if iterations > 0) + 1
+        # One step to load the corpus, then for each trained model one step to start training plus
+        # one per training iteration. When the Eflomal model uses its automatic schedule, the
+        # iteration count is derived from the corpus during start_training, so the total step count
+        # is not known up front; progress is reported as indeterminate until it is resolved below.
+        num_steps: Optional[int] = (
+            None if self._is_eflomal else sum(iterations + 1 for _, iterations in self._models if iterations > 0) + 1
+        )
         cur_step = 0
 
-        if progress is not None:
-            progress(ProgressStatus.from_step(cur_step, num_steps))
+        def report() -> None:
+            if progress is not None:
+                progress(
+                    ProgressStatus.from_step(cur_step, num_steps) if num_steps is not None else ProgressStatus(cur_step)
+                )
+
+        report()
 
         if isinstance(self._parallel_corpus, ParallelTextCorpus):
             corpus_count = 0
@@ -156,28 +200,32 @@ class ThotWordAlignmentModelTrainer(Trainer):
         else:
             self._model.read_sentence_pairs(str(self._parallel_corpus[0]), str(self._parallel_corpus[1]))
         cur_step += 1
-        if progress is not None:
-            progress(ProgressStatus.from_step(cur_step, num_steps))
+        report()
         if check_canceled is not None:
             check_canceled()
 
         trained_segment_count = 0
         for model, iteration_count in self._models:
-            if iteration_count == 0:
+            if iteration_count == 0 and not self._is_eflomal:
                 continue
 
             trained_segment_count = model.start_training()
+
+            if self._is_eflomal:
+                # The (possibly automatic) schedule is resolved during start_training; ask the model
+                # how many sweeps to run and finalize the total step count now that it is known.
+                iteration_count = cast(ta.EflomalAlignmentModel, model).scheduled_iterations
+                num_steps = cur_step + iteration_count + 1
+
             cur_step += 1
-            if progress is not None:
-                progress(ProgressStatus.from_step(cur_step, num_steps))
+            report()
             if check_canceled is not None:
                 check_canceled()
 
             for _ in range(iteration_count):
                 model.train()
                 cur_step += 1
-                if progress is not None:
-                    progress(ProgressStatus.from_step(cur_step, num_steps))
+                report()
                 if check_canceled is not None:
                     check_canceled()
             model.end_training()
