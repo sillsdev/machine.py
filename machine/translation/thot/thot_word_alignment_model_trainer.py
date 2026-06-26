@@ -101,9 +101,17 @@ class ThotWordAlignmentModelTrainer(Trainer):
                 eflomal.p0 = parameters.eflomal_p0
             if parameters.eflomal_jump_window is not None:
                 eflomal.jump_window = parameters.eflomal_jump_window
-            # The iteration count is resolved from the model after start_training, since the
-            # automatic schedule depends on the corpus size (see train).
-            self._models.append((eflomal, 0))
+            # With an explicit schedule the total sweep count is known up front; with the
+            # automatic (corpus-scaled) schedule it is 0 here and resolved from the model after
+            # start_training (see train).
+            eflomal_iteration_count = (
+                parameters.get_eflomal_ibm1_iteration_count()
+                + parameters.get_eflomal_hmm_iteration_count()
+                + parameters.get_eflomal_fertility_iteration_count()
+                if parameters.is_eflomal_schedule_specified
+                else 0
+            )
+            self._models.append((eflomal, eflomal_iteration_count))
         else:
             ibm1 = ta.Ibm1AlignmentModel()
             ibm1.variational_bayes = parameters.get_variational_bayes(model_type)
@@ -169,10 +177,14 @@ class ThotWordAlignmentModelTrainer(Trainer):
     ) -> None:
         # One step to load the corpus, then for each trained model one step to start training plus
         # one per training iteration. When the Eflomal model uses its automatic schedule, the
-        # iteration count is derived from the corpus during start_training, so the total step count
-        # is not known up front; progress is reported as indeterminate until it is resolved below.
+        # iteration count is derived from the corpus during start_training (stored as 0 until then),
+        # so the total step count is not known up front; progress is reported as indeterminate until
+        # it is resolved below.
+        iteration_count_known = not self._is_eflomal or self._models[0][1] > 0
         num_steps: Optional[int] = (
-            None if self._is_eflomal else sum(iterations + 1 for _, iterations in self._models if iterations > 0) + 1
+            sum(iterations + 1 for _, iterations in self._models if iterations > 0) + 1
+            if iteration_count_known
+            else None
         )
         cur_step = 0
 
@@ -211,9 +223,9 @@ class ThotWordAlignmentModelTrainer(Trainer):
 
             trained_segment_count = model.start_training()
 
-            if self._is_eflomal:
-                # The (possibly automatic) schedule is resolved during start_training; ask the model
-                # how many sweeps to run and finalize the total step count now that it is known.
+            if self._is_eflomal and iteration_count == 0:
+                # The automatic schedule is resolved during start_training; ask the model how many
+                # sweeps to run and finalize the (until now indeterminate) total step count.
                 iteration_count = cast(ta.EflomalAlignmentModel, model).scheduled_iterations
                 num_steps = cur_step + iteration_count + 1
 
