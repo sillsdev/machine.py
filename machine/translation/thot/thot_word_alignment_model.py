@@ -152,6 +152,8 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
             return ta.HmmAlignmentModel()
         elif self.type is ThotWordAlignmentModelType.FAST_ALIGN:
             return ta.FastAlignModel()
+        elif self.type is ThotWordAlignmentModelType.EFLOMAL:
+            return ta.EflomalAlignmentModel()
         else:
             raise ValueError("The model type is invalid.")
 

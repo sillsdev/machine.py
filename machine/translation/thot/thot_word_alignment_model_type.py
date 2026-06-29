@@ -8,3 +8,4 @@ class ThotWordAlignmentModelType(IntEnum):
     HMM = auto()
     IBM3 = auto()
     IBM4 = auto()
+    EFLOMAL = auto()

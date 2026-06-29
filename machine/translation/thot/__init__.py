@@ -3,8 +3,10 @@ from ...utils.packages import is_thot_available
 if not is_thot_available():
     raise RuntimeError('sil-thot is not installed. Install sil-machine with the "thot" extra.')
 
+from .thot_eflomal_word_alignment_model import ThotEflomalWordAlignmentModel
 from .thot_fast_align_word_alignment_model import ThotFastAlignWordAlignmentModel
 from .thot_hmm_word_alignment_model import ThotHmmWordAlignmentModel
+from .thot_hmm_word_alignment_model_base import ThotHmmWordAlignmentModelBase
 from .thot_ibm1_word_alignment_model import ThotIbm1WordAlignmentModel
 from .thot_ibm2_word_alignment_model import ThotIbm2WordAlignmentModel
 from .thot_ibm3_word_alignment_model import ThotIbm3WordAlignmentModel
@@ -25,8 +27,10 @@ from .thot_word_alignment_parameters import ThotWordAlignmentParameters
 __all__ = [
     "create_thot_symmetrized_word_alignment_model",
     "create_thot_word_alignment_model",
+    "ThotEflomalWordAlignmentModel",
     "ThotFastAlignWordAlignmentModel",
     "ThotHmmWordAlignmentModel",
+    "ThotHmmWordAlignmentModelBase",
     "ThotIbm1WordAlignmentModel",
     "ThotIbm2WordAlignmentModel",
     "ThotIbm3WordAlignmentModel",

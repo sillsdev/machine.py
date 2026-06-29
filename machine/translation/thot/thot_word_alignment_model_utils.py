@@ -1,6 +1,7 @@
 from typing import Optional, Union
 
 from ...utils.typeshed import StrPath
+from .thot_eflomal_word_alignment_model import ThotEflomalWordAlignmentModel
 from .thot_fast_align_word_alignment_model import ThotFastAlignWordAlignmentModel
 from .thot_hmm_word_alignment_model import ThotHmmWordAlignmentModel
 from .thot_ibm1_word_alignment_model import ThotIbm1WordAlignmentModel
@@ -29,6 +30,8 @@ def create_thot_word_alignment_model(
         return ThotIbm3WordAlignmentModel(prefix_filename)
     if type == ThotWordAlignmentModelType.IBM4:
         return ThotIbm4WordAlignmentModel(prefix_filename)
+    if type == ThotWordAlignmentModelType.EFLOMAL:
+        return ThotEflomalWordAlignmentModel(prefix_filename)
     raise ValueError("The word alignment model type is unknown.")
 
 
