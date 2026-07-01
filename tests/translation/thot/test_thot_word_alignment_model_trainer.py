@@ -1,15 +1,19 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from testutils.thot_test_helpers import create_test_parallel_corpus
 from translation.thot.thot_model_trainer_helper import get_emtpy_parallel_corpus, get_parallel_corpus
 
-from machine.corpora.parallel_text_corpus import ParallelTextCorpus
+from machine.corpora import ParallelTextCorpus
 from machine.tokenization import StringTokenizer, WhitespaceTokenizer
-from machine.translation.symmetrized_word_alignment_model_trainer import SymmetrizedWordAlignmentModelTrainer
-from machine.translation.thot import ThotWordAlignmentModelTrainer
-from machine.translation.thot.thot_symmetrized_word_alignment_model import ThotSymmetrizedWordAlignmentModel
-from machine.translation.thot.thot_word_alignment_model_utils import create_thot_word_alignment_model
-from machine.translation.word_alignment_matrix import WordAlignmentMatrix
+from machine.translation import SymmetrizedWordAlignmentModelTrainer, WordAlignmentMatrix
+from machine.translation.thot import (
+    ThotFastAlignWordAlignmentModel,
+    ThotSymmetrizedWordAlignmentModel,
+    ThotWordAlignmentModelTrainer,
+    create_thot_symmetrized_word_alignment_model,
+    create_thot_word_alignment_model,
+)
 
 
 def train_model(
@@ -78,6 +82,39 @@ def test_train_empty_corpus() -> None:
             assert matrix == WordAlignmentMatrix.from_word_pairs(5, 6, {(0, 0)})
 
 
-if __name__ == "__main__":
-    test_train_non_empty_corpus()
-    test_train_empty_corpus()
+def test_emit_training_alignments_single_direction() -> None:
+    corpus = create_test_parallel_corpus()
+    row = next(iter(corpus.get_rows()))
+    model = ThotFastAlignWordAlignmentModel()
+    model.emit_training_alignments = True
+    with model.create_trainer(corpus) as trainer:
+        trainer.train()
+        trainer.save()
+    assert model.training_alignment_count == 8
+    # For a deterministic model, the retained training alignment matches the inference alignment,
+    # and it survives the trainer being closed.
+    assert model.get_training_alignment(0) == model.align(row.source_segment, row.target_segment)
+
+
+def test_emit_training_alignments_symmetrized() -> None:
+    corpus = create_test_parallel_corpus()
+    row = next(iter(corpus.get_rows()))
+    model = create_thot_symmetrized_word_alignment_model("fast_align")
+    model.emit_training_alignments = True
+    with model.create_trainer(corpus) as trainer:
+        trainer.train()
+        trainer.save()
+    assert model.training_alignment_count == 8
+    # The C++ symmetrized transductive alignment matches the C++ symmetrized inference alignment.
+    assert model.get_training_alignment(0) == model.align(row.source_segment, row.target_segment)
+
+
+def test_emit_training_alignments_disabled() -> None:
+    corpus = create_test_parallel_corpus()
+    model = ThotFastAlignWordAlignmentModel()
+    with model.create_trainer(corpus) as trainer:
+        trainer.train()
+        trainer.save()
+    # When emission is not enabled, retrieval returns a degenerate result rather than raising.
+    alignment = model.get_training_alignment(0)
+    assert isinstance(alignment, WordAlignmentMatrix)
