@@ -29,6 +29,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
         source_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
         target_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
         max_corpus_count: int = sys.maxsize,
+        emit_training_alignments: bool = False,
     ) -> None: ...
 
     @overload
@@ -40,6 +41,8 @@ class ThotWordAlignmentModelTrainer(Trainer):
         parameters: ThotWordAlignmentParameters = ThotWordAlignmentParameters(),
         source_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
         target_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
+        max_corpus_count: int = sys.maxsize,
+        emit_training_alignments: bool = False,
     ) -> None: ...
 
     def __init__(
@@ -51,6 +54,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
         source_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
         target_tokenizer: Tokenizer[str, int, str] = WHITESPACE_TOKENIZER,
         max_corpus_count: int = sys.maxsize,
+        emit_training_alignments: bool = False,
     ) -> None:
         if isinstance(corpus, tuple) and max_corpus_count != sys.maxsize:
             raise ValueError("max_corpus_count cannot be set when corpus filenames are provided.")
@@ -60,6 +64,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
         self._max_corpus_count = max_corpus_count
         self.source_tokenizer = source_tokenizer
         self.target_tokenizer = target_tokenizer
+        self.emit_training_alignments = emit_training_alignments
         self._stats = TrainStats()
 
         if isinstance(model_type, str):
@@ -215,6 +220,12 @@ class ThotWordAlignmentModelTrainer(Trainer):
         report()
         if check_canceled is not None:
             check_canceled()
+
+        if self.emit_training_alignments:
+            # Retain the alignments computed during training so that they can be returned without a
+            # separate inference pass. Only the final (most refined) model's alignments are needed,
+            # since that is the model used for inference.
+            self._model.emit_training_alignments = True
 
         trained_segment_count = 0
         for model, iteration_count in self._models:
