@@ -18,9 +18,10 @@ from machine.corpora import (
     StandardParallelTextCorpus,
     UpdateUsfmRow,
     UpdateUsfmTextBehavior,
-    ZipParatextProjectVersificationErrorDetector,
+    ZipUsfmVersificationAnalyzer,
 )
 from machine.punctuation_analysis import ZipParatextProjectQuoteConventionDetector
+from machine.scripture import ALL_BOOK_IDS
 
 
 @pytest.mark.skip(reason="This is for manual testing only. Remove this decorator to run the test.")
@@ -68,6 +69,6 @@ def test_analyze_corpora_quote_conventions():
 @pytest.mark.skip(reason="This is for manual testing only. Remove this decorator to run the test.")
 def test_validate_usfm_versification():
     archive = zipfile.ZipFile(USFM_SOURCE_PROJECT_ZIP_PATH, "r")
-    versification_error_detector = ZipParatextProjectVersificationErrorDetector(archive)
-    errors = versification_error_detector.get_usfm_versification_errors()
-    assert len(errors) == 0
+    versification_analyzer = ZipUsfmVersificationAnalyzer(archive)
+    analysis = versification_analyzer.analyze_usfm_versification({book_id: None for book_id in ALL_BOOK_IDS})
+    assert len(analysis.diagnostics) == 0

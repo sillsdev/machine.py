@@ -1,14 +1,14 @@
-from typing import List, Optional, Set, Union
+from typing import Dict, Optional, Set, Union
 
 from ..scripture.canon import book_id_to_number
 from .paratext_project_file_handler import ParatextProjectFileHandler
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
 from .usfm_parser import parse_usfm
-from .usfm_versification_error_detector import UsfmVersificationError, UsfmVersificationErrorDetector
+from .usfm_versification_analyzer_handler import UsfmVersificationAnalysis, UsfmVersificationAnalyzerHandler
 
 
-class ParatextProjectVersificationErrorDetectorBase:
+class UsfmVersificationAnalyzerBase:
     def __init__(
         self,
         paratext_project_file_handler: ParatextProjectFileHandler,
@@ -20,10 +20,17 @@ class ParatextProjectVersificationErrorDetectorBase:
         else:
             self._settings = settings
 
-    def get_usfm_versification_errors(
-        self, handler: Optional[UsfmVersificationErrorDetector] = None, books: Optional[Set[int]] = None
-    ) -> List[UsfmVersificationError]:
-        handler = handler or UsfmVersificationErrorDetector(self._settings)
+    def analyze_usfm_versification(
+        self,
+        book_ids_and_chapters: Optional[Dict[str, Optional[Set[int]]]] = None,
+        handler: Optional[UsfmVersificationAnalyzerHandler] = None,
+    ) -> UsfmVersificationAnalysis:
+        book_nums_and_chapters = (
+            {book_id_to_number(book_id): chapters for book_id, chapters in book_ids_and_chapters.items()}
+            if book_ids_and_chapters is not None
+            else None
+        )
+        handler = handler or UsfmVersificationAnalyzerHandler(self._settings, book_nums_and_chapters)
         for book_id in self._settings.get_all_scripture_book_ids():
 
             file_name = self._settings.get_book_file_name(book_id)
@@ -31,7 +38,7 @@ class ParatextProjectVersificationErrorDetectorBase:
             if not self._paratext_project_file_handler.exists(file_name):
                 continue
 
-            if books is not None and not book_id_to_number(book_id) in books:
+            if book_nums_and_chapters is not None and book_id_to_number(book_id) not in book_nums_and_chapters:
                 continue
 
             with self._paratext_project_file_handler.open(file_name) as sfm_file:
@@ -45,4 +52,4 @@ class ParatextProjectVersificationErrorDetectorBase:
                     f". Error: '{e}'"
                 )
                 raise RuntimeError(error_message) from e
-        return handler.errors
+        return handler.get_analysis()
