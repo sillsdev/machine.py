@@ -1,7 +1,6 @@
 from typing import Iterable, Optional
 
 import pytest
-import thot.alignment as ta
 from testutils.thot_test_helpers import create_test_parallel_corpus
 
 from machine.corpora import (
@@ -70,10 +69,6 @@ def test_word_align_corpus_transductive_text_ids_keep_index_in_sync() -> None:
     assert text2_actual == text2_expected
 
 
-@pytest.mark.skipif(
-    not hasattr(ta, "EflomalAlignmentModel"),
-    reason="Eflomal requires a Thot build that includes EflomalAlignmentModel",
-)
 def test_word_align_corpus_transductive_eflomal() -> None:
     rows = list(word_align_corpus(create_test_parallel_corpus(), aligner="eflomal").get_rows())
     assert len(rows) == 8
