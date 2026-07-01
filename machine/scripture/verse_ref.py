@@ -876,7 +876,9 @@ class Versification:
         vref.versification = self
         return True
 
-    def all_included_verses(self) -> Generator[VerseRef, None, None]:
+    def all_included_verses(
+        self, only_chapters: Optional[Dict[int, Optional[Set[int]]]] = None
+    ) -> Generator[VerseRef, None, None]:
         for book, chapters in enumerate(self.book_list):
             book = book + 1
             if not is_canonical(book) or (book > 86 and book < 93):
@@ -885,6 +887,12 @@ class Versification:
                 chapter = chapter + 1
                 first_verse = self.first_included_verse(book, chapter)
                 yielded_first_verse = False
+                if only_chapters is not None:
+                    if book not in only_chapters:
+                        continue
+                    chapters_filter = only_chapters[book]
+                    if chapters_filter is not None and chapter not in chapters_filter:
+                        continue
                 for verse_number in range(2, last_verse + 1):
                     verse = VerseRef(book=book, chapter=chapter, verse=verse_number, versification=self)
                     if self.is_excluded(verse.bbbcccvvv):

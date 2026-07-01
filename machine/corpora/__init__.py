@@ -11,7 +11,7 @@ from .file_paratext_project_file_handler import FileParatextProjectFileHandler
 from .file_paratext_project_settings_parser import FileParatextProjectSettingsParser
 from .file_paratext_project_terms_parser import FileParatextProjectTermsParser
 from .file_paratext_project_text_updater import FileParatextProjectTextUpdater
-from .file_paratext_project_versification_error_detector import FileParatextProjectVersificationErrorDetector
+from .file_usfm_versification_analyzer import FileUsfmVersificationAnalyzer
 from .flatten import flatten
 from .memory_alignment_collection import MemoryAlignmentCollection
 from .memory_stream_container import MemoryStreamContainer
@@ -28,7 +28,6 @@ from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
 from .paratext_project_terms_parser_base import KeyTerm, ParatextProjectTermsParserBase
 from .paratext_project_text_updater_base import ParatextProjectTextUpdaterBase
-from .paratext_project_versification_error_detector_base import ParatextProjectVersificationErrorDetectorBase
 from .paratext_text_corpus import ParatextTextCorpus
 from .place_markers_usfm_update_block_handler import PlaceMarkersAlignmentInfo, PlaceMarkersUsfmUpdateBlockHandler
 from .scripture_element import ScriptureElement
@@ -78,10 +77,12 @@ from .usfm_tokenizer import RtlReferenceOrder, UsfmTokenizer
 from .usfm_update_block import UsfmUpdateBlock
 from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
 from .usfm_update_block_handler import UsfmUpdateBlockHandler
-from .usfm_versification_error_detector import (
-    UsfmVersificationError,
-    UsfmVersificationErrorDetector,
-    UsfmVersificationErrorType,
+from .usfm_versification_analyzer_base import UsfmVersificationAnalyzerBase
+from .usfm_versification_analyzer_handler import (
+    UsfmVersificationAnalysis,
+    UsfmVersificationAnalyzerHandler,
+    UsfmVersificationDiagnostic,
+    UsfmVersificationDiagnosticType,
 )
 from .usx_file_alignment_collection import UsxFileAlignmentCollection
 from .usx_file_alignment_corpus import UsxFileAlignmentCorpus
@@ -93,7 +94,7 @@ from .zip_paratext_project_file_handler import ZipParatextProjectFileHandler
 from .zip_paratext_project_settings_parser import ZipParatextProjectSettingsParser
 from .zip_paratext_project_terms_parser import ZipParatextProjectTermsParser
 from .zip_paratext_project_text_updater import ZipParatextProjectTextUpdater
-from .zip_paratext_project_versification_detector import ZipParatextProjectVersificationErrorDetector
+from .zip_usfm_versification_analyzer import ZipUsfmVersificationAnalyzer
 
 __all__ = [
     "AlignedWordPair",
@@ -114,7 +115,7 @@ __all__ = [
     "FileParatextProjectSettingsParser",
     "FileParatextProjectTermsParser",
     "FileParatextProjectTextUpdater",
-    "FileParatextProjectVersificationErrorDetector",
+    "FileUsfmVersificationAnalyzer",
     "flatten",
     "is_scripture",
     "KeyTerm",
@@ -139,7 +140,6 @@ __all__ = [
     "ParatextProjectSettingsParserBase",
     "ParatextProjectTermsParserBase",
     "ParatextProjectTextUpdaterBase",
-    "ParatextProjectVersificationErrorDetectorBase",
     "ParatextTextCorpus",
     "parse_usfm",
     "PlaceMarkersAlignmentInfo",
@@ -187,9 +187,11 @@ __all__ = [
     "UsfmUpdateBlockElement",
     "UsfmUpdateBlockElementType",
     "UsfmUpdateBlockHandler",
-    "UsfmVersificationError",
-    "UsfmVersificationErrorDetector",
-    "UsfmVersificationErrorType",
+    "UsfmVersificationAnalysis",
+    "UsfmVersificationAnalyzerBase",
+    "UsfmVersificationAnalyzerHandler",
+    "UsfmVersificationDiagnostic",
+    "UsfmVersificationDiagnosticType",
     "UsxFileAlignmentCollection",
     "UsxFileAlignmentCorpus",
     "UsxFileText",
@@ -200,5 +202,5 @@ __all__ = [
     "ZipParatextProjectSettingsParser",
     "ZipParatextProjectTermsParser",
     "ZipParatextProjectTextUpdater",
-    "ZipParatextProjectVersificationErrorDetector",
+    "ZipUsfmVersificationAnalyzer",
 ]

@@ -109,6 +109,12 @@ def test_all_included_verses() -> None:
     assert len(russian_orthodox_verses) == 37280
     assert russian_orthodox_verses[-1].bbbcccvvv == 83001015
 
+    original_verses_genesis = list(ORIGINAL_VERSIFICATION.all_included_verses({1: None}))
+    assert len(original_verses_genesis) == 1533
+
+    original_verses_genesis_chapter_one = list(ORIGINAL_VERSIFICATION.all_included_verses({1: {1}}))
+    assert len(original_verses_genesis_chapter_one) == 31
+
 
 def test_has_cross_book_mappings() -> None:
     assert not ORIGINAL_VERSIFICATION.has_cross_book_mappings()
