@@ -1,6 +1,8 @@
+import binascii
 import json
 import logging
 import os
+from base64 import b64decode
 from datetime import datetime, timezone
 from typing import Callable, Optional, Union, cast
 
@@ -123,8 +125,16 @@ def update_settings(settings: Settings, args: dict, task: Optional[Task], logger
     settings.update(args)
     settings.model_type = cast(str, settings.model_type).lower()
     if "build_options" in settings:
+        # If build_options are base64 encoded, decode them
+        build_options_str = cast(str, settings.build_options)
         try:
-            build_options = json.loads(cast(str, settings.build_options))
+            build_options_decoded = b64decode(build_options_str, validate=True)
+            build_options_str = build_options_decoded.decode("utf-8")
+        except (binascii.Error, ValueError, UnicodeDecodeError):
+            pass
+        # Load the build options JSON from the string
+        try:
+            build_options = json.loads(build_options_str)
         except ValueError as e:
             raise ValueError("Build options could not be parsed: Invalid JSON") from e
         except TypeError as e:
