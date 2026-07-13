@@ -139,3 +139,6 @@ out/
 
 # omit IDE data
 .idea/
+
+# Ignore Poetry plugins
+.poetry/
