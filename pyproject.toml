@@ -53,7 +53,7 @@ classifiers = [
 packages = [{ include = "machine" }]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.14"
+python = ">=3.10,<3.15"
 regex = ">=2021.7.6"
 numpy = "^2.2.6"
 sortedcontainers = "^2.4.0"
@@ -64,8 +64,8 @@ urllib3 = "<2"
 sentencepiece = "^0.2.0"
 sil-thot = "^3.5.0"
 
-transformers = "4.46.2"
-datasets = "^2.4.0"
+transformers = "4.47.1"
+datasets = "^4.1.0"
 sacremoses = "^0.0.53"
 
 clearml = { extras = ["s3"], version = "^1.13.1" }
@@ -90,7 +90,7 @@ pep8-naming = "^0.14.1"
 
 [tool.poetry.group.gpu.dependencies]
 torch = { version = "^2.4", markers = "sys_platform == 'win32' or sys_platform == 'linux'" }
-accelerate = { version = "^0.26.0", markers = "sys_platform == 'win32' or sys_platform == 'linux'" }
+accelerate = { version = "^1.0", markers = "sys_platform == 'win32' or sys_platform == 'linux'" }
 
 
 [tool.poetry.extras]
