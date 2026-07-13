@@ -74,7 +74,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
         ):
             self._pipeline_kwargs["prefix"] = f"translate {src_lang} to {tgt_lang}: "
         else:
-            additional_special_tokens = self._tokenizer.additional_special_tokens
+            additional_special_tokens = cast(list[str], self._tokenizer.additional_special_tokens or [])
             if isinstance(self._tokenizer, M2M100Tokenizer):
                 src_lang_token = self._tokenizer.lang_code_to_token.get(src_lang) if src_lang is not None else None
                 tgt_lang_token = self._tokenizer.lang_code_to_token.get(tgt_lang) if tgt_lang is not None else None
