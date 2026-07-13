@@ -42,6 +42,7 @@
 				"editor.formatOnSave": true,
 				"editor.formatOnType": true,
 				"isort.args": [
+					"--gitignore",
 					"--profile",
 					"black"
 				]

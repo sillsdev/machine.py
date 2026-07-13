@@ -2,24 +2,11 @@
 line-length = 120
 target-version = ['py310']
 include = '\.pyi?$'
-exclude = '''
-/(
-    \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-)/
-'''
 
 [tool.isort]
 profile = "black"
 line_length = 120
+skip_gitignore = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -90,9 +77,6 @@ pep8-naming = "^0.14.1"
 [tool.poetry.group.gpu.dependencies]
 torch = { version = "^2.4", markers = "sys_platform == 'win32' or sys_platform == 'linux'" }
 accelerate = { version = "^1.0", markers = "sys_platform == 'win32' or sys_platform == 'linux'" }
-
-[tool.poetry.requires-plugins]
-poetry-plugin-export = ">=1.10"
 
 [project.optional-dependencies]
 sentencepiece = ["sentencepiece"]
