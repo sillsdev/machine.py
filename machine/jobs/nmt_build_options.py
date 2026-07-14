@@ -59,3 +59,4 @@ class NmtBuildOptions(BaseModel):
     generate_params: GenerateParams | None = None
     tokenizer: TokenizerConfig | None = None
     attn_implementation: str | None = None
+    max_steps: int | None = None
