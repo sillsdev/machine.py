@@ -32,7 +32,7 @@ class TokenizerConfig(BaseModel):
 
 class NmtBuildOptions(BaseModel):
     align_pretranslations: bool | None = None
-    tags: list[str] | None = None
+    tags: list[str] | str | None = None
     use_key_terms: bool | None = None
     parent_model_name: str | None = None
     train_params: TrainParams | None = None

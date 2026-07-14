@@ -8,6 +8,6 @@ class ThotAlign(BaseModel):
 
 
 class WordAlignmentBuildOptions(BaseModel):
-    tags: list[str] | None = None
+    tags: list[str] | str | None = None
     use_key_terms: bool | None = None
     thot_align: ThotAlign | None = None
