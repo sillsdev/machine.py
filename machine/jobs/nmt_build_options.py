@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -54,7 +56,14 @@ class NmtBuildOptions(BaseModel):
     align_pretranslations: bool | None = None
     tags: list[str] | str | None = None
     use_key_terms: bool | None = None
-    parent_model_name: str | None = None
+    parent_model_name: (
+        Literal[
+            "facebook/nllb-200-distilled-1.3B",
+            "facebook/nllb-200-distilled-600M",
+            "hf-internal-testing/tiny-random-nllb",
+        ]
+        | None
+    ) = None
     train_params: TrainParams | None = None
     generate_params: GenerateParams | None = None
     tokenizer: TokenizerConfig | None = None
