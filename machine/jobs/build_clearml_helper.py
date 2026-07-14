@@ -145,7 +145,7 @@ def update_settings(settings: Settings, args: dict, task: Optional[Task], logger
         try:
             model.model_validate(build_options)
         except ValidationError as e:
-            raise ValidationError(f"Invalid build options: {e}") from e
+            raise ValueError(f"Invalid build options: {e}") from e
         settings.update({settings.model_type: build_options})
         if "align_pretranslations" in build_options:
             settings.update({"align_pretranslations": build_options["align_pretranslations"]})
