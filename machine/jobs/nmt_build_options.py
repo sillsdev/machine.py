@@ -1,7 +1,12 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class TrainParams(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        strict=True,
+    )
+
     do_train: bool | None = None
     optim: str | None = None
     warmup_steps: int | None = None
@@ -19,6 +24,11 @@ class TrainParams(BaseModel):
 
 
 class GenerateParams(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        strict=True,
+    )
+
     device: int | None = None
     num_beams: int | None = 2
     batch_size: int | None = None
@@ -26,11 +36,21 @@ class GenerateParams(BaseModel):
 
 
 class TokenizerConfig(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        strict=True,
+    )
+
     add_unk_src_tokens: bool | None = None
     add_unk_trg_tokens: bool | None = None
 
 
 class NmtBuildOptions(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        strict=True,
+    )
+
     align_pretranslations: bool | None = None
     tags: list[str] | str | None = None
     use_key_terms: bool | None = None
