@@ -7,6 +7,6 @@ class ThotMt(BaseModel):
 
 
 class SmtBuildOptions(BaseModel):
-    tags: list[str] | None = None
+    tags: list[str] | str | None = None
     use_key_terms: bool | None = None
     thot_mt: ThotMt | None = None
