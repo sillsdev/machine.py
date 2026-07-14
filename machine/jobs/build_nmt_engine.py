@@ -8,6 +8,7 @@ from ..utils.canceled_error import CanceledError
 from ..utils.progress_status import ProgressStatus
 from .build_clearml_helper import report_clearml_progress, update_settings
 from .config import SETTINGS
+from .nmt_build_options import NmtBuildOptions
 from .nmt_engine_build_job import NmtEngineBuildJob
 from .nmt_model_factory import NmtModelFactory
 from .shared_file_service_factory import SharedFileServiceType
@@ -45,7 +46,7 @@ def run(args: dict) -> None:
 
     try:
         logger.info("NMT Engine Build Job started")
-        update_settings(SETTINGS, args, task, logger)
+        update_settings(SETTINGS, args, task, logger, NmtBuildOptions)
 
         translation_file_service = TranslationFileService(SharedFileServiceType.CLEARML, SETTINGS)
         nmt_model_factory: NmtModelFactory
