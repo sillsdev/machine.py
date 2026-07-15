@@ -23,6 +23,7 @@ from .symmetrized_word_aligner import SymmetrizedWordAligner
 from .symmetrized_word_alignment_model import SymmetrizedWordAlignmentModel
 from .symmetrized_word_alignment_model_trainer import SymmetrizedWordAlignmentModelTrainer
 from .trainer import Trainer, TrainStats
+from .transductive_word_alignment_model import TransductiveWordAlignmentModel
 from .translation_constants import MAX_SEGMENT_LENGTH
 from .translation_engine import TranslationEngine
 from .translation_model import TranslationModel
@@ -69,6 +70,7 @@ __all__ = [
     "SymmetrizedWordAlignmentModelTrainer",
     "Trainer",
     "TrainStats",
+    "TransductiveWordAlignmentModel",
     "translate_corpus",
     "TranslationEngine",
     "TranslationModel",

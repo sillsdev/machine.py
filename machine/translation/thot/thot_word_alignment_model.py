@@ -10,6 +10,7 @@ import thot.alignment as ta
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
 from ...utils.typeshed import StrPath
 from ..ibm1_word_alignment_model import Ibm1WordAlignmentModel
+from ..transductive_word_alignment_model import TransductiveWordAlignmentModel
 from ..word_alignment_matrix import WordAlignmentMatrix
 from ..word_vocabulary import WordVocabulary
 from .thot_utils import batch, escape_token, escape_tokens, unescape_token
@@ -21,7 +22,7 @@ _SPECIAL_SYMBOL_INDICES = {0, 1, 2}
 _MAX_BATCH_SIZE = 10240
 
 
-class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
+class ThotWordAlignmentModel(Ibm1WordAlignmentModel, TransductiveWordAlignmentModel):
     def __init__(self, prefix_filename: Optional[StrPath] = None, create_new: bool = False) -> None:
         self._set_model(self._create_model())
         if prefix_filename is not None:
@@ -33,6 +34,7 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
         else:
             self._prefix_filename = None
         self.parameters = ThotWordAlignmentParameters()
+        self.emit_training_alignments = False
 
     @property
     def source_words(self) -> WordVocabulary:
@@ -93,6 +95,14 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel):
             for _, matrix in alignments:
                 results.append(WordAlignmentMatrix(matrix.to_numpy()))
         return results
+
+    @property
+    def training_alignment_count(self) -> int:
+        return self._model.num_sentence_pairs
+
+    def get_training_alignment(self, n: int) -> WordAlignmentMatrix:
+        _, matrix = self._model.get_training_alignment(n)
+        return WordAlignmentMatrix(matrix.to_numpy())
 
     def get_translation_score(
         self, source_word: Optional[Union[str, int]], target_word: Optional[Union[str, int]]
@@ -199,7 +209,13 @@ class _Trainer(ThotWordAlignmentModelTrainer):
     def __init__(
         self, model: ThotWordAlignmentModel, corpus: ParallelTextCorpus, prefix_filename: Optional[StrPath]
     ) -> None:
-        super().__init__(model.type, corpus, prefix_filename, model.parameters)
+        super().__init__(
+            model.type,
+            corpus,
+            prefix_filename,
+            model.parameters,
+            emit_training_alignments=model.emit_training_alignments,
+        )
         self._machine_model = model
 
     def save(self) -> None:

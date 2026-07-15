@@ -5,6 +5,7 @@ from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from ..corpora.parallel_text_row import ParallelTextRow
 from ..utils.progress_status import ProgressStatus
 from .symmetrization_heuristic import SymmetrizationHeuristic
+from .transductive_word_alignment_model import TransductiveWordAlignmentModel
 from .translation_engine import TranslationEngine
 from .word_aligner import WordAligner
 from .word_alignment_matrix import WordAlignmentMatrix
@@ -23,11 +24,16 @@ def word_align_corpus(
 
         model = create_thot_symmetrized_word_alignment_model(aligner)
         model.heuristic = symmetrization_heuristic
+        # Retain the alignments computed during training so that the corpus can be aligned
+        # without a separate, potentially expensive, inference pass.
+        model.emit_training_alignments = True
         with model.create_trainer(corpus) as trainer:
             trainer.train(progress)
             trainer.save()
         aligner = model
 
+    if isinstance(aligner, TransductiveWordAlignmentModel):
+        return _TransductiveWordAlignParallelTextCorpus(corpus, aligner)
     return _WordAlignParallelTextCorpus(corpus, aligner, batch_size)
 
 
@@ -65,6 +71,38 @@ class _WordAlignParallelTextCorpus(ParallelTextCorpus):
                         )
                     row.aligned_word_pairs = word_pairs
                     yield row
+
+
+class _TransductiveWordAlignParallelTextCorpus(ParallelTextCorpus):
+    def __init__(self, corpus: ParallelTextCorpus, model: TransductiveWordAlignmentModel) -> None:
+        self._corpus = corpus
+        self._model = model
+
+    def is_source_tokenized(self) -> bool:
+        return self._corpus.is_source_tokenized
+
+    def is_target_tokenized(self) -> bool:
+        return self._corpus.is_target_tokenized
+
+    def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[ParallelTextRow, None, None]:
+        # The training alignments are keyed by the order in which the sentence pairs were added
+        # during training, so the full corpus must be iterated to keep the index in sync; rows that
+        # are not in the requested texts are skipped rather than filtered out of the enumeration.
+        text_id_set = None if text_ids is None else set(text_ids)
+        with self._corpus.get_rows() as rows:
+            for index, row in enumerate(rows):
+                if text_id_set is not None and row.text_id not in text_id_set:
+                    continue
+                alignment = self._model.get_training_alignment(index)
+                known_alignment = WordAlignmentMatrix.from_parallel_text_row(row)
+                if known_alignment is not None:
+                    known_alignment.priority_symmetrize_with(alignment)
+                    alignment = known_alignment
+                word_pairs = alignment.to_aligned_word_pairs()
+                if isinstance(self._model, WordAlignmentModel):
+                    self._model.compute_aligned_word_pair_scores(row.source_segment, row.target_segment, word_pairs)
+                row.aligned_word_pairs = word_pairs
+                yield row
 
 
 class _TranslateParallelTextCorpus(ParallelTextCorpus):
