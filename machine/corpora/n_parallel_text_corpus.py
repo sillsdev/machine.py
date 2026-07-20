@@ -402,9 +402,9 @@ def default_row_ref_comparer(x: Any, y: Any) -> int:
     # Do not use the default comparer for ScriptureRef, since we want to ignore segments
     if isinstance(x, ScriptureRef) and isinstance(y, ScriptureRef):
         return x.compare_to(y, False)
-    if x is None and y is not None:
-        return 1
-    if x is not None and y is None:
+    if x is None:
+        return 0 if y is None else 1
+    if y is None:
         return -1
     if x == y:
         return 0

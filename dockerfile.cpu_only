@@ -1,7 +1,6 @@
-# syntax=docker/dockerfile:1.7-labs
+# syntax=docker/dockerfile:1
 ARG PYTHON_VERSION=3.12
-ARG UBUNTU_VERSION=noble
-ARG POETRY_VERSION=1.6.1
+ARG POETRY_VERSION=2.4.1
 
 FROM python:$PYTHON_VERSION-slim-bookworm AS builder
 ARG POETRY_VERSION
@@ -19,7 +18,8 @@ RUN python3 -m venv $POETRY_VENV \
 ENV PATH="${PATH}:${POETRY_VENV}/bin"
 
 WORKDIR /src
-COPY poetry.lock pyproject.toml /src
+COPY poetry.lock pyproject.toml /src/
+RUN poetry self add poetry-plugin-export
 RUN poetry export --extras="thot jobs" --without-hashes -f requirements.txt > requirements.txt
 
 

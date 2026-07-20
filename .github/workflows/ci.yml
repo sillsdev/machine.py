@@ -14,13 +14,13 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     defaults:
       run:
         shell: bash
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up Python ${{ matrix.python-version }}
         id: setup-python
         uses: actions/setup-python@v6
@@ -29,6 +29,7 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
+          version: 2.4.1
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
@@ -48,14 +49,14 @@ jobs:
           node-version: "24"
       - name: Lint with pyright
         run: |
-          npm install -g pyright@1.1.400
+          npm install -g pyright@1.1.411
           poetry run pyright
       - name: Test with pytest
         run: poetry run pytest --cov --cov-report=xml
         env:
           EFLOMAL_PATH: /home/runner/work/machine.py/machine.py/.venv/lib/python${{ matrix.python-version }}/site-packages/eflomal/bin
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -65,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up Python 3.10
         id: setup-python
         uses: actions/setup-python@v6
@@ -74,13 +75,14 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
+          version: 2.4.1
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
       - name: Build
         run: poetry build
       - name: Upload package
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: wheel
           path: dist/*.whl

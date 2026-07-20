@@ -415,9 +415,11 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
         if text_id_column is not None:
             features_dict[text_id_column] = Value("string")
         if ref_column is not None:
-            features_dict[ref_column] = Sequence(Value("string"))
+            features_dict[ref_column] = cast(FeatureType, Sequence(Value("string")))
         if alignment_column is not None:
-            features_dict[alignment_column] = Sequence({source_lang: Value("int32"), target_lang: Value("int32")})
+            features_dict[alignment_column] = cast(
+                FeatureType, Sequence({source_lang: Value("int32"), target_lang: Value("int32")})
+            )
         if content_type_column is not None:
             features_dict[content_type_column] = ClassLabel(names=[e.name for e in TextRowContentType])
         features = Features(features_dict)
@@ -468,9 +470,11 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
         if text_id_column is not None:
             features_dict[text_id_column] = Value("string")
         if ref_column is not None:
-            features_dict[ref_column] = Sequence(Value("string"))
+            features_dict[ref_column] = cast(FeatureType, Sequence(Value("string")))
         if alignment_column is not None:
-            features_dict[alignment_column] = Sequence({source_lang: Value("int32"), target_lang: Value("int32")})
+            features_dict[alignment_column] = cast(
+                FeatureType, Sequence({source_lang: Value("int32"), target_lang: Value("int32")})
+            )
         features = Features(features_dict)
 
         if info is not None and info.features is not None and info.features != features:
