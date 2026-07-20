@@ -21,7 +21,6 @@ class TrainParams(BaseModel):
     learning_rate: float | None = None
     fp16: bool | None = None
     tf32: bool | None = None
-    save_strategy: str | None = None
     max_steps: int | None = None
 
 
@@ -31,8 +30,7 @@ class GenerateParams(BaseModel):
         strict=True,
     )
 
-    device: int | None = None
-    num_beams: int | None = 2
+    num_beams: int | None = None
     batch_size: int | None = None
     oom_batch_size_backoff_mult: float | None = None
 
