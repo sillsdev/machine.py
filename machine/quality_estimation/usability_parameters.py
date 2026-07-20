@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 
-@dataclass
+@dataclass(frozen=True)
 class UsabilityParameters:
     unusable: ClassVar["UsabilityParameters"]
     usable: ClassVar["UsabilityParameters"]

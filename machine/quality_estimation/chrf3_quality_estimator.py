@@ -1,8 +1,6 @@
 import math
 from collections import defaultdict
-from typing import Iterable, overload
-
-from scipy.stats import gmean
+from typing import Iterable, List, Type, cast, overload
 
 from ..corpora import MultiKeyRef, ScriptureRef
 from .score import Score
@@ -39,30 +37,36 @@ class ChrF3QualityEstimator:
 
     @overload
     def estimate_quality(
-        self, confidences: Iterable[tuple[ScriptureRef, float]]
-    ) -> tuple[list[ScriptureSegmentUsability], list[ScriptureChapterUsability], list[ScriptureBookUsability]]: ...
+        self, confidences: Iterable[tuple[MultiKeyRef, float]], ref_type: Type[MultiKeyRef] = MultiKeyRef
+    ) -> tuple[list[TextSegmentUsability], list[TextUsability]]: ...
 
     @overload
     def estimate_quality(
-        self, confidences: Iterable[tuple[MultiKeyRef, float]]
-    ) -> tuple[list[TextSegmentUsability], list[TextUsability]]: ...
+        self, confidences: Iterable[tuple[ScriptureRef, float]], ref_type: Type[ScriptureRef] = ScriptureRef
+    ) -> tuple[list[ScriptureSegmentUsability], list[ScriptureChapterUsability], list[ScriptureBookUsability]]: ...
 
     def estimate_quality(
-        self, confidences: Iterable[tuple[ScriptureRef, float]] | Iterable[tuple[MultiKeyRef, float]]
+        self,
+        confidences: Iterable[tuple[ScriptureRef, float] | tuple[MultiKeyRef, float]],
+        ref_type: Type[ScriptureRef | MultiKeyRef] = ScriptureRef,
     ) -> (
         tuple[list[ScriptureSegmentUsability], list[ScriptureChapterUsability], list[ScriptureBookUsability]]
         | tuple[list[TextSegmentUsability], list[TextUsability]]
     ):
         confidences_list = list(confidences)
         if not confidences_list:
-            return ([], []) if isinstance(confidences_list[0][0], MultiKeyRef) else ([], [], [])
+            return ([], []) if issubclass(ref_type, MultiKeyRef) else ([], [], [])
 
         first_key = confidences_list[0][0]
-        if hasattr(first_key, "book"):
-            segment_scores, chapter_scores, book_scores = self._project_chrf3_scripture(confidences_list)
+        if isinstance(first_key, ScriptureRef):
+            segment_scores, chapter_scores, book_scores = self._project_chrf3_scripture(
+                cast(List[tuple[ScriptureRef, float]], confidences_list)
+            )
             return self._compute_segment_usability_scripture(segment_scores, chapter_scores, book_scores)
         else:
-            segment_scores, text_scores = self._project_chrf3_text(confidences_list)
+            segment_scores, text_scores = self._project_chrf3_text(
+                cast(List[tuple[MultiKeyRef, float]], confidences_list)
+            )
             return self._compute_segment_usability_text(segment_scores, text_scores)
 
     def _calculate_usable_probability(self, chrf3: float) -> float:
@@ -179,7 +183,15 @@ class ChrF3QualityEstimator:
             )
         return usability_texts
 
-    def _project_chrf3_text(self, confidences) -> tuple[list[TextSegmentScore], TextScores]:
+    @staticmethod
+    def _gmean(values: List[float]) -> float:
+        if not values or any(x <= 0 for x in values):
+            return 0.0
+        return math.exp(sum(math.log(x) for x in values) / len(values))
+
+    def _project_chrf3_text(
+        self, confidences: List[tuple[MultiKeyRef, float]]
+    ) -> tuple[list[TextSegmentScore], TextScores]:
         confidences_by_text_id = defaultdict(list)
         segment_scores = []
         for segment_ref, confidence in confidences:
@@ -189,11 +201,11 @@ class ChrF3QualityEstimator:
 
         text_scores = TextScores()
         for text_id, values in confidences_by_text_id.items():
-            text_scores.add_score(text_id, Score(self._slope, gmean(values), self._intercept))
+            text_scores.add_score(text_id, Score(self._slope, self._gmean(values), self._intercept))
         return segment_scores, text_scores
 
     def _project_chrf3_scripture(
-        self, confidences
+        self, confidences: List[tuple[ScriptureRef, float]]
     ) -> tuple[list[ScriptureSegmentScore], ScriptureChapterScores, ScriptureBookScores]:
         confidences_by_book = defaultdict(list)
         confidences_by_book_and_chapter = defaultdict(list)
@@ -208,9 +220,9 @@ class ChrF3QualityEstimator:
 
         chapter_scores = ScriptureChapterScores()
         for (book, chapter), values in confidences_by_book_and_chapter.items():
-            chapter_scores.add_score(book, chapter, Score(self._slope, gmean(values), self._intercept))
+            chapter_scores.add_score(book, chapter, Score(self._slope, self._gmean(values), self._intercept))
 
         book_scores = ScriptureBookScores()
         for book, values in confidences_by_book.items():
-            book_scores.add_score(book, Score(self._slope, gmean(values), self._intercept))
+            book_scores.add_score(book, Score(self._slope, self._gmean(values), self._intercept))
         return segment_scores, chapter_scores, book_scores
