@@ -42,7 +42,7 @@ class TranslationEngineBuildJob(ABC):
             check_canceled()
 
         logger.info("Pretranslating segments")
-        self._batch_inference(progress_reporter, check_canceled)
+        self._batch_inference(parallel_corpus, progress_reporter, check_canceled)
 
         self._save_model()
         return train_corpus_size, confidence
@@ -70,6 +70,7 @@ class TranslationEngineBuildJob(ABC):
     @abstractmethod
     def _batch_inference(
         self,
+        parallel_training_corpus: ParallelTextCorpus,
         progress_reporter: PhasedProgressReporter,
         check_canceled: Optional[Callable[[], None]],
     ) -> None: ...
