@@ -1,15 +1,25 @@
 import logging
 from contextlib import ExitStack
-from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import Any, Callable, Optional, Sequence, Tuple
+
+from ..corpora.aligned_word_pair import AlignedWordPair
+
+from ..corpora.text_row import TextRow
+
+from ..corpora.memory_text import MemoryText
+
+from ..corpora.dictionary_text_corpus import DictionaryTextCorpus
+from itertools import chain
+
+from .config import SETTINGS
+from .thot.thot_word_alignment_model_factory import ThotWordAlignmentModelFactory
+from ..tokenization.tokenizer_factory import create_tokenizer
 
 from ..corpora.corpora_utils import batch
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from ..corpora.text_corpus import TextCorpus
 from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
 from ..utils.progress_status import ProgressStatus
-from .eflomal_aligner import EflomalAligner, is_eflomal_available, tokenize
 from .nmt_model_factory import NmtModelFactory
 from .translation_engine_build_job import TranslationEngineBuildJob
 from .translation_file_service import PretranslationInfo, TranslationFileService
@@ -94,6 +104,7 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
 
     def _batch_inference(
         self,
+        parallel_training_corpus: ParallelTextCorpus,
         progress_reporter: PhasedProgressReporter,
         check_canceled: Optional[Callable[[], None]],
     ) -> None:
@@ -119,9 +130,11 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
                 current_inference_step += len(seg_batch)
                 phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
 
-            if self._config.align_pretranslations and is_eflomal_available():
+            if self._config.align_pretranslations:
                 logger.info("Aligning source to pretranslations")
-                pretranslations = self._align(src_segments, pretranslations, progress_reporter, check_canceled)
+                pretranslations = self._align(
+                    src_segments, pretranslations, parallel_training_corpus, progress_reporter, check_canceled
+                )
 
             writer = stack.enter_context(self._translation_file_service.open_target_pretranslation_writer())
             for pretranslation in pretranslations:
@@ -129,8 +142,9 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
 
     def _align(
         self,
-        src_segments: Sequence[str],
+        src_pretranslate_segments: Sequence[str],
         pretranslations: Sequence[PretranslationInfo],
+        parallel_training_corpus: ParallelTextCorpus,
         progress_reporter: PhasedProgressReporter,
         check_canceled: Optional[Callable[[], None]],
     ) -> Sequence[PretranslationInfo]:
@@ -138,29 +152,67 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
             check_canceled()
 
         logger.info("Aligning source to pretranslations")
-        progress_reporter.start_next_phase()
 
-        src_tokenized = [tokenize(s) for s in src_segments]
-        trg_tokenized = [tokenize(pt_info["translation"]) for pt_info in pretranslations]
+        alignment_model_factory = ThotWordAlignmentModelFactory(SETTINGS)
 
-        with TemporaryDirectory() as td:
-            aligner = EflomalAligner(Path(td))
-            logger.info("Training aligner")
-            aligner.train(src_tokenized, trg_tokenized)
+        tokenizer = create_tokenizer(SETTINGS.thot_align.tokenizer)
 
-            if check_canceled is not None:
-                check_canceled()
+        source_inference_corpus = DictionaryTextCorpus(
+            MemoryText(
+                "pretranslations",
+                [
+                    TextRow("pretranslations", i, list(tokenizer.tokenize(segment)))
+                    for i, segment in enumerate(src_pretranslate_segments)
+                ],
+            )
+        )
+        target_inference_corpus = DictionaryTextCorpus(
+            MemoryText(
+                "pretranslations",
+                [
+                    TextRow("pretranslations", i, list(tokenizer.tokenize(pretranslation["translation"])))
+                    for i, pretranslation in enumerate(pretranslations)
+                ],
+            )
+        )
 
-            logger.info("Aligning pretranslations")
-            alignments = aligner.align()
+        parallel_pretranslation_rows = list(source_inference_corpus.align_rows(target_inference_corpus))
+
+        alignment_parallel_corpus = ParallelTextCorpus.from_parallel_rows(
+            chain(
+                parallel_pretranslation_rows,
+                parallel_training_corpus.get_rows(),
+            )
+        )
+
+        logger.info("Training aligner")
+        with (
+            progress_reporter.start_next_phase() as phase_progress,
+            alignment_model_factory.create_model_trainer(tokenizer, alignment_parallel_corpus) as trainer,
+        ):
+            trainer.train(progress=phase_progress, check_canceled=check_canceled)
+            trainer.save()
+
+        logger.info("Aligning pretranslations")
+        alignment_model = alignment_model_factory.create_alignment_model()
+
+        alignments = alignment_model.align_batch(parallel_pretranslation_rows)
+
+        all_word_pairs = []
+        for parallel_text_row, alignment in zip(parallel_pretranslation_rows, alignments, strict=True):
+            word_pairs = alignment.to_aligned_word_pairs(include_null=True)
+            alignment_model.compute_aligned_word_pair_scores(
+                parallel_text_row.source_segment, parallel_text_row.target_segment, word_pairs
+            )
+            all_word_pairs.append(word_pairs)
 
         if check_canceled is not None:
             check_canceled()
 
         for i in range(len(pretranslations)):
-            pretranslations[i]["sourceTokens"] = list(src_tokenized[i])
-            pretranslations[i]["translationTokens"] = list(trg_tokenized[i])
-            pretranslations[i]["alignment"] = alignments[i]
+            pretranslations[i]["sourceTokens"] = list(parallel_pretranslation_rows[i].source_segment)
+            pretranslations[i]["translationTokens"] = list(parallel_pretranslation_rows[i].target_segment)
+            pretranslations[i]["alignment"] = AlignedWordPair.to_string(all_word_pairs[i], include_scores=True)
 
         return pretranslations
 
