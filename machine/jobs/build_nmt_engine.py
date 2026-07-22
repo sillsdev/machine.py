@@ -11,6 +11,7 @@ from .config import SETTINGS
 from .nmt_engine_build_job import NmtEngineBuildJob
 from .nmt_model_factory import NmtModelFactory
 from .shared_file_service_factory import SharedFileServiceType
+from .thot.thot_word_alignment_model_factory import ThotWordAlignmentModelFactory
 from .translation_file_service import TranslationFileService
 
 # Setup logging
@@ -56,7 +57,9 @@ def run(args: dict) -> None:
         else:
             raise RuntimeError("The model type is invalid.")
 
-        job = NmtEngineBuildJob(SETTINGS, nmt_model_factory, translation_file_service)
+        job = NmtEngineBuildJob(
+            SETTINGS, nmt_model_factory, translation_file_service, ThotWordAlignmentModelFactory(SETTINGS)
+        )
         train_corpus_size, _ = job.run(progress, check_canceled)
         if task is not None:
             task.get_logger().report_single_value(name="train_corpus_size", value=train_corpus_size)
