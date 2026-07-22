@@ -14,19 +14,25 @@ from ..tokenization.tokenizer_factory import create_tokenizer
 from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
 from ..utils.progress_status import ProgressStatus
 from .nmt_model_factory import NmtModelFactory
-from .thot.thot_word_alignment_model_factory import ThotWordAlignmentModelFactory
 from .translation_engine_build_job import TranslationEngineBuildJob
 from .translation_file_service import PretranslationInfo, TranslationFileService
+from .word_alignment_model_factory import WordAlignmentModelFactory
 
 logger = logging.getLogger(__name__)
 
 
 class NmtEngineBuildJob(TranslationEngineBuildJob):
     def __init__(
-        self, config: Any, nmt_model_factory: NmtModelFactory, translation_file_service: TranslationFileService
+        self,
+        config: Any,
+        nmt_model_factory: NmtModelFactory,
+        translation_file_service: TranslationFileService,
+        alignment_model_factory: WordAlignmentModelFactory,
     ) -> None:
         self._nmt_model_factory = nmt_model_factory
         self._nmt_model_factory.init()
+        self._alignment_model_factory = alignment_model_factory
+        self._alignment_model_factory.init()
         super().__init__(config, translation_file_service)
 
     def _get_progress_reporter(
@@ -147,8 +153,6 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
 
         logger.info("Aligning source to pretranslations")
 
-        alignment_model_factory = ThotWordAlignmentModelFactory(self._config)
-
         tokenizer = create_tokenizer(self._config.thot_align.tokenizer)
 
         source_inference_corpus = DictionaryTextCorpus(
@@ -170,27 +174,27 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
             )
         )
 
-        parallel_pretranslation_rows = source_inference_corpus.align_rows(target_inference_corpus)
+        parallel_pretranslation_corpus = source_inference_corpus.align_rows(target_inference_corpus)
 
         alignment_parallel_corpus = ParallelTextCorpus.from_parallel_rows(
             chain(
-                parallel_pretranslation_rows.get_rows(),
+                parallel_pretranslation_corpus.get_rows(),
                 parallel_training_corpus.get_rows(),
             )
-        )
+        )  # TODO .lowercase()?
 
         logger.info("Training aligner")
         with (
             progress_reporter.start_next_phase() as phase_progress,
-            alignment_model_factory.create_model_trainer(tokenizer, alignment_parallel_corpus) as trainer,
+            self._alignment_model_factory.create_model_trainer(tokenizer, alignment_parallel_corpus) as trainer,
         ):
             trainer.train(progress=phase_progress, check_canceled=check_canceled)
             trainer.save()
 
         logger.info("Aligning pretranslations")
-        alignment_model = alignment_model_factory.create_alignment_model()
+        alignment_model = self._alignment_model_factory.create_alignment_model()
 
-        parallel_pretranslation_rows = list(parallel_pretranslation_rows)
+        parallel_pretranslation_rows = list(parallel_pretranslation_corpus)  # TODO .lowercase()?
         alignments = alignment_model.align_batch(parallel_pretranslation_rows)
 
         all_word_pairs = []
