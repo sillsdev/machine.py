@@ -13,7 +13,6 @@ from ..corpora.text_row import TextRow
 from ..tokenization.tokenizer_factory import create_tokenizer
 from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
 from ..utils.progress_status import ProgressStatus
-from .config import SETTINGS
 from .nmt_model_factory import NmtModelFactory
 from .thot.thot_word_alignment_model_factory import ThotWordAlignmentModelFactory
 from .translation_engine_build_job import TranslationEngineBuildJob
