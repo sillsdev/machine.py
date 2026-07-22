@@ -16,6 +16,7 @@ from .config import SETTINGS
 from .shared_file_service_factory import SharedFileServiceType
 from .thot.thot_word_alignment_model_factory import ThotWordAlignmentModelFactory
 from .word_alignment_build_job import WordAlignmentBuildJob
+from .word_alignment_build_options import WordAlignmentBuildOptions
 from .word_alignment_file_service import WordAlignmentFileService
 from .word_alignment_model_factory import WordAlignmentModelFactory
 
@@ -47,7 +48,7 @@ def run(args: dict):
 
     try:
         logger.info("Word Alignment Build Job started")
-        update_settings(SETTINGS, args, task, logger)
+        update_settings(SETTINGS, args, task, logger, WordAlignmentBuildOptions)
 
         word_alignment_file_service = WordAlignmentFileService(SharedFileServiceType.CLEARML, SETTINGS)
         word_alignment_model_factory: WordAlignmentModelFactory

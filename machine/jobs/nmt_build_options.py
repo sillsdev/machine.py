@@ -1,0 +1,69 @@
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict
+
+
+class TrainParams(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        strict=True,
+    )
+
+    do_train: bool | None = None
+    optim: str | None = None
+    warmup_steps: int | None = None
+    per_device_train_batch_size: int | None = None
+    gradient_accumulation_steps: int | None = None
+    label_smoothing_factor: float | None = None
+    group_by_length: bool | None = None
+    gradient_checkpointing: bool | None = None
+    lr_scheduler_type: str | None = None
+    learning_rate: float | None = None
+    fp16: bool | None = None
+    tf32: bool | None = None
+    max_steps: int | None = None
+
+
+class GenerateParams(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        strict=True,
+    )
+
+    num_beams: int | None = None
+    batch_size: int | None = None
+    oom_batch_size_backoff_mult: float | None = None
+
+
+class TokenizerConfig(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        strict=True,
+    )
+
+    add_unk_src_tokens: bool | None = None
+    add_unk_trg_tokens: bool | None = None
+
+
+class NmtBuildOptions(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        strict=True,
+    )
+
+    align_pretranslations: bool | None = None
+    tags: list[str] | str | None = None
+    use_key_terms: bool | None = None
+    parent_model_name: (
+        Literal[
+            "facebook/nllb-200-distilled-1.3B",
+            "facebook/nllb-200-distilled-600M",
+            "hf-internal-testing/tiny-random-nllb",
+        ]
+        | None
+    ) = None
+    train_params: TrainParams | None = None
+    generate_params: GenerateParams | None = None
+    tokenizer: TokenizerConfig | None = None
+    attn_implementation: str | None = None
+    max_steps: int | None = None

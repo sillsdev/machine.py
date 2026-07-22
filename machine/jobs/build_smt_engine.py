@@ -14,6 +14,7 @@ from .build_clearml_helper import (
 )
 from .config import SETTINGS
 from .shared_file_service_factory import SharedFileServiceType
+from .smt_build_options import SmtBuildOptions
 from .smt_engine_build_job import SmtEngineBuildJob
 from .smt_model_factory import SmtModelFactory
 from .translation_file_service import TranslationFileService
@@ -46,7 +47,7 @@ def run(args: dict) -> None:
 
     try:
         logger.info("SMT Engine Build Job started")
-        update_settings(SETTINGS, args, task, logger)
+        update_settings(SETTINGS, args, task, logger, SmtBuildOptions)
 
         shared_file_service = TranslationFileService(SharedFileServiceType.CLEARML, SETTINGS)
         smt_model_factory: SmtModelFactory
