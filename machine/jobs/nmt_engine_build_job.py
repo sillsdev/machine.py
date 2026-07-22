@@ -1,26 +1,21 @@
 import logging
 from contextlib import ExitStack
+from itertools import chain
 from typing import Any, Callable, Optional, Sequence, Tuple
 
 from ..corpora.aligned_word_pair import AlignedWordPair
-
-from ..corpora.text_row import TextRow
-
-from ..corpora.memory_text import MemoryText
-
-from ..corpora.dictionary_text_corpus import DictionaryTextCorpus
-from itertools import chain
-
-from .config import SETTINGS
-from .thot.thot_word_alignment_model_factory import ThotWordAlignmentModelFactory
-from ..tokenization.tokenizer_factory import create_tokenizer
-
 from ..corpora.corpora_utils import batch
+from ..corpora.dictionary_text_corpus import DictionaryTextCorpus
+from ..corpora.memory_text import MemoryText
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from ..corpora.text_corpus import TextCorpus
+from ..corpora.text_row import TextRow
+from ..tokenization.tokenizer_factory import create_tokenizer
 from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
 from ..utils.progress_status import ProgressStatus
+from .config import SETTINGS
 from .nmt_model_factory import NmtModelFactory
+from .thot.thot_word_alignment_model_factory import ThotWordAlignmentModelFactory
 from .translation_engine_build_job import TranslationEngineBuildJob
 from .translation_file_service import PretranslationInfo, TranslationFileService
 
@@ -153,9 +148,9 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
 
         logger.info("Aligning source to pretranslations")
 
-        alignment_model_factory = ThotWordAlignmentModelFactory(SETTINGS)
+        alignment_model_factory = ThotWordAlignmentModelFactory(self._config)
 
-        tokenizer = create_tokenizer(SETTINGS.thot_align.tokenizer)
+        tokenizer = create_tokenizer(self._config.thot_align.tokenizer)
 
         source_inference_corpus = DictionaryTextCorpus(
             MemoryText(
@@ -176,11 +171,11 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
             )
         )
 
-        parallel_pretranslation_rows = list(source_inference_corpus.align_rows(target_inference_corpus))
+        parallel_pretranslation_rows = source_inference_corpus.align_rows(target_inference_corpus)
 
         alignment_parallel_corpus = ParallelTextCorpus.from_parallel_rows(
             chain(
-                parallel_pretranslation_rows,
+                parallel_pretranslation_rows.get_rows(),
                 parallel_training_corpus.get_rows(),
             )
         )
@@ -196,6 +191,7 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
         logger.info("Aligning pretranslations")
         alignment_model = alignment_model_factory.create_alignment_model()
 
+        parallel_pretranslation_rows = list(parallel_pretranslation_rows)
         alignments = alignment_model.align_batch(parallel_pretranslation_rows)
 
         all_word_pairs = []
