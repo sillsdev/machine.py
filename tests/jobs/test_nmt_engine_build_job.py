@@ -16,6 +16,7 @@ from machine.jobs import (
     NmtModelFactory,
     PretranslationInfo,
     TranslationFileService,
+    WordAlignmentModelFactory,
 )
 from machine.translation import (
     Phrase,
@@ -25,6 +26,7 @@ from machine.translation import (
     TranslationResult,
     TranslationSources,
     WordAlignmentMatrix,
+    WordAlignmentModel,
 )
 from machine.utils import CanceledError, ContextManagedGenerator
 
@@ -153,6 +155,30 @@ class _TestEnvironment:
             lambda: open_target_pretranslation_writer(self)
         )
 
+        self.alignment_model_trainer = decoy.mock(cls=Trainer)
+        decoy.when(self.alignment_model_trainer.__enter__()).then_return(self.alignment_model_trainer)
+        stats = TrainStats()
+        decoy.when(self.alignment_model_trainer.stats).then_return(stats)
+
+        self.model = decoy.mock(cls=WordAlignmentModel)
+        decoy.when(self.model.__enter__()).then_return(self.model)
+        decoy.when(self.model.align_batch(matchers.Anything())).then_return(
+            [
+                WordAlignmentMatrix.from_word_pairs(
+                    row_count=8,
+                    column_count=8,
+                    set_values=[(0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7)],
+                ),
+            ]
+        )
+
+        self.word_alignment_model_factory = decoy.mock(cls=WordAlignmentModelFactory)
+        decoy.when(
+            self.word_alignment_model_factory.create_model_trainer(matchers.Anything(), matchers.Anything())
+        ).then_return(self.alignment_model_trainer)
+        decoy.when(self.word_alignment_model_factory.create_alignment_model()).then_return(self.model)
+        decoy.when(self.word_alignment_model_factory.save_model()).then_return(Path("model.zip"))
+
         self.job = NmtEngineBuildJob(
             MockSettings(
                 {
@@ -173,6 +199,7 @@ class _TestEnvironment:
             ),
             self.nmt_model_factory,
             self.translation_file_service,
+            self.word_alignment_model_factory,
         )
 
 
