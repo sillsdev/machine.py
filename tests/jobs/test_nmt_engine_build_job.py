@@ -17,7 +17,6 @@ from machine.jobs import (
     PretranslationInfo,
     TranslationFileService,
 )
-from machine.jobs.eflomal_aligner import is_eflomal_available
 from machine.translation import (
     Phrase,
     Trainer,
@@ -37,25 +36,19 @@ def test_run(decoy: Decoy) -> None:
     pretranslations = json.loads(env.target_pretranslations)
     assert len(pretranslations) == 1
     assert pretranslations[0]["translation"] == "Please, I have booked a room."
-    if is_eflomal_available():
-        assert pretranslations[0]["sourceTokens"] == [
-            "Por",
-            "favor",
-            ",",
-            "tengo",
-            "reservada",
-            "una",
-            "habitación",
-            ".",
-        ]
-        assert pretranslations[0]["translationTokens"] == ["Please", ",", "I", "have", "booked", "a", "room", "."]
-        assert len(pretranslations[0]["alignment"]) > 0
-        assert pretranslations[0]["sequenceConfidence"] == 0.5
-    else:
-        assert pretranslations[0]["sourceTokens"] == []
-        assert pretranslations[0]["translationTokens"] == []
-        assert len(pretranslations[0]["alignment"]) == 0
-        assert pretranslations[0]["sequenceConfidence"] == 0.5
+    assert pretranslations[0]["sourceTokens"] == [
+        "Por",
+        "favor",
+        ",",
+        "tengo",
+        "reservada",
+        "una",
+        "habitación",
+        ".",
+    ]
+    assert pretranslations[0]["translationTokens"] == ["Please", ",", "I", "have", "booked", "a", "room", "."]
+    assert len(pretranslations[0]["alignment"]) > 0
+    assert pretranslations[0]["sequenceConfidence"] == 0.5
     decoy.verify(env.translation_file_service.save_model(Path("model.tar.gz"), "models/save-model.tar.gz"), times=1)
 
 
@@ -168,6 +161,14 @@ class _TestEnvironment:
                     "save_model": "save-model",
                     "inference_batch_size": 100,
                     "align_pretranslations": True,
+                    "build_id": "my_build",
+                    "thot_align": {
+                        "tokenizer": "latin",
+                        "model_type": "eflomal",
+                        "word_alignment_heuristic": "grow-diag-final-and",
+                    },
+                    "data_dir": "~/machine",
+                    "shared_file_folder": "dev",
                 }
             ),
             self.nmt_model_factory,
