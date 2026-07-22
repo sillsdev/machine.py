@@ -71,6 +71,7 @@ class SmtEngineBuildJob(TranslationEngineBuildJob):
 
     def _batch_inference(
         self,
+        parallel_training_corpus: ParallelTextCorpus,
         progress_reporter: PhasedProgressReporter,
         check_canceled: Optional[Callable[[], None]],
     ) -> None:
