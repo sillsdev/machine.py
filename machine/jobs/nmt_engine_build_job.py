@@ -151,8 +151,6 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
         if check_canceled is not None:
             check_canceled()
 
-        logger.info("Aligning source to pretranslations")
-
         tokenizer = create_tokenizer(self._config.thot_align.tokenizer)
 
         source_inference_corpus = DictionaryTextCorpus(
@@ -199,7 +197,7 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
 
         all_word_pairs = []
         for parallel_text_row, alignment in zip(parallel_pretranslation_rows, alignments, strict=True):
-            word_pairs = alignment.to_aligned_word_pairs(include_null=True)
+            word_pairs = alignment.to_aligned_word_pairs(include_null=False)
             alignment_model.compute_aligned_word_pair_scores(
                 parallel_text_row.source_segment, parallel_text_row.target_segment, word_pairs
             )
