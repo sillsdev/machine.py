@@ -43,8 +43,6 @@ class _TestEnvironment:
         self.model_trainer = decoy.mock(cls=Trainer)
         decoy.when(self.model_trainer.__enter__()).then_return(self.model_trainer)
         stats = TrainStats()
-        stats.train_corpus_size = 3
-        stats.metrics["bleu"] = 30.0
         decoy.when(self.model_trainer.stats).then_return(stats)
 
         self.model = decoy.mock(cls=WordAlignmentModel)

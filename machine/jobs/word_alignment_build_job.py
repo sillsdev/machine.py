@@ -99,7 +99,6 @@ class WordAlignmentBuildJob:
             writer = stack.enter_context(self._word_alignment_file_service.open_alignment_output_writer())
             current_inference_step = 0
             phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
-            batch_size = self._config["inference_batch_size"]
 
             parallel_corpus = ParallelTextCorpus.from_parallel_rows(
                 [
@@ -112,9 +111,9 @@ class WordAlignmentBuildJob:
                     )
                     for ii in inference_inputs
                 ]
-            ).lowercase()
+            ).lowercase()  # TODO we're calling lowercase() here; is that correct?
 
-            segment_batch = list(parallel_corpus.take(batch_size))
+            segment_batch = list(parallel_corpus)
             if check_canceled is not None:
                 check_canceled()
             alignments = alignment_model.align_batch(segment_batch)

@@ -35,7 +35,7 @@ default:
     tokenizer: latin
   thot_align:
     word_alignment_heuristic: grow-diag-final-and
-    model_type: hmm
+    model_type: eflomal
     tokenizer: latin
 development:
   shared_file_folder: dev
