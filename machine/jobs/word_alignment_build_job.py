@@ -111,7 +111,7 @@ class WordAlignmentBuildJob:
                     )
                     for ii in inference_inputs
                 ]
-            ).lowercase()
+            ).lowercase()  # TODO we're calling lowercase() here; is that correct?
 
             segment_batch = list(parallel_corpus)
             if check_canceled is not None:
