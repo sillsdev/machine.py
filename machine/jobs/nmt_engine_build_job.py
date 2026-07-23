@@ -27,11 +27,11 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
         config: Any,
         nmt_model_factory: NmtModelFactory,
         translation_file_service: TranslationFileService,
-        alignment_model_factory: WordAlignmentModelFactory,
+        word_alignment_model_factory: WordAlignmentModelFactory,
     ) -> None:
         self._nmt_model_factory = nmt_model_factory
         self._nmt_model_factory.init()
-        self._alignment_model_factory = alignment_model_factory
+        self._alignment_model_factory = word_alignment_model_factory
         self._alignment_model_factory.init()
         super().__init__(config, translation_file_service)
 
