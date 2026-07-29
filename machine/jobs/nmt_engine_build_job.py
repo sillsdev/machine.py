@@ -169,7 +169,7 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
         tokenizer = create_tokenizer(self._config.thot_align.tokenizer)
 
         with TemporaryDirectory() as temp_dir:
-            # Spool the translated pretranslations to disk, so that the aligner can make multiple
+            # Spool the translated pretranslations to disk so that the aligner can make multiple
             # passes over them without keeping the entire corpus in memory.
             logger.info("Aligning source to pretranslations")
             source_path = Path(temp_dir) / "pretranslations.src.txt"
@@ -192,7 +192,7 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
                 TextFileTextCorpus(translation_path)
             )
 
-            # The pretranslations are placed at the beginning of the training corpus, so that a
+            # The pretranslations are placed at the beginning of the training corpus so that a
             # transductive model's training alignments can be matched back to them by index.
             alignment_parallel_corpus = flatten([parallel_pretranslation_corpus, parallel_training_corpus])
 

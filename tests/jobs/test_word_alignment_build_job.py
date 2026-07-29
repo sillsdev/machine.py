@@ -21,8 +21,8 @@ def test_run(decoy: Decoy) -> None:
     env.job.run()
 
     alignments = json.loads(env.alignment_json)
-    assert len(alignments) == 1
-    assert alignments[0]["alignment"] == "0-0 1-1 2-2"
+    assert len(alignments) == 3
+    assert alignments[0]["alignment"] == "2-2 3-3 4-5 6-8 9-7 11-6 12-10"
     decoy.verify(
         env.word_alignment_file_service.save_model(matchers.Anything(), f"builds/{env.job._config.build_id}/model.zip"),
         times=1,
@@ -49,7 +49,17 @@ class _TestEnvironment:
         decoy.when(self.model.__enter__()).then_return(self.model)
         decoy.when(self.model.align_batch(matchers.Anything())).then_return(
             [
-                WordAlignmentMatrix.from_word_pairs(row_count=3, column_count=3, set_values=[(0, 0), (1, 1), (2, 2)]),
+                WordAlignmentMatrix.from_word_pairs(
+                    row_count=13,
+                    column_count=11,
+                    set_values=[(2, 2), (3, 3), (4, 5), (6, 8), (9, 7), (11, 6), (12, 10)],
+                ),
+                WordAlignmentMatrix.from_word_pairs(
+                    row_count=10, column_count=10, set_values=[(2, 2), (3, 3), (4, 5), (5, 6), (6, 8), (8, 7), (9, 9)]
+                ),
+                WordAlignmentMatrix.from_word_pairs(
+                    row_count=7, column_count=7, set_values=[(0, 0), (1, 1), (3, 3), (4, 4), (5, 5), (6, 6)]
+                ),
             ]
         )
 
