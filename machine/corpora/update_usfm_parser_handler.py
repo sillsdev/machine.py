@@ -375,6 +375,10 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
                             if index < len(tokens) and tokens[index].type == UsfmTokenType.TEXT:
                                 index += 1
 
+                        # If the next token is a verse, add \nb to prevent the verse appearing in the remark
+                        if tokens[index].type == UsfmTokenType.VERSE:
+                            tokens.insert(index, UsfmToken(UsfmTokenType.PARAGRAPH, "nb"))
+
                         tokens[index:index] = remark_tokens
         return tokenizer.detokenize(tokens)
 

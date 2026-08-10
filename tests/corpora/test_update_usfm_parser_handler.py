@@ -1386,6 +1386,60 @@ def test_pass_remark():
 \ide UTF-8
 \rem Existing remark
 \c 1
+\p
+\v 1 Some text
+\v 2
+\v 3 Other text
+\c 2
+\rem Existing remark
+\p
+\v 1 More text
+\c 3
+"""
+
+    target = update_usfm(
+        rows,
+        usfm,
+        text_behavior=UpdateUsfmTextBehavior.PREFER_EXISTING,
+        remarks=[(0, "New remark 0"), (1, "New remark 1"), (2, "New remark 2"), (3, "New remark 3")],
+    )
+    result = r"""\id MAT - Test
+\ide UTF-8
+\rem Existing remark
+\rem New remark 0
+\c 1
+\rem New remark 1
+\p
+\v 1 Some text
+\v 2 Update 2
+\v 3 Other text
+\c 2
+\rem Existing remark
+\rem New remark 2
+\p
+\v 1 More text
+\c 3
+\rem New remark 3
+"""
+
+    assert_usfm_equals(target, result)
+
+
+def test_no_body_remark():
+    rows = [
+        UpdateUsfmRow(
+            scr_ref("MAT 1:1"),
+            "Update 1",
+        ),
+        UpdateUsfmRow(
+            scr_ref("MAT 1:2"),
+            "Update 2",
+        ),
+    ]
+    usfm = r"""\id MAT - Test
+\ide UTF-8
+\rem Existing remark
+\c 1
 \v 1 Some text
 \v 2
 \v 3 Other text
@@ -1407,12 +1461,14 @@ def test_pass_remark():
 \rem New remark 0
 \c 1
 \rem New remark 1
+\nb
 \v 1 Some text
 \v 2 Update 2
 \v 3 Other text
 \c 2
 \rem Existing remark
 \rem New remark 2
+\nb
 \v 1 More text
 \c 3
 \rem New remark 3
@@ -1471,6 +1527,7 @@ def test_pass_multiple_remarks_same_chapter() -> None:
 \ide UTF-8
 \rem Existing remark
 \c 1
+\q1
 \v 1 Some text
 \v 2
 \v 3 Other text
@@ -1490,6 +1547,7 @@ def test_pass_multiple_remarks_same_chapter() -> None:
 \c 1
 \rem New remark 1.1
 \rem New remark 1.2
+\q1
 \v 1 Some text
 \v 2 Update 2
 \v 3 Other text
