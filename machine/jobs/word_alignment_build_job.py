@@ -94,15 +94,13 @@ class WordAlignmentBuildJob:
         check_canceled: Optional[Callable[[], None]],
     ) -> None:
 
-        inference_inputs = self._word_alignment_file_service.get_word_alignment_inputs()
-
-        inference_step_count = len(inference_inputs)
+        with self._word_alignment_file_service.get_word_alignment_inputs() as inference_inputs:
+            inference_step_count = sum(1 for _ in inference_inputs)
 
         with ExitStack() as stack:
             phase_progress = stack.enter_context(progress_reporter.start_next_phase())
             writer = stack.enter_context(self._word_alignment_file_service.open_alignment_output_writer())
-            current_inference_step = 0
-            phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
+            inference_inputs = stack.enter_context(self._word_alignment_file_service.get_word_alignment_inputs())
 
             temp_dir = stack.enter_context(TemporaryDirectory())
             # Spool the parallel data to disk so that the aligner can make multiple
@@ -125,6 +123,8 @@ class WordAlignmentBuildJob:
 
             parallel_corpus = TextFileTextCorpus(source_path).align_rows(TextFileTextCorpus(target_path))
 
+            current_inference_step = 0
+            phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
             batch_size: int = self._config["inference_batch_size"]
             alignment_model = stack.enter_context(self._word_alignment_model_factory.create_alignment_model())
             rows = stack.enter_context(parallel_corpus.tokenize(self._tokenizer).get_rows())
@@ -151,6 +151,8 @@ class WordAlignmentBuildJob:
                         "alignment": AlignedWordPair.to_string(word_pairs),
                     }
                     writer.write(word_alignment_info)
+                    current_inference_step += len(wa_batch)
+                    phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
 
     def _save_model(self) -> None:
         logger.info("Saving model")
