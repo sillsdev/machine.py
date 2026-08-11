@@ -39,6 +39,7 @@ from .scripture_text_corpus import (
     extract_scripture_corpus,
     is_scripture,
 )
+from .segment_boundary_adjuster import SegmentBoundaryAdjuster
 from .standard_parallel_text_corpus import StandardParallelTextCorpus
 from .text import Text
 from .text_corpus import TextCorpus
@@ -150,6 +151,7 @@ __all__ = [
     "ScriptureRefUsfmParserHandlerBase",
     "ScriptureTextCorpus",
     "ScriptureTextType",
+    "SegmentBoundaryAdjuster",
     "StandardParallelTextCorpus",
     "Text",
     "TextCorpus",
