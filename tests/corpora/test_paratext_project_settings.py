@@ -113,6 +113,11 @@ def test_get_book_id_wrong_book_part_book_num_book_id() -> None:
     assert settings.get_book_id("PROJ100.SFM") is None
 
 
+def test_get_book_id_case_insensitive() -> None:
+    settings = _create_settings("MAT")
+    assert settings.get_book_id("PROJMRK.sfm") == "MRK"
+
+
 def _create_settings(file_name_form: str) -> ParatextProjectSettings:
     return ParatextProjectSettings(
         "id",
