@@ -30,7 +30,6 @@ from .paratext_project_terms_parser_base import KeyTerm, ParatextProjectTermsPar
 from .paratext_project_text_updater_base import ParatextProjectTextUpdaterBase
 from .paratext_text_corpus import ParatextTextCorpus
 from .place_markers_usfm_update_block_handler import PlaceMarkersAlignmentInfo, PlaceMarkersUsfmUpdateBlockHandler
-from .segment_boundary_adjuster import SegmentBoundaryAdjuster
 from .scripture_element import ScriptureElement
 from .scripture_ref import EMPTY_SCRIPTURE_REF, ScriptureRef
 from .scripture_ref_usfm_parser_handler_base import ScriptureRefUsfmParserHandlerBase, ScriptureTextType
@@ -40,6 +39,7 @@ from .scripture_text_corpus import (
     extract_scripture_corpus,
     is_scripture,
 )
+from .segment_boundary_adjuster import SegmentBoundaryAdjuster
 from .standard_parallel_text_corpus import StandardParallelTextCorpus
 from .text import Text
 from .text_corpus import TextCorpus
