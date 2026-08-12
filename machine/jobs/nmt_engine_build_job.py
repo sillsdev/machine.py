@@ -225,6 +225,18 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
                     # written to the pretranslations.
                     segments = [(lowercase(row.source_segment), lowercase(row.target_segment)) for _, row in pt_batch]
                     if transductive_model is not None:
+                        # Diagnostic
+                        for i, (_, row) in enumerate(pt_batch):
+                            source_len = len(row.source_segment)
+                            target_len = len(row.target_segment)
+
+                            logger.info(
+                                "Training alignment %d: source=%d target=%d matrix=%d cells",
+                                index + i,
+                                source_len,
+                                target_len,
+                                source_len * target_len,
+                            )
                         # The pretranslations are the first rows of the training corpus, so their
                         # alignments were already computed during training.
                         alignments: Sequence[WordAlignmentMatrix] = [
