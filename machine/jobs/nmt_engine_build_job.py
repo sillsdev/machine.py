@@ -227,11 +227,9 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
                     if transductive_model is not None:
                         # The pretranslations are the first rows of the training corpus, so their
                         # alignments were already computed during training.
-                        alignments: Sequence[WordAlignmentMatrix] = []
-                        for i in range(len(pt_batch)):
-                            logger.info(f"Index: {index}, i: {i}, pt_info: {pt_batch[i]}")
-                            alignments.append(transductive_model.get_training_alignment(index + i))
-
+                        alignments: Sequence[WordAlignmentMatrix] = [
+                            transductive_model.get_training_alignment(index + i) for i in range(len(pt_batch))
+                        ]
                     else:
                         alignments = alignment_model.align_batch(segments)
                     for (pt_info, row), (source_segment, target_segment), alignment in zip(
