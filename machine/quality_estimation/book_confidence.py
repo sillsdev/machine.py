@@ -1,7 +1,11 @@
+from typing import Optional
+
 LOW_BOOK_CONFIDENCE_THRESHOLD = 0.42
 
 
-def is_book_confidence_unusually_low(confidence: float) -> bool:
+def is_book_confidence_unusually_low(
+    confidence: float, book_id: Optional[str] = None, model: Optional[str] = None
+) -> bool:
     if not 0 <= confidence <= 1:
         raise ValueError(
             f"The book confidence {confidence} is invalid. "
