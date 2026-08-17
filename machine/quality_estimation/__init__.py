@@ -1,3 +1,4 @@
+from .book_confidence import LOW_BOOK_CONFIDENCE_THRESHOLD, is_book_confidence_unusually_low
 from .chrf3_quality_estimator import ChrF3QualityEstimator
 from .scripture_book_usability import ScriptureBookUsability
 from .scripture_chapter_usability import ScriptureChapterUsability
@@ -11,6 +12,8 @@ from .usability_parameters import UsabilityParameters
 
 __all__ = [
     "ChrF3QualityEstimator",
+    "is_book_confidence_unusually_low",
+    "LOW_BOOK_CONFIDENCE_THRESHOLD",
     "ScriptureBookUsability",
     "ScriptureChapterUsability",
     "ScriptureSegmentUsability",
