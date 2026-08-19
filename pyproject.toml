@@ -19,7 +19,7 @@ reportMissingModuleSource = false
 
 [project]
 name = "sil-machine"
-version = "1.9.0"
+version = "1.9.1"
 description = "A natural language processing library that is focused on providing tools for resource-poor languages."
 license = "MIT"
 authors = [{ name = "SIL International" }]
