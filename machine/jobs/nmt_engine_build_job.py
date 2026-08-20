@@ -48,7 +48,7 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
                 phases = [
                     Phase(message="Training NMT model", percentage=0.8, stage="train"),
                     Phase(message="Pretranslating segments", percentage=0.1, stage="inference"),
-                    Phase(message="Aligning segments", percentage=0.1, report_steps=True),
+                    Phase(message="Aligning segments", percentage=0.1, stage="align"),
                 ]
             else:
                 phases = [
@@ -59,7 +59,7 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
             if self._config.align_pretranslations:
                 phases = [
                     Phase(message="Pretranslating segments", percentage=0.9, stage="inference"),
-                    Phase(message="Aligning segments", percentage=0.1, report_steps=True),
+                    Phase(message="Aligning segments", percentage=0.1, stage="align"),
                 ]
             else:
                 phases = [Phase(message="Pretranslating segments", percentage=1.0, stage="inference")]
