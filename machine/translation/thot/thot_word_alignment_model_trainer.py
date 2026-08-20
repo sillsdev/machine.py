@@ -185,23 +185,24 @@ class ThotWordAlignmentModelTrainer(Trainer):
         # iteration count is derived from the corpus during start_training (stored as 0 until then),
         # so the total step count is not known up front; progress is reported as indeterminate until
         # it is resolved below.
-        # iteration_count_known = not self._is_eflomal or self._models[0][1] > 0
-        # num_steps: Optional[int] = (
-        #     sum(iterations + 1 for _, iterations in self._models if iterations > 0) + 1
-        #     if iteration_count_known
-        #     else None
-        # )
+        iteration_count_known = not self._is_eflomal or self._models[0][1] > 0
+        num_steps: Optional[int] = (
+            sum(iterations + 1 for _, iterations in self._models if iterations > 0) + 1
+            if iteration_count_known
+            else None
+        )
         cur_step = 0
+        # Throttle the progress reporting
+        update_frequency = num_steps // 10 if num_steps is not None and num_steps > 10 else 1
 
         def report() -> None:
-            pass
-            # nonlocal update_frequency
-            # if update_frequency is None and num_steps is not None:
-            #     update_frequency = num_steps // 10 if num_steps > 10 else 1
-            # if progress is not None and (update_frequency is None or (cur_step % update_frequency) == 0):
-            #     progress(
-            #         ProgressStatus.from_step(cur_step, num_steps) if num_steps is not None else ProgressStatus(cur_step)
-            #     )
+            nonlocal update_frequency
+            if update_frequency is None and num_steps is not None:
+                update_frequency = num_steps // 10 if num_steps > 10 else 1
+            if progress is not None and (update_frequency is None or (cur_step % update_frequency) == 0):
+                progress(
+                    ProgressStatus.from_step(cur_step, num_steps) if num_steps is not None else ProgressStatus(cur_step)
+                )
 
         report()
 
@@ -242,7 +243,7 @@ class ThotWordAlignmentModelTrainer(Trainer):
                 # The automatic schedule is resolved during start_training; ask the model how many
                 # sweeps to run and finalize the (until now indeterminate) total step count.
                 iteration_count = cast(ta.EflomalAlignmentModel, model).scheduled_iterations
-                # num_steps = cur_step + iteration_count + 1
+                num_steps = cur_step + iteration_count + 1
 
             cur_step += 1
             report()
