@@ -186,22 +186,22 @@ class ThotWordAlignmentModelTrainer(Trainer):
         # so the total step count is not known up front; progress is reported as indeterminate until
         # it is resolved below.
         iteration_count_known = not self._is_eflomal or self._models[0][1] > 0
-        num_steps: Optional[int] = (
-            sum(iterations + 1 for _, iterations in self._models if iterations > 0) + 1
-            if iteration_count_known
-            else None
-        )
+        # num_steps: Optional[int] = (
+        #     sum(iterations + 1 for _, iterations in self._models if iterations > 0) + 1
+        #     if iteration_count_known
+        #     else None
+        # )
         cur_step = 0
-        update_frequency = num_steps // 10 if num_steps and num_steps > 10 else None
 
         def report() -> None:
-            nonlocal update_frequency
-            if update_frequency is None and num_steps is not None:
-                update_frequency = num_steps // 10 if num_steps > 10 else 1
-            if progress is not None and (update_frequency is None or (cur_step % update_frequency) == 0):
-                progress(
-                    ProgressStatus.from_step(cur_step, num_steps) if num_steps is not None else ProgressStatus(cur_step)
-                )
+            pass
+            # nonlocal update_frequency
+            # if update_frequency is None and num_steps is not None:
+            #     update_frequency = num_steps // 10 if num_steps > 10 else 1
+            # if progress is not None and (update_frequency is None or (cur_step % update_frequency) == 0):
+            #     progress(
+            #         ProgressStatus.from_step(cur_step, num_steps) if num_steps is not None else ProgressStatus(cur_step)
+            #     )
 
         report()
 
