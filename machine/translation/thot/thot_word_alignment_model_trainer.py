@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 import sys
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple, Union, cast, overload
@@ -17,8 +16,6 @@ from ..trainer import Trainer, TrainStats
 from .thot_utils import escape_token, escape_tokens
 from .thot_word_alignment_model_type import ThotWordAlignmentModelType
 from .thot_word_alignment_parameters import ThotWordAlignmentParameters
-
-logger = logging.getLogger(__name__)
 
 
 class ThotWordAlignmentModelTrainer(Trainer):
@@ -195,18 +192,16 @@ class ThotWordAlignmentModelTrainer(Trainer):
             else None
         )
         cur_step = 0
-        update_frequency = num_steps // 100 if num_steps and num_steps > 100 else None
-        logger.info("step frequency %d", update_frequency)
+        update_frequency = num_steps // 10 if num_steps and num_steps > 10 else None
 
         def report() -> None:
             nonlocal update_frequency
             if update_frequency is None and num_steps is not None:
-                update_frequency = num_steps // 100 if num_steps > 100 else 1
+                update_frequency = num_steps // 10 if num_steps > 10 else 1
             if progress is not None and (update_frequency is None or (cur_step % update_frequency) == 0):
                 progress(
                     ProgressStatus.from_step(cur_step, num_steps) if num_steps is not None else ProgressStatus(cur_step)
                 )
-                logger.info("step %d of total %d", cur_step, num_steps)
 
         report()
 
