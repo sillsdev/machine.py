@@ -195,11 +195,14 @@ class ThotWordAlignmentModelTrainer(Trainer):
             else None
         )
         cur_step = 0
-        update_frequency = num_steps // 10 if num_steps and num_steps > 10 else 1
+        update_frequency = num_steps // 100 if num_steps and num_steps > 100 else None
         logger.info("step frequency %d", update_frequency)
 
         def report() -> None:
-            if progress is not None and (cur_step % update_frequency) == 0:
+            nonlocal update_frequency
+            if update_frequency is None and num_steps is not None:
+                update_frequency = num_steps // 100 if num_steps > 100 else 1
+            if progress is not None and (update_frequency is None or (cur_step % update_frequency) == 0):
                 progress(
                     ProgressStatus.from_step(cur_step, num_steps) if num_steps is not None else ProgressStatus(cur_step)
                 )
