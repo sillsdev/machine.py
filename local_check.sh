@@ -1,5 +1,5 @@
 #!/bin/bash
-poetry install
+poetry install --all-extras
 
 echo "======================= black ======================"
 poetry run black .

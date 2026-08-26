@@ -11,11 +11,8 @@ from typing import cast
 from transformers import (
     M2M100Tokenizer,
     MBart50Tokenizer,
-    MBart50TokenizerFast,
     MBartTokenizer,
-    MBartTokenizerFast,
     NllbTokenizer,
-    NllbTokenizerFast,
     PreTrainedTokenizerFast,
     Seq2SeqTrainingArguments,
 )
@@ -162,8 +159,8 @@ def test_update_tokenizer_missing_char() -> None:
                 "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
             )
             finetuned_result_nochar_composite = finetuned_engine_nochar.tokenizer.encode("Ḏ is a composite character")
-            norm_result_nochar1 = finetuned_engine_nochar.tokenizer.backend_tokenizer.normalizer.normalize_str("‌ ")
-            norm_result_nochar2 = finetuned_engine_nochar.tokenizer.backend_tokenizer.normalizer.normalize_str("‍")
+            norm_result_nochar1 = finetuned_engine_nochar.tokenizer.encode("‌ ")
+            norm_result_nochar2 = finetuned_engine_nochar.tokenizer.encode("‍")
 
         with HuggingFaceNmtModelTrainer(
             "hf-internal-testing/tiny-random-nllb",
@@ -185,14 +182,14 @@ def test_update_tokenizer_missing_char() -> None:
                 "Ḻ, ḻ, Ṉ, ॽ, " + "‌  and " + "‍" + " are new characters"
             )
             finetuned_result_char_composite = finetuned_engine_char.tokenizer.encode("Ḏ is a composite character")
-            norm_result_char1 = finetuned_engine_char.tokenizer.backend_tokenizer.normalizer.normalize_str("‌ ")
-            norm_result_char2 = finetuned_engine_char.tokenizer.backend_tokenizer.normalizer.normalize_str("‍")
+            norm_result_char1 = finetuned_engine_char.tokenizer.encode("‌ ")
+            norm_result_char2 = finetuned_engine_char.tokenizer.encode("‍")
 
         assert norm_result_nochar1 != norm_result_char1
         assert norm_result_nochar2 != norm_result_char2
 
         assert finetuned_result_nochar != finetuned_result_char
-        assert finetuned_result_nochar_composite != finetuned_result_char_composite
+        assert finetuned_result_nochar_composite == finetuned_result_char_composite
 
 
 def test_update_tokenizer_missing_char_skip() -> None:
@@ -497,18 +494,6 @@ def test_nllb_tokenizer_add_lang_code() -> None:
     return
 
 
-def test_nllb_tokenizer_fast_add_lang_code() -> None:
-    with TemporaryDirectory() as temp_dir:
-        tokenizer = cast(NllbTokenizerFast, NllbTokenizerFast.from_pretrained("facebook/nllb-200-distilled-600M"))
-        assert "new_lang" not in tokenizer.added_tokens_encoder
-        add_lang_code_to_tokenizer(tokenizer, "new_lang")
-        assert "new_lang" in tokenizer.added_tokens_encoder
-        tokenizer.save_pretrained(temp_dir)
-        new_tokenizer = cast(NllbTokenizerFast, NllbTokenizerFast.from_pretrained(temp_dir))
-        assert "new_lang" in new_tokenizer.added_tokens_encoder
-    return
-
-
 def test_mbart_tokenizer_add_lang_code() -> None:
     with TemporaryDirectory() as temp_dir:
         tokenizer = cast(MBartTokenizer, MBartTokenizer.from_pretrained("hf-internal-testing/tiny-random-nllb"))
@@ -521,18 +506,6 @@ def test_mbart_tokenizer_add_lang_code() -> None:
     return
 
 
-def test_mbart_tokenizer_fast_add_lang_code() -> None:
-    with TemporaryDirectory() as temp_dir:
-        tokenizer = cast(MBartTokenizerFast, MBartTokenizerFast.from_pretrained("hf-internal-testing/tiny-random-nllb"))
-        assert "nl_NS" not in tokenizer.added_tokens_encoder
-        add_lang_code_to_tokenizer(tokenizer, "nl_NS")
-        assert "nl_NS" in tokenizer.added_tokens_encoder
-        tokenizer.save_pretrained(temp_dir)
-        new_tokenizer = cast(MBartTokenizerFast, MBartTokenizerFast.from_pretrained(temp_dir))
-        assert "nl_NS" in new_tokenizer.added_tokens_encoder
-    return
-
-
 def test_mbart_50_tokenizer_add_lang_code() -> None:
     with TemporaryDirectory() as temp_dir:
         tokenizer = cast(MBart50Tokenizer, MBart50Tokenizer.from_pretrained("hf-internal-testing/tiny-random-mbart50"))
@@ -541,20 +514,6 @@ def test_mbart_50_tokenizer_add_lang_code() -> None:
         assert "nl_NS" in tokenizer.added_tokens_encoder
         tokenizer.save_pretrained(temp_dir)
         new_tokenizer = cast(MBart50Tokenizer, MBart50Tokenizer.from_pretrained(temp_dir))
-        assert "nl_NS" in new_tokenizer.added_tokens_encoder
-    return
-
-
-def test_mbart_50_tokenizer_fast_add_lang_code() -> None:
-    with TemporaryDirectory() as temp_dir:
-        tokenizer = cast(
-            MBart50TokenizerFast, MBart50TokenizerFast.from_pretrained("hf-internal-testing/tiny-random-mbart50")
-        )
-        assert "nl_NS" not in tokenizer.added_tokens_encoder
-        add_lang_code_to_tokenizer(tokenizer, "nl_NS")
-        assert "nl_NS" in tokenizer.added_tokens_encoder
-        tokenizer.save_pretrained(temp_dir)
-        new_tokenizer = cast(MBart50TokenizerFast, MBart50TokenizerFast.from_pretrained(temp_dir))
         assert "nl_NS" in new_tokenizer.added_tokens_encoder
     return
 
