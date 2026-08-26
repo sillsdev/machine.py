@@ -15,7 +15,7 @@ if [ "$#" -ne 0 ]; then
   exit 2
 fi
 
-poetry install
+poetry install --all-extras
 
 if [ "$agent_strict" = true ]; then
   echo "=================== comment hygiene ================="
