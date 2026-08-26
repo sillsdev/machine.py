@@ -1,5 +1,5 @@
 {
-  "additional_special_tokens": null,
+  "extra_special_tokens": null,
   "bos_token": "<s>",
   "cls_token": "<s>",
   "eos_token": "</s>",
