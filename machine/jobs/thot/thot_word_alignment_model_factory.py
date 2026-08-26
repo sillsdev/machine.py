@@ -15,19 +15,21 @@ class ThotWordAlignmentModelFactory(WordAlignmentModelFactory):
 
     def create_model_trainer(self, tokenizer: Tokenizer[str, int, str], corpus: ParallelTextCorpus) -> Trainer:
         self._model_dir.mkdir(parents=True, exist_ok=True)
+        corpus = corpus.tokenize(tokenizer).lowercase()
+        # Retain the alignments computed during training, so that the model created by
+        # create_alignment_model can align the training corpus transductively without a separate
+        # inference pass. The alignments are saved with the model and restored when it is loaded.
         direct_trainer = ThotWordAlignmentModelTrainer(
             self._config.thot_align.model_type,
-            corpus.lowercase(),
+            corpus,
             prefix_filename=self._direct_model_path,
-            source_tokenizer=tokenizer,
-            target_tokenizer=tokenizer,
+            emit_training_alignments=True,
         )
         inverse_trainer = ThotWordAlignmentModelTrainer(
             self._config.thot_align.model_type,
-            corpus.invert().lowercase(),
+            corpus.invert(),
             prefix_filename=self._inverse_model_path,
-            source_tokenizer=tokenizer,
-            target_tokenizer=tokenizer,
+            emit_training_alignments=True,
         )
         return SymmetrizedWordAlignmentModelTrainer(direct_trainer, inverse_trainer)
 

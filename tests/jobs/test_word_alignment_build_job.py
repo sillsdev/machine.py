@@ -13,7 +13,7 @@ from machine.jobs import DictToJsonWriter, WordAlignmentBuildJob, WordAlignmentM
 from machine.jobs.word_alignment_file_service import WordAlignmentFileService, WordAlignmentInput
 from machine.translation import Trainer, TrainStats, WordAlignmentMatrix
 from machine.translation.word_alignment_model import WordAlignmentModel
-from machine.utils import CanceledError
+from machine.utils import CanceledError, ContextManagedGenerator
 
 
 def test_run(decoy: Decoy) -> None:
@@ -21,8 +21,8 @@ def test_run(decoy: Decoy) -> None:
     env.job.run()
 
     alignments = json.loads(env.alignment_json)
-    assert len(alignments) == 1
-    assert alignments[0]["alignment"] == "0-0 1-1 2-2"
+    assert len(alignments) == 3
+    assert alignments[0]["alignment"] == "2-2 3-3 4-5 6-8 9-7 11-6 12-10"
     decoy.verify(
         env.word_alignment_file_service.save_model(matchers.Anything(), f"builds/{env.job._config.build_id}/model.zip"),
         times=1,
@@ -43,15 +43,23 @@ class _TestEnvironment:
         self.model_trainer = decoy.mock(cls=Trainer)
         decoy.when(self.model_trainer.__enter__()).then_return(self.model_trainer)
         stats = TrainStats()
-        stats.train_corpus_size = 3
-        stats.metrics["bleu"] = 30.0
         decoy.when(self.model_trainer.stats).then_return(stats)
 
         self.model = decoy.mock(cls=WordAlignmentModel)
         decoy.when(self.model.__enter__()).then_return(self.model)
         decoy.when(self.model.align_batch(matchers.Anything())).then_return(
             [
-                WordAlignmentMatrix.from_word_pairs(row_count=3, column_count=3, set_values=[(0, 0), (1, 1), (2, 2)]),
+                WordAlignmentMatrix.from_word_pairs(
+                    row_count=13,
+                    column_count=11,
+                    set_values=[(2, 2), (3, 3), (4, 5), (6, 8), (9, 7), (11, 6), (12, 10)],
+                ),
+                WordAlignmentMatrix.from_word_pairs(
+                    row_count=10, column_count=10, set_values=[(2, 2), (3, 3), (4, 5), (5, 6), (6, 8), (8, 7), (9, 9)]
+                ),
+                WordAlignmentMatrix.from_word_pairs(
+                    row_count=7, column_count=7, set_values=[(0, 0), (1, 1), (3, 3), (4, 4), (5, 5), (6, 6)]
+                ),
             ]
         )
 
@@ -90,33 +98,38 @@ class _TestEnvironment:
         decoy.when(self.word_alignment_file_service.exists_source_corpus()).then_return(True)
         decoy.when(self.word_alignment_file_service.exists_target_corpus()).then_return(True)
 
-        decoy.when(self.word_alignment_file_service.get_word_alignment_inputs()).then_return(
-            [
-                WordAlignmentInput(
-                    corpusId="corpus1",
-                    textId="text1",
-                    sourceRefs=["1"],
-                    targetRefs=["1"],
-                    source="¿Le importaría darnos las llaves de la habitación, por favor?",
-                    target="Would you mind giving us the room keys, please?",
-                ),
-                WordAlignmentInput(
-                    corpusId="corpus1",
-                    textId="text1",
-                    sourceRefs=["2"],
-                    targetRefs=["2"],
-                    source="¿Le importaría cambiarme a otra habitación más tranquila?",
-                    target="Would you mind moving me to another quieter room?",
-                ),
-                WordAlignmentInput(
-                    corpusId="corpus1",
-                    textId="text1",
-                    sourceRefs=["3"],
-                    targetRefs=["3"],
-                    source="Me parece que existe un problema.",
-                    target="I think there is a problem.",
-                ),
-            ]
+        decoy.when(self.word_alignment_file_service.get_word_alignment_inputs()).then_do(
+            lambda: ContextManagedGenerator(
+                (
+                    wa
+                    for wa in [
+                        WordAlignmentInput(
+                            corpusId="corpus1",
+                            textId="text1",
+                            sourceRefs=["1"],
+                            targetRefs=["1"],
+                            source="¿Le importaría darnos las llaves de la habitación, por favor?",
+                            target="Would you mind giving us the room keys, please?",
+                        ),
+                        WordAlignmentInput(
+                            corpusId="corpus1",
+                            textId="text1",
+                            sourceRefs=["2"],
+                            targetRefs=["2"],
+                            source="¿Le importaría cambiarme a otra habitación más tranquila?",
+                            target="Would you mind moving me to another quieter room?",
+                        ),
+                        WordAlignmentInput(
+                            corpusId="corpus1",
+                            textId="text1",
+                            sourceRefs=["3"],
+                            targetRefs=["3"],
+                            source="Me parece que existe un problema.",
+                            target="I think there is a problem.",
+                        ),
+                    ]
+                )
+            )
         )
 
         self.alignment_json = ""

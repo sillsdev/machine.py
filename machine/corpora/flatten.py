@@ -33,14 +33,13 @@ def flatten(corpora: Iterable[Corpus]) -> Corpus:
     if len(corpus_list) == 1:
         return corpus_list[0]
 
-    if any(type(corpus_list[0]) != type(corpus) for corpus in corpus_list[1:]):  # noqa: E721
-        raise TypeError("All corpora must be of the same type.")
-
-    if isinstance(corpus_list[0], TextCorpus):
+    if all(isinstance(corpus, TextCorpus) for corpus in corpus_list):
         return _FlattenTextCorpus(cast(List[TextCorpus], corpus_list))
-    if isinstance(corpus_list[0], AlignmentCorpus):
+    if all(isinstance(corpus, AlignmentCorpus) for corpus in corpus_list):
         return _FlattenAlignmentCorpus(cast(List[AlignmentCorpus], corpus_list))
-    return _FlattenParallelTextCorpus(cast(List[ParallelTextCorpus], corpus_list))
+    if all(isinstance(corpus, ParallelTextCorpus) for corpus in corpus_list):
+        return _FlattenParallelTextCorpus(cast(List[ParallelTextCorpus], corpus_list))
+    raise TypeError("All corpora must be of the same type.")
 
 
 class _FlattenTextCorpus(TextCorpus):
@@ -100,7 +99,7 @@ class _FlattenParallelTextCorpus(ParallelTextCorpus):
     def count(self, include_empty: bool = True, text_ids: Optional[Iterable[str]] = None) -> int:
         return sum(c.count(include_empty, text_ids) for c in self._corpora)
 
-    def _get_rows(self) -> Generator[ParallelTextRow, None, None]:
+    def _get_rows(self, text_ids: Optional[Iterable[str]] = None) -> Generator[ParallelTextRow, None, None]:
         for corpus in self._corpora:
-            with corpus.get_rows() as rows:
+            with corpus.get_rows(text_ids) as rows:
                 yield from rows

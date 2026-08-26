@@ -2,7 +2,7 @@ import json
 from contextlib import contextmanager
 from io import StringIO
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, List
 
 from decoy import Decoy, matchers
 from pytest import raises
@@ -16,47 +16,89 @@ from machine.jobs import (
     NmtModelFactory,
     PretranslationInfo,
     TranslationFileService,
+    WordAlignmentModelFactory,
 )
-from machine.jobs.eflomal_aligner import is_eflomal_available
 from machine.translation import (
     Phrase,
     Trainer,
     TrainStats,
+    TransductiveWordAlignmentModel,
     TranslationEngine,
     TranslationResult,
     TranslationSources,
     WordAlignmentMatrix,
+    WordAlignmentModel,
 )
 from machine.utils import CanceledError, ContextManagedGenerator
 
 
 def test_run(decoy: Decoy) -> None:
-    env = _TestEnvironment(decoy)
+    env = _TestEnvironment(decoy, transductive=True)
     env.job.run()
 
     pretranslations = json.loads(env.target_pretranslations)
     assert len(pretranslations) == 1
     assert pretranslations[0]["translation"] == "Please, I have booked a room."
-    if is_eflomal_available():
-        assert pretranslations[0]["sourceTokens"] == [
-            "Por",
-            "favor",
-            ",",
-            "tengo",
-            "reservada",
-            "una",
-            "habitación",
-            ".",
-        ]
-        assert pretranslations[0]["translationTokens"] == ["Please", ",", "I", "have", "booked", "a", "room", "."]
-        assert len(pretranslations[0]["alignment"]) > 0
-        assert pretranslations[0]["sequenceConfidence"] == 0.5
-    else:
-        assert pretranslations[0]["sourceTokens"] == []
-        assert pretranslations[0]["translationTokens"] == []
-        assert len(pretranslations[0]["alignment"]) == 0
-        assert pretranslations[0]["sequenceConfidence"] == 0.5
+    assert pretranslations[0]["sourceTokens"] == [
+        "Por",
+        "favor",
+        ",",
+        "tengo",
+        "reservada",
+        "una",
+        "habitación",
+        ".",
+    ]
+    assert pretranslations[0]["translationTokens"] == ["Please", ",", "I", "have", "booked", "a", "room", "."]
+    assert len(pretranslations[0]["alignment"]) > 0
+    assert pretranslations[0]["sequenceConfidence"] == 0.5
+    decoy.verify(env.model.align_batch(matchers.Anything()), times=0)
     decoy.verify(env.translation_file_service.save_model(Path("model.tar.gz"), "models/save-model.tar.gz"), times=1)
+
+
+def test_run_inductive_fallback(decoy: Decoy) -> None:
+    env = _TestEnvironment(decoy, transductive=False)
+    env.job.run()
+
+    pretranslations = json.loads(env.target_pretranslations)
+    assert len(pretranslations) == 1
+    assert pretranslations[0]["sourceTokens"] == [
+        "Por",
+        "favor",
+        ",",
+        "tengo",
+        "reservada",
+        "una",
+        "habitación",
+        ".",
+    ]
+    assert pretranslations[0]["translationTokens"] == ["Please", ",", "I", "have", "booked", "a", "room", "."]
+    assert len(pretranslations[0]["alignment"]) > 0
+
+
+def test_run_batched_transductive(decoy: Decoy) -> None:
+    env = _TestEnvironment(decoy, transductive=True, num_pretranslations=3, batch_size=2)
+    env.job.run()
+
+    pretranslations = json.loads(env.target_pretranslations)
+    assert len(pretranslations) == 3
+    assert [pt["textId"] for pt in pretranslations] == ["text1", "text2", "text3"]
+    for pretranslation in pretranslations:
+        assert pretranslation["translation"] == "Please, I have booked a room."
+        assert len(pretranslation["alignment"]) > 0
+    assert env.translate_batch_sizes == [2, 1]
+    assert env.training_alignment_requests == [0, 1, 2]
+
+
+def test_run_batched_inductive(decoy: Decoy) -> None:
+    env = _TestEnvironment(decoy, transductive=False, num_pretranslations=3, batch_size=2)
+    env.job.run()
+
+    pretranslations = json.loads(env.target_pretranslations)
+    assert len(pretranslations) == 3
+    for pretranslation in pretranslations:
+        assert len(pretranslation["alignment"]) > 0
+    assert env.align_batch_sizes == [2, 1]
 
 
 def test_cancel(decoy: Decoy) -> None:
@@ -68,8 +110,29 @@ def test_cancel(decoy: Decoy) -> None:
     assert env.target_pretranslations == ""
 
 
+class _TransductiveModel(WordAlignmentModel, TransductiveWordAlignmentModel):
+    pass
+
+
+def _create_translation_result() -> TranslationResult:
+    return TranslationResult(
+        translation="Please, I have booked a room.",
+        source_tokens="Por favor , tengo reservada una habitación .".split(),
+        target_tokens="Please , I have booked a room .".split(),
+        confidences=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+        sequence_confidence=0.5,
+        sources=[TranslationSources.NMT] * 8,
+        alignment=WordAlignmentMatrix.from_word_pairs(
+            8, 8, {(0, 0), (1, 0), (2, 1), (3, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7)}
+        ),
+        phrases=[Phrase(Range.create(0, 8), 8)],
+    )
+
+
 class _TestEnvironment:
-    def __init__(self, decoy: Decoy) -> None:
+    def __init__(
+        self, decoy: Decoy, transductive: bool = False, num_pretranslations: int = 1, batch_size: int = 100
+    ) -> None:
         self.source_tokenizer_trainer = decoy.mock(cls=Trainer)
         self.target_tokenizer_trainer = decoy.mock(cls=Trainer)
 
@@ -79,33 +142,15 @@ class _TestEnvironment:
         stats.metrics["bleu"] = 30.0
         decoy.when(self.model_trainer.stats).then_return(stats)
 
+        self.translate_batch_sizes: List[int] = []
+
+        def _translate_batch(segments: List[str]) -> List[TranslationResult]:
+            self.translate_batch_sizes.append(len(segments))
+            return [_create_translation_result() for _ in segments]
+
         self.engine = decoy.mock(cls=TranslationEngine)
         decoy.when(self.engine.__enter__()).then_return(self.engine)
-        decoy.when(self.engine.translate_batch(matchers.Anything())).then_return(
-            [
-                TranslationResult(
-                    translation="Please, I have booked a room.",
-                    source_tokens="Por favor , tengo reservada una habitación .".split(),
-                    target_tokens="Please , I have booked a room .".split(),
-                    confidences=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
-                    sequence_confidence=0.5,
-                    sources=[
-                        TranslationSources.NMT,
-                        TranslationSources.NMT,
-                        TranslationSources.NMT,
-                        TranslationSources.NMT,
-                        TranslationSources.NMT,
-                        TranslationSources.NMT,
-                        TranslationSources.NMT,
-                        TranslationSources.NMT,
-                    ],
-                    alignment=WordAlignmentMatrix.from_word_pairs(
-                        8, 8, {(0, 0), (1, 0), (2, 1), (3, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7)}
-                    ),
-                    phrases=[Phrase(Range.create(0, 8), 8)],
-                )
-            ]
-        )
+        decoy.when(self.engine.translate_batch(matchers.Anything())).then_do(_translate_batch)
 
         self.nmt_model_factory = decoy.mock(cls=NmtModelFactory)
         decoy.when(self.nmt_model_factory.train_tokenizer).then_return(True)
@@ -132,15 +177,16 @@ class _TestEnvironment:
                     for pi in [
                         PretranslationInfo(
                             corpusId="corpus1",
-                            textId="text1",
-                            sourceRefs=["ref1"],
-                            targetRefs=["ref1"],
+                            textId=f"text{i + 1}",
+                            sourceRefs=[f"ref{i + 1}"],
+                            targetRefs=[f"ref{i + 1}"],
                             translation="Por favor, tengo reservada una habitación.",
                             sourceTokens=[],
                             translationTokens=[],
                             alignment="",
                             sequenceConfidence=0.5,
                         )
+                        for i in range(num_pretranslations)
                     ]
                 )
             )
@@ -160,18 +206,64 @@ class _TestEnvironment:
             lambda: open_target_pretranslation_writer(self)
         )
 
+        self.alignment_model_trainer = decoy.mock(cls=Trainer)
+        decoy.when(self.alignment_model_trainer.__enter__()).then_return(self.alignment_model_trainer)
+        stats = TrainStats()
+        decoy.when(self.alignment_model_trainer.stats).then_return(stats)
+
+        alignment = WordAlignmentMatrix.from_word_pairs(
+            row_count=8,
+            column_count=8,
+            set_values=[(0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7)],
+        )
+        self.training_alignment_requests: List[int] = []
+        self.align_batch_sizes: List[int] = []
+
+        def _get_training_alignment(n: int) -> WordAlignmentMatrix:
+            self.training_alignment_requests.append(n)
+            return alignment
+
+        def _align_batch(segments: List[object]) -> List[WordAlignmentMatrix]:
+            self.align_batch_sizes.append(len(segments))
+            return [alignment for _ in segments]
+
+        if transductive:
+            self.model = decoy.mock(cls=_TransductiveModel)
+            decoy.when(self.model.__enter__()).then_return(self.model)
+            decoy.when(self.model.get_training_alignment(matchers.Anything())).then_do(_get_training_alignment)
+        else:
+            self.model = decoy.mock(cls=WordAlignmentModel)
+            decoy.when(self.model.__enter__()).then_return(self.model)
+            decoy.when(self.model.align_batch(matchers.Anything())).then_do(_align_batch)
+
+        self.word_alignment_model_factory = decoy.mock(cls=WordAlignmentModelFactory)
+        decoy.when(
+            self.word_alignment_model_factory.create_model_trainer(matchers.Anything(), matchers.Anything())
+        ).then_return(self.alignment_model_trainer)
+        decoy.when(self.word_alignment_model_factory.create_alignment_model()).then_return(self.model)
+        decoy.when(self.word_alignment_model_factory.save_model()).then_return(Path("model.zip"))
+
         self.job = NmtEngineBuildJob(
             MockSettings(
                 {
                     "src_lang": "es",
                     "trg_lang": "en",
                     "save_model": "save-model",
-                    "inference_batch_size": 100,
+                    "inference_batch_size": batch_size,
                     "align_pretranslations": True,
+                    "build_id": "my_build",
+                    "thot_align": {
+                        "tokenizer": "latin",
+                        "model_type": "eflomal",
+                        "word_alignment_heuristic": "grow-diag-final-and",
+                    },
+                    "data_dir": "~/machine",
+                    "shared_file_folder": "dev",
                 }
             ),
             self.nmt_model_factory,
             self.translation_file_service,
+            self.word_alignment_model_factory,
         )
 
 

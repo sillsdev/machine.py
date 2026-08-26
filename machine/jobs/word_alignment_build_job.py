@@ -1,14 +1,19 @@
+import json
 import logging
 from contextlib import ExitStack
-from typing import Any, Callable, Optional
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import Any, Callable, Generator, Optional
 
 from ..corpora.aligned_word_pair import AlignedWordPair
+from ..corpora.corpora_utils import batch
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
-from ..corpora.parallel_text_row import ParallelTextRow
+from ..corpora.text_file_text_corpus import TextFileTextCorpus
+from ..corpora.token_processors import lowercase
 from ..tokenization.tokenizer_factory import create_tokenizer
 from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
 from ..utils.progress_status import ProgressStatus
-from .word_alignment_file_service import WordAlignmentFileService
+from .word_alignment_file_service import WordAlignmentFileService, WordAlignmentInput
 from .word_alignment_model_factory import WordAlignmentModelFactory
 
 logger = logging.getLogger(__name__)
@@ -89,56 +94,65 @@ class WordAlignmentBuildJob:
         check_canceled: Optional[Callable[[], None]],
     ) -> None:
 
-        inference_inputs = self._word_alignment_file_service.get_word_alignment_inputs()
-
-        inference_step_count = len(inference_inputs)
+        with self._word_alignment_file_service.get_word_alignment_inputs() as inference_inputs:
+            inference_step_count = sum(1 for _ in inference_inputs)
 
         with ExitStack() as stack:
             phase_progress = stack.enter_context(progress_reporter.start_next_phase())
-            alignment_model = stack.enter_context(self._word_alignment_model_factory.create_alignment_model())
             writer = stack.enter_context(self._word_alignment_file_service.open_alignment_output_writer())
+            inference_inputs = stack.enter_context(self._word_alignment_file_service.get_word_alignment_inputs())
+
+            temp_dir = stack.enter_context(TemporaryDirectory())
+            # Spool the parallel data to disk so that the aligner can make multiple
+            # passes over them without keeping the entire corpus in memory.
+            source_path = Path(temp_dir) / "word_align.src.txt"
+            target_path = Path(temp_dir) / "word_align.trg.txt"
+            word_alignments_path = Path(temp_dir) / "word_align.json"
+            with (
+                source_path.open("w", encoding="utf-8", newline="\n") as source_file,
+                target_path.open("w", encoding="utf-8", newline="\n") as target_file,
+                word_alignments_path.open("w", encoding="utf-8", newline="\n") as word_alignments_file,
+            ):
+                for wa_input in inference_inputs:
+                    source_file.write(wa_input["source"] + "\n")
+                    target_file.write(wa_input["target"] + "\n")
+                    word_alignments_file.write(json.dumps(wa_input, ensure_ascii=False) + "\n")
+
+            if check_canceled is not None:
+                check_canceled()
+
+            parallel_corpus = TextFileTextCorpus(source_path).align_rows(TextFileTextCorpus(target_path))
+
             current_inference_step = 0
             phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
-            batch_size = self._config["inference_batch_size"]
+            batch_size: int = self._config["inference_batch_size"]
+            alignment_model = stack.enter_context(self._word_alignment_model_factory.create_alignment_model())
+            rows = stack.enter_context(parallel_corpus.tokenize(self._tokenizer).get_rows())
+            for wa_batch in batch(zip(_read_word_alignments(word_alignments_path), rows, strict=True), batch_size):
+                if check_canceled is not None:
+                    check_canceled()
+                segments = [(lowercase(row.source_segment), lowercase(row.target_segment)) for _, row in wa_batch]
+                alignments = alignment_model.align_batch(segments)
+                if check_canceled is not None:
+                    check_canceled()
+                for (wa_input, row), (source_segment, target_segment), alignment in zip(
+                    wa_batch, segments, alignments, strict=True
+                ):
+                    word_pairs = alignment.to_aligned_word_pairs(include_null=False)
+                    alignment_model.compute_aligned_word_pair_scores(source_segment, target_segment, word_pairs)
 
-            parallel_corpus = ParallelTextCorpus.from_parallel_rows(
-                [
-                    ParallelTextRow(
-                        ii["textId"],
-                        ii["sourceRefs"],
-                        ii["targetRefs"],
-                        list(self._tokenizer.tokenize(ii["source"])),
-                        list(self._tokenizer.tokenize(ii["target"])),
-                    )
-                    for ii in inference_inputs
-                ]
-            ).lowercase()
-
-            segment_batch = list(parallel_corpus.take(batch_size))
-            if check_canceled is not None:
-                check_canceled()
-            alignments = alignment_model.align_batch(segment_batch)
-            if check_canceled is not None:
-                check_canceled()
-
-            for parallel_text_row, inference_input, alignment in zip(
-                parallel_corpus.get_rows(), inference_inputs, alignments
-            ):
-                word_pairs = alignment.to_aligned_word_pairs(include_null=True)
-                alignment_model.compute_aligned_word_pair_scores(
-                    parallel_text_row.source_segment, parallel_text_row.target_segment, word_pairs
-                )
-
-                word_alignment_info = {
-                    "corpusId": inference_input["corpusId"],
-                    "textId": inference_input["textId"],
-                    "sourceRefs": [str(ref) for ref in inference_input["sourceRefs"]],
-                    "targetRefs": [str(ref) for ref in inference_input["targetRefs"]],
-                    "sourceTokens": parallel_text_row.source_segment,
-                    "targetTokens": parallel_text_row.target_segment,
-                    "alignment": AlignedWordPair.to_string(word_pairs),
-                }
-                writer.write(word_alignment_info)
+                    word_alignment_info = {
+                        "corpusId": wa_input["corpusId"],
+                        "textId": wa_input["textId"],
+                        "sourceRefs": [str(ref) for ref in wa_input["sourceRefs"]],
+                        "targetRefs": [str(ref) for ref in wa_input["targetRefs"]],
+                        "sourceTokens": row.source_segment,
+                        "targetTokens": row.target_segment,
+                        "alignment": AlignedWordPair.to_string(word_pairs),
+                    }
+                    writer.write(word_alignment_info)
+                    current_inference_step += len(wa_batch)
+                    phase_progress(ProgressStatus.from_step(current_inference_step, inference_step_count))
 
     def _save_model(self) -> None:
         logger.info("Saving model")
@@ -146,3 +160,9 @@ class WordAlignmentBuildJob:
         self._word_alignment_file_service.save_model(
             model_path, f"builds/{self._config['build_id']}/model{''.join(model_path.suffixes)}"
         )
+
+
+def _read_word_alignments(path: Path) -> Generator[WordAlignmentInput, None, None]:
+    with path.open("r", encoding="utf-8") as file:
+        for line in file:
+            yield json.loads(line)
