@@ -142,3 +142,6 @@ out/
 
 # Ignore Poetry plugins
 .poetry/
+
+# Ignore custom pyright configuration
+pyrightconfig.json

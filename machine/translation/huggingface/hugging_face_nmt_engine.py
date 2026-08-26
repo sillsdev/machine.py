@@ -4,7 +4,8 @@ import gc
 import logging
 import re
 from math import exp, prod
-from typing import Collection, Iterable, List, Optional, Sequence, Tuple, Union, cast
+from pathlib import Path
+from typing import Any, Collection, Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 import torch  # pyright: ignore[reportMissingImports]
 from sacremoses import MosesPunctNormalizer
@@ -14,18 +15,15 @@ from transformers import (
     AutoTokenizer,
     M2M100Tokenizer,
     NllbTokenizer,
-    NllbTokenizerFast,
     PreTrainedModel,
     PreTrainedTokenizer,
     PreTrainedTokenizerFast,
-    TranslationPipeline,
 )
-from transformers.generation import BeamSearchEncoderDecoderOutput, GreedySearchEncoderDecoderOutput
-from transformers.tokenization_utils import BatchEncoding, TruncationStrategy
+from transformers.generation.utils import GenerateBeamEncoderDecoderOutput, GenerateEncoderDecoderOutput
+from transformers.tokenization_utils_base import TruncationStrategy
 
 from ...annotations.range import Range
 from ...corpora.aligned_word_pair import AlignedWordPair
-from ...utils.typeshed import StrPath
 from ..translation_engine import TranslationEngine
 from ..translation_result import TranslationResult
 from ..translation_result_builder import TranslationResultBuilder
@@ -38,7 +36,7 @@ logger = logging.getLogger(__name__)
 class HuggingFaceNmtEngine(TranslationEngine):
     def __init__(
         self,
-        model: Union[PreTrainedModel, StrPath, str],
+        model: Union[PreTrainedModel, Path, str],
         oom_batch_size_backoff_mult: float = 1.0,
         **pipeline_kwargs,
     ) -> None:
@@ -53,8 +51,8 @@ class HuggingFaceNmtEngine(TranslationEngine):
                 PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(str(self._model), config=model_config)
             )
             self._is_model_owned = True
-        self._tokenizer = AutoTokenizer.from_pretrained(self._model.name_or_path, use_fast=True)
-        if isinstance(self._tokenizer, (NllbTokenizer, NllbTokenizerFast)):
+        self._tokenizer = AutoTokenizer.from_pretrained(self._model.name_or_path)
+        if isinstance(self._tokenizer, NllbTokenizer):
             self._mpn = MosesPunctNormalizer()
             self._mpn.substitutions = [  # type: ignore
                 (re.compile(r), sub)
@@ -70,11 +68,12 @@ class HuggingFaceNmtEngine(TranslationEngine):
             src_lang is not None
             and tgt_lang is not None
             and "prefix" not in self._pipeline_kwargs
+            and self._model.name_or_path is not None
             and (self._model.name_or_path.startswith("t5-") or self._model.name_or_path.startswith("google/mt5-"))
         ):
             self._pipeline_kwargs["prefix"] = f"translate {src_lang} to {tgt_lang}: "
         else:
-            additional_special_tokens = cast(list[str], self._tokenizer.additional_special_tokens or [])
+            extra_special_tokens = cast(list[str], self._tokenizer.extra_special_tokens or [])
             if isinstance(self._tokenizer, M2M100Tokenizer):
                 src_lang_token = self._tokenizer.lang_code_to_token.get(src_lang) if src_lang is not None else None
                 tgt_lang_token = self._tokenizer.lang_code_to_token.get(tgt_lang) if tgt_lang is not None else None
@@ -84,14 +83,14 @@ class HuggingFaceNmtEngine(TranslationEngine):
             if (
                 src_lang is not None
                 and src_lang_token not in self._tokenizer.added_tokens_encoder
-                and src_lang_token not in additional_special_tokens
+                and src_lang_token not in extra_special_tokens
             ):
                 raise ValueError(f"The specified model does not support the language code '{src_lang}'")
 
             if (
                 tgt_lang is not None
                 and tgt_lang_token not in self._tokenizer.added_tokens_encoder
-                and tgt_lang_token not in additional_special_tokens
+                and tgt_lang_token not in extra_special_tokens
             ):
                 raise ValueError(f"The specified model does not support the language code '{tgt_lang}'")
 
@@ -101,7 +100,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
 
         self._pipeline = _TranslationPipeline(
             model=self._model,
-            tokenizer=self._tokenizer,
+            tokenizer=cast(PreTrainedTokenizer, self.tokenizer),
             mpn=self._mpn,
             batch_size=self._batch_size,
             **self._pipeline_kwargs,
@@ -189,17 +188,27 @@ class HuggingFaceNmtEngine(TranslationEngine):
             torch.cuda.empty_cache()
 
 
-class _TranslationPipeline(TranslationPipeline):
+class _TranslationPipeline:
     def __init__(
         self,
-        model: Union[PreTrainedModel, StrPath, str],
-        tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast],
-        batch_size: int,
+        model: Union[PreTrainedModel, Path, str],
+        tokenizer: PreTrainedTokenizer,
         mpn: Optional[MosesPunctNormalizer] = None,
         **kwargs,
     ) -> None:
-        super().__init__(model=model, tokenizer=tokenizer, batch_size=batch_size, **kwargs)
+        if isinstance(model, (str, Path)):
+            model = cast(PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(model))
+        self.device: torch.device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+        self.model: Any = cast(PreTrainedModel, cast(torch.nn.Module, model).to(self.device))
+        self.tokenizer = tokenizer
         self._mpn = mpn
+        self._kwargs = kwargs
+
+    def __call__(self, sentences: Iterable[Any], **generate_kwargs) -> List[List[dict]]:
+        model_inputs = self.preprocess(list(sentences)).to(self.device)
+        with torch.no_grad():
+            model_outputs = self._forward(model_inputs, **generate_kwargs)
+        return self.postprocess(model_outputs)
 
     def preprocess(self, *args, truncation=TruncationStrategy.DO_NOT_TRUNCATE, src_lang=None, tgt_lang=None):
         if self.tokenizer is None:
@@ -214,26 +223,23 @@ class _TranslationPipeline(TranslationPipeline):
                 for s in args
             ]
         else:
-            sentences = [
-                (
-                    s
-                    if isinstance(s, str)
-                    else self.tokenizer.decode(self.tokenizer.convert_tokens_to_ids(s), use_source_tokenizer=True)
-                )
-                for s in args
-            ]
-        inputs = cast(
-            BatchEncoding,
-            super().preprocess(*sentences, truncation=truncation, src_lang=src_lang, tgt_lang=tgt_lang),
+            sentences = (
+                [s for s in args if isinstance(s, str)],
+                [
+                    self.tokenizer.decode(self.tokenizer.convert_tokens_to_ids(s), use_source_tokenizer=True)
+                    for s in args
+                    if not isinstance(s, str)
+                ],
+            )
+
+        # The source language prefix and the forced target language token are configured on the tokenizer and the
+        # generation config in _configure_model, so a plain tokenizer call is all that is needed here.
+        return self.tokenizer(
+            cast(list[str] | list[list[str]], sentences),
+            return_tensors="pt",
+            truncation=TruncationStrategy.DO_NOT_TRUNCATE,
+            padding=True,
         )
-        if inputs.encodings is not None:
-            inputs["input_tokens"] = [
-                _get_encoding_fast_tokens(inputs.encodings[i]) if isinstance(args[i], str) else args[i]
-                for i in range(len(args))
-            ]
-        else:
-            inputs["input_tokens"] = [self.tokenizer.tokenize(s) if isinstance(s, str) else s for s in args]
-        return inputs
 
     def _forward(self, model_inputs, **generate_kwargs):
         in_b, input_length = model_inputs["input_ids"].shape
@@ -247,7 +253,6 @@ class _TranslationPipeline(TranslationPipeline):
         generate_kwargs["min_length"] = generate_kwargs.get("min_length", config.min_length)
         generate_kwargs["max_length"] = generate_kwargs.get("max_length", config.max_length)
         generate_kwargs["output_attentions"] = generate_kwargs.get("output_attentions", True)
-        self.check_inputs(input_length, generate_kwargs["min_length"], generate_kwargs["max_length"])
         output = self.model.generate(
             **model_inputs,
             **generate_kwargs,
@@ -255,14 +260,14 @@ class _TranslationPipeline(TranslationPipeline):
             return_dict_in_generate=True,
         )
 
-        if isinstance(output, BeamSearchEncoderDecoderOutput):
+        if isinstance(output, GenerateBeamEncoderDecoderOutput):
             output_ids = output.sequences
             beam_indices = output.beam_indices
             scores = output.scores
             assert scores is not None and beam_indices is not None
             sequences_scores = output.sequences_scores
             attentions = output.cross_attentions
-        elif isinstance(output, GreedySearchEncoderDecoderOutput):
+        elif isinstance(output, GenerateEncoderDecoderOutput):
             output_ids = output.sequences
             beam_indices = None
             assert output.scores is not None
@@ -272,15 +277,30 @@ class _TranslationPipeline(TranslationPipeline):
         else:
             raise RuntimeError("Cannot postprocess the output of the model.")
 
-        transition_scores = cast(
-            torch.Tensor,
-            self.model.compute_transition_scores(
-                output_ids,  # type: ignore
-                scores,  # type: ignore
-                beam_indices,  # type: ignore
-                normalize_logits=True,
-            ),
-        )
+        try:
+            transition_scores = cast(
+                torch.Tensor,
+                self.model.compute_transition_scores(
+                    output_ids,
+                    scores,
+                    beam_indices,
+                    normalize_logits=True,
+                ),
+            )
+        except Exception:
+            output_ids = output_ids.to("cpu")
+            scores = tuple(score.to("cpu") for score in scores)
+            beam_indices = beam_indices.to("cpu") if beam_indices is not None else None
+            transition_scores = cast(
+                torch.Tensor,
+                self.model.compute_transition_scores(
+                    output_ids,
+                    scores,
+                    beam_indices,
+                    normalize_logits=True,
+                ),
+            )
+        sequences_scores = getattr(output, "sequences_scores", None)
 
         if beam_indices is None:
             beam_indices = torch.zeros_like(output_ids)
@@ -354,7 +374,7 @@ class _TranslationPipeline(TranslationPipeline):
             "attentions": attentions,
         }
 
-    def postprocess(self, model_outputs, clean_up_tokenization_spaces=False):
+    def postprocess(self, model_outputs, clean_up_tokenization_spaces=False) -> List[List[dict]]:
         if self.tokenizer is None:
             raise RuntimeError("No tokenizer is specified.")
         all_special_ids = set(self.tokenizer.all_special_ids)
