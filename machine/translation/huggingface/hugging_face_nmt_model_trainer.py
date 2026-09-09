@@ -535,6 +535,7 @@ def find_executable_batch_size(function: Callable, starting_batch_size, accelera
             try:
                 return function(batch_size, *args, **kwargs)
             except Exception as e:
+                logger.error(f"Attempt with batch_size={batch_size} failed with error: {e}", exc_info=True)
                 if should_reduce_batch_size(e):
                     gc.collect()
                     torch.cuda.empty_cache()
