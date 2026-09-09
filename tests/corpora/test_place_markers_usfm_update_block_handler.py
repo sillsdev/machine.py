@@ -729,6 +729,176 @@ def test_adjustment_of_placed_paragraph_marker() -> None:
     assert_usfm_equals(target, result)
 
 
+def test_unclosed_style_marker_in_non_verse_paragraph() -> None:
+    # An unclosed character style is closed implicitly by the next paragraph marker, which must
+    # not be pulled into the block being closed (and then dropped as part of the removed style).
+    source = "(A)"
+    pretranslation = "(A translated)"
+    align_info = PlaceMarkersAlignmentInfo(
+        source_tokens=[t for t in TOKENIZER.tokenize(source)],
+        translation_tokens=[t for t in TOKENIZER.tokenize(pretranslation)],
+        alignment=to_word_alignment_matrix("0-0 1-1 2-2"),
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.STRIP,
+    )
+    rows = [
+        UpdateUsfmRow(scr_ref("PSA 119:0/1:d"), str(pretranslation), metadata={"alignment_info": align_info}),
+        UpdateUsfmRow(scr_ref("PSA 119:1"), "New verse 1"),
+    ]
+    usfm = r"""\id PSA
+\c 119
+\d \bd (A)
+\q1
+\v 1 Verse 1
+"""
+
+    target = update_usfm(rows, usfm, update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()])
+    result = r"""\id PSA
+\c 119
+\d (A translated)
+\q1
+\v 1 New verse 1
+"""
+    assert_usfm_equals(target, result)
+
+
+def test_unmatched_end_marker() -> None:
+    # A stray end marker has no matching start marker, so it is marked for removal even when
+    # styles are preserved. It must not be mistaken for a marker that can be placed.
+    source = "Section header"
+    pretranslation = "New section header"
+    align_info = PlaceMarkersAlignmentInfo(
+        source_tokens=[t for t in TOKENIZER.tokenize(source)],
+        translation_tokens=[t for t in TOKENIZER.tokenize(pretranslation)],
+        alignment=to_word_alignment_matrix("0-1 1-2"),
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+    )
+    rows = [
+        UpdateUsfmRow(scr_ref("MAT 1:0/1:s"), str(pretranslation), metadata={"alignment_info": align_info}),
+        UpdateUsfmRow(scr_ref("MAT 1:1"), "New verse 1"),
+    ]
+    usfm = r"""\id MAT
+\c 1
+\s Section header\it*
+\p
+\v 1 Verse 1
+"""
+
+    target = update_usfm(
+        rows,
+        usfm,
+        style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
+    )
+    result = r"""\id MAT
+\c 1
+\s New section header
+\p
+\v 1 New verse 1
+"""
+    assert_usfm_equals(target, result)
+
+
+def test_marker_behavior_disagrees_with_alignment_info() -> None:
+    # The behaviors in the alignment info are supplied by the caller and can disagree with the
+    # ones the updater was built with. The markers are already stripped, so there is nothing to
+    # place and the block is left alone.
+    source = "Section header"
+    pretranslation = "New section header"
+    align_info = PlaceMarkersAlignmentInfo(
+        source_tokens=[t for t in TOKENIZER.tokenize(source)],
+        translation_tokens=[t for t in TOKENIZER.tokenize(pretranslation)],
+        alignment=to_word_alignment_matrix("0-1 1-2"),
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+    )
+    rows = [
+        UpdateUsfmRow(scr_ref("MAT 1:0/1:s"), str(pretranslation), metadata={"alignment_info": align_info}),
+        UpdateUsfmRow(scr_ref("MAT 1:1"), "New verse 1"),
+    ]
+    usfm = r"""\id MAT
+\c 1
+\s Section \it header\it*
+\p
+\v 1 Verse 1
+"""
+
+    target = update_usfm(
+        rows,
+        usfm,
+        style_behavior=UpdateUsfmMarkerBehavior.STRIP,
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
+    )
+    result = r"""\id MAT
+\c 1
+\s New section header
+\p
+\v 1 New verse 1
+"""
+    assert_usfm_equals(target, result)
+
+
+def test_other_elements_do_not_affect_embed_placement() -> None:
+    # Attributes, milestones and the like are never transferred, so their presence must not
+    # change where anything else lands - here, an embed before end-of-verse paragraph markers.
+    source = "This is the first part. This is the second part."
+    pretranslation = "Esta es la primera parte. Esta es la segunda parte."
+    result = r"""\id MAT
+\c 1
+\v 1 Esta es la primera parte. Esta es la segunda parte. \f + \ft Footnote\f*
+\q1
+\q2
+"""
+    for milestone in ["", r" \ts-s\*"]:
+        align_info = PlaceMarkersAlignmentInfo(
+            source_tokens=[t for t in TOKENIZER.tokenize(source)],
+            translation_tokens=[t for t in TOKENIZER.tokenize(pretranslation)],
+            alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10"),
+            paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+            style_behavior=UpdateUsfmMarkerBehavior.STRIP,
+        )
+        rows = [UpdateUsfmRow(scr_ref("MAT 1:1"), str(pretranslation), metadata={"alignment_info": align_info})]
+        usfm = (
+            "\\id MAT\n\\c 1\n"
+            "\\v 1 This is the first part. This is the second part.\\f + \\ft Footnote\\f*\n"
+            f"\\q1{milestone}\n\\q2\n"
+        )
+
+        target = update_usfm(rows, usfm, update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()])
+        assert_usfm_equals(target, result)
+
+
+def test_verse_range_matched_by_multiple_rows() -> None:
+    # A verse range picks up one text token per matched row, so all of them have to be read.
+    source = "This is the first part. This is the second part."
+    pretranslation = "Esta es la primera parte. Esta es la segunda parte."
+    align_info = PlaceMarkersAlignmentInfo(
+        source_tokens=[t for t in TOKENIZER.tokenize(source)],
+        translation_tokens=[t for t in TOKENIZER.tokenize(pretranslation)],
+        alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10"),
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.STRIP,
+    )
+    rows = [
+        UpdateUsfmRow(scr_ref("MAT 1:1"), "Esta es la primera parte.", metadata={"alignment_info": align_info}),
+        UpdateUsfmRow(scr_ref("MAT 1:2"), "Esta es la segunda parte.", metadata={"alignment_info": align_info}),
+    ]
+    usfm = r"""\id MAT
+\c 1
+\v 1-2 This is the first part.
+\p This is the second part.
+"""
+
+    target = update_usfm(rows, usfm, update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()])
+    result = r"""\id MAT
+\c 1
+\v 1-2 Esta es la primera parte.
+\p Esta es la segunda parte.
+"""
+    assert_usfm_equals(target, result)
+
+
 def scr_ref(*refs: str) -> List[ScriptureRef]:
     return [ScriptureRef.parse(ref) for ref in refs]
 

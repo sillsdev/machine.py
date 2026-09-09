@@ -235,7 +235,11 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
 
     def end_note(self, state: UsfmParserState, marker: str, closed: bool) -> None:
         if closed:
-            self._collect_updatable_tokens(state)
+            # Mirror start_note: an embed in a duplicate verse is dropped, end marker included.
+            if self._duplicate_verse:
+                self._skip_updatable_tokens(state)
+            else:
+                self._collect_updatable_tokens(state)
 
         super().end_note(state, marker, closed)
 
@@ -264,14 +268,18 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
         attributes: Sequence[UsfmAttribute],
         closed: bool,
     ) -> None:
-        if self._current_text_type == ScriptureTextType.EMBED:
-            self._collect_updatable_tokens(state)
-        else:
-            self._replace_with_new_tokens(state)
-            if self._style_behavior == UpdateUsfmMarkerBehavior.STRIP:
-                self._skip_updatable_tokens(state)
-            else:
+        # An implicitly closed character style has no end marker of its own, so the token at
+        # state.index belongs to whatever closed it (e.g. the next paragraph marker). Leave it
+        # for the callback that handles it, as end_note and end_sidebar already do.
+        if closed:
+            if self._current_text_type == ScriptureTextType.EMBED:
                 self._collect_updatable_tokens(state)
+            else:
+                self._replace_with_new_tokens(state)
+                if self._style_behavior == UpdateUsfmMarkerBehavior.STRIP:
+                    self._skip_updatable_tokens(state)
+                else:
+                    self._collect_updatable_tokens(state)
 
         super().end_char(state, marker, attributes, closed)
 

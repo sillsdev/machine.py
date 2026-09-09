@@ -21,6 +21,24 @@ class PlaceMarkersAlignmentInfo(TypedDict):
     style_behavior: UpdateUsfmMarkerBehavior
 
 
+def _element_text(element: UsfmUpdateBlockElement) -> str:
+    # A TEXT element holds one token per row matched to the block, so a verse range matched by
+    # several rows has several tokens. Reading only the first drops the rest of the translation.
+    return "".join(t.to_usfm() for t in element.tokens)
+
+
+def _is_placeable(element: UsfmUpdateBlockElement, alignment_info: PlaceMarkersAlignmentInfo) -> bool:
+    # An element marked for removal is never placed, so it must not keep the block from
+    # returning early below: the placement code would then have nothing left to place.
+    if element.marked_for_removal:
+        return False
+    if element.type == UsfmUpdateBlockElementType.PARAGRAPH:
+        return alignment_info["paragraph_behavior"] == UpdateUsfmMarkerBehavior.PRESERVE and len(element.tokens) == 1
+    if element.type == UsfmUpdateBlockElementType.STYLE:
+        return alignment_info["style_behavior"] == UpdateUsfmMarkerBehavior.PRESERVE
+    return False
+
+
 class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
     def __init__(self, *args):
         super().__init__(*args)
@@ -38,20 +56,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
             len(elements) == 0
             or alignment_info["alignment"].row_count == 0
             or alignment_info["alignment"].column_count == 0
-            or not any(
-                (
-                    (
-                        e.type == UsfmUpdateBlockElementType.PARAGRAPH
-                        and alignment_info["paragraph_behavior"] == UpdateUsfmMarkerBehavior.PRESERVE
-                        and len(e.tokens) == 1
-                    )
-                    or (
-                        e.type == UsfmUpdateBlockElementType.STYLE
-                        and alignment_info["style_behavior"] == UpdateUsfmMarkerBehavior.PRESERVE
-                    )
-                )
-                for e in elements
-            )
+            or not any(_is_placeable(e, alignment_info) for e in elements)
         ):
             return block
 
@@ -74,7 +79,9 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                         elements.pop(i)
             elif not (
                 element.type == UsfmUpdateBlockElementType.EMBED
-                or (element.type == UsfmUpdateBlockElementType.TEXT and len(element.tokens[0].to_usfm().strip()) == 0)
+                # OTHER elements are never transferred, so they must not count as content here
+                or element.type == UsfmUpdateBlockElementType.OTHER
+                or (element.type == UsfmUpdateBlockElementType.TEXT and len(_element_text(element).strip()) == 0)
             ):
                 eob_empty_paras = False
 
@@ -92,7 +99,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         for element in elements:
             if element.type == UsfmUpdateBlockElementType.TEXT:
                 if element.marked_for_removal:
-                    text = element.tokens[0].to_usfm()
+                    text = _element_text(element)
                     src_sent += text
 
                     # Track seen tokens
@@ -103,7 +110,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                     if len(text.strip()) > 0:
                         src_tok_idx += 1
                 else:
-                    trg_sent += element.tokens[0].to_usfm()
+                    trg_sent += _element_text(element)
 
             if element.marked_for_removal or (
                 element.type == UsfmUpdateBlockElementType.PARAGRAPH
@@ -115,6 +122,8 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
             elif element.type in [UsfmUpdateBlockElementType.PARAGRAPH, UsfmUpdateBlockElementType.STYLE]:
                 to_place.append(element)
                 adj_src_toks.append(src_tok_idx)
+            # OTHER elements (attributes, milestones) are intentionally dropped: they are tied to
+            # source text that no longer exists, so there is nowhere to transfer them to.
 
         if len(trg_sent.strip()) == 0:
             return block
@@ -162,6 +171,11 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
             to_insert.append((trg_str_idx, element))
         to_insert.sort(key=lambda x: x[0])
         to_insert += [(len(trg_sent), element) for element in embed_elements + end_elements]
+
+        # The guard above only predicts that something is placeable. If nothing survived
+        # element collection, leave the block untouched rather than rebuilding its text.
+        if len(to_insert) == 0:
+            return block
 
         # Construct new text tokens to put between markers
         # and reincorporate headers and empty end-of-verse paragraph markers
