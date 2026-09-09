@@ -15,13 +15,12 @@ from transformers import (
     AutoTokenizer,
     M2M100Tokenizer,
     NllbTokenizer,
-    Pipeline,
     PreTrainedModel,
     PreTrainedTokenizer,
     PreTrainedTokenizerFast,
 )
 from transformers.generation.utils import GenerateBeamEncoderDecoderOutput, GenerateEncoderDecoderOutput
-from transformers.tokenization_utils_base import TruncationStrategy
+from transformers.tokenization_utils_base import BatchEncoding, TruncationStrategy
 
 from ...annotations.range import Range
 from ...corpora.aligned_word_pair import AlignedWordPair
@@ -30,6 +29,7 @@ from ..translation_result import TranslationResult
 from ..translation_result_builder import TranslationResultBuilder
 from ..translation_sources import TranslationSources
 from ..word_alignment_matrix import WordAlignmentMatrix
+from .transformers_compatibility import TranslationPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +106,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
 
         self._oom_batch_size_backoff_mult = oom_batch_size_backoff_mult
 
-        self._pipeline = _TranslationPipeline(
+        self._pipeline = SilTranslationPipeline(
             model=self._model,
             tokenizer=cast(PreTrainedTokenizer, self.tokenizer),
             mpn=self._mpn,
@@ -146,7 +146,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
                     raise
                 self._batch_size = max(int(round(self._batch_size * self._oom_batch_size_backoff_mult)), 1)
                 logger.warning(f"Out of memory error caught. Reducing batch size to {self._batch_size} and retrying.")
-                self._pipeline = _TranslationPipeline(
+                self._pipeline = SilTranslationPipeline(
                     model=self._model,
                     tokenizer=self._tokenizer,
                     batch_size=self._batch_size,
@@ -196,44 +196,17 @@ class HuggingFaceNmtEngine(TranslationEngine):
             torch.cuda.empty_cache()
 
 
-class _TranslationPipeline(Pipeline):
+class SilTranslationPipeline(TranslationPipeline):
     def __init__(
         self,
         model: PreTrainedModel,
         tokenizer: PreTrainedTokenizer,
+        batch_size: int,
         mpn: Optional[MosesPunctNormalizer] = None,
         **kwargs,
     ) -> None:
-        if isinstance(model, (str, Path)):
-            model = cast(PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(model))
-        self.device: torch.device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
-        self.model: Any = cast(PreTrainedModel, cast(torch.nn.Module, model).to(self.device))
-        self.tokenizer = tokenizer
+        super().__init__(model=model, tokenizer=tokenizer, batch_size=batch_size, **kwargs)
         self._mpn = mpn
-        self._kwargs = kwargs
-
-    def __call__(self, sentences: Iterable[Any], **generate_kwargs) -> List[List[dict]]:
-        model_inputs = self.preprocess(*sentences).to(self.device)
-        with torch.no_grad():
-            model_outputs = self._forward(model_inputs, **generate_kwargs)
-        return self.postprocess(model_outputs)
-
-    def _sanitize_parameters(self, **pipeline_parameters):
-        return pipeline_parameters
-
-    def check_inputs(self, input_length: int, min_length: Optional[int], max_length: Optional[int]) -> None:
-        """
-        Checks whether there might be something wrong with given input with regard to the model.
-        """
-        if min_length is not None and max_length is not None and max_length < min_length:
-            logger.warning(f"Your min_length={min_length} must be inferior than your max_length={max_length}.")
-
-        if max_length is not None and input_length < max_length:
-            logger.warning(
-                f"Your max_length is set to {max_length}, but your input_length is only {input_length}. Since this is "
-                "a summarization task, where outputs shorter than the input are typically wanted, you might "
-                f"consider decreasing max_length manually, e.g. summarizer('...', max_length={input_length // 2})"
-            )
 
     def preprocess(self, *args, truncation=TruncationStrategy.DO_NOT_TRUNCATE, src_lang=None, tgt_lang=None):
         if self.tokenizer is None:
@@ -256,17 +229,22 @@ class _TranslationPipeline(Pipeline):
                 )
                 for s in args
             ]
-
-        # The source language prefix and the forced target language token are configured on the tokenizer and the
-        # generation config in _configure_model, so a plain tokenizer call is all that is needed here.
-        return self.tokenizer(
-            cast(list[str] | list[list[str]], sentences),
-            return_tensors="pt",
-            truncation=truncation,
-            padding=True,
+        inputs = cast(
+            BatchEncoding,
+            super().preprocess(*sentences, truncation=truncation, src_lang=src_lang, tgt_lang=tgt_lang),
         )
+        if inputs.encodings is not None:
+            inputs["input_tokens"] = [
+                _get_encoding_fast_tokens(inputs.encodings[i]) if isinstance(args[i], str) else args[i]
+                for i in range(len(args))
+            ]
+        else:
+            inputs["input_tokens"] = [self.tokenizer.tokenize(s) if isinstance(s, str) else s for s in args]
+        return inputs
 
     def _forward(self, model_inputs, **generate_kwargs):
+        if self.tokenizer is None:
+            raise RuntimeError("No tokenizer is specified.")
         in_b, input_length = model_inputs["input_ids"].shape
 
         if "input_tokens" in model_inputs:
@@ -274,24 +252,11 @@ class _TranslationPipeline(Pipeline):
         else:
             input_tokens = [self.tokenizer.convert_ids_to_tokens(seq) for seq in model_inputs["input_ids"]]
 
-        if hasattr(self.model, "generation_config") and self.model.generation_config is not None:
-            config = self.model.generation_config
-        else:
-            config = self.model.config
-        generate_kwargs["min_length"] = generate_kwargs.get(
-            "min_length", self._kwargs.get("min_length", config.min_length or 0)
-        )
-        generate_kwargs["max_length"] = generate_kwargs.get(
-            "max_length", self._kwargs.get("max_length", config.max_length or 200)
-        )
-        generate_kwargs["output_attentions"] = generate_kwargs.get(
-            "output_attentions", self._kwargs.get("output_attentions", True)
-        )
-        generate_kwargs["num_beams"] = self._kwargs.get("num_beams", config.num_beams or 1)
-        self.check_inputs(input_length, generate_kwargs["min_length"], generate_kwargs["max_length"])
-        output = self.model.generate(
+        self.check_inputs(input_length, self.generation_config.min_length, self.generation_config.max_length)
+        output = cast(Any, self.model).generate(
             **model_inputs,
             **generate_kwargs,
+            generation_config=self.generation_config,
             output_scores=True,
             return_dict_in_generate=True,
         )
@@ -316,7 +281,7 @@ class _TranslationPipeline(Pipeline):
         try:
             transition_scores = cast(
                 torch.Tensor,
-                self.model.compute_transition_scores(
+                cast(Any, self.model).compute_transition_scores(
                     output_ids,
                     scores,
                     beam_indices,
@@ -329,14 +294,13 @@ class _TranslationPipeline(Pipeline):
             beam_indices = beam_indices.to("cpu") if beam_indices is not None else None
             transition_scores = cast(
                 torch.Tensor,
-                self.model.compute_transition_scores(
+                cast(Any, self.model).compute_transition_scores(
                     output_ids,
                     scores,
                     beam_indices,
                     normalize_logits=True,
                 ),
             )
-        sequences_scores = getattr(output, "sequences_scores", None)
 
         if beam_indices is None:
             beam_indices = torch.zeros_like(output_ids)
@@ -365,7 +329,7 @@ class _TranslationPipeline(Pipeline):
         start_index = 0
         if self.model.config.decoder_start_token_id is not None:
             start_index = 1
-        if generate_kwargs["output_attentions"] is True:
+        if self.generation_config.output_attentions:
             assert attentions is not None
             num_heads = attentions[0][0].shape[1]
 
@@ -421,7 +385,7 @@ class _TranslationPipeline(Pipeline):
             "attentions": attentions,
         }
 
-    def postprocess(self, model_outputs, clean_up_tokenization_spaces=False) -> List[List[dict]]:
+    def postprocess(self, model_outputs, clean_up_tokenization_spaces=False):
         if self.tokenizer is None:
             raise RuntimeError("No tokenizer is specified.")
         all_special_ids = set(self.tokenizer.all_special_ids)
@@ -478,7 +442,7 @@ class _TranslationPipeline(Pipeline):
 
             records.append(record)
 
-        return [records]
+        return records
 
 
 def torch_gather_nd(params: torch.Tensor, indices: torch.Tensor, batch_dim: int = 0) -> torch.Tensor:
@@ -511,3 +475,7 @@ def torch_gather_nd(params: torch.Tensor, indices: torch.Tensor, batch_dim: int 
 
     out = torch.gather(params, dim=batch_dim, index=indices)
     return out.reshape(*index_shape, *tail_sizes)
+
+
+def _get_encoding_fast_tokens(encoding) -> List[str]:
+    return [token for (token, mask) in zip(encoding.tokens, encoding.special_tokens_mask) if not mask]
