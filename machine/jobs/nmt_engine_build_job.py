@@ -149,7 +149,8 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
             if check_canceled is not None:
                 check_canceled()
             source_segments = [pt_info["translation"] for pt_info in pt_batch]
-            for pt_info, result in zip(pt_batch, engine.translate_batch(source_segments), strict=True):
+            t_batch = engine.translate_batch(source_segments)
+            for pt_info, result in zip(pt_batch, t_batch, strict=True):
                 pt_info["translation"] = result.translation
                 pt_info["sequenceConfidence"] = result.sequence_confidence
             current_inference_step += len(pt_batch)

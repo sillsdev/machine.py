@@ -4,7 +4,8 @@ import gc
 import logging
 import re
 from math import exp, prod
-from typing import Collection, Iterable, List, Optional, Sequence, Tuple, Union, cast
+from pathlib import Path
+from typing import Any, Collection, Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 import torch  # pyright: ignore[reportMissingImports]
 from sacremoses import MosesPunctNormalizer
@@ -14,23 +15,21 @@ from transformers import (
     AutoTokenizer,
     M2M100Tokenizer,
     NllbTokenizer,
-    NllbTokenizerFast,
     PreTrainedModel,
     PreTrainedTokenizer,
     PreTrainedTokenizerFast,
-    TranslationPipeline,
 )
-from transformers.generation import BeamSearchEncoderDecoderOutput, GreedySearchEncoderDecoderOutput
-from transformers.tokenization_utils import BatchEncoding, TruncationStrategy
+from transformers.generation.utils import GenerateBeamEncoderDecoderOutput, GenerateEncoderDecoderOutput
+from transformers.tokenization_utils_base import BatchEncoding, TruncationStrategy
 
 from ...annotations.range import Range
 from ...corpora.aligned_word_pair import AlignedWordPair
-from ...utils.typeshed import StrPath
 from ..translation_engine import TranslationEngine
 from ..translation_result import TranslationResult
 from ..translation_result_builder import TranslationResultBuilder
 from ..translation_sources import TranslationSources
 from ..word_alignment_matrix import WordAlignmentMatrix
+from .transformers_compatibility import TranslationPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -38,23 +37,30 @@ logger = logging.getLogger(__name__)
 class HuggingFaceNmtEngine(TranslationEngine):
     def __init__(
         self,
-        model: Union[PreTrainedModel, StrPath, str],
+        model: Union[PreTrainedModel, Path, str],
         oom_batch_size_backoff_mult: float = 1.0,
         **pipeline_kwargs,
     ) -> None:
-        self._model = model
         self._pipeline_kwargs = pipeline_kwargs
-        if isinstance(self._model, PreTrainedModel):
+        if isinstance(model, PreTrainedModel):
+            self._model = model
             self._model.eval()
             self._is_model_owned = False
         else:
-            model_config = AutoConfig.from_pretrained(str(self._model), label2id={}, id2label={}, num_labels=0)
+            model_config = AutoConfig.from_pretrained(str(model), label2id={}, id2label={}, num_labels=0)
+
+            # If output_attentions is True or None, we need to set the attn_implementation to eager to get the attentions
+            attn_implementation = "eager" if self._pipeline_kwargs.get("output_attentions", True) else "sdpa"
+
             self._model = cast(
-                PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(str(self._model), config=model_config)
+                PreTrainedModel,
+                AutoModelForSeq2SeqLM.from_pretrained(
+                    str(model), config=model_config, attn_implementation=attn_implementation
+                ),
             )
             self._is_model_owned = True
-        self._tokenizer = AutoTokenizer.from_pretrained(self._model.name_or_path, use_fast=True)
-        if isinstance(self._tokenizer, (NllbTokenizer, NllbTokenizerFast)):
+        self._tokenizer = AutoTokenizer.from_pretrained(self._model.name_or_path)
+        if isinstance(self._tokenizer, NllbTokenizer):
             self._mpn = MosesPunctNormalizer()
             self._mpn.substitutions = [  # type: ignore
                 (re.compile(r), sub)
@@ -70,11 +76,12 @@ class HuggingFaceNmtEngine(TranslationEngine):
             src_lang is not None
             and tgt_lang is not None
             and "prefix" not in self._pipeline_kwargs
+            and self._model.name_or_path is not None
             and (self._model.name_or_path.startswith("t5-") or self._model.name_or_path.startswith("google/mt5-"))
         ):
             self._pipeline_kwargs["prefix"] = f"translate {src_lang} to {tgt_lang}: "
         else:
-            additional_special_tokens = cast(list[str], self._tokenizer.additional_special_tokens or [])
+            extra_special_tokens = cast(list[str], self._tokenizer.extra_special_tokens or [])
             if isinstance(self._tokenizer, M2M100Tokenizer):
                 src_lang_token = self._tokenizer.lang_code_to_token.get(src_lang) if src_lang is not None else None
                 tgt_lang_token = self._tokenizer.lang_code_to_token.get(tgt_lang) if tgt_lang is not None else None
@@ -84,14 +91,14 @@ class HuggingFaceNmtEngine(TranslationEngine):
             if (
                 src_lang is not None
                 and src_lang_token not in self._tokenizer.added_tokens_encoder
-                and src_lang_token not in additional_special_tokens
+                and src_lang_token not in extra_special_tokens
             ):
                 raise ValueError(f"The specified model does not support the language code '{src_lang}'")
 
             if (
                 tgt_lang is not None
                 and tgt_lang_token not in self._tokenizer.added_tokens_encoder
-                and tgt_lang_token not in additional_special_tokens
+                and tgt_lang_token not in extra_special_tokens
             ):
                 raise ValueError(f"The specified model does not support the language code '{tgt_lang}'")
 
@@ -99,9 +106,9 @@ class HuggingFaceNmtEngine(TranslationEngine):
 
         self._oom_batch_size_backoff_mult = oom_batch_size_backoff_mult
 
-        self._pipeline = _TranslationPipeline(
+        self._pipeline = SilTranslationPipeline(
             model=self._model,
-            tokenizer=self._tokenizer,
+            tokenizer=cast(PreTrainedTokenizer, self.tokenizer),
             mpn=self._mpn,
             batch_size=self._batch_size,
             **self._pipeline_kwargs,
@@ -139,7 +146,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
                     raise
                 self._batch_size = max(int(round(self._batch_size * self._oom_batch_size_backoff_mult)), 1)
                 logger.warning(f"Out of memory error caught. Reducing batch size to {self._batch_size} and retrying.")
-                self._pipeline = _TranslationPipeline(
+                self._pipeline = SilTranslationPipeline(
                     model=self._model,
                     tokenizer=self._tokenizer,
                     batch_size=self._batch_size,
@@ -189,11 +196,11 @@ class HuggingFaceNmtEngine(TranslationEngine):
             torch.cuda.empty_cache()
 
 
-class _TranslationPipeline(TranslationPipeline):
+class SilTranslationPipeline(TranslationPipeline):
     def __init__(
         self,
-        model: Union[PreTrainedModel, StrPath, str],
-        tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast],
+        model: PreTrainedModel,
+        tokenizer: PreTrainedTokenizer,
         batch_size: int,
         mpn: Optional[MosesPunctNormalizer] = None,
         **kwargs,
@@ -236,33 +243,32 @@ class _TranslationPipeline(TranslationPipeline):
         return inputs
 
     def _forward(self, model_inputs, **generate_kwargs):
+        if self.tokenizer is None:
+            raise RuntimeError("No tokenizer is specified.")
         in_b, input_length = model_inputs["input_ids"].shape
 
-        input_tokens = model_inputs["input_tokens"]
-        del model_inputs["input_tokens"]
-        if hasattr(self.model, "generation_config") and self.model.generation_config is not None:
-            config = self.model.generation_config
+        if "input_tokens" in model_inputs:
+            input_tokens = model_inputs.pop("input_tokens")
         else:
-            config = self.model.config
-        generate_kwargs["min_length"] = generate_kwargs.get("min_length", config.min_length)
-        generate_kwargs["max_length"] = generate_kwargs.get("max_length", config.max_length)
-        generate_kwargs["output_attentions"] = generate_kwargs.get("output_attentions", True)
-        self.check_inputs(input_length, generate_kwargs["min_length"], generate_kwargs["max_length"])
-        output = self.model.generate(
+            input_tokens = [self.tokenizer.convert_ids_to_tokens(seq) for seq in model_inputs["input_ids"]]
+
+        self.check_inputs(input_length, self.generation_config.min_length, self.generation_config.max_length)
+        output = cast(Any, self.model).generate(
             **model_inputs,
             **generate_kwargs,
+            generation_config=self.generation_config,
             output_scores=True,
             return_dict_in_generate=True,
         )
 
-        if isinstance(output, BeamSearchEncoderDecoderOutput):
+        if isinstance(output, GenerateBeamEncoderDecoderOutput):
             output_ids = output.sequences
             beam_indices = output.beam_indices
             scores = output.scores
             assert scores is not None and beam_indices is not None
             sequences_scores = output.sequences_scores
             attentions = output.cross_attentions
-        elif isinstance(output, GreedySearchEncoderDecoderOutput):
+        elif isinstance(output, GenerateEncoderDecoderOutput):
             output_ids = output.sequences
             beam_indices = None
             assert output.scores is not None
@@ -272,15 +278,29 @@ class _TranslationPipeline(TranslationPipeline):
         else:
             raise RuntimeError("Cannot postprocess the output of the model.")
 
-        transition_scores = cast(
-            torch.Tensor,
-            self.model.compute_transition_scores(
-                output_ids,  # type: ignore
-                scores,  # type: ignore
-                beam_indices,  # type: ignore
-                normalize_logits=True,
-            ),
-        )
+        try:
+            transition_scores = cast(
+                torch.Tensor,
+                cast(Any, self.model).compute_transition_scores(
+                    output_ids,
+                    scores,
+                    beam_indices,
+                    normalize_logits=True,
+                ),
+            )
+        except Exception:
+            output_ids = output_ids.to("cpu")
+            scores = tuple(score.to("cpu") for score in scores)
+            beam_indices = beam_indices.to("cpu") if beam_indices is not None else None
+            transition_scores = cast(
+                torch.Tensor,
+                cast(Any, self.model).compute_transition_scores(
+                    output_ids,
+                    scores,
+                    beam_indices,
+                    normalize_logits=True,
+                ),
+            )
 
         if beam_indices is None:
             beam_indices = torch.zeros_like(output_ids)
@@ -309,15 +329,26 @@ class _TranslationPipeline(TranslationPipeline):
         start_index = 0
         if self.model.config.decoder_start_token_id is not None:
             start_index = 1
-        if generate_kwargs["output_attentions"] is True:
+        if self.generation_config.output_attentions:
             assert attentions is not None
             num_heads = attentions[0][0].shape[1]
+
+            # Truncate/Pad beam_indices to match output_ids length exact slice
+            target_seq_len = output_ids.shape[1] - start_index
+            sliced_beam_indices = beam_indices[:, start_index:]
+            if sliced_beam_indices.shape[1] > target_seq_len:
+                sliced_beam_indices = sliced_beam_indices[:, :target_seq_len]
+            elif sliced_beam_indices.shape[1] < target_seq_len:
+                sliced_beam_indices = torch.nn.functional.pad(
+                    sliced_beam_indices, (0, target_seq_len - sliced_beam_indices.shape[1])
+                )
+
             indices = torch.stack(
                 (
                     torch.arange(output_ids.shape[1] - start_index, device=output_ids.device).expand(
                         in_b, n_sequences, -1
                     ),
-                    torch.reshape(beam_indices[:, start_index:] % num_beams, (in_b, n_sequences, -1)),
+                    torch.reshape(sliced_beam_indices % num_beams, (in_b, n_sequences, -1)),
                 ),
                 dim=3,
             )
