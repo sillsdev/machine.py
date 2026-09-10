@@ -5,12 +5,8 @@ from ..utils.string_utils import parse_integer
 from .paratext_project_file_handler import ParatextProjectFileHandler
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
-from .update_usfm_parser_handler import (
-    UpdateUsfmMarkerBehavior,
-    UpdateUsfmParserHandler,
-    UpdateUsfmRow,
-    UpdateUsfmTextBehavior,
-)
+from .update_usfm_behavior import UpdateUsfmMarkerBehavior, UpdateUsfmTextBehavior
+from .update_usfm_parser_handler import UpdateUsfmParserHandler, UpdateUsfmRow
 from .usfm_parser import parse_usfm
 from .usfm_token import UsfmTokenType
 from .usfm_tokenizer import UsfmToken, UsfmTokenizer

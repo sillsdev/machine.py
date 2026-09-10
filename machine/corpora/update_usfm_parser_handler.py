@@ -1,9 +1,9 @@
-from enum import Enum, auto
 from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 from ..scripture.verse_ref import IgnoreSegmentsVerseRef, VerseRef, Versification
 from .scripture_ref import ScriptureRef
 from .scripture_ref_usfm_parser_handler_base import ScriptureRefUsfmParserHandlerBase, ScriptureTextType
+from .update_usfm_behavior import UpdateUsfmMarkerBehavior, UpdateUsfmTextBehavior
 from .usfm_parser_state import UsfmParserState
 from .usfm_stylesheet import UsfmStylesheet
 from .usfm_tag import UsfmTextType
@@ -12,17 +12,6 @@ from .usfm_tokenizer import UsfmTokenizer
 from .usfm_update_block import UsfmUpdateBlock
 from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
 from .usfm_update_block_handler import UsfmUpdateBlockHandler, UsfmUpdateBlockHandlerError
-
-
-class UpdateUsfmTextBehavior(Enum):
-    PREFER_EXISTING = auto()
-    PREFER_NEW = auto()
-    STRIP_EXISTING = auto()
-
-
-class UpdateUsfmMarkerBehavior(Enum):
-    PRESERVE = auto()
-    STRIP = auto()
 
 
 class _RowInfo:
