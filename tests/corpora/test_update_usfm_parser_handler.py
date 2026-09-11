@@ -1706,6 +1706,56 @@ def test_filter_chapters_with_bad_chapter_reference() -> None:
     assert_usfm_equals(target, result)
 
 
+def test_unclosed_style_marker_does_not_consume_next_paragraph_marker() -> None:
+    # An unclosed character style has no end marker of its own, so it is closed implicitly by
+    # the next paragraph marker. That marker belongs to the paragraph it starts, not to the
+    # style being closed, so it must survive.
+    rows = [
+        UpdateUsfmRow(scr_ref("MAT 1:1"), "New verse 1"),
+        UpdateUsfmRow(scr_ref("MAT 1:2"), "New verse 2"),
+    ]
+    usfm = r"""\id MAT
+\c 1
+\q1
+\v 1 Verse 1 \bd Selah
+\b
+\q1
+\v 2 Verse 2
+"""
+
+    target = update_usfm(rows, usfm)
+    result = r"""\id MAT
+\c 1
+\q1
+\v 1 New verse 1
+\b
+\q1
+\v 2 New verse 2
+"""
+    assert_usfm_equals(target, result)
+
+    # ...including when the unclosed style is in a non-verse paragraph
+    rows = [
+        UpdateUsfmRow(scr_ref("MAT 1:0/1:d"), "New title"),
+        UpdateUsfmRow(scr_ref("MAT 1:1"), "New verse 1"),
+    ]
+    usfm = r"""\id MAT
+\c 1
+\d \bd Title
+\q1
+\v 1 Verse 1
+"""
+
+    target = update_usfm(rows, usfm)
+    result = r"""\id MAT
+\c 1
+\d New title
+\q1
+\v 1 New verse 1
+"""
+    assert_usfm_equals(target, result)
+
+
 def scr_ref(*refs: str) -> List[ScriptureRef]:
     return [ScriptureRef.parse(ref) for ref in refs]
 
