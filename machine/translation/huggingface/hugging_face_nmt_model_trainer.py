@@ -4,24 +4,18 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Callable, List, Optional, Union, cast
 
 import torch  # pyright: ignore[reportMissingImports]
-from accelerate import Accelerator  # pyright: ignore[reportMissingImports]
-from accelerate.utils.memory import should_reduce_batch_size  # pyright: ignore[reportMissingImports]
 from datasets.arrow_dataset import Dataset
 from sacremoses import MosesPunctNormalizer
 from torch import Tensor  # pyright: ignore[reportMissingImports]
-from torch.nn import Module  # pyright: ignore[reportMissingImports]
-from torch.optim.lr_scheduler import LambdaLR  # pyright: ignore[reportMissingImports]
-from torch.optim.optimizer import Optimizer  # pyright: ignore[reportMissingImports]
 from torch.utils.checkpoint import checkpoint  # pyright: ignore[reportMissingImports] # noqa: F401
 from transformers import (
     AutoConfig,
     AutoModelForSeq2SeqLM,
     AutoTokenizer,
     DataCollatorForSeq2Seq,
-    EvalPrediction,
     M2M100ForConditionalGeneration,
     M2M100Tokenizer,
     MBart50Tokenizer,
@@ -29,7 +23,6 @@ from transformers import (
     NllbTokenizer,
     PreTrainedModel,
     PreTrainedTokenizer,
-    PreTrainedTokenizerBase,
     PreTrainedTokenizerFast,
     Seq2SeqTrainer,
     Seq2SeqTrainingArguments,
@@ -390,11 +383,10 @@ class HuggingFaceNmtModelTrainer(Trainer):
             pad_to_multiple_of=8 if self._training_args.fp16 else None,
         )
 
-        self._trainer = AutoGradientAccumulationStepsSeq2SeqTrainer(
+        self._trainer = Seq2SeqTrainer(
             model=model,
             args=self._training_args,
             train_dataset=cast(Any, train_dataset),
-            tokenizer=tokenizer,
             data_collator=data_collator,
             callbacks=[
                 _ProgressCallback(
@@ -476,76 +468,6 @@ class _ProgressCallback(TrainerCallback):
                 if self._max_steps is None
                 else ProgressStatus.from_step(state.global_step, self._max_steps)
             )
-
-
-class AutoGradientAccumulationStepsSeq2SeqTrainer(Seq2SeqTrainer):
-    def __init__(
-        self,
-        model: Union[PreTrainedModel, Module],
-        args: Seq2SeqTrainingArguments,
-        data_collator: Any,
-        train_dataset: Optional[Dataset] = None,
-        eval_dataset: Optional[Union[Dataset, Dict[str, Dataset]]] = None,
-        tokenizer: Optional[PreTrainedTokenizerBase] = None,
-        model_init: Optional[Callable[[], PreTrainedModel]] = None,
-        compute_loss_func: Callable | None = None,
-        compute_metrics: Optional[Callable[[EvalPrediction], Dict]] = None,
-        callbacks: Optional[List[TrainerCallback]] = None,
-        optimizers: Tuple[Optional[Optimizer], Optional[LambdaLR]] = (None, None),
-        preprocess_logits_for_metrics: Optional[Callable[[Tensor, Tensor], Tensor]] = None,
-    ):
-        super().__init__(
-            model,
-            args,
-            data_collator,
-            train_dataset,
-            eval_dataset,  # type: ignore
-            tokenizer,
-            model_init,
-            compute_loss_func,
-            compute_metrics,
-            callbacks,
-            optimizers,
-            preprocess_logits_for_metrics,
-        )
-
-    def _inner_training_loop(
-        self, batch_size=None, args=None, resume_from_checkpoint=None, trial=None, ignore_keys_for_eval=None
-    ):
-        inner_training_loop = find_executable_batch_size(super()._inner_training_loop, batch_size, self.accelerator)
-        return inner_training_loop(
-            args=args,
-            resume_from_checkpoint=resume_from_checkpoint,
-            trial=trial,
-            ignore_keys_for_eval=ignore_keys_for_eval,
-        )
-
-
-def find_executable_batch_size(function: Callable, starting_batch_size, accelerator: Accelerator):
-    batch_size = starting_batch_size
-
-    def decorator(*args, **kwargs):
-        nonlocal batch_size
-        gc.collect()
-        torch.cuda.empty_cache()
-
-        while True:
-            if batch_size == 0:
-                raise RuntimeError("No executable batch size found, reached zero.")
-            try:
-                return function(batch_size, *args, **kwargs)
-            except Exception as e:
-                logger.error(f"Attempt with batch_size={batch_size} failed with error: {e}", exc_info=True)
-                if should_reduce_batch_size(e):
-                    gc.collect()
-                    torch.cuda.empty_cache()
-                    batch_size //= 2
-                    accelerator.gradient_accumulation_steps = accelerator.gradient_accumulation_steps * 2
-                    kwargs["args"].gradient_accumulation_steps = accelerator.gradient_accumulation_steps
-                else:
-                    raise
-
-    return decorator
 
 
 def add_lang_code_to_tokenizer(tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast], lang_code: str):
