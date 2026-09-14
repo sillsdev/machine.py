@@ -235,7 +235,7 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
                     for (pt_info, row), (source_segment, target_segment), alignment in zip(
                         pt_batch, segments, alignments, strict=True
                     ):
-                        word_pairs = alignment.to_aligned_word_pairs(include_null=False)
+                        word_pairs = alignment.to_aligned_word_pairs(include_null=True)
                         alignment_model.compute_aligned_word_pair_scores(source_segment, target_segment, word_pairs)
                         pt_info["sourceTokens"] = list(row.source_segment)
                         pt_info["translationTokens"] = list(row.target_segment)
