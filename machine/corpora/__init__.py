@@ -59,12 +59,8 @@ from .token_processors import (
     normalize,
     unescape_spaces,
 )
-from .update_usfm_parser_handler import (
-    UpdateUsfmMarkerBehavior,
-    UpdateUsfmParserHandler,
-    UpdateUsfmRow,
-    UpdateUsfmTextBehavior,
-)
+from .update_usfm_behavior import UpdateUsfmMarkerBehavior, UpdateUsfmTextBehavior
+from .update_usfm_parser_handler import UpdateUsfmParserHandler, UpdateUsfmRow
 from .usfm_file_text import UsfmFileText
 from .usfm_file_text_corpus import UsfmFileTextCorpus
 from .usfm_memory_text import UsfmMemoryText

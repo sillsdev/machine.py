@@ -4,7 +4,7 @@ from typing import List, TypedDict, cast
 
 from ..translation.word_alignment_matrix import WordAlignmentMatrix
 from .segment_boundary_adjuster import SegmentBoundaryAdjuster
-from .update_usfm_parser_handler import UpdateUsfmMarkerBehavior
+from .update_usfm_behavior import UpdateUsfmMarkerBehavior
 from .usfm_token import UsfmToken, UsfmTokenType
 from .usfm_update_block import UsfmUpdateBlock
 from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
@@ -39,18 +39,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
             or alignment_info["alignment"].row_count == 0
             or alignment_info["alignment"].column_count == 0
             or not any(
-                (
-                    (
-                        e.type == UsfmUpdateBlockElementType.PARAGRAPH
-                        and alignment_info["paragraph_behavior"] == UpdateUsfmMarkerBehavior.PRESERVE
-                        and len(e.tokens) == 1
-                    )
-                    or (
-                        e.type == UsfmUpdateBlockElementType.STYLE
-                        and alignment_info["style_behavior"] == UpdateUsfmMarkerBehavior.PRESERVE
-                    )
-                )
-                for e in elements
+                e.is_placeable(alignment_info["paragraph_behavior"], alignment_info["style_behavior"]) for e in elements
             )
         ):
             return block
@@ -74,7 +63,8 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                         elements.pop(i)
             elif not (
                 element.type == UsfmUpdateBlockElementType.EMBED
-                or (element.type == UsfmUpdateBlockElementType.TEXT and len(element.tokens[0].to_usfm().strip()) == 0)
+                or element.type == UsfmUpdateBlockElementType.OTHER
+                or (element.type == UsfmUpdateBlockElementType.TEXT and len(element.get_text().strip()) == 0)
             ):
                 eob_empty_paras = False
 
@@ -92,7 +82,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         for element in elements:
             if element.type == UsfmUpdateBlockElementType.TEXT:
                 if element.marked_for_removal:
-                    text = element.tokens[0].to_usfm()
+                    text = element.get_text()
                     src_sent += text
 
                     # Track seen tokens
@@ -103,7 +93,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                     if len(text.strip()) > 0:
                         src_tok_idx += 1
                 else:
-                    trg_sent += element.tokens[0].to_usfm()
+                    trg_sent += element.get_text()
 
             if element.marked_for_removal or (
                 element.type == UsfmUpdateBlockElementType.PARAGRAPH
@@ -162,6 +152,10 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
             to_insert.append((trg_str_idx, element))
         to_insert.sort(key=lambda x: x[0])
         to_insert += [(len(trg_sent), element) for element in embed_elements + end_elements]
+
+        # In the case of unclosed markers, to_insert might be empty
+        if len(to_insert) == 0:
+            return block
 
         # Construct new text tokens to put between markers
         # and reincorporate headers and empty end-of-verse paragraph markers
