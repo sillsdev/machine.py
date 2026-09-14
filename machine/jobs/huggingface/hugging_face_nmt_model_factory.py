@@ -6,8 +6,8 @@ from typing import Any, cast
 import datasets.utils.logging as datasets_logging
 import transformers.utils.logging as transformers_logging
 from transformers import AutoConfig, AutoModelForSeq2SeqLM, HfArgumentParser, PreTrainedModel, Seq2SeqTrainingArguments
-from transformers.integrations import ClearMLCallback
-from transformers.tokenization_utils import TruncationStrategy
+from transformers.integrations.integration_utils import ClearMLCallback
+from transformers.tokenization_utils_base import TruncationStrategy
 
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
 from ...corpora.text_corpus import TextCorpus
@@ -26,7 +26,6 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
         self._config = config
         args = config.huggingface.train_params.to_dict()
         args["output_dir"] = str(self._model_dir)
-        args["overwrite_output_dir"] = True
         # Use "max_steps" from root for backward compatibility
         if "max_steps" in self._config.huggingface:
             args["max_steps"] = self._config.huggingface.max_steps
