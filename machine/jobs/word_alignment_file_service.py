@@ -1,11 +1,12 @@
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterator, List, Optional, TypedDict, Union
+from typing import Any, Generator, Iterator, List, Optional, TypedDict, Union
 
 import json_stream
 
 from ..corpora.text_corpus import TextCorpus
 from ..corpora.text_file_text_corpus import TextFileTextCorpus
+from ..utils.context_managed_generator import ContextManagedGenerator
 from .shared_file_service_base import DictToJsonWriter, SharedFileServiceBase
 from .shared_file_service_factory import SharedFileServiceType, get_shared_file_service
 
@@ -54,23 +55,24 @@ class WordAlignmentFileService:
             for target_filename in self._target_filenames
         )
 
-    def get_word_alignment_inputs(self) -> List[WordAlignmentInput]:
-        src_pretranslate_path = self.shared_file_service.download_file(
+    def get_word_alignment_inputs(self) -> ContextManagedGenerator[WordAlignmentInput, None, None]:
+        src_word_alignment_path = self.shared_file_service.download_file(
             f"{self.shared_file_service.build_path}/{self._word_alignment_input_filename}"
         )
-        with src_pretranslate_path.open("r", encoding="utf-8-sig") as file:
-            wa_inputs = [
-                WordAlignmentInput(
-                    corpusId=pi["corpusId"],
-                    textId=pi["textId"],
-                    sourceRefs=list(pi["sourceRefs"]),
-                    targetRefs=list(pi["targetRefs"]),
-                    source=pi["source"],
-                    target=pi["target"],
-                )
-                for pi in json_stream.load(file)
-            ]
-        return wa_inputs
+
+        def generator() -> Generator[WordAlignmentInput, None, None]:
+            with src_word_alignment_path.open("r", encoding="utf-8-sig") as file:
+                for wi in json_stream.load(file):
+                    yield WordAlignmentInput(
+                        corpusId=wi["corpusId"],
+                        textId=wi["textId"],
+                        sourceRefs=list(wi["sourceRefs"]),
+                        targetRefs=list(wi["targetRefs"]),
+                        source=wi["source"],
+                        target=wi["target"],
+                    )
+
+        return ContextManagedGenerator(generator())
 
     def exists_source_corpus(self) -> bool:
         return all(

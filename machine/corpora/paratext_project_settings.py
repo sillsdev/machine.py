@@ -31,7 +31,10 @@ class ParatextProjectSettings:
 
     def get_book_id(self, file_name: str) -> Optional[str]:
         """Returns None when the file name doesn't match the pattern of a book file name for the project."""
-        if not file_name.startswith(self.file_name_prefix) or not file_name.endswith(self.file_name_suffix):
+        file_name_casefolded = file_name.casefold()
+        if not file_name_casefolded.startswith(self.file_name_prefix.casefold()) or not file_name_casefolded.endswith(
+            self.file_name_suffix.casefold()
+        ):
             return None
 
         book_part: str = file_name[len(self.file_name_prefix) : -len(self.file_name_suffix)]

@@ -22,6 +22,7 @@ def alignment_exception(refs: Iterable[str]) -> RuntimeError:
 def batch(iterable: Iterable[T], batch_size: int) -> Iterable[Sequence[T]]:
     if isinstance(iterable, Sequence) and len(iterable) <= batch_size:
         yield iterable
+        return
 
     batch: List[T] = []
     for item in iterable:

@@ -71,7 +71,7 @@ class AlignedWordPair:
         source_index = "NULL" if self.source_index < 0 else str(self.source_index)
         target_index = "NULL" if self.target_index < 0 else str(self.target_index)
         repr = f"{source_index}-{target_index}"
-        if include_scores and self.translation_score >= 0:
+        if include_scores and (self.translation_score >= 0 or self.alignment_score >= 0):
             repr += f":{format_score(self.translation_score)}"
             if self.alignment_score >= 0:
                 repr += f":{format_score(self.alignment_score)}"
