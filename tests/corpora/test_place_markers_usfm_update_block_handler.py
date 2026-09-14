@@ -869,8 +869,8 @@ def test_other_elements_do_not_affect_embed_placement() -> None:
         assert_usfm_equals(target, result)
 
 
-def test_verse_range_matched_by_multiple_rows() -> None:
-    # A verse range picks up one text token per matched row, so all of them have to be read.
+def test_multiple_text_rows_in_verse_ranges_are_updated() -> None:
+    # Verse ranges contain multiple text rows, which must be processed as if they were a single row
     source = "This is the first part. This is the second part."
     pretranslation = "Esta es la primera parte. Esta es la segunda parte."
     align_info = PlaceMarkersAlignmentInfo(
