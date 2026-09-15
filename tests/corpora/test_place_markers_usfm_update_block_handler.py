@@ -899,6 +899,47 @@ def test_multiple_text_rows_in_verse_ranges_are_updated() -> None:
     assert_usfm_equals(target, result)
 
 
+def test_anusvara_tokenization() -> None:
+    # The anusvara ("ं") is the third to last character in the update rows string
+    source = (
+        "Like the crushing of my bones, my enemies taunt me, while they say to me all day long, “Where is your God?”"
+    )
+    pretranslation = (
+        '"कब च तेरु परमेश्वर?"' + " इन सवालों के मेरे दूसरे ताना मि पर मरदिन, हर बगत इन लगदु जन व मेरे सर पे ते कटदिन नह ं। "
+    )
+    align_info = PlaceMarkersAlignmentInfo(
+        source_tokens=[t for t in TOKENIZER.tokenize(source)],
+        translation_tokens=[t for t in TOKENIZER.tokenize(pretranslation)],
+        alignment=to_word_alignment_matrix(
+            "0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10 11-11 12-12 13-13 14-14 15-15 16-16 17-17 18-18 19-19 20-20 "
+            "21-21 22-22 23-23 24-24 24-25 25-26 26-27 26-28 26-29 27-30"
+        ),
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.STRIP,
+    )
+    rows = [UpdateUsfmRow(scr_ref("PSA 42:10"), str(pretranslation), {"alignment_info": align_info})]
+    usfm = r"""\id PSA
+\c 42
+\q1
+\v 10 Like the crushing of my bones, my enemies taunt me,
+\q2 while they say to me all day long, “Where is your God?”
+"""
+
+    target = update_usfm(
+        rows,
+        usfm,
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
+    )
+    result = r"""\id PSA
+\c 42
+\q1
+\v 10 "कब च तेरु परमेश्वर?" इन सवालों के मेरे दूसरे
+\q2 ताना मि पर मरदिन, हर बगत इन लगदु जन व मेरे सर पे ते कटदिन नह ं।
+"""
+    assert_usfm_equals(target, result)
+
+
 def scr_ref(*refs: str) -> List[ScriptureRef]:
     return [ScriptureRef.parse(ref) for ref in refs]
 
