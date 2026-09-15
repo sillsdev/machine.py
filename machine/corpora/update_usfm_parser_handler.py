@@ -486,13 +486,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
 
     def _start_update_block(self, scripture_refs: Sequence[ScriptureRef]) -> None:
         row_texts, row_metadata = self._advance_rows(scripture_refs)
-        self._update_block_stack.append(
-            UsfmUpdateBlock(
-                scripture_refs,
-                metadata=row_metadata[-1] if len(row_metadata) > 0 else {},
-                row_metadata=row_metadata,
-            )
-        )
+        self._update_block_stack.append(UsfmUpdateBlock(scripture_refs, row_metadata=row_metadata))
         self._push_updated_text([UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in row_texts])
 
     def _end_update_block(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:

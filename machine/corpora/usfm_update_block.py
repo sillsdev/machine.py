@@ -12,12 +12,10 @@ class UsfmUpdateBlock:
         self,
         refs: Iterable[ScriptureRef] = [],
         elements: Iterable[UsfmUpdateBlockElement] = [],
-        metadata: dict[str, object] = {},
         row_metadata: Iterable[dict[str, object]] = [],
     ) -> None:
         self._refs: list[ScriptureRef] = list(refs)
         self._elements: list[UsfmUpdateBlockElement] = list(elements)
-        self._metadata: dict[str, object] = metadata
         # One entry per row matched to this block, in order. A verse range can be matched by
         # several rows, in which case this block's text is those rows' texts concatenated.
         self._row_metadata: list[dict[str, object]] = list(row_metadata)
@@ -32,7 +30,7 @@ class UsfmUpdateBlock:
 
     @property
     def metadata(self) -> dict[str, object]:
-        return self._metadata
+        return self._row_metadata[-1] if len(self._row_metadata) > 0 else {}
 
     @property
     def row_metadata(self) -> Sequence[dict[str, object]]:
@@ -79,9 +77,8 @@ class UsfmUpdateBlock:
         return (
             self._refs == other._refs
             and self._elements == other._elements
-            and self._metadata == other._metadata
             and self._row_metadata == other._row_metadata
         )
 
     def copy(self) -> UsfmUpdateBlock:
-        return UsfmUpdateBlock(self._refs, self._elements, self._metadata, self._row_metadata)
+        return UsfmUpdateBlock(self._refs, self._elements, self._row_metadata)
