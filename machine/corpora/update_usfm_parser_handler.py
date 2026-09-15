@@ -379,9 +379,9 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
                         tokens[index:index] = remark_tokens
         return tokenizer.detokenize(tokens)
 
-    def _advance_rows(self, seg_scr_refs: Sequence[ScriptureRef]) -> Tuple[List[str], Optional[dict[str, object]]]:
+    def _advance_rows(self, seg_scr_refs: Sequence[ScriptureRef]) -> Tuple[List[str], List[dict[str, object]]]:
         row_texts: List[str] = []
-        row_metadata = None
+        row_metadata: List[dict[str, object]] = []
         source_index: int = 0
 
         # handle the special case of verse 0, which although first in the rows,
@@ -407,7 +407,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
                     # source and row match
                     # grab the text - both source and row will be incremented in due time...
                     row_texts.append(text)
-                    row_metadata = metadata
+                    row_metadata.append(metadata if metadata is not None else {})
                     break
             if compare <= 0:
                 # source is ahead of row, increment row
@@ -485,10 +485,8 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
         return any(self._replace_stack) and self._replace_stack[-1]
 
     def _start_update_block(self, scripture_refs: Sequence[ScriptureRef]) -> None:
-        row_texts, metadata = self._advance_rows(scripture_refs)
-        self._update_block_stack.append(
-            UsfmUpdateBlock(scripture_refs, metadata=metadata if metadata is not None else {})
-        )
+        row_texts, row_metadata = self._advance_rows(scripture_refs)
+        self._update_block_stack.append(UsfmUpdateBlock(scripture_refs, row_metadata=row_metadata))
         self._push_updated_text([UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in row_texts])
 
     def _end_update_block(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:

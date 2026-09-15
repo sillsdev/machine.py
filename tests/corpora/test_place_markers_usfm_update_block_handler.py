@@ -1,4 +1,7 @@
+import logging
 from typing import List, Optional, Sequence
+
+import pytest
 
 from machine.corpora import (
     AlignedWordPair,
@@ -938,6 +941,85 @@ def test_anusvara_tokenization() -> None:
 \q2 ताना मि पर मरदिन, हर बगत इन लगदु जन व मेरे सर पे ते कटदिन नह ं।
 """
     assert_usfm_equals(target, result)
+
+
+def test_verse_range_with_empty_trailing_row(caplog: pytest.LogCaptureFixture) -> None:
+    # Verse ranges consist of multiple rows, but only the first one is non-empty and has a non-empty alignment matrix.
+    # An empty alignment matrix must not clobber any non-empty matrices.
+    source = "This is the first part. This is the second part."
+    pretranslation = "Esta es la primera parte. Esta es la segunda parte."
+    align_info = PlaceMarkersAlignmentInfo(
+        source_tokens=[t for t in TOKENIZER.tokenize(source)],
+        translation_tokens=[t for t in TOKENIZER.tokenize(pretranslation)],
+        alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10 11-11"),
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.STRIP,
+    )
+    empty_align_info = PlaceMarkersAlignmentInfo(
+        source_tokens=[],
+        translation_tokens=[],
+        alignment=to_word_alignment_matrix(""),
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.STRIP,
+    )
+    usfm = r"""\id MAT
+\c 1
+\v 1-2 This is the first part.
+\p This is the second part.
+"""
+    result = r"""\id MAT
+\c 1
+\v 1-2 Esta es la primera parte.
+\p Esta es la segunda parte.
+"""
+
+    # the result should be the same whether the second row has an empty alignment matrix or no alignment matrix at all
+    for empty_row in [
+        UpdateUsfmRow(scr_ref("MAT 1:2"), "", metadata={"alignment_info": empty_align_info}),
+        UpdateUsfmRow(scr_ref("MAT 1:2"), ""),
+    ]:
+        rows = [
+            UpdateUsfmRow(scr_ref("MAT 1:1"), str(pretranslation), metadata={"alignment_info": align_info}),
+            empty_row,
+        ]
+        with caplog.at_level(logging.WARNING):
+            target = update_usfm(rows, usfm, update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()])
+        assert_usfm_equals(target, result)
+        # a row that contributed no text is expected, so it must not be reported as unexpected
+        assert "Expected at most one row with alignment info" not in caplog.text
+
+
+def test_multiple_rows_with_alignment_info_warns(caplog: pytest.LogCaptureFixture) -> None:
+    # Only one row's alignment info can be used, so a block matched by several rows that each have
+    # text of their own is outside what the handler can place markers for
+    first_align_info = PlaceMarkersAlignmentInfo(
+        source_tokens=[t for t in TOKENIZER.tokenize("This is the first part.")],
+        translation_tokens=[t for t in TOKENIZER.tokenize("Esta es la primera parte.")],
+        alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3 4-4 5-5"),
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.STRIP,
+    )
+    second_align_info = PlaceMarkersAlignmentInfo(
+        source_tokens=[t for t in TOKENIZER.tokenize("This is the second part.")],
+        translation_tokens=[t for t in TOKENIZER.tokenize("Esta es la segunda parte.")],
+        alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3 4-4 5-5"),
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.STRIP,
+    )
+    rows = [
+        UpdateUsfmRow(scr_ref("MAT 1:1"), "Esta es la primera parte.", metadata={"alignment_info": first_align_info}),
+        UpdateUsfmRow(scr_ref("MAT 1:2"), "Esta es la segunda parte.", metadata={"alignment_info": second_align_info}),
+    ]
+    usfm = r"""\id MAT
+\c 1
+\v 1-2 This is the first part.
+\p This is the second part.
+"""
+
+    with caplog.at_level(logging.WARNING):
+        update_usfm(rows, usfm, update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()])
+
+    assert "Expected at most one row with alignment info for MAT 1:1, MAT 1:2, but found 2" in caplog.text
 
 
 def scr_ref(*refs: str) -> List[ScriptureRef]:
