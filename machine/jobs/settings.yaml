@@ -7,7 +7,6 @@ default:
   huggingface:
     parent_model_name: facebook/nllb-200-distilled-1.3B
     train_params:
-      auto_find_batch_size: true
       do_train: true
       optim: adamw_torch
       warmup_steps: 1000
