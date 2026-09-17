@@ -270,6 +270,8 @@ class SilTranslationPipeline(TranslationPipeline):
             assert scores is not None and beam_indices is not None
             sequences_scores = output.sequences_scores
             attentions = output.cross_attentions
+            # Beam search scores are already log probabilities.
+            normalize_logits = False
         elif isinstance(output, GenerateEncoderDecoderOutput):
             output_ids = output.sequences
             beam_indices = None
@@ -277,18 +279,12 @@ class SilTranslationPipeline(TranslationPipeline):
             scores = output.scores
             sequences_scores = None
             attentions = output.cross_attentions
+            # Greedy search scores are unnormalized logits.
+            normalize_logits = True
         else:
             raise RuntimeError("Cannot postprocess the output of the model.")
 
-        transition_scores = cast(
-            torch.Tensor,
-            cast(Any, self.model).compute_transition_scores(
-                output_ids,
-                scores,
-                beam_indices,
-                normalize_logits=False,
-            ),
-        )
+        transition_scores = _compute_transition_scores(output_ids, scores, beam_indices, normalize_logits)
 
         if beam_indices is None:
             beam_indices = torch.zeros_like(output_ids)
@@ -463,6 +459,42 @@ def torch_gather_nd(params: torch.Tensor, indices: torch.Tensor, batch_dim: int 
 
     out = torch.gather(params, dim=batch_dim, index=indices)
     return out.reshape(*index_shape, *tail_sizes)
+
+
+def _compute_transition_scores(
+    sequences: torch.Tensor,
+    scores: Tuple[torch.Tensor, ...],
+    beam_indices: Optional[torch.Tensor],
+    normalize_logits: bool,
+) -> torch.Tensor:
+    """
+    Compute the log probability of each generated token.
+
+    This is equivalent to PreTrainedModel.compute_transition_scores, but gathers one step at a time instead of
+    stacking the scores for every step into a single tensor, which requires several gigabytes of memory for a large
+    vocabulary.
+    """
+    if beam_indices is None:
+        # Greedy search is equivalent to a beam search where the first (and only) beam is always selected.
+        beam_indices = torch.arange(scores[0].shape[0], device=sequences.device).view(-1, 1).expand(-1, len(scores))
+
+    # Cut the beam indices to the longest beam length. Beams that finished early are masked out below.
+    beam_indices_mask = beam_indices < 0
+    max_beam_length = int((1 - beam_indices_mask.long()).sum(-1).max().item())
+    beam_indices_mask = beam_indices_mask[:, :max_beam_length]
+    beam_indices = beam_indices[:, :max_beam_length].masked_fill(beam_indices_mask, 0)
+
+    # The token generated at step i is at cut_idx + i in the sequence.
+    cut_idx = sequences.shape[-1] - max_beam_length
+    transition_scores = torch.zeros(sequences.shape[0], max_beam_length, device=sequences.device, dtype=scores[0].dtype)
+    for i in range(max_beam_length):
+        step_scores = scores[i]
+        if normalize_logits:
+            step_scores = torch.nn.functional.log_softmax(step_scores, dim=-1)
+        transition_scores[:, i] = step_scores[beam_indices[:, i], sequences[:, cut_idx + i]]
+
+    transition_scores[beam_indices_mask] = 0
+    return transition_scores
 
 
 def _get_encoding_fast_tokens(encoding) -> List[str]:
