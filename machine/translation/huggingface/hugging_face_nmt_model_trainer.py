@@ -8,7 +8,7 @@ from typing import Any, Callable, List, Optional, Union, cast
 
 import torch  # pyright: ignore[reportMissingImports]
 from accelerate import Accelerator  # pyright: ignore[reportMissingImports]
-from accelerate.utils.memory import release_memory, should_reduce_batch_size  # pyright: ignore[reportMissingImports]
+from accelerate.utils.memory import should_reduce_batch_size  # pyright: ignore[reportMissingImports]
 from datasets.arrow_dataset import Dataset
 from sacremoses import MosesPunctNormalizer
 from torch import Tensor  # pyright: ignore[reportMissingImports]
@@ -35,7 +35,6 @@ from transformers import (
 )
 from transformers.tokenization_utils_base import BatchEncoding
 from transformers.trainer_callback import TrainerControl, TrainerState
-from transformers.trainer_utils import get_last_checkpoint
 from transformers.training_args import TrainingArguments
 
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
@@ -114,24 +113,6 @@ class HuggingFaceNmtModelTrainer(Trainer):
         progress: Optional[Callable[[ProgressStatus], None]] = None,
         check_canceled: Optional[Callable[[], None]] = None,
     ) -> None:
-        last_checkpoint = None
-        if (
-            self._training_args.output_dir is not None
-            and os.path.isdir(self._training_args.output_dir)
-            and self._training_args.resume_from_checkpoint is not None
-        ):
-            last_checkpoint = get_last_checkpoint(self._training_args.output_dir)
-            if last_checkpoint is None and any(os.path.isfile(p) for p in os.listdir(self._training_args.output_dir)):
-                raise ValueError(
-                    f"Output directory ({self._training_args.output_dir}) already exists and is not empty. "
-                    "Remove --resume_from_checkpoint to overcome."
-                )
-            elif last_checkpoint is not None and self._training_args.resume_from_checkpoint is None:
-                logger.info(
-                    f"Checkpoint detected, resuming training at {last_checkpoint}. To avoid this behavior, change "
-                    "the `--output_dir` or remove `--resume_from_checkpoint` to train from scratch."
-                )
-
         # Set seed before initializing model.
         set_seed(self._training_args.seed)
 
@@ -170,7 +151,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
         def find_missing_characters(tokenizer: Any, train_dataset: Dataset, lang_codes: List[str]) -> List[str]:
             vocab = tokenizer.get_vocab().keys()
             charset = set()
-            mpn_normalize = True if isinstance(tokenizer, NllbTokenizer) else False
+            mpn_normalize = isinstance(tokenizer, NllbTokenizer)
             for ex in train_dataset["translation"]:
                 for lang_code in lang_codes:
                     ex_text = ex[lang_code]
@@ -299,12 +280,20 @@ class HuggingFaceNmtModelTrainer(Trainer):
             batch_tokens: List[List[str]],
             return_tensors: Optional[Union[str, TensorType]] = None,
         ) -> BatchEncoding:
-            return tokenizer(
-                batch_tokens,
-                is_split_into_words=True,
-                add_special_tokens=False,
-                return_tensors=return_tensors,
-            )
+            input_ids: List[List[int]] = []
+            attention_mask: List[List[int]] = []
+
+            for tokens in batch_tokens:
+                ids = cast(List[int], tokenizer.convert_tokens_to_ids(tokens))
+                input_ids.append(ids)
+                attention_mask.append([1] * len(ids))
+
+            batch_outputs = {
+                "input_ids": input_ids,
+                "attention_mask": attention_mask,
+            }
+
+            return BatchEncoding(batch_outputs, tensor_type=return_tensors)
 
         def preprocess_function(examples):
             # Add one to the content_type in order to convert back from ClassLabels which are enumerated from 0, not 1
@@ -401,13 +390,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
         )
 
         logger.info("Train NMT model")
-        ckpt = None
-        if self._training_args.resume_from_checkpoint is not None:
-            ckpt = self._training_args.resume_from_checkpoint
-        elif last_checkpoint is not None:
-            ckpt = last_checkpoint
         train_result = self._trainer.train(
-            resume_from_checkpoint=ckpt,
+            resume_from_checkpoint=self._training_args.resume_from_checkpoint,
         )
 
         self._metrics = train_result.metrics
