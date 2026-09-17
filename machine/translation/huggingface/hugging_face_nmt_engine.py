@@ -17,6 +17,7 @@ from transformers import (
     NllbTokenizer,
     PreTrainedModel,
     PreTrainedTokenizer,
+    PreTrainedTokenizerBase,
     PreTrainedTokenizerFast,
 )
 from transformers.generation.utils import GenerateBeamEncoderDecoderOutput, GenerateEncoderDecoderOutput
@@ -42,15 +43,19 @@ class HuggingFaceNmtEngine(TranslationEngine):
         **pipeline_kwargs,
     ) -> None:
         self._pipeline_kwargs = pipeline_kwargs
+        if self._pipeline_kwargs.get("output_attentions") is None:
+            self._pipeline_kwargs["output_attentions"] = True
         if isinstance(model, PreTrainedModel):
             self._model = model
+            if self._pipeline_kwargs["output_attentions"]:
+                model.set_attn_implementation("eager")
             self._model.eval()
             self._is_model_owned = False
         else:
             model_config = AutoConfig.from_pretrained(str(model), label2id={}, id2label={}, num_labels=0)
 
             # If output_attentions is True or None, we need to set the attn_implementation to eager to get the attentions
-            attn_implementation = "eager" if self._pipeline_kwargs.get("output_attentions", True) else "sdpa"
+            attn_implementation = "eager" if self._pipeline_kwargs["output_attentions"] else "sdpa"
 
             self._model = cast(
                 PreTrainedModel,
@@ -108,7 +113,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
 
         self._pipeline = SilTranslationPipeline(
             model=self._model,
-            tokenizer=cast(PreTrainedTokenizer, self.tokenizer),
+            tokenizer=self.tokenizer,
             mpn=self._mpn,
             batch_size=self._batch_size,
             **self._pipeline_kwargs,
@@ -200,7 +205,7 @@ class SilTranslationPipeline(TranslationPipeline):
     def __init__(
         self,
         model: PreTrainedModel,
-        tokenizer: PreTrainedTokenizer,
+        tokenizer: PreTrainedTokenizerBase,
         batch_size: int,
         mpn: Optional[MosesPunctNormalizer] = None,
         **kwargs,
@@ -247,10 +252,7 @@ class SilTranslationPipeline(TranslationPipeline):
             raise RuntimeError("No tokenizer is specified.")
         in_b, input_length = model_inputs["input_ids"].shape
 
-        if "input_tokens" in model_inputs:
-            input_tokens = model_inputs.pop("input_tokens")
-        else:
-            input_tokens = [self.tokenizer.convert_ids_to_tokens(seq) for seq in model_inputs["input_ids"]]
+        input_tokens = model_inputs.pop("input_tokens")
 
         self.check_inputs(input_length, self.generation_config.min_length, self.generation_config.max_length)
         output = cast(Any, self.model).generate(
@@ -278,29 +280,15 @@ class SilTranslationPipeline(TranslationPipeline):
         else:
             raise RuntimeError("Cannot postprocess the output of the model.")
 
-        try:
-            transition_scores = cast(
-                torch.Tensor,
-                cast(Any, self.model).compute_transition_scores(
-                    output_ids,
-                    scores,
-                    beam_indices,
-                    normalize_logits=True,
-                ),
-            )
-        except Exception:
-            output_ids = output_ids.to("cpu")
-            scores = tuple(score.to("cpu") for score in scores)
-            beam_indices = beam_indices.to("cpu") if beam_indices is not None else None
-            transition_scores = cast(
-                torch.Tensor,
-                cast(Any, self.model).compute_transition_scores(
-                    output_ids,
-                    scores,
-                    beam_indices,
-                    normalize_logits=True,
-                ),
-            )
+        transition_scores = cast(
+            torch.Tensor,
+            cast(Any, self.model).compute_transition_scores(
+                output_ids,
+                scores,
+                beam_indices,
+                normalize_logits=False,
+            ),
+        )
 
         if beam_indices is None:
             beam_indices = torch.zeros_like(output_ids)
@@ -329,7 +317,7 @@ class SilTranslationPipeline(TranslationPipeline):
         start_index = 0
         if self.model.config.decoder_start_token_id is not None:
             start_index = 1
-        if self.generation_config.output_attentions:
+        if self.generation_config.output_attentions is not False:
             assert attentions is not None
             num_heads = attentions[0][0].shape[1]
 

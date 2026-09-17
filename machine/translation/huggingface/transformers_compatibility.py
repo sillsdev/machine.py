@@ -1,6 +1,6 @@
 import enum
 import warnings
-from typing import Any, Callable, Optional, Sequence, Union, cast
+from typing import Any, Callable, Sequence, Union, cast
 
 from transformers import GenerationConfig, Pipeline
 from transformers.tokenization_utils_base import TruncationStrategy
@@ -28,19 +28,14 @@ class TranslationPipeline(Pipeline):
 
     def __init__(
         self,
-        framework: Optional[str] = "pt",
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.framework = framework
 
     def _sanitize_parameters(
         self,
         src_lang=None,
         tgt_lang=None,
-        return_tensors=None,
-        return_text=None,
-        return_type=None,
         clean_up_tokenization_spaces=None,
         truncation=None,
         stop_sequence=None,
@@ -53,11 +48,6 @@ class TranslationPipeline(Pipeline):
         forward_params = generate_kwargs
 
         postprocess_params = {}
-        if return_tensors is not None and return_type is None:
-            return_type = ReturnType.TENSORS if return_tensors else ReturnType.TEXT
-        if return_type is not None:
-            postprocess_params["return_type"] = return_type
-
         if clean_up_tokenization_spaces is not None:
             postprocess_params["clean_up_tokenization_spaces"] = clean_up_tokenization_spaces
 
@@ -90,29 +80,6 @@ class TranslationPipeline(Pipeline):
                 preprocess_params["tgt_lang"] = items[3]
         return preprocess_params, forward_params, postprocess_params
 
-    def _parse_and_tokenize(self, *args, truncation):
-        if self.tokenizer is None:
-            raise RuntimeError("No tokenizer is specified.")
-        prefix = self.prefix if self.prefix is not None else ""
-        if isinstance(args[0], list):
-            if self.tokenizer.pad_token_id is None:
-                raise ValueError("Please make sure that the tokenizer has a pad_token_id when using a batch input")
-            args = ([prefix + arg for arg in args[0]],)
-            padding = True
-
-        elif isinstance(args[0], str):
-            args = (prefix + args[0],)
-            padding = False
-        else:
-            raise TypeError(
-                f" `args[0]`: {args[0]} have the wrong format. The should be either of type `str` or type `list`"
-            )
-        inputs = self.tokenizer(*args, padding=padding, truncation=truncation, return_tensors=self.framework)
-        # This is produced by tokenizers but is an invalid generate kwargs
-        if "token_type_ids" in inputs:
-            del inputs["token_type_ids"]
-        return inputs
-
     def __call__(self, *args: Sequence[Union[str, Sequence[str]]], **kwargs: Any) -> list[dict[str, str]]:
         result = super().__call__(*args, **kwargs)
         if not isinstance(result, list) or not args:
@@ -141,11 +108,11 @@ class TranslationPipeline(Pipeline):
         src_lang: str | None = None,
         tgt_lang: str | None = None,
     ):
-        if self.tokenizer:
-            build_inputs = getattr(self.tokenizer, "_build_translation_inputs", None)
-            if callable(build_inputs):
-                build_inputs_fn = cast(Callable[..., Any], build_inputs)
-                return build_inputs_fn(
-                    *args, return_tensors=self.framework, truncation=truncation, src_lang=src_lang, tgt_lang=tgt_lang
-                )
-        return self._parse_and_tokenize(*args, truncation=truncation)
+        if self.tokenizer is None:
+            raise RuntimeError("No tokenizer is specified.")
+        build_inputs = getattr(self.tokenizer, "_build_translation_inputs", None)
+        if callable(build_inputs):
+            build_inputs_fn = cast(Callable[..., Any], build_inputs)
+            return build_inputs_fn(
+                *args, return_tensors="pt", truncation=truncation, src_lang=src_lang, tgt_lang=tgt_lang
+            )
