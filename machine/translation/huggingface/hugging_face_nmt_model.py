@@ -17,14 +17,16 @@ from .hugging_face_nmt_model_trainer import HuggingFaceNmtModelTrainer
 class HuggingFaceNmtModel(TranslationModel):
     def __init__(
         self,
-        model: Union[PreTrainedModel, Path],
+        model: Union[PreTrainedModel, Path, str],
         parent_model_name: str,
         training_args: Optional[Seq2SeqTrainingArguments] = None,
         **pipeline_kwargs,
     ) -> None:
         self._model = model
         if isinstance(model, PreTrainedModel):
-            self._model_path = Path(str(model.name_or_path))
+            if model.name_or_path is None:
+                raise ValueError("No model name_or_path specified.")
+            self._model_path = Path(model.name_or_path)
         else:
             self._model_path = Path(model)
         self._parent_model_name = parent_model_name

@@ -1,5 +1,6 @@
 import logging
 import tarfile
+import warnings
 from pathlib import Path
 from typing import Any, cast
 
@@ -26,6 +27,15 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
         self._config = config
         args = config.huggingface.train_params.to_dict()
         args["output_dir"] = str(self._model_dir)
+        # Allow group_by_length backwards compatibility
+        if "group_by_length" in args:
+            warnings.warn(
+                "'group_by_length' is deprecated and will be removed in a future release.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            if args.pop("group_by_length") is True:
+                args["train_sampling_strategy"] = "group_by_length"
         # Use "max_steps" from root for backward compatibility
         if "max_steps" in self._config.huggingface:
             args["max_steps"] = self._config.huggingface.max_steps
