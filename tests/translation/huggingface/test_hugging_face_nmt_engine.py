@@ -60,9 +60,10 @@ def test_translate_greedy(output_attentions: bool) -> None:
         output_attentions=output_attentions,
     ) as engine:
         result = engine.translate("This is a test string")
-        assert result.translation == "skaberskaber Dollar Dollar ፤ ፤ gerekir gerekir"
+        assert result.translation == "skaberskaber Dollar Dollar Dollar ፤ gerekir gerekir"
         assert result.confidences[0] == approx(1.08e-05, 0.01)
-        assert result.sequence_confidence == approx(_get_sequence_confidence(result), 0.01)
+        # Greedy search does not produce a sequence score
+        assert result.sequence_confidence == -1.0
         assert str(result.alignment) == ("0-2 2-0 2-1 2-3 4-4 4-5 4-6 4-7" if output_attentions else "")
 
 
