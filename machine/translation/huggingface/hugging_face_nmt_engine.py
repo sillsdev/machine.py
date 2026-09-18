@@ -464,7 +464,7 @@ def torch_gather_nd(params: torch.Tensor, indices: torch.Tensor, batch_dim: int 
 def _compute_transition_scores(
     sequences: torch.Tensor,
     scores: Tuple[torch.Tensor, ...],
-    beam_indices: Optional[torch.Tensor],
+    output_beam_indices: Optional[torch.Tensor],
     normalize_logits: bool,
 ) -> torch.Tensor:
     """
@@ -474,9 +474,11 @@ def _compute_transition_scores(
     stacking the scores for every step into a single tensor, which requires several gigabytes of memory for a large
     vocabulary.
     """
-    if beam_indices is None:
+    if output_beam_indices is None:
         # Greedy search is equivalent to a beam search where the first (and only) beam is always selected.
         beam_indices = torch.arange(scores[0].shape[0], device=sequences.device).view(-1, 1).expand(-1, len(scores))
+    else:
+        beam_indices = output_beam_indices
 
     # Cut the beam indices to the longest beam length. Beams that finished early are masked out below.
     beam_indices_mask = beam_indices < 0
