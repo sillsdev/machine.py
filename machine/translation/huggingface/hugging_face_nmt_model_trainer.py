@@ -4,7 +4,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Callable, List, Optional, Union, cast
 
 import torch  # pyright: ignore[reportMissingImports]
 from accelerate import Accelerator  # pyright: ignore[reportMissingImports]
@@ -13,26 +13,19 @@ from datasets.arrow_dataset import Dataset
 from sacremoses import MosesPunctNormalizer
 from torch import Tensor  # pyright: ignore[reportMissingImports]
 from torch.nn import Module  # pyright: ignore[reportMissingImports]
-from torch.optim.lr_scheduler import LambdaLR  # pyright: ignore[reportMissingImports]
-from torch.optim.optimizer import Optimizer  # pyright: ignore[reportMissingImports]
 from torch.utils.checkpoint import checkpoint  # pyright: ignore[reportMissingImports] # noqa: F401
 from transformers import (
     AutoConfig,
     AutoModelForSeq2SeqLM,
     AutoTokenizer,
     DataCollatorForSeq2Seq,
-    EvalPrediction,
     M2M100ForConditionalGeneration,
     M2M100Tokenizer,
     MBart50Tokenizer,
-    MBart50TokenizerFast,
     MBartTokenizer,
-    MBartTokenizerFast,
     NllbTokenizer,
-    NllbTokenizerFast,
     PreTrainedModel,
     PreTrainedTokenizer,
-    PreTrainedTokenizerBase,
     PreTrainedTokenizerFast,
     Seq2SeqTrainer,
     Seq2SeqTrainingArguments,
@@ -40,9 +33,8 @@ from transformers import (
     TrainerCallback,
     set_seed,
 )
-from transformers.tokenization_utils import BatchEncoding
+from transformers.tokenization_utils_base import BatchEncoding
 from transformers.trainer_callback import TrainerControl, TrainerState
-from transformers.trainer_utils import get_last_checkpoint
 from transformers.training_args import TrainingArguments
 
 from ...corpora.parallel_text_corpus import ParallelTextCorpus
@@ -76,12 +68,9 @@ setattr(
 
 MULTILINGUAL_TOKENIZERS = (
     MBartTokenizer,
-    MBartTokenizerFast,
     MBart50Tokenizer,
-    MBart50TokenizerFast,
     M2M100Tokenizer,
     NllbTokenizer,
-    NllbTokenizerFast,
 )
 
 
@@ -124,20 +113,6 @@ class HuggingFaceNmtModelTrainer(Trainer):
         progress: Optional[Callable[[ProgressStatus], None]] = None,
         check_canceled: Optional[Callable[[], None]] = None,
     ) -> None:
-        last_checkpoint = None
-        if os.path.isdir(self._training_args.output_dir) and not self._training_args.overwrite_output_dir:
-            last_checkpoint = get_last_checkpoint(self._training_args.output_dir)
-            if last_checkpoint is None and any(os.path.isfile(p) for p in os.listdir(self._training_args.output_dir)):
-                raise ValueError(
-                    f"Output directory ({self._training_args.output_dir}) already exists and is not empty. "
-                    "Use --overwrite_output_dir to overcome."
-                )
-            elif last_checkpoint is not None and self._training_args.resume_from_checkpoint is None:
-                logger.info(
-                    f"Checkpoint detected, resuming training at {last_checkpoint}. To avoid this behavior, change "
-                    "the `--output_dir` or add `--overwrite_output_dir` to train from scratch."
-                )
-
         # Set seed before initializing model.
         set_seed(self._training_args.seed)
 
@@ -156,7 +131,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
             model = cast(PreTrainedModel, AutoModelForSeq2SeqLM.from_pretrained(self._model, config=config))
 
         logger.info("Initializing tokenizer")
-        tokenizer = AutoTokenizer.from_pretrained(model.name_or_path, use_fast=True)
+        tokenizer = AutoTokenizer.from_pretrained(model.name_or_path)
 
         src_lang = self._src_lang
         if src_lang is None:
@@ -176,19 +151,22 @@ class HuggingFaceNmtModelTrainer(Trainer):
         def find_missing_characters(tokenizer: Any, train_dataset: Dataset, lang_codes: List[str]) -> List[str]:
             vocab = tokenizer.get_vocab().keys()
             charset = set()
-            mpn_normalize = True if isinstance(tokenizer, (NllbTokenizerFast)) else False
+            mpn_normalize = isinstance(tokenizer, NllbTokenizer)
             for ex in train_dataset["translation"]:
                 for lang_code in lang_codes:
                     ex_text = ex[lang_code]
                     if mpn_normalize:
                         ex_text = self._mpn.normalize(ex_text)
-                    ex_text = tokenizer.backend_tokenizer.normalizer.normalize_str(ex_text)
+                    if tokenizer.backend_tokenizer.normalizer is not None:
+                        ex_text = tokenizer.backend_tokenizer.normalizer.normalize_str(ex_text)
                     charset = charset | set(ex_text)
             charset = set(filter(None, {char.strip() for char in charset}))
             missing_characters = sorted(list(charset - vocab))
             return missing_characters
 
         def add_tokens(tokenizer: Any, missing_tokens: List[str]) -> Any:
+            if self._training_args.output_dir is None:
+                raise ValueError("Missing output_dir from training arguments")
             tokenizer_dir = Path(self._training_args.output_dir)
             tokenizer.save_pretrained(str(tokenizer_dir))
             with open(tokenizer_dir / "tokenizer.json", "r+", encoding="utf-8") as file:
@@ -204,7 +182,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 json.dump(data, file, ensure_ascii=False, indent=4)
                 file.truncate()
             logger.info(f"Added {len(missing_tokens)} tokens to the tokenizer: {missing_tokens}")
-            return AutoTokenizer.from_pretrained(str(tokenizer_dir), use_fast=True)
+            return AutoTokenizer.from_pretrained(str(tokenizer_dir))
 
         if self._add_unk_src_tokens or self._add_unk_tgt_tokens:
             logger.info("Checking for missing tokens")
@@ -215,8 +193,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 )
             else:
                 norm_tok = PreTrainedTokenizerFast.from_pretrained(
-                    str(Path(os.path.dirname(os.path.abspath(__file__))) / "custom_normalizer"),
-                    use_fast=True,
+                    str(Path(os.path.dirname(os.path.abspath(__file__))) / "custom_normalizer")
                 )
                 # using unofficially supported behavior to set the normalizer
                 lang_codes = []
@@ -249,12 +226,9 @@ class HuggingFaceNmtModelTrainer(Trainer):
         if (
             self._tgt_lang is not None
             and model.config.decoder_start_token_id is None
-            and isinstance(tokenizer, (MBartTokenizer, MBartTokenizerFast))
+            and isinstance(tokenizer, MBartTokenizer)
         ):
-            if isinstance(tokenizer, MBartTokenizer):
-                model.config.decoder_start_token_id = tokenizer.lang_code_to_id[self._tgt_lang]
-            else:
-                model.config.decoder_start_token_id = tokenizer.convert_tokens_to_ids(self._tgt_lang)
+            model.config.decoder_start_token_id = tokenizer.convert_tokens_to_ids(self._tgt_lang)
 
         if model.config.decoder_start_token_id is None:
             raise ValueError("Make sure that `config.decoder_start_token_id` is correctly defined")
@@ -280,15 +254,17 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 model.config.forced_bos_token_id = forced_bos_token_id
 
         prefix = ""
-        if model.name_or_path.startswith("t5-") or model.name_or_path.startswith("google/mt5-"):
+        if model.name_or_path is not None and (
+            model.name_or_path.startswith("t5-") or model.name_or_path.startswith("google/mt5-")
+        ):
             prefix = f"translate {self._src_lang} to {self._tgt_lang}: "
 
         max_src_length = self.max_src_length
         if max_src_length is None:
-            max_src_length = model.config.max_length
+            max_src_length = model.generation_config.max_length or 200
         max_tgt_length = self.max_tgt_length
         if max_tgt_length is None:
-            max_tgt_length = model.config.max_length
+            max_tgt_length = model.generation_config.max_length or 200
 
         if self._training_args.label_smoothing_factor > 0 and not hasattr(
             model, "prepare_decoder_input_ids_from_labels"
@@ -304,37 +280,31 @@ class HuggingFaceNmtModelTrainer(Trainer):
             batch_tokens: List[List[str]],
             return_tensors: Optional[Union[str, TensorType]] = None,
         ) -> BatchEncoding:
-            batch_outputs: Dict[str, Any] = {}
+            input_ids: List[List[int]] = []
+            attention_mask: List[List[int]] = []
+
             for tokens in batch_tokens:
                 ids = cast(List[int], tokenizer.convert_tokens_to_ids(tokens))
-                outputs = tokenizer.prepare_for_model(ids, add_special_tokens=False)
+                input_ids.append(ids)
+                attention_mask.append([1] * len(ids))
 
-                for key, value in outputs.items():
-                    if key not in batch_outputs:
-                        batch_outputs[key] = []
-                    batch_outputs[key].append(value)
+            batch_outputs = {
+                "input_ids": input_ids,
+                "attention_mask": attention_mask,
+            }
+
             return BatchEncoding(batch_outputs, tensor_type=return_tensors)
 
         def preprocess_function(examples):
             # Add one to the content_type in order to convert back from ClassLabels which are enumerated from 0, not 1
-            if isinstance(tokenizer, (NllbTokenizer, NllbTokenizerFast)):
-                inputs = [
-                    (self._mpn.normalize(ex[src_lang]), TextRowContentType(d + 1))
-                    for ex, d in zip(examples["translation"], examples["content_type"])
-                ]
-                targets = [
-                    (self._mpn.normalize(ex[tgt_lang]), TextRowContentType(d + 1))
-                    for ex, d in zip(examples["translation"], examples["content_type"])
-                ]
-            else:
-                inputs = [
-                    (self._mpn.normalize(ex[src_lang]), TextRowContentType(d + 1))
-                    for ex, d in zip(examples["translation"], examples["content_type"])
-                ]
-                targets = [
-                    (self._mpn.normalize(ex[tgt_lang]), TextRowContentType(d + 1))
-                    for ex, d in zip(examples["translation"], examples["content_type"])
-                ]
+            inputs = [
+                (self._mpn.normalize(ex[src_lang]), TextRowContentType(d + 1))
+                for ex, d in zip(examples["translation"], examples["content_type"])
+            ]
+            targets = [
+                (self._mpn.normalize(ex[tgt_lang]), TextRowContentType(d + 1))
+                for ex, d in zip(examples["translation"], examples["content_type"])
+            ]
 
             num_glosses = len([1 for _, d in inputs if d == TextRowContentType.WORD])
             if not isinstance(tokenizer, PreTrainedTokenizerFast) or num_glosses == 0:
@@ -409,7 +379,6 @@ class HuggingFaceNmtModelTrainer(Trainer):
             model=model,
             args=self._training_args,
             train_dataset=cast(Any, train_dataset),
-            tokenizer=tokenizer,
             data_collator=data_collator,
             callbacks=[
                 _ProgressCallback(
@@ -421,13 +390,8 @@ class HuggingFaceNmtModelTrainer(Trainer):
         )
 
         logger.info("Train NMT model")
-        ckpt = None
-        if self._training_args.resume_from_checkpoint is not None:
-            ckpt = self._training_args.resume_from_checkpoint
-        elif last_checkpoint is not None:
-            ckpt = last_checkpoint
         train_result = self._trainer.train(
-            resume_from_checkpoint=ckpt,
+            resume_from_checkpoint=self._training_args.resume_from_checkpoint,
         )
 
         self._metrics = train_result.metrics
@@ -500,32 +464,22 @@ class AutoGradientAccumulationStepsSeq2SeqTrainer(Seq2SeqTrainer):
         args: Seq2SeqTrainingArguments,
         data_collator: Any,
         train_dataset: Optional[Dataset] = None,
-        eval_dataset: Optional[Union[Dataset, Dict[str, Dataset]]] = None,
-        tokenizer: Optional[PreTrainedTokenizerBase] = None,
-        model_init: Optional[Callable[[], PreTrainedModel]] = None,
-        compute_metrics: Optional[Callable[[EvalPrediction], Dict]] = None,
         callbacks: Optional[List[TrainerCallback]] = None,
-        optimizers: Tuple[Optional[Optimizer], Optional[LambdaLR]] = (None, None),
-        preprocess_logits_for_metrics: Optional[Callable[[Tensor, Tensor], Tensor]] = None,
     ):
         super().__init__(
-            model,
-            args,
-            data_collator,
-            train_dataset,  # type: ignore
-            eval_dataset,  # type: ignore
-            tokenizer,
-            model_init,
-            compute_metrics,
-            callbacks,
-            optimizers,  # type: ignore
-            preprocess_logits_for_metrics,
+            model=model,
+            args=args,
+            data_collator=data_collator,
+            train_dataset=train_dataset,
+            callbacks=callbacks,
         )
 
     def _inner_training_loop(
         self, batch_size=None, args=None, resume_from_checkpoint=None, trial=None, ignore_keys_for_eval=None
     ):
-        inner_training_loop = find_executable_batch_size(super()._inner_training_loop, batch_size, self.accelerator)
+        inner_training_loop = self.find_executable_batch_size(
+            super()._inner_training_loop, batch_size, self.accelerator
+        )
         return inner_training_loop(
             args=args,
             resume_from_checkpoint=resume_from_checkpoint,
@@ -533,31 +487,34 @@ class AutoGradientAccumulationStepsSeq2SeqTrainer(Seq2SeqTrainer):
             ignore_keys_for_eval=ignore_keys_for_eval,
         )
 
+    def find_executable_batch_size(self, function: Callable, starting_batch_size, accelerator: Accelerator):
+        batch_size = starting_batch_size
 
-def find_executable_batch_size(function: Callable, starting_batch_size, accelerator: Accelerator):
-    batch_size = starting_batch_size
+        def decorator(*args, **kwargs):
+            nonlocal batch_size
+            self.accelerator.free_memory()
+            gc.collect()
+            torch.cuda.empty_cache()
 
-    def decorator(*args, **kwargs):
-        nonlocal batch_size
-        gc.collect()
-        torch.cuda.empty_cache()
+            while True:
+                if batch_size == 0:
+                    raise RuntimeError("No executable batch size found, reached zero.")
+                try:
+                    return function(batch_size, *args, **kwargs)
+                except Exception as e:
+                    logger.error(f"Attempt with batch_size={batch_size} failed with error: {e}", exc_info=True)
+                    if should_reduce_batch_size(e):
+                        self.accelerator.free_memory()
+                        gc.collect()
+                        torch.cuda.empty_cache()
+                        batch_size //= 2
+                        self._update_auto_batch_size(batch_size)
+                        accelerator.gradient_accumulation_steps = accelerator.gradient_accumulation_steps * 2
+                        kwargs["args"].gradient_accumulation_steps = accelerator.gradient_accumulation_steps
+                    else:
+                        raise
 
-        while True:
-            if batch_size == 0:
-                raise RuntimeError("No executable batch size found, reached zero.")
-            try:
-                return function(batch_size, *args, **kwargs)
-            except Exception as e:
-                if should_reduce_batch_size(e):
-                    gc.collect()
-                    torch.cuda.empty_cache()
-                    batch_size //= 2
-                    accelerator.gradient_accumulation_steps = accelerator.gradient_accumulation_steps * 2
-                    kwargs["args"].gradient_accumulation_steps = accelerator.gradient_accumulation_steps
-                else:
-                    raise
-
-    return decorator
+        return decorator
 
 
 def add_lang_code_to_tokenizer(tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast], lang_code: str):
@@ -570,13 +527,12 @@ def add_lang_code_to_tokenizer(tokenizer: Union[PreTrainedTokenizer, PreTrainedT
         return
 
     tokenizer.add_special_tokens(
-        {"additional_special_tokens": tokenizer.additional_special_tokens + [lang_token]}  # type: ignore
+        {"extra_special_tokens": tokenizer.extra_special_tokens + [lang_token]}  # type: ignore
     )
     lang_id = cast(int, tokenizer.convert_tokens_to_ids(lang_token))
 
     if isinstance(tokenizer, (MBart50Tokenizer, MBartTokenizer)):
         tokenizer.lang_code_to_id[lang_code] = lang_id
-        tokenizer.id_to_lang_code[lang_id] = lang_code
         tokenizer.fairseq_tokens_to_ids[lang_code] = lang_id
         tokenizer.fairseq_ids_to_tokens[lang_id] = lang_code
     elif isinstance(tokenizer, M2M100Tokenizer):
