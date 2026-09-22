@@ -55,7 +55,7 @@ intentionally skip.
 | `PascalCase` methods / `camelCase` locals / `_camelCase` fields | `snake_case` functions/vars |
 | `IReadOnlyList<T>` / `IDictionary<,>` / `ISet<T>` etc. | `Sequence[T]`/`list` / `Mapping`/`dict` / `Set`/`set` etc. |
 | NUnit `Assert.That(...)` | pytest plain `assert` (check neighboring test files) |
-| `AssemblyInfo`/`.csproj` `<Version>` | `pyproject.toml` `version` (poetry) |
+| `AssemblyInfo`/`.csproj` `<Version>` | `pyproject.toml` `version` |
 
 The top-level Python areas are: `annotations`, `clusterers`, `corpora`, `jobs`,
 `optimization`, `punctuation_analysis`, `scripture`, `sequence_alignment`, `statistics`,
@@ -87,12 +87,12 @@ Apply the ported changes with Edit/Write.
 Install, format, lint, type-check, and test (this is `local_check.sh`):
 
 ```bash
-poetry install
-poetry run black .
-poetry run flake8 .
-poetry run isort .
-poetry run pyright
-poetry run pytest
+uv sync --all-extras
+uv run black .
+uv run flake8 .
+uv run isort .
+uv run pyright
+uv run pytest
 ```
 
 `black` and `isort` rewrite files in place; `flake8` and `pyright` are gates that must pass

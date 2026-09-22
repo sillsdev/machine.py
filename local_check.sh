@@ -1,13 +1,13 @@
 #!/bin/bash
-poetry install
+uv sync --all-extras
 
 echo "======================= black ======================"
-poetry run black .
+uv run black .
 echo "======================= flake8 ======================"
-poetry run flake8 .
+uv run flake8 .
 echo "======================= isort ======================"
-poetry run isort .
+uv run isort .
 echo "======================= pyright ======================"
-poetry run pyright
+uv run pyright
 echo "======================= pytest ======================"
-poetry run pytest
+uv run pytest

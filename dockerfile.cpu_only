@@ -1,26 +1,16 @@
 # syntax=docker/dockerfile:1
 ARG PYTHON_VERSION=3.12
-ARG POETRY_VERSION=2.4.1
+ARG UV_VERSION=0.12.17
+
+FROM ghcr.io/astral-sh/uv:$UV_VERSION AS uv
 
 FROM python:$PYTHON_VERSION-slim-bookworm AS builder
-ARG POETRY_VERSION
-
-ENV POETRY_HOME=/opt/poetry
-ENV POETRY_VENV=/opt/poetry-venv
-ENV POETRY_CACHE_DIR=/opt/.cache
-
-# Install poetry separated from system interpreter
-RUN python3 -m venv $POETRY_VENV \
-    && $POETRY_VENV/bin/pip install -U pip setuptools \
-    && $POETRY_VENV/bin/pip install poetry==${POETRY_VERSION}
-
-# Add `poetry` to PATH
-ENV PATH="${PATH}:${POETRY_VENV}/bin"
+COPY --from=uv /uv /bin/uv
 
 WORKDIR /src
-COPY poetry.lock pyproject.toml /src/
-RUN poetry self add poetry-plugin-export
-RUN poetry export --with=gpu --all-extras --without-hashes -f requirements.txt > requirements.txt
+COPY uv.lock pyproject.toml /src/
+# dev dependencies are left out of the image
+RUN uv export --frozen --no-default-groups --group gpu --all-extras --no-hashes --no-emit-project -o requirements.txt
 
 
 FROM python:$PYTHON_VERSION-slim-bookworm

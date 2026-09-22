@@ -1,12 +1,101 @@
+[project]
+name = "sil-machine"
+version = "1.9.2"
+description = "A natural language processing library that is focused on providing tools for resource-poor languages."
+authors = [{ name = "SIL International" }]
+requires-python = ">=3.10,<3.15"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+maintainers = [{ name = "Damien Daspit", email = "damien_daspit@sil.org" }]
+keywords = [
+    "machine",
+    "translation",
+    "natural",
+    "language",
+    "processing",
+]
+classifiers = [
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing",
+    "Topic :: Text Processing :: Linguistic",
+]
+dependencies = [
+    "regex>=2021.7.6",
+    "numpy>=2.3.4,<3.0; python_version>='3.11'",
+    "numpy>=2.2.6,<2.3; python_version=='3.10'",
+    "sortedcontainers~=2.4",
+    "networkx~=3.0",
+    "charset-normalizer>=2.1.1,<3.0",
+    "urllib3<2.0",
+    "botocore>=1.35.41,<2.0",
+    "boto3>=1.19.41,<2.0",
+]
+
+[project.urls]
+Repository = "https://github.com/sillsdev/machine.py"
+
+[project.optional-dependencies]
+sentencepiece = ["sentencepiece~=0.2"]
+thot = ["sil-thot~=3.5.2"]
+huggingface = [
+    "transformers==4.47.1",
+    "datasets~=4.1",
+    "sacremoses>=0.0.53,<1",
+]
+jobs = [
+    "clearml[s3]>=1.13.1,<2.0",
+    "json-stream~=1.3",
+    "dynaconf>=3.2.5,<4.0",
+    "eflomal~=2.0; sys_platform == 'linux'",
+    "pydantic>=2.13.4,<3.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.17,<0.13"]
+build-backend = "uv_build"
+
 [tool.black]
 line-length = 120
 target-version = ['py310']
 include = '\.pyi?$'
 
+[dependency-groups]
+dev = [
+    "pytest>=8.3.2,<9",
+    "black>=24.1.1,<25",
+    "flake8>=7.0.0,<8",
+    "isort>=5.9.3,<6",
+    "pytest-cov>=4.1.0,<5",
+    "ipykernel>=6.7.0,<7",
+    "jupyter>=1.0.0,<2",
+    "pandas>=2.0.3,<3",
+    "pyright[nodejs]>=1.1.411,<2",
+    "decoy>=2.1.0,<3",
+    "pep8-naming>=0.14.1,<0.15",
+]
+gpu = [
+    "torch==2.9.1 ; sys_platform == 'win32' or sys_platform == 'linux'",
+    "accelerate>=1.0,<2 ; sys_platform == 'win32' or sys_platform == 'linux'",
+]
+
 [tool.isort]
 profile = "black"
 line_length = 120
 skip_gitignore = true
+
+[tool.uv]
+default-groups = "all"
+
+[tool.uv.build-backend]
+module-name = ["machine"]
+module-root = ""
+namespace = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -16,66 +105,3 @@ norecursedirs = "tests/testutils"
 typeCheckingMode = "basic"
 extraPaths = ["tests"]
 reportMissingModuleSource = false
-
-[project]
-name = "sil-machine"
-version = "1.9.2"
-description = "A natural language processing library that is focused on providing tools for resource-poor languages."
-license = "MIT"
-authors = [{ name = "SIL International" }]
-maintainers = [{ name = "Damien Daspit", email = "damien_daspit@sil.org" }]
-readme = "README.md"
-repository = "https://github.com/sillsdev/machine.py"
-keywords = ["machine", "translation", "natural", "language", "processing"]
-classifiers = [
-  "Topic :: Scientific/Engineering",
-  "Topic :: Scientific/Engineering :: Artificial Intelligence",
-  "Topic :: Scientific/Engineering :: Mathematics",
-  "Topic :: Software Development",
-  "Topic :: Software Development :: Libraries",
-  "Topic :: Software Development :: Libraries :: Python Modules",
-  "Topic :: Text Processing",
-  "Topic :: Text Processing :: Linguistic",
-]
-requires-python = ">=3.10,<3.15"
-dependencies = [
-  "regex>=2021.7.6",
-  "numpy>=2.3.4,<3.0; python_version>='3.11'",
-  "numpy>=2.2.6,<2.3; python_version=='3.10'",
-  "sortedcontainers~=2.4",
-  "networkx~=3.0",
-  "charset-normalizer>=2.1.1,<3.0",
-  "urllib3<2.0",
-  "botocore>=1.35.41,<2.0",
-  "boto3>=1.19.41,<2.0",
-]
-
-[tool.poetry]
-packages = [{ include = "machine" }]
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.3.2"
-black = "^24.1.1"
-flake8 = "^7.0.0"
-isort = "^5.9.3"
-pytest-cov = "^4.1.0"
-ipykernel = "^6.7.0"
-jupyter = "^1.0.0"
-pandas = "^2.0.3"
-pyright = { extras = ["nodejs"], version = "^1.1.411" }
-decoy = "^2.1.0"
-pep8-naming = "^0.14.1"
-
-[tool.poetry.group.gpu.dependencies]
-torch = { version = "2.9.1", markers = "sys_platform == 'win32' or sys_platform == 'linux'" }
-accelerate = { version = "^1.0", markers = "sys_platform == 'win32' or sys_platform == 'linux'" }
-
-[project.optional-dependencies]
-sentencepiece = ["sentencepiece~=0.2"]
-thot = ["sil-thot~=3.5.2"]
-huggingface = ["transformers==4.47.1", "datasets~=4.1", "sacremoses>=0.0.53,<1"]
-jobs = [  "clearml[s3]>=1.13.1,<2.0", "json-stream~=1.3", "dynaconf>=3.2.5,<4.0", "eflomal~=2.0; sys_platform == 'linux'", "pydantic>=2.13.4,<3.0"]
-
-[build-system]
-requires = ["poetry-core>=2.0.0"]
-build-backend = "poetry.core.masonry.api"

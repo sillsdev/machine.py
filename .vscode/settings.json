@@ -16,7 +16,7 @@
   "files.associations": {
     "*.SFM": "usfm"
   },
-  "black-formatter.path": ["poetry", "run", "black"],
+  "black-formatter.path": ["uv", "run", "black"],
   "isort.args": ["--profile", "black"],
   "cSpell.words": [
     "CLEARML",
@@ -26,7 +26,5 @@
     "typeshed",
     "Usfm",
     "venv"
-  ],
-  "python-envs.defaultEnvManager": "ms-python.python:poetry",
-  "python-envs.defaultPackageManager": "ms-python.python:poetry"
+  ]
 }
