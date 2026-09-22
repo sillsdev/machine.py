@@ -1,12 +1,12 @@
 ARG PYTHON_VERSION=3.10
-ARG POETRY_VERSION=2.4.1
+ARG UV_VERSION=0.12.17
 ARG CUDA_VERSION=12.6.1-base-ubuntu24.04
+
+FROM ghcr.io/astral-sh/uv:$UV_VERSION AS uv
 
 FROM nvidia/cuda:$CUDA_VERSION
 ARG PYTHON_VERSION
-ARG POETRY_VERSION
 
-ENV POETRY_VENV=/opt/poetry-venv
 ENV PIP_DISABLE_PIP_VERSION_CHECK=on
 ENV TZ=America/New_York
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
@@ -29,10 +29,11 @@ RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python$PYTHON_VERSION
 RUN ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python3  & \
     ln -sfn /usr/bin/python${PYTHON_VERSION} /usr/bin/python
 
+COPY --from=uv /uv /uvx /bin/
+
 # Install python packages
 RUN pip install -U pip setuptools \
-    && pip install poetry==${POETRY_VERSION} black pipenv virtualenv clearml \
-    && poetry config virtualenvs.in-project true \
+    && pip install black pipenv virtualenv clearml \
     && pip install cffi
 
 COPY ./.devcontainer/clearml.conf /root/clearml.conf
