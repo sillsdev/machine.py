@@ -70,9 +70,6 @@ confirm `Unverified`; an unverified concern is never Major.
 
 ## 5. Close with five lines
 
-Start the summary comment with `FYI`, so it never holds up the review on its
-own; the findings carry their own severity.
-
 1. Verdict: approve, approve with fixes, or request changes.
 2. The one thing that matters most, with its number and `path:line`.
 3. Counts by severity.
