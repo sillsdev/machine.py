@@ -2,7 +2,7 @@
 name = "sil-machine"
 version = "1.9.2"
 description = "A natural language processing library that is focused on providing tools for resource-poor languages."
-authors = [{ name = "SIL International" }]
+authors = [{ name = "SIL Global" }]
 requires-python = ">=3.10,<3.15"
 readme = "README.md"
 license = "MIT"
