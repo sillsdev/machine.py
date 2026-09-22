@@ -66,13 +66,10 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # The built-in code-review skill finds and verifies, at "high" effort; the
-          # plugin it replaces dropped anything under 80 on its confidence rubric.
-          # Without --comment it reports back, and pr-review sets what gets posted.
-          prompt: |
-            Review pull request ${{ github.event.pull_request.number }}.
-            Run /code-review high on it without --comment, then post the verified
-            findings as the pr-review skill describes.
+          # pr-review has the built-in code-review skill find and verify at "high"
+          # effort, then sets what gets posted. The code-review plugin this replaces
+          # dropped anything under 80 on its confidence rubric.
+          prompt: '/pr-review ${{ github.event.pull_request.number }}'
           # v1 has no `model` input; the model is passed through to the CLI instead.
           claude_args: >-
             --model claude-opus-5

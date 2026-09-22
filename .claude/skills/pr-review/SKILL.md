@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: How to write up a code review in sillsdev/machine.py - short line comments, evidence, severity.
+description: Review a pull request in sillsdev/machine.py - find and verify with code-review, then post short numbered line comments with evidence and severity.
 argument-hint: "[optional PR number, branch, or review focus]"
 user-invocable: true
 ---
@@ -10,6 +10,10 @@ user-invocable: true
 Post one short comment per finding, anchored on the line it is about, then one
 summary comment. A review is read-only: do not edit, commit, push, or resolve
 threads.
+
+Unless verified findings are already in hand, get them first with
+`/code-review high <target>`, without `--comment`: it finds and verifies, and
+this skill decides what gets posted.
 
 ## 1. One finding, one comment
 
