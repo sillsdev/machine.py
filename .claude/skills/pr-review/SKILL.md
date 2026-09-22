@@ -20,19 +20,19 @@ this skill decides what gets posted.
 Anchor it on the line. Two problems on one line are two comments. A reviewer
 scrolling the diff should meet each point where it applies.
 
-Number findings `F1`, `F2`, ... in the order you post them, and start each
-comment with its number, so a reply or a later review can refer to one without
-quoting it. Not `#1`: GitHub links that to issue 1. Numbers are stable - a
+Number findings `F1`, `F2`, ... in the order you post them, and put the number
+right after the severity word, so a reply or a later review can refer to one
+without quoting it. Not `#1`: GitHub links that to issue 1. Numbers are stable - a
 withdrawn finding keeps its number, and a later round continues the sequence.
 
 ## 2. Lead with the claim
 
-After the number and severity, the first sentence names the defect. Evidence
+After the severity and number, the first sentence names the defect. Evidence
 second, fix third, if it fits.
 
 ```
-F1 Important. Verse range collapses to one row: `_advance_rows` keeps only the
-last match, so a `\v 1-2` matched by two rows loses the first row's metadata.
+Major F1. Verse range collapses to one row: `_advance_rows` keeps only the last
+match, so a `\v 1-2` matched by two rows loses the first row's metadata.
 Collect a list.
 ```
 
@@ -41,14 +41,22 @@ the summary instead.
 
 ## 3. Label the severity
 
-**Critical** blocks merge, then **Important**, then **Minor**. Critical means
-demonstrated: a failing command, a broken contract, a missing gate. A worry is
-not Critical.
+The first word of every comment is its severity. Reviewable reads it from a
+comment posted on GitHub and sets the discussion's disposition to match:
+
+- **Major** blocks review completion until a maintainer dismisses it. Major
+  means demonstrated: a failing command, a broken contract, a missing gate. A
+  worry is not Major.
+- **Minor** stays open until the author answers it.
+- **FYI** starts resolved: worth knowing, no answer needed.
+
+A comment that starts with any other word gets Reviewable's default instead,
+which for a reviewer is Blocking.
 
 ## 4. Carry the evidence
 
 Every comment gets a `path:line` and a consequence. Mark what you did not
-confirm `Unverified`; an unverified concern never blocks a merge.
+confirm `Unverified`; an unverified concern is never Major.
 
 - Do not report pre-existing issues the diff does not touch.
 - Do not ask for a migration, modernization, or benchmark the diff gave no
@@ -61,6 +69,9 @@ confirm `Unverified`; an unverified concern never blocks a merge.
 - A coverage percentage is not evidence that a changed line is tested.
 
 ## 5. Close with five lines
+
+Start the summary comment with `FYI`, so it never holds up the review on its
+own; the findings carry their own severity.
 
 1. Verdict: approve, approve with fixes, or request changes.
 2. The one thing that matters most, with its number and `path:line`.
