@@ -23,6 +23,12 @@ Governs `machine/corpora/**/*.py`.
 - Compare markers, tokens, and identifiers by exact string identity. Case
   folding and locale-aware normalization belong only where the operation is
   genuinely linguistic; quotation-mark identity is not.
+- Every corpus class streams. Rows come from a `_get_rows` generator that
+  `get_rows` wraps in a `ContextManagedGenerator`, and a transform or new corpus
+  yields from its source inside `with ... get_rows() as rows:` rather than
+  collecting rows into a list. A whole-Bible corpus, or several of them in a
+  parallel corpus, must not have to fit in memory. The dictionary-backed corpora
+  are the exception: they wrap data the caller already holds.
 - For files, ZIPs, and streams, preserve entry and byte limits, path validation,
   closing, and actionable errors. Be explicit about who owns a handle passed in.
 - A row that produces no text still carries metadata. A verse range matched by
