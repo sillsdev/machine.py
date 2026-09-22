@@ -25,5 +25,6 @@ iterable of dicts will accept a positional `dict` and iterate its keys.
 CI covers lint, type and test breakage on every push, so re-running the suite during review adds
 nothing. Use the environment for what CI can't do: check whether a suspected bug actually manifests.
 Write a throwaway script or run one targeted test file, and compare against the base branch when the
-question is whether behavior changed. A finding you tried and failed to reproduce is worth more than
-one you only reasoned about.
+question is whether behavior changed. Reach the project environment through `poetry run` — the bare
+`python` on `PATH` is a different interpreter without the dependencies installed. A finding you
+tried and failed to reproduce is worth more than one you only reasoned about.
