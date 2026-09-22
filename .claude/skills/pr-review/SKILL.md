@@ -19,13 +19,20 @@ rules file.
 Anchor it on the line. Two problems on one line are two comments. A reviewer
 scrolling the diff should meet each point where it applies.
 
+Number findings `F1`, `F2`, ... in the order you post them, and start each
+comment with its number, so a reply or a later review can refer to one without
+quoting it. Not `#1`: GitHub links that to issue 1. Numbers are stable - a
+withdrawn finding keeps its number, and a later round continues the sequence.
+
 ## 2. Lead with the claim
 
-First sentence names the defect. Evidence second, fix third, if it fits.
+After the number and severity, the first sentence names the defect. Evidence
+second, fix third, if it fits.
 
 ```
-Verse range collapses to one row: `_advance_rows` keeps only the last match, so
-a `\v 1-2` matched by two rows loses the first row's metadata. Collect a list.
+F1 Important. Verse range collapses to one row: `_advance_rows` keeps only the
+last match, so a `\v 1-2` matched by two rows loses the first row's metadata.
+Collect a list.
 ```
 
 Three lines is long. A finding needing more is a design question - raise it in
@@ -57,7 +64,7 @@ confirm `Unverified`; an unverified concern never blocks a merge.
 ## 5. Close with five lines
 
 1. Verdict: approve, approve with fixes, or request changes.
-2. The one thing that matters most, with its `path:line`.
+2. The one thing that matters most, with its number and `path:line`.
 3. Counts by severity.
 4. What you ran, and its result.
 5. What you could not verify.
@@ -65,8 +72,8 @@ confirm `Unverified`; an unverified concern never blocks a merge.
 Say which public API, optional dependency, published-wheel surface, or parity
 contract with `sillsdev/machine` changed, or `None verified`.
 
-Then mark each finding **changed**, **accepted**, or **unverified**. Leave
-nothing implicit: a thread with no follow-up leaves nobody able to tell which
-findings mattered.
+Then mark each finding, by number, **changed**, **accepted**, or
+**unverified**. Leave nothing implicit: a thread with no follow-up leaves nobody
+able to tell which findings mattered.
 
 For an adversarial second pass, apply `docs/review/devils-advocate.md`.
