@@ -22,7 +22,7 @@ neither, so a local run is not CI-equivalent. -->
 - `./local_check.sh` --
 - `./local_check.sh --agent-strict` -- <!-- required of agents, optional for humans -->
 - `git diff --check <merge-base>...HEAD` --
-- <!-- Focused test runs, or a platform note where a skipped extra changes the result -->
+- <!-- Focused test runs, if relevant -->
 
 ## Issue / porting context
 

@@ -10,8 +10,6 @@ user-invocable: true
 Search open and recently closed issues first, and say what you searched. Then
 write the title and the three-sentence lede; the form fields hold the rest.
 
-GitHub issues are the tracker here.
-
 ## 1. Title: one symptom
 
 Under about 70 characters, in the reader's words. No "investigate", no
@@ -50,8 +48,5 @@ Sanitize first: no secrets, tokens, customer text, or private project data.
 
 Ready means another maintainer can reproduce the bug, judge the acceptance
 criteria, or find the change to port - without asking you a question.
-
-A workflow files the porting issue after a merge, marked `AUTO-GENERATED-ISSUE`.
-Do not write a second one by hand.
 
 Hand back the title, labels, and body. The author decides whether to publish.

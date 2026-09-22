@@ -20,7 +20,7 @@ failed before are:
 - a USFM or reference change whose test proves the happy path only;
 - a parity claim about `sillsdev/machine` with no checked comparison;
 - a public API change called internal because every caller in this repo still
-  compiles;
+  works;
 - a build-job change asserted to be safe under failure without a run that failed.
 
 Close with `Top risk`, `Evidence still needed`, and `Would this block merge?`.

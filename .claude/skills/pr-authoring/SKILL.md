@@ -35,27 +35,9 @@ comment that narrates its own history.*
 
 ## 2. Fill the top zone
 
-Under 200 words. Drop any section that would be empty.
-
-```markdown
-## Quick summary
-<The lede. Nothing else.>
-
-## Where to look
-- <risk> -- <the test, invariant, or gate that pins it>
-
-## Deliberately not included
-- <deferred path, and what would unblock it>
-
-## Validation
-- <exact command> -- <exact result>
-
-## Issue / porting context
-<Fixes #N only for a real issue. For ported work, link the machine PR.>
-```
-
-This mirrors `.github/PULL_REQUEST_TEMPLATE.md`. If the two ever differ, the
-template is what contributors actually see; fix this to match it.
+Use the sections in `.github/PULL_REQUEST_TEMPLATE.md`, in under 200 words. The
+Quick summary is the lede and nothing else. Drop any section that would be
+empty.
 
 ## 3. Put the reasoning below the rule
 
@@ -71,10 +53,8 @@ Every count, path, symbol, and test name must match the tree. A wrong number in
 a PR body outlives the PR.
 
 Validation lines carry the command and its result, nothing else. Never list a
-command you did not run. Never call a local run CI-equivalent - CI collects
-coverage and runs the full OS and Python matrix, and `local_check.sh` does
-neither. Name any check you skipped, and say which platform produced a result
-that a skipped optional dependency could change.
+command you did not run, and never call a local run CI-equivalent. Name any
+check you skipped.
 
 ## Replying to review comments
 

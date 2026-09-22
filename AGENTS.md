@@ -9,17 +9,9 @@ code you are changing, prefer the executable behavior and say so.
 
 ## Validation
 
-Run `./local_check.sh` from the repository root: it installs, formats with black
-and isort, lints with flake8, type-checks with pyright, and tests. Do not skip a
-failing step or report success without fresh output.
-
-Agents must also run `./local_check.sh --agent-strict`, which makes
-`scripts/comment_hygiene.py` blocking over the lines the branch adds. The
-standard it enforces is the `code-comments` skill. Do not drop the flag to get a
-run through.
-
-CI collects coverage and `local_check.sh` does not, so a local run is never
-coverage-equivalent.
+Run `./local_check.sh` from the repository root, and do not skip a failing step
+or report success without fresh output. Agents must also pass
+`./local_check.sh --agent-strict`; do not drop the flag to get a run through.
 
 ## Where the tree misleads
 
@@ -27,20 +19,6 @@ coverage-equivalent.
   request reflects the pushed head, not the merge result, and not a PR gate.
 - The `Comment hygiene` check is advisory and never fails. Its green tick is not
   evidence that the strict scan passed.
-- `poetry install --all-extras` does not install torch. That lives in the `gpu`
-  Poetry group, which is a group and not an extra. `eflomal` installs only on
-  Linux, so an alignment path can be exercised on one machine and skipped on
-  another without saying so.
-- pyright runs in `basic` mode. An annotation it accepts is not evidence the
-  types are sound under `strict`.
-- Tests import helpers as `testutils.*`, which resolves only because
-  `tests/conftest.py` appends that directory to `sys.path`. The package has no
-  `__init__.py` and is not importable from elsewhere.
-- Three different things are called a reference here: a `ScriptureRef`, a
-  versification-mapped verse location, and ordinary object identity. Say which.
-  Likewise a "row" is a corpus row and not a USFM line; a "segment" is a
-  `ScriptureRef` path component in corpora but a text span in tokenization; and
-  "alignment" is word alignment unless you name another domain.
 
 ## Changing code
 
@@ -53,7 +31,7 @@ coverage-equivalent.
 - Reference and versification arithmetic recurs next (`29d4dbb`, `2a80929`,
   `7d85f16`). Assert over the affected book, chapter, and verse mapping rather
   than over a rendered string.
-- In `punctuation_analysis`, index by text element and not by code unit, and
+- In `punctuation_analysis`, index by text element and not by code point, and
   assume the chapter or verse is missing or unparsable (`53992c8`, `ca37757`).
   This area's history is almost entirely crash fixes from live Paratext data.
 - Close streams, models, and trainers according to their contracts, and be
@@ -70,7 +48,7 @@ coverage-equivalent.
 
 Preserve unrelated changes and pre-existing untracked files. Never use
 `reset --hard`, `checkout --`, broad deletion, or broad staging as a cleanup
-shortcut. Local review notes go in `.review/`, which `.gitignore` excludes.
+shortcut. Local review notes go in `.review/`.
 
 Much of this library is a port of [sillsdev/machine](https://github.com/sillsdev/machine)
 (C#). When changing code that exists on both sides, check what the C#
@@ -80,7 +58,6 @@ issue after merge; do not hand-file a duplicate.
 
 ## Agent guidance
 
-`CLAUDE.md` imports this file. Claude workflows live under `.claude/skills/`.
 Path-scoped review rules live under `docs/review/`; match the changed path,
 first row wins:
 
@@ -92,5 +69,4 @@ first row wins:
 | any other `machine/**/*.py` | `docs/review/machine-library.md` |
 | `tests/**/*.py` | `docs/review/machine-tests.md` |
 
-`docs/review/devils-advocate.md` is an optional adversarial pass for a high-risk
-change. Add a nested `AGENTS.md` only when a subtree needs different rules.
+Add a nested `AGENTS.md` only when a subtree needs different rules.

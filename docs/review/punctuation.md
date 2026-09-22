@@ -9,10 +9,8 @@ This area's history is almost entirely crash fixes reported from live data, so
 review it for the input that should not have reached the code rather than for
 the happy path.
 
-- Index by text element, not by code unit. A surrogate pair, a combining mark,
-  or a multi-code-point quotation mark must not split. Python strings hide the
-  surrogate problem that other runtimes surface, which makes the combining-mark
-  case easier to miss, not less likely.
+- Index by text element, not by code point. A combining mark or a
+  multi-code-point quotation mark must not split.
 - Assume the chapter or verse is missing, out of range, or unparsable. The
   extractor runs over real Paratext projects: `53992c8` fixed chapter numbers
   that came back wrong and `ca37757` fixed a crash on an invalid chapter.
@@ -23,6 +21,5 @@ the happy path.
   another; a case-insensitive or locale-aware comparison here is a bug.
 - Quote convention detection reads whole projects and must degrade rather than
   raise when a book is absent or unreadable (`0c3cd9c`, `d93dacd`).
-- Add a fixture for the malformed case with the fix, in
-  `tests/punctuation_analysis/`. Every fix above came from live data, not from
-  review.
+- Add a fixture for the malformed case with the fix. Every fix above came from
+  live data, not from review.

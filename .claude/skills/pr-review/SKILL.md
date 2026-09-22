@@ -11,9 +11,6 @@ Post one short comment per finding, anchored on the line it is about, then one
 summary comment. A review is read-only: do not edit, commit, push, or resolve
 threads.
 
-What to look for is in `docs/review/`; `AGENTS.md` maps a changed path to its
-rules file.
-
 ## 1. One finding, one comment
 
 Anchor it on the line. Two problems on one line are two comments. A reviewer
@@ -54,9 +51,7 @@ confirm `Unverified`; an unverified concern never blocks a merge.
   reason for.
 - A search that found nothing proves absence only if you state what you
   searched.
-- Name the commands you ran and what they returned. `./local_check.sh` is the
-  full local sequence; an agent-authored branch also needs `--agent-strict`, and
-  a green advisory `Comment hygiene` check does not stand in for it.
+- Name the commands you ran and what they returned.
 - Reproduce before you report. The environment can run the code: a finding you
   tried and failed to reproduce is worth more than one you only reasoned about.
 - A coverage percentage is not evidence that a changed line is tested.

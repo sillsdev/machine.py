@@ -37,7 +37,7 @@ is welcome, as is an issue reference that is part of the contract.
 
 One block - a run of whole-line `#` comments, ended by a blank line, code, or a
 docstring - gets **200 characters total**, markers and indentation excluded.
-Every line fits **120 display columns**, which is black's `line-length`.
+Every line fits **120 display columns**.
 
 Docstrings are exempt from the budget, not from the content rules or the width
 limit.
@@ -62,11 +62,3 @@ the parameter list.
 
 A test comment explains a non-obvious fixture or setup constraint. It does not
 restate the test name.
-
-## Run the check
-
-`poetry run python scripts/comment_hygiene.py` scans the lines your branch adds.
-Add `--full --advisory` to size existing debt, or `--self-test` to check the
-rules themselves. Agents run `./local_check.sh --agent-strict`, which makes the
-scan blocking; the pull request check is advisory, so its green tick proves
-nothing.

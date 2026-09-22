@@ -14,13 +14,8 @@ characters, with no terminal punctuation:
 A body, when there is one: blank line after the subject, wrapped at about 80
 columns, saying what changed and why. Reference a GitHub issue when one exists.
 
-## Two traps in the history
+The `(#N)` suffix in the history is added by GitHub when a pull request is
+squashed. Never type it into a local commit.
 
-1. The `(#N)` suffix is added by GitHub when a pull request is squashed. Never
-   type it into a local commit.
-2. A handful of old commits carry a Jira identifier such as `LT-22605`. That is
-   historical; use a GitHub issue reference.
-
-The 72-character limit is not enforced and subjects over 100 characters exist.
-Do not rewrite shared history to satisfy it, or to fix a message on a pushed
-branch - add a corrective commit unless the author asks for the rewrite.
+Do not rewrite shared history to fix a message on a pushed branch - add a
+corrective commit unless the author asks for the rewrite.
