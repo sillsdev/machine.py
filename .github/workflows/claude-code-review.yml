@@ -18,7 +18,8 @@ jobs:
     # Secrets are not available to workflows triggered by pull requests from forked
     # repositories, so only review pull requests from branches in this repository.
     # This also keeps `poetry install` below from running build hooks authored by
-    # someone without push access.
+    # someone without push access, and keeps AGENTS.md trusted: CLAUDE.md is
+    # restored from main, but the AGENTS.md it imports comes from the PR head.
     if: github.event.pull_request.head.repo.full_name == github.repository
 
     runs-on: ubuntu-latest

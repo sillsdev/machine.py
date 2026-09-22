@@ -1,0 +1,50 @@
+name: Comment hygiene
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Separate from CI build so the report does not wait on the Poetry install and
+  # the test matrix. The checker is standard library only, so it needs no
+  # dependencies of its own.
+  comment_hygiene:
+    name: Report comment hygiene (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@v7
+        with:
+          # The scan diffs against the merge base; a shallow checkout leaves
+          # that commit unreachable.
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Verify the hygiene rules
+        run: python scripts/comment_hygiene.py --self-test
+
+      # Advisory: the scan annotates the lines this pull request adds and always
+      # exits 0. Agents get the blocking version through ./local_check.sh
+      # --agent-strict, so existing comment debt and any false positive cannot
+      # block a human contributor.
+      - name: Scan the lines this pull request adds
+        run: >
+          python scripts/comment_hygiene.py
+          --advisory
+          --base-ref ${{ github.event.pull_request.base.sha }}

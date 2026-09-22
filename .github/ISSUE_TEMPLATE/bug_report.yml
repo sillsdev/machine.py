@@ -1,0 +1,68 @@
+name: Bug report
+description: Report a reproducible problem in sil-machine
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please remove secrets and private project data from examples and logs.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: >-
+        Three short sentences: the symptom, the smallest trigger, and what it
+        costs. Detail goes in the fields below.
+      placeholder: |
+        A USFM attribute is dropped when the tokenizer runs on a marker with no end marker.
+        Any character style left unclosed at a paragraph break swallows the following text.
+        Round-tripping the project silently loses the attribute.
+    validations:
+      required: true
+  - type: input
+    id: package
+    attributes:
+      label: Affected module or API
+      description: Name the machine subpackage or public API, such as machine.corpora.UsfmTokenizer.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Include the sil-machine version or commit SHA.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, architecture, Python version, and any extras installed.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Minimal input or fixture and exact steps, including frequency.
+      placeholder: |
+        1. ...
+        2. ...
+        Expected: ...
+        Actual: ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or traceback
+      description: Paste sanitized output, or write None.
+  - type: textarea
+    id: regression
+    attributes:
+      label: Regression and test idea
+      description: State the first known good version, if known, and the smallest regression test.
+    validations:
+      required: true
