@@ -66,14 +66,17 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # The built-in code-review skill, at "high" effort. The code-review plugin
-          # this replaces discarded anything scoring under 80 on its confidence rubric,
-          # which filtered out design and public-API findings that don't change behavior.
-          prompt: '/code-review high --comment ${{ github.event.pull_request.number }}'
+          # The built-in code-review skill finds and verifies, at "high" effort; the
+          # plugin it replaces dropped anything under 80 on its confidence rubric.
+          # Without --comment it reports back, and pr-review sets what gets posted.
+          prompt: |
+            Review pull request ${{ github.event.pull_request.number }}.
+            Run /code-review high on it without --comment, then post the verified
+            findings as the pr-review skill describes.
           # v1 has no `model` input; the model is passed through to the CLI instead.
           claude_args: >-
             --model claude-opus-5
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr list:*),Bash(gh api:*),Bash(gh search:*),Bash(git log:*),Bash(git blame:*),Bash(git show:*),Bash(git diff:*),Bash(poetry run:*),Bash(.venv/bin/python:*)"
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr list:*),Bash(gh api:*),Bash(gh search:*),Bash(git log:*),Bash(git blame:*),Bash(git show:*),Bash(git diff:*),Bash(poetry run:*),Bash(.venv/bin/python:*)"
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
 
