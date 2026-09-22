@@ -21,18 +21,18 @@ Anchor it on the line. Two problems on one line are two comments. A reviewer
 scrolling the diff should meet each point where it applies.
 
 Number findings `F1`, `F2`, ... in the order you post them, and put the number
-right after the severity word, so a reply or a later review can refer to one
-without quoting it. Not `#1`: GitHub links that to issue 1. Numbers are stable - a
+right after the keyword, so a reply or a later review can refer to one without
+quoting it. Not `#1`: GitHub links that to issue 1. Numbers are stable - a
 withdrawn finding keeps its number, and a later round continues the sequence.
 
 ## 2. Lead with the claim
 
-After the severity and number, the first sentence names the defect. Evidence
+After the keyword and number, the first sentence names the defect. Evidence
 second, fix third, if it fits.
 
 ```
-Major F1. Verse range collapses to one row: `_advance_rows` keeps only the last
-match, so a `\v 1-2` matched by two rows loses the first row's metadata.
+Major: F1. Verse range collapses to one row: `_advance_rows` keeps only the
+last match, so a `\v 1-2` matched by two rows loses the first row's metadata.
 Collect a list.
 ```
 
@@ -41,22 +41,30 @@ the summary instead.
 
 ## 3. Label the severity
 
-The first word of every comment is its severity. Reviewable reads it from a
-comment posted on GitHub and sets the discussion's disposition to match:
+Every finding is **Critical**, **Important**, or **Low**. Critical means
+demonstrated: a failing command, a broken contract, a missing gate. A worry is
+not Critical. Important needs an answer from the author; Low is worth knowing
+and needs none.
 
-- **Major** blocks review completion until a maintainer dismisses it. Major
-  means demonstrated: a failing command, a broken contract, a missing gate. A
-  worry is not Major.
-- **Minor** stays open until the author answers it.
-- **FYI** starts resolved: worth knowing, no answer needed.
+A finding comment posted to the PR starts with the Reviewable keyword for its
+severity, followed by a colon. Reviewable reads it and sets the discussion's
+disposition:
 
-A comment that starts with any other word gets Reviewable's default instead,
-which for a reviewer is Blocking.
+| Severity | Comment starts with | Disposition in Reviewable |
+| --- | --- | --- |
+| Critical | `Major:` | Blocking, until a maintainer dismisses it |
+| Important | `Minor:` | Discussing, open until the author answers |
+| Low | `FYI:` | Informing, starts resolved |
+
+Use the keywords there and nowhere else. The summary, replies, and a review
+that is not posted use the severity names: `Minor` reads as trivial, and an
+Important finding is not. A finding comment that starts with any other word gets
+Reviewable's default, which for a reviewer is Blocking.
 
 ## 4. Carry the evidence
 
 Every comment gets a `path:line` and a consequence. Mark what you did not
-confirm `Unverified`; an unverified concern is never Major.
+confirm `Unverified`; an unverified concern is never Critical.
 
 - Do not report pre-existing issues the diff does not touch.
 - Do not ask for a migration, modernization, or benchmark the diff gave no
