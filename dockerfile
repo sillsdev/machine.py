@@ -12,9 +12,7 @@ COPY uv.lock pyproject.toml /src/
 # dev dependencies are left out of the image
 RUN uv export --frozen --no-default-groups --group gpu --all-extras --no-hashes --no-emit-project -o requirements.txt
 
-
 FROM python:$PYTHON_VERSION-slim-bookworm
-ARG PYTHON_VERSION
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=on
 ENV TZ=America/New_York
@@ -46,7 +44,5 @@ RUN --mount=type=cache,target=/root/.cache \
     python -m pip install --no-cache-dir clearml-agent setuptools
 RUN python -m pip install --no-deps . && rm -r /root/*
 ENV CLEARML_AGENT_SKIP_PYTHON_ENV_INSTALL=1
-
-ENV EFLOMAL_PATH=/usr/local/lib/python${PYTHON_VERSION}/site-packages/eflomal/bin
 
 CMD ["bash"]

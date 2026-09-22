@@ -38,6 +38,4 @@ RUN pip install -U pip setuptools \
 
 COPY ./.devcontainer/clearml.conf /root/clearml.conf
 
-ENV EFLOMAL_PATH=/workspaces/machine.py/.venv/lib/python${PYTHON_VERSION}/site-packages/eflomal/bin
-
 CMD ["bash"]
