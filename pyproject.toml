@@ -92,9 +92,8 @@ skip_gitignore = true
 default-groups = "all"
 
 [tool.uv.build-backend]
-module-name = ["machine"]
+module-name = "machine"
 module-root = ""
-namespace = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
