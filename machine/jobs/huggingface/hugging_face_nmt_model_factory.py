@@ -36,6 +36,8 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
             )
             if args.pop("group_by_length") is True:
                 args["train_sampling_strategy"] = "group_by_length"
+            else:
+                args["train_sampling_strategy"] = None
         # Use "max_steps" from root for backward compatibility
         if "max_steps" in self._config.huggingface:
             args["max_steps"] = self._config.huggingface.max_steps

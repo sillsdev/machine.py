@@ -33,7 +33,7 @@ from transformers import (
     TrainerCallback,
     set_seed,
 )
-from transformers.tokenization_utils_base import BatchEncoding
+from transformers.tokenization_utils_base import BatchEncoding, PreTrainedTokenizerBase
 from transformers.trainer_callback import TrainerControl, TrainerState
 from transformers.training_args import TrainingArguments
 
@@ -378,6 +378,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
         self._trainer = AutoGradientAccumulationStepsSeq2SeqTrainer(
             model=model,
             args=self._training_args,
+            processing_class=tokenizer,
             train_dataset=cast(Any, train_dataset),
             data_collator=data_collator,
             callbacks=[
@@ -463,6 +464,7 @@ class AutoGradientAccumulationStepsSeq2SeqTrainer(Seq2SeqTrainer):
         model: Union[PreTrainedModel, Module],
         args: Seq2SeqTrainingArguments,
         data_collator: Any,
+        processing_class: Optional[PreTrainedTokenizerBase] = None,
         train_dataset: Optional[Dataset] = None,
         callbacks: Optional[List[TrainerCallback]] = None,
     ):
@@ -471,6 +473,7 @@ class AutoGradientAccumulationStepsSeq2SeqTrainer(Seq2SeqTrainer):
             args=args,
             data_collator=data_collator,
             train_dataset=train_dataset,
+            processing_class=processing_class,
             callbacks=callbacks,
         )
 
