@@ -1,0 +1,43 @@
+name: Feature request
+description: Propose new or changed behavior in sil-machine
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: >-
+        Three short sentences: what is missing, when it bites, and what it
+        costs. Detail goes in the fields below.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Who is blocked, and by what
+      description: Describe the caller and the work they cannot do today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: >-
+        The behavior you want and its compatibility cost. Name any change to a
+        public API, an optional dependency, or the published wheel.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Criteria an outsider could check without asking you a question.
+    validations:
+      required: true
+  - type: textarea
+    id: nongoals
+    attributes:
+      label: Non-goals
+      description: What this deliberately does not cover, or write None.
