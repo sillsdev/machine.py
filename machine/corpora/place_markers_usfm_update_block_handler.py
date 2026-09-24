@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import List, TypedDict, cast
+import logging
+from typing import List, Optional, TypedDict, cast
 
 from ..translation.word_alignment_matrix import WordAlignmentMatrix
 from .segment_boundary_adjuster import SegmentBoundaryAdjuster
@@ -9,6 +10,8 @@ from .usfm_token import UsfmToken, UsfmTokenType
 from .usfm_update_block import UsfmUpdateBlock
 from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
 from .usfm_update_block_handler import UsfmUpdateBlockHandler, UsfmUpdateBlockHandlerError
+
+logger = logging.getLogger(__name__)
 
 PLACE_MARKERS_ALIGNMENT_INFO_KEY = "alignment_info"
 
@@ -21,6 +24,30 @@ class PlaceMarkersAlignmentInfo(TypedDict):
     style_behavior: UpdateUsfmMarkerBehavior
 
 
+def _get_alignment_info(block: UsfmUpdateBlock) -> Optional[PlaceMarkersAlignmentInfo]:
+    if len(block.row_metadata) > 1:
+        # Verse ranges put all of their text on the first row
+        infos = [
+            info
+            for info in (
+                cast(Optional[PlaceMarkersAlignmentInfo], metadata.get(PLACE_MARKERS_ALIGNMENT_INFO_KEY))
+                for metadata in block.row_metadata
+            )
+            if info is not None and info["alignment"].row_count > 0 and info["alignment"].column_count > 0
+        ]
+        if len(infos) > 1:
+            # Only the first row should have alignment info
+            logger.warning(
+                "Expected at most one row with alignment info for %s, but found %d. Markers may be misplaced.",
+                ", ".join(str(ref) for ref in block.refs),
+                len(infos),
+            )
+        return infos[-1] if len(infos) > 0 else None
+    if PLACE_MARKERS_ALIGNMENT_INFO_KEY not in block.metadata:
+        return None
+    return cast(PlaceMarkersAlignmentInfo, block.metadata[PLACE_MARKERS_ALIGNMENT_INFO_KEY])
+
+
 class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
     def __init__(self, *args):
         super().__init__(*args)
@@ -30,10 +57,10 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         elements = list(block.elements)
 
         # Nothing to do if there are no markers to place or no alignment to use
-        if PLACE_MARKERS_ALIGNMENT_INFO_KEY not in block.metadata:
+        alignment_info = _get_alignment_info(block)
+        if alignment_info is None:
             return block
 
-        alignment_info = cast(PlaceMarkersAlignmentInfo, block.metadata[PLACE_MARKERS_ALIGNMENT_INFO_KEY])
         if (
             len(elements) == 0
             or alignment_info["alignment"].row_count == 0
