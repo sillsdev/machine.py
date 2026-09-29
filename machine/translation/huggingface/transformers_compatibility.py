@@ -1,4 +1,3 @@
-import enum
 import warnings
 from typing import Any, Callable, Sequence, Union, cast
 
@@ -6,11 +5,6 @@ from transformers import Pipeline
 from transformers.tokenization_utils_base import TruncationStrategy
 
 # The following classes are a port of the same classes found in transformers v4
-
-
-class ReturnType(enum.Enum):
-    TENSORS = 0
-    TEXT = 1
 
 
 class TranslationPipeline(Pipeline):
@@ -34,8 +28,12 @@ class TranslationPipeline(Pipeline):
         clean_up_tokenization_spaces=None,
         truncation=None,
         stop_sequence=None,
+        prefix=None,
         **generate_kwargs,
     ):
+        if prefix is not None:
+            self.prefix = prefix
+
         preprocess_params = {}
         if truncation is not None:
             preprocess_params["truncation"] = truncation
