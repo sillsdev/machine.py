@@ -10,6 +10,12 @@ on:
     #   - "src/**/*.js"
     #   - "src/**/*.jsx"
 
+# Parallel reviews of one PR cannot see each other's comments and post duplicates.
+# A cancelled run may leave a partial round; the next one picks up its threads.
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 env:
   PYTHON_VERSION: "3.12"
 

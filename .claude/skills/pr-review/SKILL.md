@@ -8,12 +8,57 @@ user-invocable: true
 # Writing a machine.py review
 
 Post one short comment per finding, anchored on the line it is about, then one
-summary comment. A review is read-only: do not edit, commit, push, or resolve
-threads.
+summary comment. A review leaves the code alone: do not edit, commit, or push.
+The only thread it resolves is its own finding, once addressed or withdrawn.
 
 Unless verified findings are already in hand, get them first with
 `/code-review high <target>`, without `--comment`: it finds and verifies, and
 this skill decides what gets posted.
+
+## Start from the last round
+
+A PR is reviewed again on every push. Each round is a follow-up: settle the
+open findings first, then add only what is new.
+
+1. Load the review threads, which carry the resolved state REST lacks:
+
+   ```
+   gh api graphql -F owner={owner} -F repo={repo} -F n=<n> -f query='
+     query($owner: String!, $repo: String!, $n: Int!) {
+       repository(owner: $owner, name: $repo) { pullRequest(number: $n) {
+         reviewThreads(first: 100) { nodes { id isResolved path line
+           comments(first: 50) { nodes { databaseId author { login } body } } } } } } }'
+   ```
+
+   Load summaries from
+   `gh api --paginate repos/{owner}/{repo}/issues/<n>/comments`. An earlier
+   finding is a thread whose first comment's author is `claude`, as GraphQL
+   spells `claude[bot]`, numbered `F<n>` or not. It is open while unresolved,
+   even when `line` is null because the diff moved past it. The latest summary
+   names the commit it reviewed.
+2. Check every open finding against the head commit and reply in its thread,
+   using its first comment's `databaseId`, with
+   `gh api repos/{owner}/{repo}/pulls/<n>/comments/<id>/replies -f body=...`:
+   - Fixed: `F3 addressed in <sha>:` and what fixed it, then resolve the
+     thread by its `id`:
+     `gh api graphql -F id=<id> -f query='mutation($id: ID!) { resolveReviewThread(input: {threadId: $id}) { thread { isResolved } } }'`
+   - Author gave a reason: weigh it. If it holds, `F3 withdrawn:` and why, then
+     resolve the thread. If not, answer once with evidence; a point already
+     answered stays answered.
+   - Author chose to keep it, e.g. deferred to an issue: record it as accepted.
+   - Still applies and its code changed: `F3 still applies at <sha>:` and why.
+   - Still applies and its code is untouched: stay silent; the summary counts
+     it.
+3. Treat each finding `/code-review` returns as a duplicate when any thread,
+   open or resolved, from anyone, already raises the same defect, even if the
+   line has moved. Drop duplicates: a resolved thread is a settled one.
+4. Post a new finding when it is on code changed since the reviewed commit, or
+   when it is Critical. Diff with `git diff <reviewed-sha> <head-sha>` if
+   `gh api repos/{owner}/{repo}/compare/<reviewed-sha>...<head-sha> --jq .status`
+   prints `ahead`; otherwise history was rewritten, so treat the whole PR as
+   changed. Number new findings on from the highest `F` in the thread.
+
+Every earlier finding has a status when this is done.
 
 ## 1. One finding, one comment
 
@@ -87,8 +132,14 @@ confirm `Unverified`; an unverified concern is never Critical.
 Say which public API, optional dependency, published-wheel surface, or parity
 contract with `sillsdev/machine` changed, or `None verified`.
 
-Then mark each finding, by number, **changed**, **accepted**, or
-**unverified**. Leave nothing implicit: a thread with no follow-up leaves nobody
+Then mark every finding in the thread, earlier rounds included, by number:
+**new**, **open**, **addressed**, **accepted** (the author keeps it knowingly),
+or **withdrawn**, adding **unverified** where
+it applies. Leave nothing implicit: a thread with no follow-up leaves nobody
 able to tell which findings mattered.
+
+End with `Reviewed at <head-sha>`, the PR head from
+`gh pr view <n> --json headRefOid`, not the merge commit checked out, so the
+next round knows where this one stopped.
 
 For an adversarial second pass, apply `docs/review/devils-advocate.md`.
