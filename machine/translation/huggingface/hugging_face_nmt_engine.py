@@ -47,6 +47,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
             self._pipeline_kwargs["output_attentions"] = True
         if isinstance(model, PreTrainedModel):
             self._model = model
+            self._model_attn_implementation = model.config._attn_implementation
             if self._pipeline_kwargs["output_attentions"]:
                 model.set_attn_implementation("eager")
             self._model.eval()
@@ -196,6 +197,9 @@ class HuggingFaceNmtEngine(TranslationEngine):
         del self._pipeline
         if self._is_model_owned:
             del self._model
+        elif self._model_attn_implementation is not None:
+            # Restore the attn implementation to the model
+            self._model.set_attn_implementation(self._model_attn_implementation)
         gc.collect()
         with torch.no_grad():
             torch.cuda.empty_cache()
@@ -313,7 +317,7 @@ class SilTranslationPipeline(TranslationPipeline):
         start_index = 0
         if self.model.config.decoder_start_token_id is not None:
             start_index = 1
-        if self.generation_config.output_attentions is not False:
+        if self.generation_config.output_attentions is not False or generate_kwargs.get("output_attentions"):
             assert attentions is not None
             num_heads = attentions[0][0].shape[1]
 
