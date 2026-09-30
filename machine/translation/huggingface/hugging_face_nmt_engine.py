@@ -43,15 +43,14 @@ class HuggingFaceNmtEngine(TranslationEngine):
         **pipeline_kwargs,
     ) -> None:
         """
-        A model passed as a `PreTrainedModel` stays owned by the caller. When `output_attentions` is enabled, the
-        engine switches that model to eager attention and restores its original implementation in `close()`.
+        A model passed as a `PreTrainedModel` stays owned by the caller and is not modified. `output_attentions`,
+        which defaults to True, requires that model to use eager attention. Otherwise, a `ValueError` is raised.
         """
         self._pipeline_kwargs = pipeline_kwargs
         if self._pipeline_kwargs.get("output_attentions") is None:
             self._pipeline_kwargs["output_attentions"] = True
         if isinstance(model, PreTrainedModel):
             self._model = model
-            self._model_attn_implementation = model.config._attn_implementation
             self._model.eval()
             self._is_model_owned = False
         else:
@@ -122,10 +121,6 @@ class HuggingFaceNmtEngine(TranslationEngine):
             batch_size=self._batch_size,
             **self._pipeline_kwargs,
         )
-
-        # Last, so that a constructor that raises leaves the caller's model unchanged.
-        if not self._is_model_owned and self._pipeline_kwargs["output_attentions"]:
-            self._model.set_attn_implementation("eager")
 
     @property
     def tokenizer(self) -> PreTrainedTokenizer | PreTrainedTokenizerFast:
@@ -204,9 +199,6 @@ class HuggingFaceNmtEngine(TranslationEngine):
         del self._pipeline
         if self._is_model_owned:
             del self._model
-        elif self._model_attn_implementation is not None:
-            # Restore the attn implementation to the model
-            self._model.set_attn_implementation(self._model_attn_implementation)
         gc.collect()
         with torch.no_grad():
             torch.cuda.empty_cache()
@@ -222,6 +214,8 @@ class SilTranslationPipeline(TranslationPipeline):
         **kwargs,
     ) -> None:
         super().__init__(model=model, tokenizer=tokenizer, batch_size=batch_size, **kwargs)
+        if self.generation_config.output_attentions:
+            _check_eager_attention(self.model)
         self._mpn = mpn
 
     def preprocess(self, *args, truncation=TruncationStrategy.DO_NOT_TRUNCATE, src_lang=None, tgt_lang=None):
@@ -266,6 +260,9 @@ class SilTranslationPipeline(TranslationPipeline):
         input_tokens = model_inputs.pop("input_tokens")
 
         self.check_inputs(input_length, self.generation_config.min_length, self.generation_config.max_length)
+        if generate_kwargs.get("output_attentions", self.generation_config.output_attentions):
+            _check_eager_attention(self.model)
+
         output = cast(Any, self.model).generate(
             **model_inputs,
             **generate_kwargs,
@@ -324,8 +321,10 @@ class SilTranslationPipeline(TranslationPipeline):
         start_index = 0
         if self.model.config.decoder_start_token_id is not None:
             start_index = 1
-        # output_attentions can be unset or overridden per call, so rely on what generate actually returned.
-        if attentions is not None:
+        # Rely on what generate returned, since output_attentions can be unset or overridden per call.
+        if not attentions or not attentions[0]:
+            attentions = None
+        else:
             num_heads = attentions[0][0].shape[1]
 
             # Truncate/Pad beam_indices to match output_ids length exact slice
@@ -508,6 +507,16 @@ def _compute_transition_scores(
 
     transition_scores[beam_indices_mask] = 0
     return transition_scores
+
+
+def _check_eager_attention(model: PreTrainedModel) -> None:
+    # Other attention implementations do not return attention weights, so alignments would silently be empty.
+    attn_implementation = model.config._attn_implementation
+    if attn_implementation != "eager":
+        raise ValueError(
+            f"output_attentions requires a model that uses eager attention, but the model uses "
+            f"'{attn_implementation}'. Load the model with attn_implementation='eager' or set output_attentions=False."
+        )
 
 
 def _get_encoding_fast_tokens(encoding) -> List[str]:
