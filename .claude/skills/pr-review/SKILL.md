@@ -10,7 +10,7 @@ user-invocable: true
 Post one short comment per finding, anchored on the line it is about, then one
 summary comment. A review leaves the code alone: do not edit, commit, or push.
 The only threads it resolves are its own findings, once addressed, withdrawn,
-or rejected by the author.
+or, unless Critical, rejected or deferred by the author.
 
 Unless verified findings are already in hand, get them first with
 `/code-review high <target>`, without `--comment`: it finds and verifies, and
@@ -43,11 +43,10 @@ open findings first, then add only what is new.
    - Fixed: `F3 addressed in <sha>:` and what fixed it, then resolve the
      thread by its `id`:
      `gh api graphql -F id=<id> -f query='mutation($id: ID!) { resolveReviewThread(input: {threadId: $id}) { thread { isResolved } } }'`
-   - Author rejected it, with or without a reason: weigh any reason given. If
-     it holds, `F3 withdrawn:` and why. If not, `F3 accepted:` with your
-     evidence, once. Either way, resolve the thread: the author has decided.
-   - Author chose to keep it, e.g. deferred to an issue: `F3 accepted:` and
-     where it went, then resolve the thread.
+   - Author rejected or deferred it: weigh any reason given. If it holds,
+     `F3 withdrawn:` and why, then resolve the thread. If not, `F3 accepted:`
+     with your evidence or where it was deferred, once, then resolve it. An
+     accepted Critical finding stays open for a maintainer to dismiss.
    - Still applies and its code changed: `F3 still applies at <sha>:` and why.
    - Still applies and its code is untouched: stay silent; the summary counts
      it.
