@@ -8,7 +8,6 @@ if sys.platform == "darwin":
 from math import exp, log
 from typing import Any, Dict, Optional
 
-import torch
 from pytest import approx, mark, raises
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
@@ -158,7 +157,7 @@ def test_compute_transition_scores_matches_transformers(num_beams: int) -> None:
     )
     actual = _compute_transition_scores(output.sequences, output.scores, beam_indices, normalize_logits)
 
-    assert torch.allclose(actual, expected)
+    assert actual.allclose(expected)
 
 
 @mark.parametrize("output_attentions", [True, False])
