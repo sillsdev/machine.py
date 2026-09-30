@@ -42,21 +42,24 @@ class HuggingFaceNmtEngine(TranslationEngine):
         oom_batch_size_backoff_mult: float = 1.0,
         **pipeline_kwargs,
     ) -> None:
+        """
+        A model passed as a `PreTrainedModel` stays owned by the caller. When `output_attentions` is enabled, the
+        engine switches that model to eager attention and restores its original implementation in `close()`.
+        """
         self._pipeline_kwargs = pipeline_kwargs
         if self._pipeline_kwargs.get("output_attentions") is None:
             self._pipeline_kwargs["output_attentions"] = True
         if isinstance(model, PreTrainedModel):
             self._model = model
             self._model_attn_implementation = model.config._attn_implementation
-            if self._pipeline_kwargs["output_attentions"]:
-                model.set_attn_implementation("eager")
             self._model.eval()
             self._is_model_owned = False
         else:
             model_config = AutoConfig.from_pretrained(str(model), label2id={}, id2label={}, num_labels=0)
 
-            # If output_attentions is True or None, we need to set the attn_implementation to eager to get the attentions
-            attn_implementation = "eager" if self._pipeline_kwargs["output_attentions"] else "sdpa"
+            # Only eager attention returns attention weights. Otherwise, let transformers choose, since forcing "sdpa"
+            # fails to load architectures without SDPA support (e.g. T5).
+            attn_implementation = "eager" if self._pipeline_kwargs["output_attentions"] else None
 
             self._model = cast(
                 PreTrainedModel,
@@ -119,6 +122,10 @@ class HuggingFaceNmtEngine(TranslationEngine):
             batch_size=self._batch_size,
             **self._pipeline_kwargs,
         )
+
+        # Last, so that a constructor that raises leaves the caller's model unchanged.
+        if not self._is_model_owned and self._pipeline_kwargs["output_attentions"]:
+            self._model.set_attn_implementation("eager")
 
     @property
     def tokenizer(self) -> PreTrainedTokenizer | PreTrainedTokenizerFast:
@@ -317,8 +324,8 @@ class SilTranslationPipeline(TranslationPipeline):
         start_index = 0
         if self.model.config.decoder_start_token_id is not None:
             start_index = 1
-        if self.generation_config.output_attentions is not False or generate_kwargs.get("output_attentions"):
-            assert attentions is not None
+        # output_attentions can be unset or overridden per call, so rely on what generate actually returned.
+        if attentions is not None:
             num_heads = attentions[0][0].shape[1]
 
             # Truncate/Pad beam_indices to match output_ids length exact slice
