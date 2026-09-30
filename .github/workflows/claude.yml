@@ -40,6 +40,9 @@ jobs:
         with:
           # Full history so git log and blame can find the commits AGENTS.md cites.
           fetch-depth: 0
+          # The persisted read-only GITHUB_TOKEN header overrides the action's app token, so
+          # pushes went out as github-actions[bot] and were denied.
+          persist-credentials: false
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v6
