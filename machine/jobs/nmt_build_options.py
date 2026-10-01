@@ -16,6 +16,7 @@ class TrainParams(BaseModel):
     gradient_accumulation_steps: int | None = None
     label_smoothing_factor: float | None = None
     group_by_length: bool | None = None
+    train_sampling_strategy: str | None = None
     gradient_checkpointing: bool | None = None
     lr_scheduler_type: str | None = None
     learning_rate: float | None = None
