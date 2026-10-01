@@ -31,6 +31,14 @@ def _sanitize_verse_data(verse_data: str) -> str:
     return verse_data.replace("\u200F", "")
 
 
+def get_rows_versification(rows: Optional[Sequence[UpdateUsfmRow]]) -> Versification:
+    if rows is not None:
+        for row in rows:
+            if len(row.refs) > 0:
+                return row.refs[0].versification
+    return Versification.get_builtin("English")
+
+
 class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
     def __init__(
         self,
@@ -52,10 +60,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
         self._verse_row_index = 0
         self._verse_rows_map: Dict[VerseRef, List[_RowInfo]] = {}
         self._verse_rows_ref = VerseRef()
-        if len(self._rows) > 0:
-            self._update_rows_versification: Versification = self._rows[0].refs[0].versification
-        else:
-            self._update_rows_versification = Versification.get_builtin("English")
+        self._update_rows_versification: Versification = get_rows_versification(self._rows)
         self._tokens: List[UsfmToken] = []
         self._updated_text: List[UsfmToken] = []
         self._update_block_stack: list[UsfmUpdateBlock] = []
