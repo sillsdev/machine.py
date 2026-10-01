@@ -17,12 +17,15 @@ jobs:
   claude:
     # Skips outsiders before the install; the action still checks write access. The issue or PR
     # body reaches the prompt whoever wrote it, and an outsider's fork PR would run its code.
+    # Claude's own PRs are let through: the bot's association is NONE, but it wrote the body
+    # and pushed the branch to this repo.
     if: |
       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
         github.event.comment.author_association || github.event.review.author_association ||
         github.event.issue.author_association) &&
-      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
-        github.event.issue.author_association || github.event.pull_request.author_association) &&
+      (contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
+        github.event.issue.author_association || github.event.pull_request.author_association) ||
+        (github.event.issue.user.login || github.event.pull_request.user.login) == 'claude[bot]') &&
       ((github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
