@@ -70,6 +70,11 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-interaction --all-extras
 
+      # port-pr reads the C# source from a sibling clone, as of each source PR's merge
+      # commit, so it needs full history. Outside the workspace, black and flake8 skip it.
+      - name: Clone sillsdev/machine
+        run: git clone https://github.com/sillsdev/machine.git ../machine
+
       - name: Run Claude Code
         id: claude
         uses: anthropics/claude-code-action@v1
@@ -83,7 +88,8 @@ jobs:
           # The action's own prompt ends an issue run with a "Create a PR" link; the
           # appended prompt has Claude open the pull request itself.
           claude_args: >-
-            --allowedTools "Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh issue view:*),Bash(git log:*),Bash(git blame:*),Bash(git show:*),Bash(git diff:*),Bash(git status:*),Bash(poetry run:*),Bash(./local_check.sh:*)"
+            --add-dir ../machine
+            --allowedTools "Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh issue view:*),Bash(git log:*),Bash(git blame:*),Bash(git show:*),Bash(git diff:*),Bash(git status:*),Bash(git -C ../machine show:*),Bash(git -C ../machine log:*),Bash(git -C ../machine blame:*),Bash(poetry run:*),Bash(./local_check.sh:*)"
             --append-system-prompt "When invoked on an issue and you change code, open the pull request yourself once your commits are pushed: gh pr create --base main --head <your branch>. Post its link in your comment in place of a Create a PR link. Write the title and body with the pr-authoring skill, and put Closes #<issue number> in the body. Before opening it, run ./local_check.sh --agent-strict and report its result in the body. Dependencies are already installed, and you work on the branch this action created: where a skill such as port-pr says to install, create or switch branches, or push, commit on the current branch and push it the way these instructions say."
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
