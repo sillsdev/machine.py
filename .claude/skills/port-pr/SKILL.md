@@ -39,10 +39,10 @@ gh pr diff <PR> --repo sillsdev/machine
 Read the full diff. For each changed C# file, read the corresponding file(s) in
 `../machine` as of the merge commit, with `git -C ../machine show <mergeCommit>:<path>`,
 to understand the surrounding context. The working tree may have moved on since the PR
-merged. If `git show` reports `bad object`, the clone predates the merge: run
-`git -C ../machine fetch` and retry. Identify the Python counterpart (see mapping
-below). Read the existing Python code you're about to change so the port matches local
-idiom.
+merged. First check the commit with `git -C ../machine cat-file -e <mergeCommit>`. If it
+fails, the clone predates the merge: run `git -C ../machine fetch`. Identify the Python
+counterpart (see mapping below). Read the existing Python code you're about to change so
+the port matches local idiom.
 
 Note: not every change ports. Skip C#-only concerns (`.csproj`/`.sln`/`Directory.*.props`,
 `AssemblyInfo`, `omnisharp.json`, csharpier/editorconfig formatting, NuGet packaging).
