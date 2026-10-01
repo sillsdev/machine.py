@@ -32,14 +32,17 @@ gh issue view <ISSUE> --json title,body,labels
 ## Step 2 — Understand the source change
 
 ```bash
-gh pr view <PR> --repo sillsdev/machine --json title,body,files,commits
+gh pr view <PR> --repo sillsdev/machine --json title,body,files,commits,mergeCommit
 gh pr diff <PR> --repo sillsdev/machine
 ```
 
-Read the full diff. For each changed C# file, open the corresponding file(s) in
-`../machine` to understand the surrounding context, and identify the Python counterpart
-(see mapping below). Read the existing Python code you're about to change so the port
-matches local idiom.
+Read the full diff. For each changed C# file, read the corresponding file(s) in
+`../machine` as of the merge commit, with `git -C ../machine show <mergeCommit>:<path>`,
+to understand the surrounding context. The working tree may have moved on since the PR
+merged. First check the commit with `git -C ../machine cat-file -e <mergeCommit>`. If it
+fails, the clone predates the merge: run `git -C ../machine fetch`. Identify the Python
+counterpart (see mapping below). Read the existing Python code you're about to change so
+the port matches local idiom.
 
 Note: not every change ports. Skip C#-only concerns (`.csproj`/`.sln`/`Directory.*.props`,
 `AssemblyInfo`, `omnisharp.json`, csharpier/editorconfig formatting, NuGet packaging).
