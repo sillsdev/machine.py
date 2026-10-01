@@ -6,7 +6,7 @@ on:
   pull_request_review_comment:
     types: [created]
   issues:
-    types: [opened, assigned]
+    types: [opened, assigned, labeled]
   pull_request_review:
     types: [submitted]
 
@@ -29,7 +29,8 @@ jobs:
       ((github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude'))))
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude'))) ||
+      (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'porting'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -75,6 +76,8 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Porting issues are created with this label, so each one starts a port.
+          label_trigger: porting
 
           # This is an optional setting that allows Claude to read CI results on PRs
           additional_permissions: |
@@ -84,6 +87,6 @@ jobs:
           # appended prompt has Claude open the pull request itself.
           claude_args: >-
             --allowedTools "Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh issue view:*),Bash(git log:*),Bash(git blame:*),Bash(git show:*),Bash(git diff:*),Bash(git status:*),Bash(poetry run:*),Bash(./local_check.sh:*)"
-            --append-system-prompt "When invoked on an issue and you change code, open the pull request yourself once your commits are pushed: gh pr create --base main --head <your branch>. Post its link in your comment in place of a Create a PR link. Write the title and body with the pr-authoring skill, and put Closes #<issue number> in the body. Before opening it, run ./local_check.sh --agent-strict and report its result in the body. Dependencies are already installed, and you work on the branch this action created: where a skill such as port-pr says to install, create or switch branches, or push, commit on the current branch and push it the way these instructions say."
+            --append-system-prompt "When invoked on an issue and you change code, open the pull request yourself once your commits are pushed: gh pr create --base main --head <your branch>. Post its link in your comment in place of a Create a PR link. Write the title and body with the pr-authoring skill, and put Closes #<issue number> in the body. Before opening it, run ./local_check.sh --agent-strict and report its result in the body. Dependencies are already installed, and you work on the branch this action created: where a skill such as port-pr says to install, create or switch branches, or push, commit on the current branch and push it the way these instructions say. When the issue is labeled porting, port it with the port-pr skill."
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
