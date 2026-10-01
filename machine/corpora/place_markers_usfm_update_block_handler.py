@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Optional, TypedDict, cast
+from typing import Dict, List, Optional, Sequence, Tuple, TypedDict, cast
 
 from ..translation.word_alignment_matrix import WordAlignmentMatrix
 from .segment_boundary_adjuster import SegmentBoundaryAdjuster
@@ -25,27 +25,64 @@ class PlaceMarkersAlignmentInfo(TypedDict):
 
 
 def _get_alignment_info(block: UsfmUpdateBlock) -> Optional[PlaceMarkersAlignmentInfo]:
-    if len(block.row_metadata) > 1:
-        # Verse ranges put all of their text on the first row
-        infos = [
-            info
-            for info in (
-                cast(Optional[PlaceMarkersAlignmentInfo], metadata.get(PLACE_MARKERS_ALIGNMENT_INFO_KEY))
-                for metadata in block.row_metadata
-            )
-            if info is not None and info["alignment"].row_count > 0 and info["alignment"].column_count > 0
-        ]
-        if len(infos) > 1:
-            # Only the first row should have alignment info
+    infos: List[PlaceMarkersAlignmentInfo] = []
+    for row in block.rows:
+        # Rows that contributed no text, such as the later verses of a verse range, have nothing to align
+        if len(row.text.strip()) == 0:
+            continue
+        info = cast(Optional[PlaceMarkersAlignmentInfo], row.metadata.get(PLACE_MARKERS_ALIGNMENT_INFO_KEY))
+        if info is None or len(info["translation_tokens"]) == 0:
             logger.warning(
-                "Expected at most one row with alignment info for %s, but found %d. Markers may be misplaced.",
-                ", ".join(str(ref) for ref in block.refs),
-                len(infos),
+                "Markers were not placed for %s because a row with text has no alignment info.", _format_refs(block)
             )
-        return infos[-1] if len(infos) > 0 else None
-    if PLACE_MARKERS_ALIGNMENT_INFO_KEY not in block.metadata:
+            return None
+        # The same alignment info on several rows already describes their combined text
+        if not any(info is other for other in infos):
+            infos.append(info)
+
+    if len(infos) == 0:
         return None
-    return cast(PlaceMarkersAlignmentInfo, block.metadata[PLACE_MARKERS_ALIGNMENT_INFO_KEY])
+    # A block matched by several rows, e.g. a verse range, has those rows' texts concatenated
+    alignment_info = infos[0] if len(infos) == 1 else _merge_alignment_infos(block, infos)
+    alignment = alignment_info["alignment"]
+    if not any(alignment.is_row_aligned(i) for i in range(alignment.row_count)):
+        # Markers are still placed, but with nothing to align them to, they all go at the end of the text
+        logger.warning(
+            "The alignment for %s has no aligned words, so its markers were placed at the end of its text.",
+            _format_refs(block),
+        )
+    return alignment_info
+
+
+def _merge_alignment_infos(
+    block: UsfmUpdateBlock, infos: Sequence[PlaceMarkersAlignmentInfo]
+) -> PlaceMarkersAlignmentInfo:
+    source_tokens: List[str] = []
+    translation_tokens: List[str] = []
+    word_pairs: List[Tuple[int, int]] = []
+    for info in infos:
+        # Offset by the token counts rather than the matrix size, since a matrix may omit unaligned trailing tokens
+        for pair in info["alignment"].to_aligned_word_pairs():
+            if pair.source_index >= len(info["source_tokens"]) or pair.target_index >= len(info["translation_tokens"]):
+                raise UsfmUpdateBlockHandlerError(
+                    block,
+                    f"Aligned word pair {pair.source_index}-{pair.target_index} is outside the tokens of its row "
+                    f"for {_format_refs(block)}.",
+                )
+            word_pairs.append((len(source_tokens) + pair.source_index, len(translation_tokens) + pair.target_index))
+        source_tokens.extend(info["source_tokens"])
+        translation_tokens.extend(info["translation_tokens"])
+    return PlaceMarkersAlignmentInfo(
+        source_tokens=source_tokens,
+        translation_tokens=translation_tokens,
+        alignment=WordAlignmentMatrix.from_word_pairs(len(source_tokens), len(translation_tokens), word_pairs),
+        paragraph_behavior=infos[0]["paragraph_behavior"],
+        style_behavior=infos[0]["style_behavior"],
+    )
+
+
+def _format_refs(block: UsfmUpdateBlock) -> str:
+    return ", ".join(str(ref) for ref in block.refs)
 
 
 class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
@@ -61,13 +98,8 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         if alignment_info is None:
             return block
 
-        if (
-            len(elements) == 0
-            or alignment_info["alignment"].row_count == 0
-            or alignment_info["alignment"].column_count == 0
-            or not any(
-                e.is_placeable(alignment_info["paragraph_behavior"], alignment_info["style_behavior"]) for e in elements
-            )
+        if len(elements) == 0 or not any(
+            e.is_placeable(alignment_info["paragraph_behavior"], alignment_info["style_behavior"]) for e in elements
         ):
             return block
 
@@ -155,6 +187,8 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
 
         # Predict marker placements and get insertion order
         to_insert = []
+        # The predicted target token of each open style marker, by marker
+        open_style_trg_toks: Dict[str, List[int]] = {}
         for element, adj_src_tok in zip(to_place, adj_src_toks):
             adj_trg_tok = self._predict_marker_location(alignment_info["alignment"], adj_src_tok, src_toks, trg_toks)
 
@@ -164,12 +198,19 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
                     adj_trg_tok, trg_toks
                 )
 
-            if (
-                adj_trg_tok > 0
-                and element.type == UsfmUpdateBlockElementType.STYLE
-                and element.tokens[0].marker[-1] == "*"
-            ):
-                # Insert end tokens directly after the token they follow
+            is_end_style = element.type == UsfmUpdateBlockElementType.STYLE and element.tokens[0].marker[-1] == "*"
+            if element.type == UsfmUpdateBlockElementType.STYLE:
+                marker = element.tokens[0].marker
+                if is_end_style:
+                    opening_trg_toks = open_style_trg_toks.get(marker[:-1])
+                    if opening_trg_toks:
+                        # Move a misplaced closing style marker to one token after its opening marker
+                        adj_trg_tok = max(adj_trg_tok, opening_trg_toks.pop() + 1)
+                else:
+                    open_style_trg_toks.setdefault(marker, []).append(adj_trg_tok)
+
+            if is_end_style and 0 < adj_trg_tok <= len(trg_toks):
+                # Place closing style marker at the end of the token
                 trg_str_idx = trg_tok_starts[adj_trg_tok - 1] + len(trg_toks[adj_trg_tok - 1])
             elif adj_trg_tok < len(trg_tok_starts):
                 trg_str_idx = trg_tok_starts[adj_trg_tok]
@@ -208,8 +249,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         while len(header_elements) > 0:
             placed_elements.append(header_elements.pop(0)[1])
 
-        block._elements = placed_elements + ignored_elements
-        return block
+        return UsfmUpdateBlock(block.refs, placed_elements + ignored_elements, block.rows)
 
     def _predict_marker_location(
         self,

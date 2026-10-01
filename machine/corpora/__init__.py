@@ -71,7 +71,7 @@ from .usfm_stylesheet import UsfmStylesheet
 from .usfm_tag import UsfmJustification, UsfmStyleAttribute, UsfmStyleType, UsfmTag, UsfmTextProperties, UsfmTextType
 from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
 from .usfm_tokenizer import RtlReferenceOrder, UsfmTokenizer
-from .usfm_update_block import UsfmUpdateBlock
+from .usfm_update_block import UsfmUpdateBlock, UsfmUpdateBlockRow
 from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
 from .usfm_update_block_handler import UsfmUpdateBlockHandler
 from .usfm_versification_analyzer_base import UsfmVersificationAnalyzerBase
@@ -185,6 +185,7 @@ __all__ = [
     "UsfmUpdateBlockElement",
     "UsfmUpdateBlockElementType",
     "UsfmUpdateBlockHandler",
+    "UsfmUpdateBlockRow",
     "UsfmVersificationAnalysis",
     "UsfmVersificationAnalyzerBase",
     "UsfmVersificationAnalyzerHandler",

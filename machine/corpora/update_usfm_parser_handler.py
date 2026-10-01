@@ -9,7 +9,7 @@ from .usfm_stylesheet import UsfmStylesheet
 from .usfm_tag import UsfmTextType
 from .usfm_token import UsfmAttribute, UsfmToken, UsfmTokenType
 from .usfm_tokenizer import UsfmTokenizer
-from .usfm_update_block import UsfmUpdateBlock
+from .usfm_update_block import UsfmUpdateBlock, UsfmUpdateBlockRow
 from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
 from .usfm_update_block_handler import UsfmUpdateBlockHandler, UsfmUpdateBlockHandlerError
 
@@ -25,6 +25,56 @@ class UpdateUsfmRow:
         self.refs = refs
         self.text = text
         self.metadata = metadata
+
+
+class _UsfmUpdateBlockBuilder:
+    def __init__(self, refs: Iterable[ScriptureRef] = [], rows: Iterable[UsfmUpdateBlockRow] = []) -> None:
+        self._refs: List[ScriptureRef] = list(refs)
+        self._elements: List[UsfmUpdateBlockElement] = []
+        self._rows: List[UsfmUpdateBlockRow] = list(rows)
+
+    def add_text(self, tokens: Iterable[UsfmToken]) -> None:
+        self._elements.append(UsfmUpdateBlockElement(UsfmUpdateBlockElementType.TEXT, list(tokens)))
+
+    def add_token(self, token: UsfmToken, marked_for_removal: bool = False) -> None:
+        if token.type == UsfmTokenType.TEXT:
+            element_type = UsfmUpdateBlockElementType.TEXT
+        elif token.type == UsfmTokenType.PARAGRAPH:
+            element_type = UsfmUpdateBlockElementType.PARAGRAPH
+        elif token.type == UsfmTokenType.CHARACTER or token.type == UsfmTokenType.END:
+            element_type = UsfmUpdateBlockElementType.STYLE
+        else:
+            element_type = UsfmUpdateBlockElementType.OTHER
+        self._elements.append(UsfmUpdateBlockElement(element_type, [token], marked_for_removal))
+
+    def add_embed(self, tokens: Iterable[UsfmToken], marked_for_removal: bool = False) -> None:
+        self._elements.append(
+            UsfmUpdateBlockElement(UsfmUpdateBlockElementType.EMBED, list(tokens), marked_for_removal)
+        )
+
+    def extend_last_element(self, tokens: Iterable[UsfmToken]) -> None:
+        self._elements[-1].tokens.extend(tokens)
+
+    def update_refs(self, refs: Iterable[ScriptureRef]) -> None:
+        self._refs = list(refs)
+
+    def is_empty(self) -> bool:
+        return len(self._elements) == 0
+
+    def get_last_element(self) -> UsfmUpdateBlockElement:
+        return self._elements[-1]
+
+    def get_last_paragraph(self) -> Optional[UsfmUpdateBlockElement]:
+        for element in reversed(self._elements):
+            if element.type == UsfmUpdateBlockElementType.PARAGRAPH:
+                return element
+        return None
+
+    def pop(self) -> UsfmUpdateBlockElement:
+        return self._elements.pop()
+
+    def build(self) -> UsfmUpdateBlock:
+        return UsfmUpdateBlock(self._refs, self._elements, self._rows)
 
 
 def _sanitize_verse_data(verse_data: str) -> str:
@@ -58,7 +108,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
             self._update_rows_versification = Versification.get_builtin("English")
         self._tokens: List[UsfmToken] = []
         self._updated_text: List[UsfmToken] = []
-        self._update_block_stack: list[UsfmUpdateBlock] = []
+        self._update_block_stack: list[_UsfmUpdateBlockBuilder] = []
         self._embed_tokens: List[UsfmToken] = []
         self._id_text = id_text
         if update_block_handlers is None:
@@ -103,7 +153,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
             self._update_verse_rows()
 
         self._collect_readonly_tokens(state)
-        self._update_block_stack.append(UsfmUpdateBlock())
+        self._update_block_stack.append(_UsfmUpdateBlockBuilder())
         start_book_tokens: List[UsfmToken] = []
         if self._id_text is not None:
             start_book_tokens.append(UsfmToken(UsfmTokenType.TEXT, text=self._id_text + " "))
@@ -114,7 +164,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
     def end_book(self, state: UsfmParserState, marker: str) -> None:
         self._use_updated_text()
         self._pop_new_tokens()
-        update_block = self._update_block_stack.pop()
+        update_block = self._update_block_stack.pop().build()
         self._tokens.extend(update_block.get_tokens())
 
         super().end_book(state, marker)
@@ -379,9 +429,8 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
                         tokens[index:index] = remark_tokens
         return tokenizer.detokenize(tokens)
 
-    def _advance_rows(self, seg_scr_refs: Sequence[ScriptureRef]) -> Tuple[List[str], List[dict[str, object]]]:
-        row_texts: List[str] = []
-        row_metadata: List[dict[str, object]] = []
+    def _advance_rows(self, seg_scr_refs: Sequence[ScriptureRef]) -> List[UsfmUpdateBlockRow]:
+        block_rows: List[UsfmUpdateBlockRow] = []
         source_index: int = 0
 
         # handle the special case of verse 0, which although first in the rows,
@@ -406,13 +455,12 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
                 if compare == 0:
                     # source and row match
                     # grab the text - both source and row will be incremented in due time...
-                    row_texts.append(text)
-                    row_metadata.append(metadata if metadata is not None else {})
+                    block_rows.append(UsfmUpdateBlockRow(text, metadata if metadata is not None else {}))
                     break
             if compare <= 0:
                 # source is ahead of row, increment row
                 self._verse_row_index += 1
-        return row_texts, row_metadata
+        return block_rows
 
     def _collect_updatable_tokens(self, state: UsfmParserState) -> None:
         self._use_updated_text()
@@ -485,21 +533,24 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
         return any(self._replace_stack) and self._replace_stack[-1]
 
     def _start_update_block(self, scripture_refs: Sequence[ScriptureRef]) -> None:
-        row_texts, row_metadata = self._advance_rows(scripture_refs)
-        self._update_block_stack.append(UsfmUpdateBlock(scripture_refs, row_metadata=row_metadata))
-        self._push_updated_text([UsfmToken(UsfmTokenType.TEXT, text=t + " ") for t in row_texts])
+        block_rows = self._advance_rows(scripture_refs)
+        self._update_block_stack.append(_UsfmUpdateBlockBuilder(scripture_refs, block_rows))
+        self._push_updated_text([UsfmToken(UsfmTokenType.TEXT, text=row.text + " ") for row in block_rows])
 
     def _end_update_block(self, state: UsfmParserState, scripture_refs: Sequence[ScriptureRef]) -> None:
         self._use_updated_text()
         self._pop_new_tokens()
-        update_block = self._update_block_stack.pop()
-        update_block.update_refs(scripture_refs)
+        update_block_builder = self._update_block_stack.pop()
+        update_block_builder.update_refs(scripture_refs)
 
         # Strip off any non-verse paragraphs that are at the end of the update block
         para_elems: list[UsfmUpdateBlockElement] = []
-        while len(update_block.elements) > 0 and _is_nonverse_paragraph(state, update_block.elements[-1]):
-            para_elems.append(update_block.pop())
+        while not update_block_builder.is_empty() and _is_nonverse_paragraph(
+            state, update_block_builder.get_last_element()
+        ):
+            para_elems.append(update_block_builder.pop())
 
+        update_block = update_block_builder.build()
         for handler in self._update_block_handlers:
             try:
                 update_block = handler.process_block(update_block)
@@ -513,7 +564,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
             tokens.extend(elem.get_tokens())
         if (
             len(self._update_block_stack) > 0
-            and self._update_block_stack[-1].elements[-1].type == UsfmUpdateBlockElementType.PARAGRAPH
+            and self._update_block_stack[-1].get_last_element().type == UsfmUpdateBlockElementType.PARAGRAPH
         ):
             self._update_block_stack[-1].extend_last_element(tokens)
         else:
