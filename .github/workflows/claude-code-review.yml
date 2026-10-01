@@ -72,6 +72,9 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # A push by the @claude workflow makes claude[bot] the actor, which the action
+          # rejects unless allowed. The review never pushes, so it cannot retrigger itself.
+          allowed_bots: claude
           # pr-review has the built-in code-review skill find and verify at "high"
           # effort, then sets what gets posted. The code-review plugin this replaces
           # dropped anything under 80 on its confidence rubric.
