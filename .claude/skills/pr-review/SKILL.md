@@ -9,7 +9,8 @@ user-invocable: true
 
 Post one short comment per finding, anchored on the line it is about, then one
 summary comment. A review leaves the code alone: do not edit, commit, or push.
-The only thread it resolves is its own finding, once addressed or withdrawn.
+The only threads it resolves are its own findings, once addressed, withdrawn,
+or, unless Critical, rejected or deferred by the author.
 
 Unless verified findings are already in hand, get them first with
 `/code-review high <target>`, without `--comment`: it finds and verifies, and
@@ -42,10 +43,10 @@ open findings first, then add only what is new.
    - Fixed: `F3 addressed in <sha>:` and what fixed it, then resolve the
      thread by its `id`:
      `gh api graphql -F id=<id> -f query='mutation($id: ID!) { resolveReviewThread(input: {threadId: $id}) { thread { isResolved } } }'`
-   - Author gave a reason: weigh it. If it holds, `F3 withdrawn:` and why, then
-     resolve the thread. If not, answer once with evidence; a point already
-     answered stays answered.
-   - Author chose to keep it, e.g. deferred to an issue: record it as accepted.
+   - Author rejected or deferred it: weigh any reason given. If it holds,
+     `F3 withdrawn:` and why, then resolve the thread. If not, `F3 accepted:`
+     with your evidence or where it was deferred, once, then resolve it. An
+     accepted Critical finding stays open for a maintainer to dismiss.
    - Still applies and its code changed: `F3 still applies at <sha>:` and why.
    - Still applies and its code is untouched: stay silent; the summary counts
      it.
@@ -141,5 +142,14 @@ able to tell which findings mattered.
 End with `Reviewed at <head-sha>`, the PR head from
 `gh pr view <n> --json headRefOid`, not the merge commit checked out, so the
 next round knows where this one stopped.
+
+Once the new summary is posted, minimize each earlier one as outdated, so only
+the latest shows. An earlier summary is a top-level comment by `claude[bot]`
+containing `Reviewed at`; leave its other comments, such as replies to an
+`@claude` mention, visible. Take its `node_id` from the comments listing:
+
+```
+gh api graphql -F id=<node_id> -f query='mutation($id: ID!) { minimizeComment(input: {subjectId: $id, classifier: OUTDATED}) { minimizedComment { isMinimized } } }'
+```
 
 For an adversarial second pass, apply `docs/review/devils-advocate.md`.
