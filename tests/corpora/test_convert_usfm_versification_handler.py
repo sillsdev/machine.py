@@ -759,5 +759,6 @@ def assert_usfm_equals(target: str, truth: str) -> None:
     assert target is not None
     target_lines = target.split("\n")
     truth_lines = truth.split("\n")
+    assert len(target_lines) == len(truth_lines)
     for i, truth_line in enumerate(truth_lines):
         assert target_lines[i].strip() == truth_line.strip(), f"Line {i}"
