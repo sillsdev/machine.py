@@ -12,12 +12,6 @@ from .usfm_tokenizer import UsfmTokenizer
 _TRAILING_PARAGRAPH_MARKER_PATTERNS = re.compile(r"^(?:mte?\d*|ms\d*|sd?\d*|mr|sr|sp|d|r)$")
 
 
-def _change_versification(verse_ref: VerseRef, versification: Versification) -> VerseRef:
-    new_verse_ref = verse_ref.copy()
-    new_verse_ref.change_versification(versification)
-    return new_verse_ref
-
-
 def _new_nb_token() -> UsfmToken:
     return UsfmToken(UsfmTokenType.PARAGRAPH, "nb", "", "", "")
 
@@ -51,7 +45,7 @@ class ConvertUsfmVersificationHandler(ScriptureRefUsfmParserHandlerBase):
         # The versification of verse 0 cannot properly be changed
         vr.verse = "1"
         if not self._prev_verse_ref.is_default and (
-            _change_versification(vr, self._target_versification).book != self._prev_verse_ref.book
+            vr.to_versification(self._target_versification).book != self._prev_verse_ref.book
             or vr.chapter_num == -1
         ):
             self._skip = True
@@ -71,7 +65,7 @@ class ConvertUsfmVersificationHandler(ScriptureRefUsfmParserHandlerBase):
 
         self._process_tokens(state)
 
-        verse_refs = [_change_versification(vr, self._target_versification) for vr in state.verse_ref.all_verses()]
+        verse_refs = [vr.to_versification(self._target_versification) for vr in state.verse_ref.all_verses()]
 
         if (
             self._prev_verse_ref.is_default
