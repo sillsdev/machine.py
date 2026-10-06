@@ -99,12 +99,15 @@ jobs:
           # or https://code.claude.com/docs/en/cli-reference for available options
 
       # The action hides Claude's output, so the log does not say which calls were denied.
-      # The denied calls alone name the allowedTools rule a run was missing.
+      # Only the command or target is printed, never file content, and @json keeps it on one
+      # line so a denied command cannot issue a "::" workflow command.
       - name: Show denied tool calls
         if: always() && steps.claude.outputs.execution_file != ''
+        continue-on-error: true
         env:
           EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
         run: >-
           jq -r '.[] | select(.type == "result") | .permission_denials[]?
-          | "\(.tool_name): \(.tool_input.command // (.tool_input | tostring))"[:300]'
+          | "\(.tool_name): \((.tool_input.command? // .tool_input.file_path? // .tool_input.url?
+          // .tool_input.pattern? // "") | @json | .[:300])"'
           "$EXECUTION_FILE"
