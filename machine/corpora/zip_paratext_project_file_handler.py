@@ -4,6 +4,7 @@ from tempfile import mkstemp
 from typing import BinaryIO, Optional, cast
 from zipfile import ZipFile
 
+from ..utils.zip_entry_utils import open_bounded_stream
 from .paratext_project_file_handler import ParatextProjectFileHandler
 from .usfm_stylesheet import UsfmStylesheet
 
@@ -27,7 +28,8 @@ class ZipParatextProjectFileHandler(ParatextProjectFileHandler):
     def open(self, file_name: str) -> Optional[BinaryIO]:
         for actual_entry_name in self._archive.namelist():
             if actual_entry_name.lower() == file_name.lower():
-                return BytesIO(self._archive.read(actual_entry_name))
+                with open_bounded_stream(self._archive, actual_entry_name) as stream:
+                    return BytesIO(stream.read())
         return None
 
     def create_stylesheet(self, file_name: str) -> UsfmStylesheet:
