@@ -1,6 +1,6 @@
 from pytest import raises
 
-from machine.scripture import get_books, get_chapters
+from machine.scripture import get_books, get_chapters, try_get_chapters
 
 
 def test_get_books() -> None:
@@ -177,3 +177,17 @@ def test_get_chapters() -> None:
         get_chapters("OT,MAT1")
     with raises(ValueError):
         get_chapters("OT,MAT-LUK")
+
+
+def test_try_get_chapters() -> None:
+    assert try_get_chapters("MAT1-4,12,9") == (True, {40: [1, 2, 3, 4, 9, 12]})
+    assert try_get_chapters("") == (True, {})
+    assert try_get_chapters(["MAT", "-MAT 1"]) == (True, {40: list(range(2, 29))})
+
+    # invalid syntax, book, chapter, and subtraction
+    assert try_get_chapters("OT,MAT1") == (False, None)
+    assert try_get_chapters("ABC") == (False, None)
+    assert try_get_chapters("MAT 500") == (False, None)
+    assert try_get_chapters("MAT3-1") == (False, None)
+    assert try_get_chapters("-MRK") == (False, None)
+    assert try_get_chapters("MRK 2-5;-MRK 6") == (False, None)
