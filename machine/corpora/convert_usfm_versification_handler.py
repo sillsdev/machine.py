@@ -45,8 +45,7 @@ class ConvertUsfmVersificationHandler(ScriptureRefUsfmParserHandlerBase):
         # The versification of verse 0 cannot properly be changed
         vr.verse = "1"
         if not self._prev_verse_ref.is_default and (
-            vr.to_versification(self._target_versification).book != self._prev_verse_ref.book
-            or vr.chapter_num == -1
+            vr.to_versification(self._target_versification).book != self._prev_verse_ref.book or vr.chapter_num == -1
         ):
             self._skip = True
         self._insert_chapter_index = len(self._tokens)
