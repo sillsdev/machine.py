@@ -1,5 +1,5 @@
 from io import RawIOBase
-from typing import BinaryIO
+from typing import IO
 
 
 class BoundedStream(RawIOBase):
@@ -8,7 +8,7 @@ class BoundedStream(RawIOBase):
     Closing the stream closes the inner stream.
     """
 
-    def __init__(self, inner_stream: BinaryIO, max_size: int) -> None:
+    def __init__(self, inner_stream: IO[bytes], max_size: int) -> None:
         if max_size < 0:
             raise ValueError("max_size must not be negative.")
         self._inner_stream = inner_stream
