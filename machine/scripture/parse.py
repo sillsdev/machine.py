@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Set, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 from .canon import book_id_to_number, book_number_to_id
 from .constants import ORIGINAL_VERSIFICATION
@@ -179,3 +179,12 @@ def get_chapters(
                     chapters[book] = selection_chapters[book]
 
     return chapters
+
+
+def try_get_chapters(
+    selections: Union[str, List[str]], versification: Versification = ORIGINAL_VERSIFICATION
+) -> Tuple[bool, Optional[Dict[int, List[int]]]]:
+    try:
+        return True, get_chapters(selections, versification)
+    except ValueError:
+        return False, None
