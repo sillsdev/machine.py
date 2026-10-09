@@ -3,7 +3,7 @@ from typing import BinaryIO, Dict, Optional
 
 from machine.corpora import ParatextProjectFileHandler, ParatextProjectSettings, UsfmStylesheet
 from machine.corpora.paratext_project_text_updater_base import ParatextProjectTextUpdaterBase
-from machine.scripture import ORIGINAL_VERSIFICATION, Versification
+from machine.scripture import ENGLISH_VERSIFICATION, Versification
 
 
 class MemoryParatextProjectFileHandler(ParatextProjectFileHandler):
@@ -61,7 +61,7 @@ class DefaultParatextProjectSettings(ParatextProjectSettings):
             name,
             full_name,
             encoding if encoding is not None else "utf-8",
-            versification if versification is not None else ORIGINAL_VERSIFICATION,
+            versification if versification is not None else ENGLISH_VERSIFICATION,
             stylesheet if stylesheet is not None else UsfmStylesheet("usfm.sty"),
             file_name_prefix,
             file_name_form,

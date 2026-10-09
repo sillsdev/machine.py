@@ -43,7 +43,9 @@ class ScriptureRefUsfmParserHandlerBase(UsfmParserHandler, ABC):
     def end_usfm(self, state: UsfmParserState) -> None:
         self._end_verse_text_wrapper(state)
 
-    def chapter(self, state: UsfmParserState, number: str, marker: str, alt_number: str, pub_number: str) -> None:
+    def chapter(
+        self, state: UsfmParserState, number: str, marker: str, alt_number: Optional[str], pub_number: Optional[str]
+    ) -> None:
         self._end_verse_text_wrapper(state)
         self._update_verse_ref(state.verse_ref, marker)
 
