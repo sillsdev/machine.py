@@ -1,10 +1,17 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import Iterable, Sequence
 
 from .scripture_ref import ScriptureRef
-from .usfm_token import UsfmToken, UsfmTokenType
-from .usfm_update_block_element import UsfmUpdateBlockElement, UsfmUpdateBlockElementType
+from .usfm_token import UsfmToken
+from .usfm_update_block_element import UsfmUpdateBlockElement
+
+
+@dataclass
+class UsfmUpdateBlockRow:
+    text: str
+    metadata: dict[str, object] = field(default_factory=dict)
 
 
 class UsfmUpdateBlock:
@@ -12,11 +19,15 @@ class UsfmUpdateBlock:
         self,
         refs: Iterable[ScriptureRef] = [],
         elements: Iterable[UsfmUpdateBlockElement] = [],
-        metadata: dict[str, object] = {},
+        # Keyword-only, so that a metadata dict passed where it used to go is rejected
+        *,
+        rows: Iterable[UsfmUpdateBlockRow] = [],
     ) -> None:
         self._refs: list[ScriptureRef] = list(refs)
         self._elements: list[UsfmUpdateBlockElement] = list(elements)
-        self._metadata: dict[str, object] = metadata
+        # One entry per row matched to this block, in order. A verse range can be matched by
+        # several rows, in which case this block's text is those rows' texts concatenated.
+        self._rows: list[UsfmUpdateBlockRow] = list(rows)
 
     @property
     def refs(self) -> Sequence[ScriptureRef]:
@@ -27,48 +38,14 @@ class UsfmUpdateBlock:
         return self._elements
 
     @property
-    def metadata(self) -> dict[str, object]:
-        return self._metadata
-
-    def add_text(self, tokens: Iterable[UsfmToken]) -> None:
-        self._elements.append(UsfmUpdateBlockElement(UsfmUpdateBlockElementType.TEXT, list(tokens)))
-
-    def add_token(self, token: UsfmToken, marked_for_removal: bool = False) -> None:
-        if token.type == UsfmTokenType.TEXT:
-            element_type = UsfmUpdateBlockElementType.TEXT
-        elif token.type == UsfmTokenType.PARAGRAPH:
-            element_type = UsfmUpdateBlockElementType.PARAGRAPH
-        elif token.type == UsfmTokenType.CHARACTER or token.type == UsfmTokenType.END:
-            element_type = UsfmUpdateBlockElementType.STYLE
-        else:
-            element_type = UsfmUpdateBlockElementType.OTHER
-        self._elements.append(UsfmUpdateBlockElement(element_type, [token], marked_for_removal))
-
-    def add_embed(self, tokens: Iterable[UsfmToken], marked_for_removal: bool = False) -> None:
-        self._elements.append(
-            UsfmUpdateBlockElement(UsfmUpdateBlockElementType.EMBED, list(tokens), marked_for_removal)
-        )
-
-    def extend_last_element(self, tokens: Iterable[UsfmToken]) -> None:
-        self._elements[-1].tokens.extend(tokens)
-
-    def update_refs(self, refs: Iterable[ScriptureRef]) -> None:
-        self._refs = list(refs)
-
-    def get_last_paragraph(self) -> UsfmUpdateBlockElement | None:
-        for element in reversed(self._elements):
-            if element.type == UsfmUpdateBlockElementType.PARAGRAPH:
-                return element
-        return None
-
-    def pop(self) -> UsfmUpdateBlockElement:
-        return self._elements.pop()
+    def rows(self) -> Sequence[UsfmUpdateBlockRow]:
+        return self._rows
 
     def get_tokens(self) -> list[UsfmToken]:
         return [token for element in self._elements for token in element.get_tokens()]
 
     def __eq__(self, other: UsfmUpdateBlock) -> bool:
-        return self._refs == other._refs and self._elements == other._elements and self._metadata == other._metadata
+        return self._refs == other._refs and self._elements == other._elements and self._rows == other._rows
 
     def copy(self) -> UsfmUpdateBlock:
-        return UsfmUpdateBlock(self._refs, self._elements, self._metadata)
+        return UsfmUpdateBlock(self._refs, self._elements, rows=self._rows)
