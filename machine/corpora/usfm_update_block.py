@@ -19,6 +19,8 @@ class UsfmUpdateBlock:
         self,
         refs: Iterable[ScriptureRef] = [],
         elements: Iterable[UsfmUpdateBlockElement] = [],
+        # Keyword-only, so that a metadata dict passed where it used to go is rejected
+        *,
         rows: Iterable[UsfmUpdateBlockRow] = [],
     ) -> None:
         self._refs: list[ScriptureRef] = list(refs)
@@ -46,4 +48,4 @@ class UsfmUpdateBlock:
         return self._refs == other._refs and self._elements == other._elements and self._rows == other._rows
 
     def copy(self) -> UsfmUpdateBlock:
-        return UsfmUpdateBlock(self._refs, self._elements, self._rows)
+        return UsfmUpdateBlock(self._refs, self._elements, rows=self._rows)

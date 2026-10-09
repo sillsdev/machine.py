@@ -58,7 +58,7 @@ class _UsfmUpdateBlockBuilder:
     def update_refs(self, refs: Iterable[ScriptureRef]) -> None:
         self._refs = list(refs)
 
-    def is_empty(self) -> bool:
+    def has_no_elements(self) -> bool:
         return len(self._elements) == 0
 
     def get_last_element(self) -> UsfmUpdateBlockElement:
@@ -74,7 +74,7 @@ class _UsfmUpdateBlockBuilder:
         return self._elements.pop()
 
     def build(self) -> UsfmUpdateBlock:
-        return UsfmUpdateBlock(self._refs, self._elements, self._rows)
+        return UsfmUpdateBlock(self._refs, self._elements, rows=self._rows)
 
 
 def _sanitize_verse_data(verse_data: str) -> str:
@@ -545,7 +545,7 @@ class UpdateUsfmParserHandler(ScriptureRefUsfmParserHandlerBase):
 
         # Strip off any non-verse paragraphs that are at the end of the update block
         para_elems: list[UsfmUpdateBlockElement] = []
-        while not update_block_builder.is_empty() and _is_nonverse_paragraph(
+        while not update_block_builder.has_no_elements() and _is_nonverse_paragraph(
             state, update_block_builder.get_last_element()
         ):
             para_elems.append(update_block_builder.pop())

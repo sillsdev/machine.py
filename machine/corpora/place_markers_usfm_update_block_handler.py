@@ -36,14 +36,15 @@ def _get_alignment_info(block: UsfmUpdateBlock) -> Optional[PlaceMarkersAlignmen
                 "Markers were not placed for %s because a row with text has no alignment info.", _format_refs(block)
             )
             return None
-        # The same alignment info on several rows already describes their combined text
-        if not any(info is other for other in infos):
-            infos.append(info)
+        _check_aligned_word_pairs(block, info)
+        # Each row's alignment info describes only that row's text, so it is merged even if another row has the
+        # same info, e.g. for repeated text
+        infos.append(info)
 
     if len(infos) == 0:
         return None
     # A block matched by several rows, e.g. a verse range, has those rows' texts concatenated
-    alignment_info = infos[0] if len(infos) == 1 else _merge_alignment_infos(block, infos)
+    alignment_info = infos[0] if len(infos) == 1 else _merge_alignment_infos(infos)
     alignment = alignment_info["alignment"]
     if not any(alignment.is_row_aligned(i) for i in range(alignment.row_count)):
         # Markers are still placed, but with nothing to align them to, they all go at the end of the text
@@ -54,21 +55,23 @@ def _get_alignment_info(block: UsfmUpdateBlock) -> Optional[PlaceMarkersAlignmen
     return alignment_info
 
 
-def _merge_alignment_infos(
-    block: UsfmUpdateBlock, infos: Sequence[PlaceMarkersAlignmentInfo]
-) -> PlaceMarkersAlignmentInfo:
+def _check_aligned_word_pairs(block: UsfmUpdateBlock, info: PlaceMarkersAlignmentInfo) -> None:
+    for pair in info["alignment"].to_aligned_word_pairs():
+        if pair.source_index >= len(info["source_tokens"]) or pair.target_index >= len(info["translation_tokens"]):
+            raise UsfmUpdateBlockHandlerError(
+                block,
+                f"Aligned word pair {pair.source_index}-{pair.target_index} is outside the tokens of its row "
+                f"for {_format_refs(block)}.",
+            )
+
+
+def _merge_alignment_infos(infos: Sequence[PlaceMarkersAlignmentInfo]) -> PlaceMarkersAlignmentInfo:
     source_tokens: List[str] = []
     translation_tokens: List[str] = []
     word_pairs: List[Tuple[int, int]] = []
     for info in infos:
         # Offset by the token counts rather than the matrix size, since a matrix may omit unaligned trailing tokens
         for pair in info["alignment"].to_aligned_word_pairs():
-            if pair.source_index >= len(info["source_tokens"]) or pair.target_index >= len(info["translation_tokens"]):
-                raise UsfmUpdateBlockHandlerError(
-                    block,
-                    f"Aligned word pair {pair.source_index}-{pair.target_index} is outside the tokens of its row "
-                    f"for {_format_refs(block)}.",
-                )
             word_pairs.append((len(source_tokens) + pair.source_index, len(translation_tokens) + pair.target_index))
         source_tokens.extend(info["source_tokens"])
         translation_tokens.extend(info["translation_tokens"])
@@ -93,12 +96,19 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
     def process_block(self, block: UsfmUpdateBlock) -> UsfmUpdateBlock:
         elements = list(block.elements)
 
-        # Nothing to do if there are no markers to place or no alignment to use
+        # Nothing to do if there are no markers to place or no alignment to use.
+        # Check for markers first, so that blocks without any don't log warnings about their alignment,
+        # then again with the alignment info's behaviors, which can only rule out more markers.
+        if not any(
+            e.is_placeable(UpdateUsfmMarkerBehavior.PRESERVE, UpdateUsfmMarkerBehavior.PRESERVE) for e in elements
+        ):
+            return block
+
         alignment_info = _get_alignment_info(block)
         if alignment_info is None:
             return block
 
-        if len(elements) == 0 or not any(
+        if not any(
             e.is_placeable(alignment_info["paragraph_behavior"], alignment_info["style_behavior"]) for e in elements
         ):
             return block
@@ -249,7 +259,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
         while len(header_elements) > 0:
             placed_elements.append(header_elements.pop(0)[1])
 
-        return UsfmUpdateBlock(block.refs, placed_elements + ignored_elements, block.rows)
+        return UsfmUpdateBlock(block.refs, placed_elements + ignored_elements, rows=block.rows)
 
     def _predict_marker_location(
         self,

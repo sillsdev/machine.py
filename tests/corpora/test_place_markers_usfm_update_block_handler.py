@@ -1,4 +1,7 @@
+import logging
 from typing import List, Optional, Sequence
+
+from pytest import LogCaptureFixture, raises
 
 from machine.corpora import (
     AlignedWordPair,
@@ -15,6 +18,7 @@ from machine.corpora import (
     parse_usfm,
 )
 from machine.corpora.place_markers_usfm_update_block_handler import _get_alignment_info
+from machine.corpora.usfm_update_block_handler import UsfmUpdateBlockHandlerError
 from machine.tokenization import LatinWordTokenizer
 from machine.translation import WordAlignmentMatrix
 
@@ -874,18 +878,23 @@ def test_other_elements_do_not_affect_embed_placement() -> None:
 
 def test_multiple_text_rows_in_verse_ranges_are_updated() -> None:
     # Verse ranges contain multiple text rows, which must be processed as if they were a single row
-    source = "This is the first part. This is the second part."
-    pretranslation = "Esta es la primera parte. Esta es la segunda parte."
-    align_info = PlaceMarkersAlignmentInfo(
-        source_tokens=[t for t in TOKENIZER.tokenize(source)],
-        translation_tokens=[t for t in TOKENIZER.tokenize(pretranslation)],
-        alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 9-9 10-10"),
+    first_align_info = PlaceMarkersAlignmentInfo(
+        source_tokens=[t for t in TOKENIZER.tokenize("This is the first part.")],
+        translation_tokens=[t for t in TOKENIZER.tokenize("Esta es la primera parte.")],
+        alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3 4-4 5-5"),
+        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
+        style_behavior=UpdateUsfmMarkerBehavior.STRIP,
+    )
+    second_align_info = PlaceMarkersAlignmentInfo(
+        source_tokens=[t for t in TOKENIZER.tokenize("This is the second part.")],
+        translation_tokens=[t for t in TOKENIZER.tokenize("Esta es la segunda parte.")],
+        alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3 4-4 5-5"),
         paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
         style_behavior=UpdateUsfmMarkerBehavior.STRIP,
     )
     rows = [
-        UpdateUsfmRow(scr_ref("MAT 1:1"), "Esta es la primera parte.", metadata={"alignment_info": align_info}),
-        UpdateUsfmRow(scr_ref("MAT 1:2"), "Esta es la segunda parte.", metadata={"alignment_info": align_info}),
+        UpdateUsfmRow(scr_ref("MAT 1:1"), "Esta es la primera parte.", metadata={"alignment_info": first_align_info}),
+        UpdateUsfmRow(scr_ref("MAT 1:2"), "Esta es la segunda parte.", metadata={"alignment_info": second_align_info}),
     ]
     usfm = r"""\id MAT
 \c 1
@@ -898,6 +907,28 @@ def test_multiple_text_rows_in_verse_ranges_are_updated() -> None:
 \c 1
 \v 1-2 Esta es la primera parte.
 \p Esta es la segunda parte.
+"""
+    assert_usfm_equals(target, result)
+
+
+def test_rows_with_the_same_alignment_info_are_each_merged() -> None:
+    # Rows with repeated text can share an alignment info, which still describes only one row's text
+    align_info = create_alignment_info("Amen.", "Amén.", "0-0 1-1")
+    rows = [
+        UpdateUsfmRow(scr_ref("MAT 1:1"), "Amén.", metadata={"alignment_info": align_info}),
+        UpdateUsfmRow(scr_ref("MAT 1:2"), "Amén.", metadata={"alignment_info": align_info}),
+    ]
+    usfm = r"""\id MAT
+\c 1
+\v 1-2 Amen.
+\p Amen.
+"""
+
+    target = update_usfm(rows, usfm, update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()])
+    result = r"""\id MAT
+\c 1
+\v 1-2 Amén.
+\p Amén.
 """
     assert_usfm_equals(target, result)
 
@@ -986,43 +1017,6 @@ def test_verse_range_with_empty_trailing_row() -> None:
         assert_usfm_equals(target, result)
 
 
-def test_multiple_rows_with_alignment_info_are_merged() -> None:
-    # A verse range can be matched by several rows that each have text and alignment info of their own,
-    # e.g. when the rows keep separate verses that the USFM being updated combines
-    first_align_info = PlaceMarkersAlignmentInfo(
-        source_tokens=[t for t in TOKENIZER.tokenize("This is the first part.")],
-        translation_tokens=[t for t in TOKENIZER.tokenize("Esta es la primera parte.")],
-        alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3 4-4 5-5"),
-        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        style_behavior=UpdateUsfmMarkerBehavior.STRIP,
-    )
-    second_align_info = PlaceMarkersAlignmentInfo(
-        source_tokens=[t for t in TOKENIZER.tokenize("This is the second part.")],
-        translation_tokens=[t for t in TOKENIZER.tokenize("Esta es la segunda parte.")],
-        alignment=to_word_alignment_matrix("0-0 1-1 2-2 3-3 4-4 5-5"),
-        paragraph_behavior=UpdateUsfmMarkerBehavior.PRESERVE,
-        style_behavior=UpdateUsfmMarkerBehavior.STRIP,
-    )
-    rows = [
-        UpdateUsfmRow(scr_ref("MAT 1:1"), "Esta es la primera parte.", metadata={"alignment_info": first_align_info}),
-        UpdateUsfmRow(scr_ref("MAT 1:2"), "Esta es la segunda parte.", metadata={"alignment_info": second_align_info}),
-    ]
-    usfm = r"""\id MAT
-\c 1
-\v 1-2 This is the first part.
-\p This is the second part.
-"""
-
-    target = update_usfm(rows, usfm, update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()])
-
-    result = r"""\id MAT
-\c 1
-\v 1-2 Esta es la primera parte.
-\p Esta es la segunda parte.
-"""
-    assert_usfm_equals(target, result)
-
-
 def test_merged_alignment_shifts_later_rows_past_earlier_tokens() -> None:
     block = UsfmUpdateBlock(
         scr_ref("MAT 1:1", "MAT 1:2"),
@@ -1091,6 +1085,51 @@ def test_merged_alignment_shifts_later_rows_past_rows_without_aligned_words() ->
     assert alignment_info["source_tokens"] == ["a", "b", "e", "f", "c", "d"]
     assert alignment_info["translation_tokens"] == ["x", "y", "u", "t", "z", "w", "v"]
     assert alignment_info["alignment"] == WordAlignmentMatrix.from_word_pairs(6, 7, [(0, 0), (1, 1), (4, 4), (5, 6)])
+
+
+def test_aligned_word_pair_outside_tokens_of_single_row_is_rejected() -> None:
+    block = UsfmUpdateBlock(
+        scr_ref("MAT 1:1"),
+        rows=[UsfmUpdateBlockRow("x y", {"alignment_info": create_alignment_info("a b", "x y", "0-0 1-5")})],
+    )
+
+    with raises(UsfmUpdateBlockHandlerError, match="1-5"):
+        _get_alignment_info(block)
+
+
+def test_aligned_word_pair_outside_tokens_of_merged_row_is_rejected() -> None:
+    # Merging would otherwise shift the pair into the next row's tokens
+    block = UsfmUpdateBlock(
+        scr_ref("MAT 1:1", "MAT 1:2"),
+        rows=[
+            UsfmUpdateBlockRow("x y", {"alignment_info": create_alignment_info("a b", "x y", "0-0 2-1")}),
+            UsfmUpdateBlockRow("z w", {"alignment_info": create_alignment_info("c d", "z w", "0-0 1-1")}),
+        ],
+    )
+
+    with raises(UsfmUpdateBlockHandlerError, match="2-1"):
+        _get_alignment_info(block)
+
+
+def test_only_blocks_with_markers_warn_about_missing_alignment_info(caplog: LogCaptureFixture) -> None:
+    rows = [
+        UpdateUsfmRow(scr_ref("MAT 1:1"), "Uno."),
+        UpdateUsfmRow(scr_ref("MAT 1:2"), "Dos. Tres."),
+    ]
+    usfm = r"""\id MAT
+\c 1
+\v 1 One.
+\v 2 Two.
+\p Three.
+"""
+
+    with caplog.at_level(logging.WARNING):
+        update_usfm(rows, usfm, update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()])
+
+    # verse 1 has no markers to place, so only verse 2 warns
+    assert [r.getMessage() for r in caplog.records] == [
+        "Markers were not placed for MAT 1:2 because a row with text has no alignment info."
+    ]
 
 
 def test_single_row_without_alignment_info_is_not_placed() -> None:
