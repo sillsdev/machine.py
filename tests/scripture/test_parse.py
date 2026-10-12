@@ -178,16 +178,29 @@ def test_get_chapters() -> None:
     with raises(ValueError):
         get_chapters("OT,MAT-LUK")
 
+    # empty segments
+    with raises(ValueError):
+        get_chapters("MAT;;MRK")
+    with raises(ValueError):
+        get_chapters("  ;  ")
+    with raises(ValueError):
+        get_chapters(";")
+
 
 def test_try_get_chapters() -> None:
-    assert try_get_chapters("MAT1-4,12,9") == (True, {40: [1, 2, 3, 4, 9, 12]})
-    assert try_get_chapters("") == (True, {})
-    assert try_get_chapters(["MAT", "-MAT 1"]) == (True, {40: list(range(2, 29))})
+    assert try_get_chapters("MAT1-4,12,9") == {40: [1, 2, 3, 4, 9, 12]}
+    assert try_get_chapters("") == {}
+    assert try_get_chapters(["MAT", "-MAT 1"]) == {40: list(range(2, 29))}
 
     # invalid syntax, book, chapter, and subtraction
-    assert try_get_chapters("OT,MAT1") == (False, None)
-    assert try_get_chapters("ABC") == (False, None)
-    assert try_get_chapters("MAT 500") == (False, None)
-    assert try_get_chapters("MAT3-1") == (False, None)
-    assert try_get_chapters("-MRK") == (False, None)
-    assert try_get_chapters("MRK 2-5;-MRK 6") == (False, None)
+    assert try_get_chapters("OT,MAT1") is None
+    assert try_get_chapters("ABC") is None
+    assert try_get_chapters("MAT 500") is None
+    assert try_get_chapters("MAT3-1") is None
+    assert try_get_chapters("-MRK") is None
+    assert try_get_chapters("MRK 2-5;-MRK 6") is None
+
+    # empty segments
+    assert try_get_chapters("MAT;;MRK") is None
+    assert try_get_chapters("  ;  ") is None
+    assert try_get_chapters(";") is None

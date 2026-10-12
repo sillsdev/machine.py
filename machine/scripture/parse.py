@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Dict, List, Optional, Set, Union
 
 from .canon import book_id_to_number, book_number_to_id
 from .constants import ORIGINAL_VERSIFICATION
@@ -57,6 +57,8 @@ def _update_selection(book_set: Set[int], book_nums: Set[int], subtraction: bool
 
 def parse_selection(selection: str, versification: Versification) -> Dict[int, List[int]]:
     selection = selection.strip()
+    if len(selection) == 0:
+        raise ValueError("Empty book range.")
     chapters = {}
 
     if selection[-1].isdigit() and len(selection) > 3:  # Specific chapters from one book
@@ -183,8 +185,8 @@ def get_chapters(
 
 def try_get_chapters(
     selections: Union[str, List[str]], versification: Versification = ORIGINAL_VERSIFICATION
-) -> Tuple[bool, Optional[Dict[int, List[int]]]]:
+) -> Optional[Dict[int, List[int]]]:
     try:
-        return True, get_chapters(selections, versification)
+        return get_chapters(selections, versification)
     except ValueError:
-        return False, None
+        return None
