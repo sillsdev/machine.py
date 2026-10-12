@@ -15,8 +15,8 @@ def open_bounded_stream(
 ) -> BoundedStream:
     """Opens a zip entry for reading, refusing entries that are too large or too highly compressed.
 
-    Raises `BadZipFile` if the entry's declared size or compression ratio exceeds the limits. Reading more than
-    `max_uncompressed_size` bytes from the returned stream raises an `OSError`.
+    Raises `BadZipFile` if the entry's declared size or compression ratio exceeds the limits. `ZipFile` never yields
+    more than the declared size, so an entry whose header understates its size fails the CRC check with `BadZipFile`.
     """
     if isinstance(entry, str):
         entry = archive.getinfo(entry)
