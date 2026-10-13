@@ -20,7 +20,7 @@ from .constants import (
     SEPTUAGINT_VERSIFICATION,
     VULGATE_VERSIFICATION,
 )
-from .parse import get_books, get_chapters
+from .parse import get_books, get_chapters, try_get_chapters
 from .verse_ref import (
     NULL_VERSIFICATION,
     VERSE_RANGE_SEPARATOR,
@@ -44,6 +44,7 @@ __all__ = [
     "get_bbbcccvvv",
     "get_books",
     "get_chapters",
+    "try_get_chapters",
     "is_book_id_valid",
     "is_canonical",
     "is_nt",
