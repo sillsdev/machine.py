@@ -17,7 +17,7 @@ from machine.corpora import (
     UsfmUpdateBlockRow,
     parse_usfm,
 )
-from machine.corpora.place_markers_usfm_update_block_handler import _get_alignment_info
+from machine.corpora.place_markers_usfm_update_block_handler import _get_block_alignment_info, _get_row_alignment_infos
 from machine.corpora.usfm_update_block_handler import UsfmUpdateBlockHandlerError
 from machine.tokenization import LatinWordTokenizer
 from machine.translation import WordAlignmentMatrix
@@ -846,6 +846,31 @@ def test_marker_behavior_disagrees_with_alignment_info() -> None:
     assert_usfm_equals(target, result)
 
 
+def test_alignment_is_not_checked_when_alignment_info_behaviors_leave_nothing_to_place() -> None:
+    # The updater keeps the paragraph marker that the info strips, and pair 1-9 is outside the tokens
+    align_info = PlaceMarkersAlignmentInfo(
+        source_tokens=[t for t in TOKENIZER.tokenize("One two. Three.")],
+        translation_tokens=[t for t in TOKENIZER.tokenize("Uno dos. Tres.")],
+        alignment=to_word_alignment_matrix("0-0 1-9"),
+        paragraph_behavior=UpdateUsfmMarkerBehavior.STRIP,
+        style_behavior=UpdateUsfmMarkerBehavior.STRIP,
+    )
+    rows = [UpdateUsfmRow(scr_ref("MAT 1:1"), "Uno dos. Tres.", metadata={"alignment_info": align_info})]
+    usfm = r"""\id MAT
+\c 1
+\v 1 One two.
+\p Three.
+"""
+
+    target = update_usfm(rows, usfm, update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()])
+    result = r"""\id MAT
+\c 1
+\v 1 Uno dos. Tres.
+\p
+"""
+    assert_usfm_equals(target, result)
+
+
 def test_other_elements_do_not_affect_embed_placement() -> None:
     # Attributes, milestones and the like are never transferred, so their presence must not
     # change where anything else lands - here, an embed before end-of-verse paragraph markers.
@@ -975,8 +1000,6 @@ def test_anusvara_tokenization() -> None:
 
 
 def test_verse_range_with_empty_trailing_row() -> None:
-    # Verse ranges consist of multiple rows, but only the first one is non-empty and has a non-empty alignment matrix.
-    # An empty alignment matrix must not clobber any non-empty matrices.
     source = "This is the first part. This is the second part."
     pretranslation = "Esta es la primera parte. Esta es la segunda parte."
     align_info = PlaceMarkersAlignmentInfo(
@@ -1004,7 +1027,6 @@ def test_verse_range_with_empty_trailing_row() -> None:
 \p Esta es la segunda parte.
 """
 
-    # the result should be the same whether the second row has an empty alignment matrix or no alignment matrix at all
     for empty_row in [
         UpdateUsfmRow(scr_ref("MAT 1:2"), "", metadata={"alignment_info": empty_align_info}),
         UpdateUsfmRow(scr_ref("MAT 1:2"), ""),
@@ -1026,7 +1048,7 @@ def test_merged_alignment_shifts_later_rows_past_earlier_tokens() -> None:
         ],
     )
 
-    alignment_info = _get_alignment_info(block)
+    alignment_info = get_alignment_info(block)
 
     assert alignment_info is not None
     assert alignment_info["source_tokens"] == ["a", "b", "c", "d"]
@@ -1044,7 +1066,7 @@ def test_merged_alignment_shifts_by_token_count_rather_than_matrix_size() -> Non
         ],
     )
 
-    alignment_info = _get_alignment_info(block)
+    alignment_info = get_alignment_info(block)
 
     assert alignment_info is not None
     assert alignment_info["translation_tokens"] == ["x", "y", ".", "z", "w", "v"]
@@ -1061,7 +1083,7 @@ def test_merged_alignment_ignores_rows_without_text() -> None:
         ],
     )
 
-    alignment_info = _get_alignment_info(block)
+    alignment_info = get_alignment_info(block)
 
     assert alignment_info is not None
     assert alignment_info["source_tokens"] == ["a", "b", "c", "d"]
@@ -1079,7 +1101,7 @@ def test_merged_alignment_shifts_later_rows_past_rows_without_aligned_words() ->
         ],
     )
 
-    alignment_info = _get_alignment_info(block)
+    alignment_info = get_alignment_info(block)
 
     assert alignment_info is not None
     assert alignment_info["source_tokens"] == ["a", "b", "e", "f", "c", "d"]
@@ -1094,11 +1116,10 @@ def test_aligned_word_pair_outside_tokens_of_single_row_is_rejected() -> None:
     )
 
     with raises(UsfmUpdateBlockHandlerError, match="1-5"):
-        _get_alignment_info(block)
+        get_alignment_info(block)
 
 
 def test_aligned_word_pair_outside_tokens_of_merged_row_is_rejected() -> None:
-    # Merging would otherwise shift the pair into the next row's tokens
     block = UsfmUpdateBlock(
         scr_ref("MAT 1:1", "MAT 1:2"),
         rows=[
@@ -1108,7 +1129,7 @@ def test_aligned_word_pair_outside_tokens_of_merged_row_is_rejected() -> None:
     )
 
     with raises(UsfmUpdateBlockHandlerError, match="2-1"):
-        _get_alignment_info(block)
+        get_alignment_info(block)
 
 
 def test_only_blocks_with_markers_warn_about_missing_alignment_info(caplog: LogCaptureFixture) -> None:
@@ -1126,7 +1147,6 @@ def test_only_blocks_with_markers_warn_about_missing_alignment_info(caplog: LogC
     with caplog.at_level(logging.WARNING):
         update_usfm(rows, usfm, update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()])
 
-    # verse 1 has no markers to place, so only verse 2 warns
     assert [r.getMessage() for r in caplog.records] == [
         "Markers were not placed for MAT 1:2 because a row with text has no alignment info."
     ]
@@ -1142,7 +1162,6 @@ def test_single_row_without_alignment_info_is_not_placed() -> None:
 
     target = update_usfm(rows, usfm, update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()])
 
-    # no markers are placed, so the paragraph marker is left after the text
     result = r"""\id MAT
 \c 1
 \v 1 Esta es la primera parte. Esta es la segunda parte.
@@ -1172,7 +1191,6 @@ def test_aligned_row_with_row_without_alignment_info_is_not_placed() -> None:
 
     target = update_usfm(rows, usfm, update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()])
 
-    # no markers are placed, so the paragraph marker is left after the text
     result = r"""\id MAT
 \c 1
 \v 1-2 Esta es la primera parte. Esta es la segunda parte.
@@ -1182,7 +1200,6 @@ def test_aligned_row_with_row_without_alignment_info_is_not_placed() -> None:
 
 
 def test_aligned_rows_with_row_without_alignment_info_are_not_placed() -> None:
-    # The two aligned rows would be merged, but the row without alignment info prevents placing any markers
     rows = [
         UpdateUsfmRow(
             scr_ref("MAT 1:1"),
@@ -1212,7 +1229,6 @@ def test_aligned_rows_with_row_without_alignment_info_are_not_placed() -> None:
 
     target = update_usfm(rows, usfm, update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()])
 
-    # no markers are placed, so the paragraph marker is left after the text
     result = r"""\id MAT
 \c 1
 \v 1-3 Esta es la primera parte. Esta es la segunda parte. Esta es la tercera parte.
@@ -1247,7 +1263,6 @@ def test_single_row_without_aligned_words_places_markers_at_end() -> None:
         update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
 
-    # the paragraph and style markers go at the end of the text, followed by the embed
     result = r"""\id MAT
 \c 1
 \v 1 Esta es la primera parte. Esta es la segunda parte.
@@ -1280,7 +1295,6 @@ def test_single_row_with_empty_alignment_matrix_places_markers_at_end() -> None:
         update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
 
-    # the paragraph and style markers go at the end of the text, followed by the embed
     result = r"""\id MAT
 \c 1
 \v 1 Esta es la primera parte. Esta es la segunda parte.
@@ -1321,7 +1335,6 @@ def test_merged_rows_without_aligned_words_place_markers_at_end() -> None:
         update_block_handlers=[PlaceMarkersUsfmUpdateBlockHandler()],
     )
 
-    # the paragraph and style markers go at the end of the text, followed by the embed
     result = r"""\id MAT
 \c 1
 \v 1-2 Esta es la primera parte. Esta es la segunda parte.
@@ -1331,7 +1344,6 @@ def test_merged_rows_without_aligned_words_place_markers_at_end() -> None:
 
 
 def test_end_style_marker_follows_start_marker() -> None:
-    # Reordered words can predict the end marker before the start marker
     source = "This is the big dog."
     pretranslation = "Este es el perro grande."
     align_info = PlaceMarkersAlignmentInfo(
@@ -1362,6 +1374,11 @@ def test_end_style_marker_follows_start_marker() -> None:
 
 def scr_ref(*refs: str) -> List[ScriptureRef]:
     return [ScriptureRef.parse(ref) for ref in refs]
+
+
+def get_alignment_info(block: UsfmUpdateBlock) -> Optional[PlaceMarkersAlignmentInfo]:
+    row_alignment_infos = _get_row_alignment_infos(block)
+    return None if row_alignment_infos is None else _get_block_alignment_info(block, row_alignment_infos)
 
 
 def create_alignment_info(source: str, translation: str, alignment: str) -> PlaceMarkersAlignmentInfo:

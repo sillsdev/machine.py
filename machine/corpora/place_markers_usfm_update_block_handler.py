@@ -24,7 +24,7 @@ class PlaceMarkersAlignmentInfo(TypedDict):
     style_behavior: UpdateUsfmMarkerBehavior
 
 
-def _get_alignment_info(block: UsfmUpdateBlock) -> Optional[PlaceMarkersAlignmentInfo]:
+def _get_row_alignment_infos(block: UsfmUpdateBlock) -> Optional[List[PlaceMarkersAlignmentInfo]]:
     infos: List[PlaceMarkersAlignmentInfo] = []
     for row in block.rows:
         # Rows that contributed no text, such as the later verses of a verse range, have nothing to align
@@ -36,18 +36,21 @@ def _get_alignment_info(block: UsfmUpdateBlock) -> Optional[PlaceMarkersAlignmen
                 "Markers were not placed for %s because a row with text has no alignment info.", _format_refs(block)
             )
             return None
-        _check_aligned_word_pairs(block, info)
-        # Each row's alignment info describes only that row's text, so it is merged even if another row has the
-        # same info, e.g. for repeated text
         infos.append(info)
+    return infos if len(infos) > 0 else None
 
-    if len(infos) == 0:
-        return None
-    # A block matched by several rows, e.g. a verse range, has those rows' texts concatenated
-    alignment_info = infos[0] if len(infos) == 1 else _merge_alignment_infos(infos)
+
+def _get_block_alignment_info(
+    block: UsfmUpdateBlock, row_alignment_infos: Sequence[PlaceMarkersAlignmentInfo]
+) -> PlaceMarkersAlignmentInfo:
+    # Checked before merging, which would shift a pair outside a row's tokens into the next row's tokens
+    for info in row_alignment_infos:
+        _check_aligned_word_pairs(block, info)
+    alignment_info = (
+        row_alignment_infos[0] if len(row_alignment_infos) == 1 else _merge_alignment_infos(row_alignment_infos)
+    )
     alignment = alignment_info["alignment"]
     if not any(alignment.is_row_aligned(i) for i in range(alignment.row_count)):
-        # Markers are still placed, but with nothing to align them to, they all go at the end of the text
         logger.warning(
             "The alignment for %s has no aligned words, so its markers were placed at the end of its text.",
             _format_refs(block),
@@ -96,22 +99,25 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
     def process_block(self, block: UsfmUpdateBlock) -> UsfmUpdateBlock:
         elements = list(block.elements)
 
-        # Nothing to do if there are no markers to place or no alignment to use.
-        # Check for markers first, so that blocks without any don't log warnings about their alignment,
-        # then again with the alignment info's behaviors, which can only rule out more markers.
+        # Nothing to do if there are no markers to place or no alignment to use
+        # Checked before reading any alignment info, so that blocks without markers don't warn about it
         if not any(
             e.is_placeable(UpdateUsfmMarkerBehavior.PRESERVE, UpdateUsfmMarkerBehavior.PRESERVE) for e in elements
         ):
             return block
 
-        alignment_info = _get_alignment_info(block)
-        if alignment_info is None:
+        row_alignment_infos = _get_row_alignment_infos(block)
+        if row_alignment_infos is None:
             return block
 
-        if not any(
-            e.is_placeable(alignment_info["paragraph_behavior"], alignment_info["style_behavior"]) for e in elements
-        ):
+        # The same behaviors as the merged alignment info, which takes them from the first row
+        paragraph_behavior = row_alignment_infos[0]["paragraph_behavior"]
+        style_behavior = row_alignment_infos[0]["style_behavior"]
+        if not any(e.is_placeable(paragraph_behavior, style_behavior) for e in elements):
             return block
+
+        # The alignment is checked only now, so that a block with nothing to place can't fail on it
+        alignment_info = _get_block_alignment_info(block, row_alignment_infos)
 
         # Paragraph markers at the end of the block should stay there
         # Section headers should be ignored but re-inserted in the same position relative to other paragraph markers
@@ -197,8 +203,7 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
 
         # Predict marker placements and get insertion order
         to_insert = []
-        # The predicted target token of each open style marker, by marker
-        open_style_trg_toks: Dict[str, List[int]] = {}
+        open_style_trg_toks_by_marker: Dict[str, List[int]] = {}
         for element, adj_src_tok in zip(to_place, adj_src_toks):
             adj_trg_tok = self._predict_marker_location(alignment_info["alignment"], adj_src_tok, src_toks, trg_toks)
 
@@ -212,15 +217,15 @@ class PlaceMarkersUsfmUpdateBlockHandler(UsfmUpdateBlockHandler):
             if element.type == UsfmUpdateBlockElementType.STYLE:
                 marker = element.tokens[0].marker
                 if is_end_style:
-                    opening_trg_toks = open_style_trg_toks.get(marker[:-1])
+                    opening_trg_toks = open_style_trg_toks_by_marker.get(marker[:-1])
                     if opening_trg_toks:
-                        # Move a misplaced closing style marker to one token after its opening marker
+                        # Reordered words can predict a closing marker before its opening one
                         adj_trg_tok = max(adj_trg_tok, opening_trg_toks.pop() + 1)
                 else:
-                    open_style_trg_toks.setdefault(marker, []).append(adj_trg_tok)
+                    open_style_trg_toks_by_marker.setdefault(marker, []).append(adj_trg_tok)
 
             if is_end_style and 0 < adj_trg_tok <= len(trg_toks):
-                # Place closing style marker at the end of the token
+                # Insert end tokens directly after the token they follow
                 trg_str_idx = trg_tok_starts[adj_trg_tok - 1] + len(trg_toks[adj_trg_tok - 1])
             elif adj_trg_tok < len(trg_tok_starts):
                 trg_str_idx = trg_tok_starts[adj_trg_tok]

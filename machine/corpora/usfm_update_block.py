@@ -19,14 +19,12 @@ class UsfmUpdateBlock:
         self,
         refs: Iterable[ScriptureRef] = [],
         elements: Iterable[UsfmUpdateBlockElement] = [],
-        # Keyword-only, so that a metadata dict passed where it used to go is rejected
         *,
         rows: Iterable[UsfmUpdateBlockRow] = [],
     ) -> None:
         self._refs: list[ScriptureRef] = list(refs)
         self._elements: list[UsfmUpdateBlockElement] = list(elements)
-        # One entry per row matched to this block, in order. A verse range can be matched by
-        # several rows, in which case this block's text is those rows' texts concatenated.
+        # Several rows can match a verse range, and this block's text is their texts concatenated in order
         self._rows: list[UsfmUpdateBlockRow] = list(rows)
 
     @property
