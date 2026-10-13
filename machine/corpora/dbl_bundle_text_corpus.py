@@ -1,5 +1,5 @@
 import os
-from io import BufferedReader, TextIOWrapper
+from io import TextIOWrapper
 from typing import List
 from xml.etree import ElementTree
 from zipfile import ZipFile
@@ -31,9 +31,7 @@ class DblBundleTextCorpus(ScriptureTextCorpus):
                 with open_bounded_stream(archive, versification_entry) as stream:
                     abbr = doc.getroot().findtext("./identification/abbreviation", "")
                     versification = Versification.parse(
-                        TextIOWrapper(BufferedReader(stream), encoding="utf-8-sig"),
-                        "versification.vrs",
-                        fallback_name=abbr,
+                        TextIOWrapper(stream, encoding="utf-8-sig"), "versification.vrs", fallback_name=abbr
                     )
             else:
                 versification = ENGLISH_VERSIFICATION
