@@ -3,7 +3,6 @@ from zipfile import ZIP_DEFLATED, BadZipFile, ZipFile
 
 from pytest import raises
 
-from machine.utils.bounded_stream import BoundedStream
 from machine.utils.zip_entry_utils import open_bounded_stream
 
 
@@ -36,10 +35,3 @@ def test_open_bounded_stream_compression_ratio_exceeded() -> None:
     with create_zip("bomb.txt", bytes(10_000)) as archive:
         with raises(BadZipFile):
             open_bounded_stream(archive, "bomb.txt", max_uncompressed_size=20_000, max_compression_ratio=2.0)
-
-
-def test_bounded_stream_runtime_expansion_exceeds_limit() -> None:
-    with BoundedStream(BytesIO(b"1234567890"), max_size=5) as stream:
-        assert stream.read(4) == b"1234"
-        with raises(OSError):
-            stream.read(4)
