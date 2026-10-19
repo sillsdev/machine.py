@@ -25,13 +25,23 @@ if [ "$agent_strict" = true ]; then
   fi
 fi
 
+# Every step runs even after one fails, and the last line names the failures, so
+# output read through tail cannot pass off a pyright failure as a pytest pass.
+failed=()
+
 echo "======================= black ======================"
-poetry run black .
+poetry run black . || failed+=(black)
 echo "======================= flake8 ======================"
-poetry run flake8 .
+poetry run flake8 . || failed+=(flake8)
 echo "======================= isort ======================"
-poetry run isort .
+poetry run isort . || failed+=(isort)
 echo "======================= pyright ======================"
-poetry run pyright
+poetry run pyright || failed+=(pyright)
 echo "======================= pytest ======================"
-poetry run pytest
+poetry run pytest || failed+=(pytest)
+
+if [ "${#failed[@]}" -ne 0 ]; then
+  echo "local_check: FAILED (${failed[*]})"
+  exit 1
+fi
+echo "local_check: PASSED"

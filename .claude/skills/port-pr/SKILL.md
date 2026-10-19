@@ -99,8 +99,9 @@ poetry run pytest
 ```
 
 `black` and `isort` rewrite files in place; `flake8` and `pyright` are gates that must pass
-clean. Fix any formatting, lint, type, or test failures before proceeding. Report the test
-results plainly (pass/fail counts); don't claim success if anything failed.
+clean. Fix any formatting, lint, type, or test failures before proceeding. Finish with
+`./local_check.sh --agent-strict` and report its last line, `local_check: PASSED` or
+`local_check: FAILED (<steps>)`. A pytest count is not a pass: pyright can fail above it.
 
 ## Step 6 — Commit, push, open PR (pause first)
 
