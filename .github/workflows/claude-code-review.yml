@@ -20,13 +20,55 @@ env:
   PYTHON_VERSION: "3.12"
 
 jobs:
+  # A rebase or a merge from main that keeps the PR's changes needs no new round. It
+  # compares with the last summary's commit: a quick rebase can cancel the round before it.
+  changes:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+    outputs:
+      review: ${{ steps.compare.outputs.review }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Compare with the last reviewed commit
+        id: compare
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          BASE: ${{ github.event.pull_request.base.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          reviewed=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR/comments" \
+            --jq '.[] | select(.user.login == "claude[bot]") | .body' \
+            | grep -oE 'Reviewed at [0-9a-f]{40}' | tail -n 1 | cut -d' ' -f3)
+          pr_patch_id() {
+            git diff "$(git merge-base "origin/$BASE" "$1")" "$1" | git patch-id --stable
+          }
+          if [ -n "$reviewed" ] && git fetch --quiet origin "$reviewed" \
+            && [ "$(pr_patch_id "$reviewed")" = "$(pr_patch_id "$HEAD_SHA")" ]; then
+            echo "The changes at $HEAD_SHA match those reviewed at $reviewed; skipping the review."
+            echo "review=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "review=true" >> "$GITHUB_OUTPUT"
+          fi
+
   claude-review:
+    needs: changes
     # Secrets are not available to workflows triggered by pull requests from forked
     # repositories, so only review pull requests from branches in this repository.
     # This also keeps `poetry install` below from running build hooks authored by
     # someone without push access, and keeps AGENTS.md trusted: CLAUDE.md is
     # restored from main, but the AGENTS.md it imports comes from the PR head.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      needs.changes.outputs.review == 'true'
 
     runs-on: ubuntu-latest
     permissions:
@@ -34,6 +76,7 @@ jobs:
       pull-requests: read
       issues: read
       id-token: write
+      actions: read # Lets the reviewer cite CI results in place of running local_check.sh
 
     steps:
       - name: Checkout repository
@@ -75,6 +118,8 @@ jobs:
           # A push by the @claude workflow makes claude[bot] the actor, which the action
           # rejects unless allowed. The review never pushes, so it cannot retrigger itself.
           allowed_bots: claude
+          additional_permissions: |
+            actions: read
           # pr-review has the built-in code-review skill find and verify at "high"
           # effort, then sets what gets posted. The code-review plugin this replaces
           # dropped anything under 80 on its confidence rubric.
@@ -84,7 +129,21 @@ jobs:
           # behavior and cost can change with no commit here.
           claude_args: >-
             --model opus
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr list:*),Bash(gh api:*),Bash(gh search:*),Bash(git log:*),Bash(git blame:*),Bash(git show:*),Bash(git diff:*),Bash(poetry run:*),Bash(.venv/bin/python:*)"
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr list:*),Bash(gh pr checks:*),Bash(gh api:*),Bash(gh search:*),Bash(git log:*),Bash(git blame:*),Bash(git show:*),Bash(git diff:*),Bash(poetry run:*),Bash(.venv/bin/python:*)"
+            --append-system-prompt "Allowed commands match by prefix, so run poetry run and .venv/bin/python from the repository root as they are, not after cd or inside a wrapper such as timeout."
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
 
+      # The action hides Claude's output, so the log does not say which calls were denied.
+      # Only the command or target is printed, never file content, and @json keeps it on one
+      # line so a denied command cannot issue a "::" workflow command.
+      - name: Show denied tool calls
+        if: always() && steps.claude-review.outputs.execution_file != ''
+        continue-on-error: true
+        env:
+          EXECUTION_FILE: ${{ steps.claude-review.outputs.execution_file }}
+        run: >-
+          jq -r '.[] | select(.type == "result") | .permission_denials[]?
+          | "\(.tool_name): \((.tool_input.command? // .tool_input.file_path? // .tool_input.url?
+          // .tool_input.pattern? // "") | @json | .[:300])"'
+          "$EXECUTION_FILE"
