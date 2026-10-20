@@ -63,7 +63,7 @@ jobs:
     needs: changes
     # Secrets are not available to workflows triggered by pull requests from forked
     # repositories, so only review pull requests from branches in this repository.
-    # This also keeps `poetry install` below from running build hooks authored by
+    # This also keeps `uv sync` below from running build hooks authored by
     # someone without push access, and keeps AGENTS.md trusted: CLAUDE.md is
     # restored from main, but the AGENTS.md it imports comes from the PR head.
     if: >-
@@ -86,29 +86,17 @@ jobs:
           # the base branch locally rather than only seeing the PR's final state.
           fetch-depth: 0
 
-      - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v6
+      - name: Install uv and Python ${{ env.PYTHON_VERSION }}
+        uses: astral-sh/setup-uv@v10.2.0
         with:
+          version: 0.12.17
           python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 2.4.1
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
-
-      - name: Restore virtualenv
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: review-venv-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('poetry.lock') }}
+          enable-cache: true
 
       # Gives the reviewer an interpreter to falsify its own findings with. It is not
       # here to lint or run the suite -- the CI build already does both.
       - name: Install dependencies
-        run: poetry install --no-interaction --all-extras
+        run: uv sync --locked --all-extras
 
       - name: Run Claude Code Review
         id: claude-review
@@ -129,8 +117,8 @@ jobs:
           # behavior and cost can change with no commit here.
           claude_args: >-
             --model opus
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr list:*),Bash(gh pr checks:*),Bash(gh api:*),Bash(gh search:*),Bash(git log:*),Bash(git blame:*),Bash(git show:*),Bash(git diff:*),Bash(poetry run:*),Bash(.venv/bin/python:*)"
-            --append-system-prompt "Allowed commands match by prefix, so run poetry run and .venv/bin/python from the repository root as they are, not after cd or inside a wrapper such as timeout."
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr list:*),Bash(gh pr checks:*),Bash(gh api:*),Bash(gh search:*),Bash(git log:*),Bash(git blame:*),Bash(git show:*),Bash(git diff:*),Bash(uv run:*),Bash(.venv/bin/python:*)"
+            --append-system-prompt "Allowed commands match by prefix, so run uv run and .venv/bin/python from the repository root as they are, not after cd or inside a wrapper such as timeout."
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
 
