@@ -22,6 +22,7 @@ from typing import (
 from ..scripture.verse_ref import VerseRef
 from ..tokenization.detokenizer import Detokenizer
 from ..tokenization.tokenizer import Tokenizer
+from ..translation.llm.example import Example
 from ..utils.context_managed_generator import ContextManagedGenerator
 from .aligned_word_pair import AlignedWordPair
 from .corpora_utils import get_split_indices
@@ -508,6 +509,11 @@ class ParallelTextCorpus(Corpus[ParallelTextRow]):
                     yield key, example
 
         return IterableDataset(ExamplesIterable(iterable, {}), info, split)  # type: ignore
+
+    def to_examples(self) -> Iterable[Example]:
+        with self.get_rows() as rows:
+            for row in rows:
+                yield Example(row.source_text, row.target_text)
 
 
 class _TransformParallelTextCorpus(ParallelTextCorpus):
