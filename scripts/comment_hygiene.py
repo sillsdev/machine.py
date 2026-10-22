@@ -468,7 +468,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     _report(violations, advisory=args.advisory)
     print()
     print("The standard is .claude/skills/code-comments/SKILL.md.")
-    print("Reproduce locally with: poetry run python scripts/comment_hygiene.py")
+    print("Reproduce locally with: uv run python scripts/comment_hygiene.py")
 
     if args.advisory:
         print("Advisory only; not failing the run.")

@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Separate from CI build so the report does not wait on the Poetry install and
+  # Separate from CI build so the report does not wait on the uv sync and
   # the test matrix. The checker is standard library only, so it needs no
   # dependencies of its own.
   comment_hygiene:

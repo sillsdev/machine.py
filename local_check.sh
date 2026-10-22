@@ -15,11 +15,11 @@ if [ "$#" -ne 0 ]; then
   exit 2
 fi
 
-poetry install --all-extras
+uv sync --all-extras
 
 if [ "$agent_strict" = true ]; then
   echo "=================== comment hygiene ================="
-  poetry run python scripts/comment_hygiene.py
+  uv run python scripts/comment_hygiene.py
   if [ $? -ne 0 ]; then
     exit 1
   fi
@@ -30,15 +30,15 @@ fi
 failed=()
 
 echo "======================= black ======================"
-poetry run black . || failed+=(black)
+uv run black . || failed+=(black)
 echo "======================= flake8 ======================"
-poetry run flake8 . || failed+=(flake8)
+uv run flake8 . || failed+=(flake8)
 echo "======================= isort ======================"
-poetry run isort . || failed+=(isort)
+uv run isort . || failed+=(isort)
 echo "======================= pyright ======================"
-poetry run pyright || failed+=(pyright)
+uv run pyright || failed+=(pyright)
 echo "======================= pytest ======================"
-poetry run pytest || failed+=(pytest)
+uv run pytest || failed+=(pytest)
 
 if [ "${#failed[@]}" -ne 0 ]; then
   echo "local_check: FAILED (${failed[*]})"

@@ -140,8 +140,5 @@ out/
 # omit IDE data
 .idea/
 
-# Ignore Poetry plugins
-.poetry/
-
 # Local, generated review summaries
 .review/
