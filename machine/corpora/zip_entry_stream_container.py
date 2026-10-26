@@ -5,6 +5,7 @@ from typing import Any, BinaryIO
 from zipfile import ZipFile
 
 from ..utils.typeshed import StrPath
+from ..utils.zip_entry_utils import open_bounded_stream
 from .stream_container import StreamContainer
 
 
@@ -20,7 +21,8 @@ class ZipEntryStreamContainer(StreamContainer):
         self.close()
 
     def open_stream(self) -> BinaryIO:
-        return BytesIO(self._archive.read(self._entry))
+        with open_bounded_stream(self._archive, self._entry) as stream:
+            return BytesIO(stream.read())
 
     def close(self) -> None:
         self._archive.close()

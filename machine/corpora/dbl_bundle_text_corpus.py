@@ -7,6 +7,7 @@ from zipfile import ZipFile
 from ..scripture import ENGLISH_VERSIFICATION
 from ..scripture.verse_ref import Versification
 from ..utils.typeshed import StrPath
+from ..utils.zip_entry_utils import open_bounded_stream
 from .scripture_text_corpus import ScriptureTextCorpus
 from .usx_zip_text import UsxZipText
 
@@ -16,7 +17,7 @@ class DblBundleTextCorpus(ScriptureTextCorpus):
 
     def __init__(self, filename: StrPath) -> None:
         with ZipFile(filename, "r") as archive:
-            with archive.open("metadata.xml", "r") as stream:
+            with open_bounded_stream(archive, "metadata.xml") as stream:
                 doc = ElementTree.parse(stream)
             version = doc.getroot().get("version", "2.0")
             parts = version.split(".", maxsplit=3)
@@ -27,7 +28,7 @@ class DblBundleTextCorpus(ScriptureTextCorpus):
                 (zi for zi in archive.filelist if os.path.basename(zi.filename) == "versification.vrs"), None
             )
             if versification_entry is not None:
-                with archive.open(versification_entry, "r") as stream:
+                with open_bounded_stream(archive, versification_entry) as stream:
                     abbr = doc.getroot().findtext("./identification/abbreviation", "")
                     versification = Versification.parse(
                         TextIOWrapper(stream, encoding="utf-8-sig"), "versification.vrs", fallback_name=abbr

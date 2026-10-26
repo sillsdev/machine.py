@@ -32,14 +32,17 @@ gh issue view <ISSUE> --json title,body,labels
 ## Step 2 — Understand the source change
 
 ```bash
-gh pr view <PR> --repo sillsdev/machine --json title,body,files,commits
+gh pr view <PR> --repo sillsdev/machine --json title,body,files,commits,mergeCommit
 gh pr diff <PR> --repo sillsdev/machine
 ```
 
-Read the full diff. For each changed C# file, open the corresponding file(s) in
-`../machine` to understand the surrounding context, and identify the Python counterpart
-(see mapping below). Read the existing Python code you're about to change so the port
-matches local idiom.
+Read the full diff. For each changed C# file, read the corresponding file(s) in
+`../machine` as of the merge commit, with `git -C ../machine show <mergeCommit>:<path>`,
+to understand the surrounding context. The working tree may have moved on since the PR
+merged. First check the commit with `git -C ../machine cat-file -e <mergeCommit>`. If it
+fails, the clone predates the merge: run `git -C ../machine fetch`. Identify the Python
+counterpart (see mapping below). Read the existing Python code you're about to change so
+the port matches local idiom.
 
 Note: not every change ports. Skip C#-only concerns (`.csproj`/`.sln`/`Directory.*.props`,
 `AssemblyInfo`, `omnisharp.json`, csharpier/editorconfig formatting, NuGet packaging).
@@ -55,7 +58,7 @@ intentionally skip.
 | `PascalCase` methods / `camelCase` locals / `_camelCase` fields | `snake_case` functions/vars |
 | `IReadOnlyList<T>` / `IDictionary<,>` / `ISet<T>` etc. | `Sequence[T]`/`list` / `Mapping`/`dict` / `Set`/`set` etc. |
 | NUnit `Assert.That(...)` | pytest plain `assert` (check neighboring test files) |
-| `AssemblyInfo`/`.csproj` `<Version>` | `pyproject.toml` `version` (poetry) |
+| `AssemblyInfo`/`.csproj` `<Version>` | `pyproject.toml` `version` |
 
 The top-level Python areas are: `annotations`, `clusterers`, `corpora`, `jobs`,
 `optimization`, `punctuation_analysis`, `scripture`, `sequence_alignment`, `statistics`,
@@ -87,17 +90,18 @@ Apply the ported changes with Edit/Write.
 Install, format, lint, type-check, and test (this is `local_check.sh`):
 
 ```bash
-poetry install
-poetry run black .
-poetry run flake8 .
-poetry run isort .
-poetry run pyright
-poetry run pytest
+uv sync --all-extras
+uv run black .
+uv run flake8 .
+uv run isort .
+uv run pyright
+uv run pytest
 ```
 
 `black` and `isort` rewrite files in place; `flake8` and `pyright` are gates that must pass
-clean. Fix any formatting, lint, type, or test failures before proceeding. Report the test
-results plainly (pass/fail counts); don't claim success if anything failed.
+clean. Fix any formatting, lint, type, or test failures before proceeding. Finish with
+`./local_check.sh --agent-strict` and report its last line, `local_check: PASSED` or
+`local_check: FAILED (<steps>)`. A pytest count is not a pass: pyright can fail above it.
 
 ## Step 6 — Commit, push, open PR (pause first)
 

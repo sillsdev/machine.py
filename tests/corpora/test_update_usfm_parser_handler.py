@@ -16,6 +16,7 @@ from machine.corpora import (
     UsfmUpdateBlockElementType,
     UsfmUpdateBlockHandler,
 )
+from machine.scripture import ORIGINAL_VERSIFICATION
 
 
 def test_get_usfm_verse_char_style() -> None:
@@ -1752,6 +1753,36 @@ def test_unclosed_style_marker_does_not_consume_next_paragraph_marker() -> None:
 \d New title
 \q1
 \v 1 New verse 1
+"""
+    assert_usfm_equals(target, result)
+
+
+def test_update_usfm_converts_to_rows_versification() -> None:
+    # Original vs. English
+    # MAL 4:1 = MAL 3:19
+    rows = [
+        UpdateUsfmRow(scr_ref("MAL 3:18"), "New 18"),
+        UpdateUsfmRow(scr_ref("MAL 4:1"), "New 1"),
+    ]
+    source = r"""\id MAL - Test
+\c 3
+\p
+\v 18 Old 18
+\v 19 Old 19
+"""
+    settings = DefaultParatextProjectSettings(
+        versification=ORIGINAL_VERSIFICATION, file_name_form="MAT", file_name_suffix=""
+    )
+    updater = MemoryParatextProjectTextUpdater({"MAL": source.replace("\n", "\r\n")}, settings)
+    target = updater.update_usfm("MAL", rows, text_behavior=UpdateUsfmTextBehavior.PREFER_NEW)
+
+    result = r"""\id MAL - Test
+\c 3
+\p
+\v 18 New 18
+\c 4
+\nb
+\v 1 New 1
 """
     assert_usfm_equals(target, result)
 

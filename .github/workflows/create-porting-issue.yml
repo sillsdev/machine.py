@@ -10,7 +10,10 @@ permissions:
 
 jobs:
   create-port-issue:
-    if: github.event.pull_request.merged == true
+    # Porting is the default. The no porting label opts a PR out.
+    if: |
+      github.event.pull_request.merged == true &&
+      !contains(github.event.pull_request.labels.*.name, 'no porting')
     runs-on: ubuntu-latest
 
     steps:

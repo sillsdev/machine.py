@@ -2,11 +2,12 @@ from abc import ABC
 from typing import Callable, Iterable, List, Optional, Sequence, Tuple, Union
 
 from ..utils.string_utils import parse_integer
+from .convert_usfm_versification_handler import ConvertUsfmVersificationHandler
 from .paratext_project_file_handler import ParatextProjectFileHandler
 from .paratext_project_settings import ParatextProjectSettings
 from .paratext_project_settings_parser_base import ParatextProjectSettingsParserBase
 from .update_usfm_behavior import UpdateUsfmMarkerBehavior, UpdateUsfmTextBehavior
-from .update_usfm_parser_handler import UpdateUsfmParserHandler, UpdateUsfmRow
+from .update_usfm_parser_handler import UpdateUsfmParserHandler, UpdateUsfmRow, get_rows_versification
 from .usfm_parser import parse_usfm
 from .usfm_token import UsfmTokenType
 from .usfm_tokenizer import UsfmToken, UsfmTokenizer
@@ -63,7 +64,15 @@ class ParatextProjectTextUpdaterBase(ABC):
             tokenizer = UsfmTokenizer(self._settings.stylesheet)
             tokens = tokenizer.tokenize(usfm)
             tokens = filter_tokens_by_chapter(tokens, chapters)
-            parse_usfm(tokens, handler, self._settings.stylesheet, self._settings.versification)
+
+            rows_versification = get_rows_versification(rows)
+            parse_versification = self._settings.versification
+            if rows_versification != self._settings.versification:
+                converter = ConvertUsfmVersificationHandler(rows_versification)
+                parse_usfm(tokens, converter, self._settings.stylesheet, self._settings.versification)
+                tokens = converter.tokens
+                parse_versification = rows_versification
+            parse_usfm(tokens, handler, self._settings.stylesheet, parse_versification)
             return handler.get_usfm(self._settings.stylesheet)
         except Exception as e:
             error_message = (

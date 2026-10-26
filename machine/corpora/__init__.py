@@ -2,6 +2,7 @@ from .aligned_word_pair import AlignedWordPair
 from .alignment_collection import AlignmentCollection
 from .alignment_corpus import AlignmentCorpus
 from .alignment_row import AlignmentRow
+from .convert_usfm_versification_handler import ConvertUsfmVersificationHandler
 from .corpora_utils import batch
 from .corpus import Corpus
 from .dbl_bundle_text_corpus import DblBundleTextCorpus
@@ -99,6 +100,7 @@ __all__ = [
     "AlignmentCorpus",
     "AlignmentRow",
     "batch",
+    "ConvertUsfmVersificationHandler",
     "Corpus",
     "create_versification_ref_corpus",
     "TextRowContentType",
