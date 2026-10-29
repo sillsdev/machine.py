@@ -1,14 +1,18 @@
 import sys
 
+from testutils.hugging_face_nmt_test_helpers import create_tiny_nllb_model
+
 if sys.platform == "darwin":
     from pytest import skip
 
     skip("skipping Hugging Face tests on MacOS", allow_module_level=True)
 
 from math import exp, log
+from tempfile import TemporaryDirectory
 from typing import Any, Dict, Optional
 
-from pytest import approx, mark, raises
+import torch  # pyright: ignore[reportMissingImports]
+from pytest import MonkeyPatch, approx, mark, raises
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 from machine.translation.huggingface import HuggingFaceNmtEngine, SilTranslationPipeline
@@ -51,6 +55,39 @@ def test_translate_n_batch_beam(output_attentions: bool) -> None:
         assert results[1][1].confidences[0] == approx(1.08e-05, 0.01)
         assert str(results[1][1].alignment) == ("0-0 0-1 0-2 0-3 0-7 3-4 3-5 3-6" if output_attentions else "")
         assert results[1][1].sequence_confidence == approx(_get_sequence_confidence(results[0][0]), 0.01)
+
+
+def test_translate_n_batch_oom_retains_mpn(monkeypatch: MonkeyPatch) -> None:
+    with TemporaryDirectory() as model_dir:
+        create_tiny_nllb_model(model_dir)
+        with HuggingFaceNmtEngine(
+            model_dir,
+            src_lang="eng_Latn",
+            tgt_lang="spa_Latn",
+            batch_size=2,
+            oom_batch_size_backoff_mult=0.5,
+            output_attentions=False,
+        ) as engine:
+            original_mpn = engine._mpn
+            assert original_mpn is not None
+            assert engine._pipeline._mpn is original_mpn
+
+            calls = 0
+
+            def fake_try_translate_n_batch(n: int, segments: Any) -> Any:
+                nonlocal calls
+                calls += 1
+                if calls == 1:
+                    raise torch.cuda.OutOfMemoryError
+                assert engine._pipeline._mpn is original_mpn
+                return [[] for _ in segments]
+
+            monkeypatch.setattr(engine, "_try_translate_n_batch", fake_try_translate_n_batch)
+
+            results = engine.translate_n_batch(1, ["This", "is", "a", "test", "."])
+            assert engine._pipeline._mpn is original_mpn
+            assert calls == 6  # 1 OOM call + 5 segments at batch size 1
+            assert results == [[], [], [], [], []]
 
 
 @mark.parametrize("output_attentions", [True, False])
