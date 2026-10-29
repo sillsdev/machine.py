@@ -157,6 +157,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
                 self._pipeline = SilTranslationPipeline(
                     model=self._model,
                     tokenizer=self._tokenizer,
+                    mpn=self._mpn,
                     batch_size=self._batch_size,
                     **self._pipeline_kwargs,
                 )
