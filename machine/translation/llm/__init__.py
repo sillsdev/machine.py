@@ -8,8 +8,11 @@ from .example import Example
 from .example_retriever import ExampleRetriever
 from .example_retriever_factory import ExampleRetrieverFactory
 from .example_retriever_method import ExampleRetrievalMethod
+from .llm_completion_client import Completion, LlmCompletionClient, TokenLogprob
+from .openrouter_llm_completion_client import OpenRouterLlmCompletionClient, ContentBlockError
 from .tfidf_example_retriever import TfidfExampleRetriever
 from .top_k_example_retriever import TopKExampleRetriever
+from .openrouter_llm_completion_client import ContentBlockError, OpenRouterLlmCompletionClient
 
 __all__ = [
     "CoverageExampleRetriever",
@@ -17,6 +20,11 @@ __all__ = [
     "ExampleRetrieverFactory",
     "ExampleRetrievalMethod",
     "ExampleRetriever",
+    "ContentBlockError",
+    "Completion",
+    "LlmCompletionClient",
+    "OpenRouterLlmCompletionClient",
+    "TokenLogprob",
     "TfidfExampleRetriever",
     "TopKExampleRetriever",
 ]
