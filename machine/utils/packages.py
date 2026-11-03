@@ -23,3 +23,7 @@ def is_tensorflow_available() -> bool:
 
 def is_sentencepiece_available() -> bool:
     return find_spec("sentencepiece") is not None
+
+
+def is_sklearn_available() -> bool:
+    return find_spec("sklearn") is not None
