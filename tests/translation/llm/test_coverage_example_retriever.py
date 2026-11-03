@@ -45,13 +45,13 @@ def test_coverage_retriever_keeps_repeated_sources_with_different_targets():
 def test_coverage_retriever_excludes_copies_of_the_excluded_example():
     examples = [Example("apple pie", "tarte"), Example("apple pie", "tarte"), Example("banana split", "banane")]
 
-    assert CoverageExampleRetriever(examples).rank("apple pie", 2, exclude=0) == [examples[2]]
+    assert CoverageExampleRetriever(examples).rank("apple pie", 2, exclude_example=examples[0]) == [examples[2]]
 
 
 def test_coverage_retriever_finds_nothing_when_all_remaining_examples_are_copies():
     examples = [Example("apple pie", "tarte"), Example("apple pie", "tarte")]
 
-    assert CoverageExampleRetriever(examples).rank("apple pie", 1, exclude=0) == []
+    assert CoverageExampleRetriever(examples).rank("apple pie", 1, exclude_example=examples[0]) == []
 
 
 def test_coverage_retriever_matches_a_script_without_spaces():

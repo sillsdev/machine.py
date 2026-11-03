@@ -1,4 +1,4 @@
-from typing import Iterable, List, Optional, cast
+from typing import List, cast
 
 import numpy as np
 from scipy.sparse import csr_matrix
@@ -11,15 +11,13 @@ from .top_k_example_retriever import TopKExampleRetriever
 
 class TfidfExampleRetriever(TopKExampleRetriever):
 
-    def __init__(self, examples: Iterable[Example]) -> None:
-        super().__init__(examples)
+    def __init__(self, examples: List[Example]) -> None:
         self._latin_tokenizer = LatinWordTokenizer()
-        self._vectorizer: Optional[TfidfVectorizer] = None
-        self._matrix: Optional[csr_matrix] = None
+        super().__init__(examples)
 
     def _fit(self) -> None:
         # TfidfVectorizer rejects a corpus with nothing to put in its vocabulary.
-        sources = [ex.source for ex in self.examples]
+        sources = [ex.source for ex in self._examples]
         if not any(self._tokenize(source) for source in sources):
             self._vectorizer = None
             self._matrix = None
@@ -32,11 +30,7 @@ class TfidfExampleRetriever(TopKExampleRetriever):
     def _score_examples(self, query: str) -> np.ndarray:
         if self._matrix is None or self._vectorizer is None:
             return np.array([])
-        index_of_query = next((i for i, ex in enumerate(self.examples) if ex.source == query), -1)
-        if index_of_query != -1:
-            vector: csr_matrix = self._matrix[index_of_query]
-        else:
-            vector = cast(csr_matrix, self._vectorizer.transform([query]))
+        vector = cast(csr_matrix, self._vectorizer.transform([query]))
         return (self._matrix @ vector.T).toarray().ravel()
 
     def _tokenize(self, text: str) -> List[str]:

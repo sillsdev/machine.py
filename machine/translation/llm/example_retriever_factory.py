@@ -1,15 +1,15 @@
-from typing import Iterable
+from typing import List
 
 from .coverage_example_retriever import CoverageExampleRetriever
 from .example import Example
 from .example_retriever_method import ExampleRetrievalMethod
-from .lazy_example_retriever import LazyExampleRetriever
+from .example_retriever import ExampleRetriever
 from .tfidf_example_retriever import TfidfExampleRetriever
 
 
 class ExampleRetrieverFactory:
     @staticmethod
-    def create_example_retriever(method: ExampleRetrievalMethod, examples: Iterable[Example]) -> LazyExampleRetriever:
+    def create_example_retriever(method: ExampleRetrievalMethod, examples: List[Example]) -> ExampleRetriever:
         match method:
             case ExampleRetrievalMethod.TFIDF:
                 return TfidfExampleRetriever(examples)
