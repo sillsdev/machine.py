@@ -2,8 +2,8 @@ from typing import List
 
 from .coverage_example_retriever import CoverageExampleRetriever
 from .example import Example
-from .example_retriever_method import ExampleRetrievalMethod
 from .example_retriever import ExampleRetriever
+from .example_retriever_method import ExampleRetrievalMethod
 from .tfidf_example_retriever import TfidfExampleRetriever
 
 
