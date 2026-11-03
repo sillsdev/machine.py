@@ -55,8 +55,12 @@ class ScriptureRefUsfmParserHandlerBase(UsfmParserHandler, ABC):
         # Non-latin numbers are implicitly handled
 
         if state.chapter_has_verse_zero and state.verse_ref.verse_num == 0:
-            # Fall through for the special case of verse 0 being specified in the USFM
-            pass
+            # If there is no content preceding verse 0, start the verse text
+            if self._current_text_type == ScriptureTextType.NONE:
+                self._cur_verse_ref = state.verse_ref.copy()
+                self._start_verse_text_wrapper(state)
+                return
+            # Otherwise, fall through for the special case of verse 0 being specified in the USFM
         elif state.verse_ref == self._cur_verse_ref and not self._duplicate_verse:
             if state.verse_ref.verse_num > 0:
                 self._end_verse_text(state, self._create_verse_refs())

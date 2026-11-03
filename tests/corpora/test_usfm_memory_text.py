@@ -270,6 +270,51 @@ def test_get_rows_verse_zero_with_text():
     assert rows[1].text == "Verse one."
 
 
+def test_get_rows_verse_zero_with_no_paragraph() -> None:
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\h
+\mt
+\c 1
+\v 0 Verse zero.
+\s
+\p \v 1 Verse one.
+"""
+    )
+
+    assert len(rows) == 2, str.join(",", [tr.text for tr in rows])
+
+    assert rows[0].ref == ScriptureRef.parse("MAT 1:0")
+    assert rows[0].text == "Verse zero."
+
+    assert rows[1].ref == ScriptureRef.parse("MAT 1:1")
+    assert rows[1].text == "Verse one."
+
+
+def test_get_rows_verse_zero_range_with_no_paragraph() -> None:
+    rows: List[TextRow] = get_rows(
+        r"""\id MAT - Test
+\h
+\mt
+\c 1
+\v 0-1 Verse zero and one.
+\s
+\p \v 2 Verse two.
+"""
+    )
+
+    assert len(rows) == 3, str.join(",", [tr.text for tr in rows])
+
+    assert rows[0].ref == ScriptureRef.parse("MAT 1:0")
+    assert rows[0].text == "Verse zero and one."
+
+    assert rows[1].ref == ScriptureRef.parse("MAT 1:1")
+    assert rows[1].text == ""
+
+    assert rows[2].ref == ScriptureRef.parse("MAT 1:2")
+    assert rows[2].text == "Verse two."
+
+
 def test_get_rows_private_use_marker():
     rows: List[TextRow] = get_rows(
         r"""\id MAT - Test English Apocrypha
