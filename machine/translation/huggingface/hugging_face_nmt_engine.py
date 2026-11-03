@@ -114,13 +114,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
 
         self._oom_batch_size_backoff_mult = oom_batch_size_backoff_mult
 
-        self._pipeline = SilTranslationPipeline(
-            model=self._model,
-            tokenizer=self.tokenizer,
-            mpn=self._mpn,
-            batch_size=self._batch_size,
-            **self._pipeline_kwargs,
-        )
+        self._pipeline = self._create_pipeline()
 
     @property
     def tokenizer(self) -> PreTrainedTokenizer | PreTrainedTokenizerFast:
@@ -154,12 +148,7 @@ class HuggingFaceNmtEngine(TranslationEngine):
                     raise
                 self._batch_size = max(int(round(self._batch_size * self._oom_batch_size_backoff_mult)), 1)
                 logger.warning(f"Out of memory error caught. Reducing batch size to {self._batch_size} and retrying.")
-                self._pipeline = SilTranslationPipeline(
-                    model=self._model,
-                    tokenizer=self._tokenizer,
-                    batch_size=self._batch_size,
-                    **self._pipeline_kwargs,
-                )
+                self._pipeline = self._create_pipeline()
 
     def _try_translate_n_batch(
         self, n: int, segments: Sequence[Union[str, Sequence[str]]]
@@ -202,6 +191,15 @@ class HuggingFaceNmtEngine(TranslationEngine):
         gc.collect()
         with torch.no_grad():
             torch.cuda.empty_cache()
+
+    def _create_pipeline(self) -> SilTranslationPipeline:
+        return SilTranslationPipeline(
+            model=self._model,
+            tokenizer=self._tokenizer,
+            mpn=self._mpn,
+            batch_size=self._batch_size,
+            **self._pipeline_kwargs,
+        )
 
 
 class SilTranslationPipeline(TranslationPipeline):
