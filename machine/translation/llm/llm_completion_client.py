@@ -18,8 +18,6 @@ class Completion:
     token_logprobs: List[TokenLogprob] = field(default_factory=list)
     input_token_count: int = 0
     output_token_count: int = 0
-    # True for a reply saved by an earlier run, whose cost that run already paid.
-    reused: bool = False
 
 
 class LlmCompletionClient(ABC):
