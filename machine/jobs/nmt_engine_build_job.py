@@ -148,7 +148,7 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
         for pt_batch in batch(src_pretranslations, batch_size):
             if check_canceled is not None:
                 check_canceled()
-            source_segments = [pt_info["translation"] for pt_info in pt_batch]
+            source_segments = [_join_surrogate_pairs_if_needed(pt_info["translation"]) for pt_info in pt_batch]
             t_batch = engine.translate_batch(source_segments)
             for pt_info, result in zip(pt_batch, t_batch, strict=True):
                 pt_info["translation"] = result.translation
@@ -251,6 +251,14 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
             self._translation_file_service.save_model(
                 model_path, f"models/{self._config.save_model + ''.join(model_path.suffixes)}"
             )
+
+
+def _join_surrogate_pairs_if_needed(text: str) -> str:
+    # Check if any characters are in the UTF-16 surrogate range, and join if needed.
+    # These are not supported unjoined by UTF-8 encoding or the MBartTokenizer's Rust implementation.
+    if any(0xD800 <= ord(char) <= 0xDFFF for char in text):
+        return text.encode("utf-16", "surrogatepass").decode("utf-16")
+    return text
 
 
 def _read_pretranslations(path: Path) -> Generator[PretranslationInfo, None, None]:
