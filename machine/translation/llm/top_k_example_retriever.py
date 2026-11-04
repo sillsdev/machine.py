@@ -21,7 +21,7 @@ class TopKExampleRetriever(ExampleRetriever, ABC):
                 if exclude_indices is None or i not in exclude_indices
             ][:k]
         n = scores.shape[0]
-        available = n - len(exclude_indices) if exclude_indices is not None else 0
+        available = (n - len(exclude_indices)) if exclude_indices is not None else n
         k = min(k, available)
         if k <= 0:
             return []
