@@ -56,6 +56,40 @@ def test_run(decoy: Decoy) -> None:
     decoy.verify(env.translation_file_service.save_model(Path("model.tar.gz"), "models/save-model.tar.gz"), times=1)
 
 
+def test_run_with_surrogates(decoy: Decoy) -> None:
+    env = _TestEnvironment(
+        decoy,
+        transductive=True,
+        source_text="亚撒黑仍不肯转开。故此，押尼珥就用枪\ud863\udc54刺入他的肚腹，甚至枪从背后透出，亚撒黑就在那里仆倒而死。众人赶到亚撒黑仆倒而死的地方，就都站住。",
+    )
+    env.job.run()
+
+    pretranslations = json.loads(env.target_pretranslations)
+    assert len(pretranslations) == 1
+    assert pretranslations[0]["translation"] == "Please, I have booked a room."
+    assert pretranslations[0]["sourceTokens"] == [
+        "亚撒黑仍不肯转开",
+        "。",
+        "故此",
+        "，",
+        "押尼珥就用枪𨱔刺入他的肚腹",
+        "，",
+        "甚至枪从背后透出",
+        "，",
+        "亚撒黑就在那里仆倒而死",
+        "。",
+        "众人赶到亚撒黑仆倒而死的地方",
+        "，",
+        "就都站住",
+        "。",
+    ]
+    assert pretranslations[0]["translationTokens"] == ["Please", ",", "I", "have", "booked", "a", "room", "."]
+    assert len(pretranslations[0]["alignment"]) > 0
+    assert pretranslations[0]["sequenceConfidence"] == 0.5
+    decoy.verify(env.model.align_batch(matchers.Anything()), times=0)
+    decoy.verify(env.translation_file_service.save_model(Path("model.tar.gz"), "models/save-model.tar.gz"), times=1)
+
+
 def test_run_inductive_fallback(decoy: Decoy) -> None:
     env = _TestEnvironment(decoy, transductive=False)
     env.job.run()
@@ -114,10 +148,13 @@ class _TransductiveModel(WordAlignmentModel, TransductiveWordAlignmentModel):
     pass
 
 
-def _create_translation_result() -> TranslationResult:
+def _create_translation_result(source_text: str) -> TranslationResult:
+    # Basic tokenization of punctuation
+    for character in [",", ";", "."]:
+        source_text = source_text.replace(character, " " + character)
     return TranslationResult(
         translation="Please, I have booked a room.",
-        source_tokens="Por favor , tengo reservada una habitación .".split(),
+        source_tokens="Por favor , tengo reservada una\ud863\udc54 habitación .".split(),
         target_tokens="Please , I have booked a room .".split(),
         confidences=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
         sequence_confidence=0.5,
@@ -131,7 +168,12 @@ def _create_translation_result() -> TranslationResult:
 
 class _TestEnvironment:
     def __init__(
-        self, decoy: Decoy, transductive: bool = False, num_pretranslations: int = 1, batch_size: int = 100
+        self,
+        decoy: Decoy,
+        transductive: bool = False,
+        num_pretranslations: int = 1,
+        batch_size: int = 100,
+        source_text: str = "Por favor, tengo reservada una habitación.",
     ) -> None:
         self.source_tokenizer_trainer = decoy.mock(cls=Trainer)
         self.target_tokenizer_trainer = decoy.mock(cls=Trainer)
@@ -146,7 +188,7 @@ class _TestEnvironment:
 
         def _translate_batch(segments: List[str]) -> List[TranslationResult]:
             self.translate_batch_sizes.append(len(segments))
-            return [_create_translation_result() for _ in segments]
+            return [_create_translation_result(source_text) for _ in segments]
 
         self.engine = decoy.mock(cls=TranslationEngine)
         decoy.when(self.engine.__enter__()).then_return(self.engine)
@@ -180,7 +222,7 @@ class _TestEnvironment:
                             textId=f"text{i + 1}",
                             sourceRefs=[f"ref{i + 1}"],
                             targetRefs=[f"ref{i + 1}"],
-                            translation="Por favor, tengo reservada una habitación.",
+                            translation=source_text,
                             sourceTokens=[],
                             translationTokens=[],
                             alignment="",
