@@ -8,4 +8,4 @@ class MockExampleRetriever(TopKExampleRetriever):
         pass
 
     def _score_examples(self, query: str) -> np.ndarray:
-        return np.array([0 if query == e.source else (1 if query > e.source else -1) for e in self.examples])
+        return np.array([0 if query == e.source else (1 if query > e.source else -1) for e in self._examples])
