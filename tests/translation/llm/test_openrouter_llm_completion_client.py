@@ -2,6 +2,8 @@ from contextlib import contextmanager
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import pytest
+
 from machine.translation.llm import OpenRouterLlmCompletionClient
 from machine.translation.llm.llm_completion_client import Completion, TokenLogprob
 
@@ -73,6 +75,40 @@ def test_openrouter_client_sends_chat_request_and_maps_completion_fields():
             "stream": False,
         }
     ]
+    assert sdk_client.enter_calls == 1
+    assert sdk_client.exit_calls == 1
+
+
+def test_openrouter_client_max_tokens_is_none():
+    response = SimpleNamespace(choices=[], usage=None)
+    with _client(response) as sdk_client:
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+            client.complete([])
+
+    assert sdk_client.chat.calls == [
+        {
+            "model": "openai/gpt-4o",
+            "messages": [],
+            "temperature": 0.0,
+            "logprobs": False,
+            "stream": False,
+        }
+    ]
+
+
+def test_openrouter_client_fails_after_client_is_closed():
+    response = SimpleNamespace(choices=[], usage=None)
+    with _client(response):
+        client = OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key")
+        with client:
+            pass
+
+        with pytest.raises(RuntimeError, match="closed"):
+            client.complete([])
+
+        with pytest.raises(RuntimeError, match="closed"):
+            with client:
+                client.complete([])
 
 
 def test_openrouter_client_maps_requested_token_logprobs():

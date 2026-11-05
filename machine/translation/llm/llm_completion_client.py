@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from types import TracebackType
+from typing import Dict, List, Optional, Type
 
 
 @dataclass(frozen=True)
@@ -29,3 +32,14 @@ class LlmCompletionClient(ABC):
 
     def count_tokens(self, text: str) -> Optional[int]:
         return None
+
+    def __enter__(self) -> LlmCompletionClient:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
+        pass
