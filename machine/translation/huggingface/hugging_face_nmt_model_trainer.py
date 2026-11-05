@@ -41,6 +41,7 @@ from ...corpora.parallel_text_corpus import ParallelTextCorpus
 from ...corpora.text_row_content_type import TextRowContentType
 from ...utils.progress_status import ProgressStatus
 from ..trainer import Trainer, TrainStats
+from .hugging_face_nmt_engine import is_t5_model
 
 logger = logging.getLogger(__name__)
 
@@ -254,9 +255,7 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 model.config.forced_bos_token_id = forced_bos_token_id
 
         prefix = ""
-        if model.name_or_path is not None and (
-            model.name_or_path.startswith("t5-") or model.name_or_path.startswith("google/mt5-")
-        ):
+        if is_t5_model(model):
             prefix = f"translate {self._src_lang} to {self._tgt_lang}: "
 
         max_src_length = self.max_src_length
