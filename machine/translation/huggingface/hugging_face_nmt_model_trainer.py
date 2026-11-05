@@ -255,7 +255,9 @@ class HuggingFaceNmtModelTrainer(Trainer):
 
         prefix = ""
         if model.name_or_path is not None and (
-            model.name_or_path.startswith("t5-") or model.name_or_path.startswith("google/mt5-")
+            model.name_or_path.startswith("t5-")
+            or model.name_or_path.startswith("google/mt5-")
+            or model.name_or_path.startswith("hf-internal-testing/tiny-random-T5")
         ):
             prefix = f"translate {self._src_lang} to {self._tgt_lang}: "
 
