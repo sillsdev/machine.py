@@ -16,15 +16,8 @@
   "files.associations": {
     "*.SFM": "usfm"
   },
-  "black-formatter.path": [
-    "uv",
-    "run",
-    "black"
-  ],
-  "isort.args": [
-    "--profile",
-    "black"
-  ],
+  "black-formatter.path": ["uv", "run", "black"],
+  "isort.args": ["--profile", "black"],
   "cSpell.words": [
     "CLEARML",
     "DYNACONF",
