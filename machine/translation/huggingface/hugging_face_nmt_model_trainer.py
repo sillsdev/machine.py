@@ -254,9 +254,10 @@ class HuggingFaceNmtModelTrainer(Trainer):
                 model.config.forced_bos_token_id = forced_bos_token_id
 
         prefix = ""
-        if model.name_or_path is not None and (
-            model.name_or_path.startswith("t5-") or model.name_or_path.startswith("google/mt5-")
-        ):
+        if (
+            model.name_or_path is not None
+            and (model.name_or_path.startswith("t5-") or model.name_or_path.startswith("google/mt5-"))
+        ) or (model.config is not None and model.config.model_type in ("t5", "mt5", "umt5", "longt5")):
             prefix = f"translate {self._src_lang} to {self._tgt_lang}: "
 
         max_src_length = self.max_src_length
