@@ -209,6 +209,49 @@ def test_translate_model_without_sdpa_support(output_attentions: bool) -> None:
         assert result.source_tokens == ["▁This", "▁is", "▁", "a", "▁test", "▁string"]
 
 
+def test_t5_model_without_prefix_specified() -> None:
+    with HuggingFaceNmtEngine(
+        "hf-internal-testing/tiny-random-T5ForConditionalGeneration",
+        max_length=10,
+        device="cpu",
+        src_lang="eng_Latn",
+        tgt_lang="deu_Latn",
+    ) as engine:
+        result = engine.translate("Hello world")
+        assert result.source_tokens == [
+            "▁translate",
+            "▁",
+            "eng",
+            "_",
+            "La",
+            "t",
+            "n",
+            "▁to",
+            "▁de",
+            "u",
+            "_",
+            "La",
+            "t",
+            "n",
+            ":",
+            "▁Hello",
+            "▁world",
+        ]
+
+
+def test_t5_model_with_prefix_specified() -> None:
+    with HuggingFaceNmtEngine(
+        "hf-internal-testing/tiny-random-T5ForConditionalGeneration",
+        max_length=10,
+        device="cpu",
+        src_lang="eng_Latn",
+        tgt_lang="deu_Latn",
+        prefix="translate English to German: ",
+    ) as engine:
+        result = engine.translate("Hello world")
+        assert result.source_tokens == ["▁translate", "▁English", "▁to", "▁German", ":", "▁Hello", "▁world"]
+
+
 @mark.parametrize(
     "construct_output_attentions, call_output_attentions, expect_attentions",
     [(None, None, False), (True, None, True), (True, False, False), (False, True, True)],
