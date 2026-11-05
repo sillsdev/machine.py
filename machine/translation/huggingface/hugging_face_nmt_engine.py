@@ -80,14 +80,9 @@ class HuggingFaceNmtEngine(TranslationEngine):
 
         src_lang = self._pipeline_kwargs.get("src_lang")
         tgt_lang = self._pipeline_kwargs.get("tgt_lang")
-        if (
-            src_lang is not None
-            and tgt_lang is not None
-            and "prefix" not in self._pipeline_kwargs
-            and self._model.name_or_path is not None
-            and (self._model.name_or_path.startswith("t5-") or self._model.name_or_path.startswith("google/mt5-"))
-        ):
-            self._pipeline_kwargs["prefix"] = f"translate {src_lang} to {tgt_lang}: "
+        if src_lang is not None and tgt_lang is not None and is_t5_model(self._model):
+            if "prefix" not in self._pipeline_kwargs:
+                self._pipeline_kwargs["prefix"] = f"translate {src_lang} to {tgt_lang}: "
         else:
             extra_special_tokens = cast(list[str], self._tokenizer.extra_special_tokens or [])
             if isinstance(self._tokenizer, M2M100Tokenizer):
@@ -435,6 +430,14 @@ class SilTranslationPipeline(TranslationPipeline):
             records.append(record)
 
         return records
+
+
+def is_t5_model(model: PreTrainedModel) -> bool:
+    return model.name_or_path is not None and (
+        model.name_or_path.startswith("t5-")
+        or model.name_or_path.startswith("google/mt5-")
+        or model.name_or_path.startswith("hf-internal-testing/tiny-random-T5")
+    )
 
 
 def torch_gather_nd(params: torch.Tensor, indices: torch.Tensor, batch_dim: int = 0) -> torch.Tensor:
