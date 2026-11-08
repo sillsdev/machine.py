@@ -254,10 +254,10 @@ class NmtEngineBuildJob(TranslationEngineBuildJob):
 
 
 def _join_surrogate_pairs_if_needed(text: str) -> str:
-    # Check if any characters are in the UTF-16 surrogate range, and join if needed.
+    # Check if any characters are in the UTF-16 surrogate range, and join pairs and drop unpaired halves if needed.
     # These are not supported unjoined by UTF-8 encoding or the MBartTokenizer's Rust implementation.
     if any(0xD800 <= ord(char) <= 0xDFFF for char in text):
-        return text.encode("utf-16", "surrogatepass").decode("utf-16")
+        return text.encode("utf-16", "surrogatepass").decode("utf-16", "ignore")
     return text
 
 
