@@ -94,12 +94,13 @@ def test_run_with_lone_surrogate(decoy: Decoy) -> None:
     env = _TestEnvironment(
         decoy,
         transductive=True,
-        source_text="lone\ud863x",
+        source_text="lone\ud863surrogate",
     )
-    with raises(UnicodeDecodeError):
-        env.job.run()
+    env.job.run()
 
-    assert env.target_pretranslations == ""
+    pretranslations = json.loads(env.target_pretranslations)
+    assert len(pretranslations) == 1
+    assert pretranslations[0]["sourceTokens"] == ["lonesurrogate"]
 
 
 def test_run_inductive_fallback(decoy: Decoy) -> None:
