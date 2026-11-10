@@ -13,18 +13,17 @@ class ExampleRetriever(ABC):
     @abstractmethod
     def _fit(self) -> None: ...
 
-    def rank(self, query: str, k: int, exclude_example: Optional[Example] = None) -> List[Example]:
+    @property
+    def examples(self) -> List[Example]:
+        return list(self._examples)
+
+    def rank(self, query: str, k: int, exclude_index: Optional[int] = None) -> List[Example]:
         if k <= 0:
             return []
         num_examples = len(self._examples)
-        exclude_indices = (
-            [i for i, example in enumerate(self._examples) if example == exclude_example]
-            if exclude_example is not None
-            else []
-        )
-        if k >= (num_examples - len(exclude_indices)):
-            return [example for example in self._examples if example != exclude_example]
-        return self._rank(query, k, exclude_indices)
+        if exclude_index is not None and not 0 <= exclude_index < num_examples:
+            exclude_index = None
+        return self._rank(query, k, exclude_index)
 
     @abstractmethod
-    def _rank(self, query: str, k: int, exclude_indices: Optional[List[int]] = None) -> List[Example]: ...
+    def _rank(self, query: str, k: int, exclude_index: Optional[int] = None) -> List[Example]: ...

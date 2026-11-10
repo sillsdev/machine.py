@@ -17,12 +17,17 @@ class CoverageExampleRetriever(ExampleRetriever):
 
     def __init__(self, examples: List[Example]) -> None:
         super().__init__(examples)
-        seen = set()
-        self._unique_example_indices = []
+        seen = {}
+        self._unique_example_indices = set()
+        self._deduplicated_example_indices = []
         for index, example in enumerate(self._examples):
             if example not in seen:
-                self._unique_example_indices.append(index)
-                seen.add(example)
+                self._unique_example_indices.add(index)
+                self._deduplicated_example_indices.append(index)
+                seen[example] = index
+            else:
+                if seen[example] in self._unique_example_indices:
+                    self._unique_example_indices.remove(seen[example])
 
     def _fit(self) -> None:
         # TfidfVectorizer rejects a corpus with nothing to put in its vocabulary.
@@ -34,15 +39,21 @@ class CoverageExampleRetriever(ExampleRetriever):
         self._vectorizer = TfidfVectorizer(analyzer="char_wb", ngram_range=(2, 5))
         self._matrix = cast(csr_matrix, self._vectorizer.fit_transform(sources))
 
-    def _rank(self, query: str, k: int, exclude_indices: Optional[List[int]] = None) -> List[Example]:
+    def _rank(self, query: str, k: int, exclude_index: Optional[int] = None) -> List[Example]:
         if self._vectorizer is None or self._matrix is None:
             return []
         query_vector = cast(csr_matrix, self._vectorizer.transform([query]))
         similarities = linear_kernel(query_vector, self._matrix).ravel()
         ranked = similarities.argsort()[::-1]
-        if exclude_indices is not None:
-            ranked = ranked[np.isin(ranked, exclude_indices, invert=True)]
-        ranked = ranked[np.isin(ranked, self._unique_example_indices)]
+        if k >= ranked.shape[0]:
+            return [self._examples[i] for i in ranked if i != exclude_index]
+        # If exclude index points to an example which is the first occurrence
+        # of a multiply attested example, then we still include that example
+        if exclude_index is not None and (
+            exclude_index not in self._deduplicated_example_indices or exclude_index in self._unique_example_indices
+        ):
+            ranked = ranked[ranked != exclude_index]
+        ranked = ranked[np.isin(ranked, self._deduplicated_example_indices)]
         k = min(k, len(ranked))
         if k == 0:
             return []
