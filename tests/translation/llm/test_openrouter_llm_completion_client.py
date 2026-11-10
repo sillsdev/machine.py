@@ -103,7 +103,7 @@ def test_openrouter_client_merges_default_and_per_call_kwargs_without_changing_m
         with OpenRouterLlmCompletionClient(
             "openai/gpt-4o", api_key="test-key", seed=1, provider={"order": ["openai"]}
         ) as client:
-            client.complete([], seed=42, thinking={"level": "high"}, model="other/model")
+            client.complete([], seed=42, reasoning_effort="high", model="other/model")
 
     assert sdk_client.chat.calls[0] == {
         "model": "openai/gpt-4o",
@@ -113,7 +113,7 @@ def test_openrouter_client_merges_default_and_per_call_kwargs_without_changing_m
         "stream": False,
         "seed": 42,
         "provider": {"order": ["openai"]},
-        "thinking": {"level": "high"},
+        "reasoning_effort": "high",
     }
 
 
