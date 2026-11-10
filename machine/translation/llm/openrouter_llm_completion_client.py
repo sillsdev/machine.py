@@ -11,13 +11,11 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
     def __init__(
         self,
         model: str,
-        temperature: float = 0.0,
         max_tokens: Optional[int] = None,
         api_key: Optional[str] = None,
         **default_kwargs: Any,
     ) -> None:
         self._model = model
-        self._temperature = temperature
         self._max_tokens = max_tokens
         self._default_kwargs = default_kwargs
         self._logprobs_supported: Optional[bool] = None
@@ -51,7 +49,6 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
             {
                 "model": self._model,
                 "messages": messages,
-                "temperature": self._temperature,
                 "logprobs": logprobs,
                 "stream": False,
             }

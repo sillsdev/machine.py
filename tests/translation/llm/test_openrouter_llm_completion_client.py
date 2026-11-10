@@ -59,9 +59,7 @@ def test_openrouter_client_sends_chat_request_and_maps_completion_fields():
         usage=SimpleNamespace(cost=0.012, prompt_tokens=8, completion_tokens=2),
     )
     with _client(response) as sdk_client:
-        with OpenRouterLlmCompletionClient(
-            "openai/gpt-4o", temperature=0.2, max_tokens=50, api_key="test-key"
-        ) as completion_client:
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", max_tokens=50, api_key="test-key") as completion_client:
             result = completion_client.complete([{"role": "user", "content": "hello"}])
 
     assert result == Completion("hola", 0.012, input_token_count=8, output_token_count=2)
