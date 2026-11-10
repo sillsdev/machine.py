@@ -80,7 +80,7 @@ def test_openrouter_client_sends_chat_request_and_maps_completion_fields():
 
 
 def test_openrouter_client_max_tokens_is_none():
-    response = SimpleNamespace(choices=[], usage=None)
+    response = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=""))], usage=None)
     with _client(response) as sdk_client:
         with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
             client.complete([])
@@ -94,6 +94,69 @@ def test_openrouter_client_max_tokens_is_none():
             "stream": False,
         }
     ]
+
+
+def test_openrouter_client_merges_default_and_per_call_kwargs_without_changing_model():
+    response = SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content="hola"))],
+        usage=None,
+    )
+    with _client(response) as sdk_client:
+        with OpenRouterLlmCompletionClient(
+            "openai/gpt-4o", api_key="test-key", seed=1, provider={"order": ["openai"]}
+        ) as client:
+            client.complete([], seed=42, thinking={"level": "high"}, model="other/model")
+
+    assert sdk_client.chat.calls[0] == {
+        "model": "openai/gpt-4o",
+        "messages": [],
+        "temperature": 0.0,
+        "logprobs": False,
+        "stream": False,
+        "seed": 42,
+        "provider": {"order": ["openai"]},
+        "thinking": {"level": "high"},
+    }
+
+
+def test_openrouter_client_rejects_response_without_choices():
+    response = SimpleNamespace(choices=[], usage=None)
+    with _client(response):
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+            with pytest.raises(ValueError, match="No choices"):
+                client.complete([])
+
+
+def test_openrouter_client_rejects_null_choice():
+    response = SimpleNamespace(choices=[None], usage=None)
+    with _client(response):
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+            with pytest.raises(ValueError, match="first choice is null"):
+                client.complete([])
+
+
+def test_openrouter_client_rejects_null_message():
+    response = SimpleNamespace(choices=[SimpleNamespace(message=None)], usage=None)
+    with _client(response):
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+            with pytest.raises(ValueError, match="no message"):
+                client.complete([])
+
+
+def test_openrouter_client_rejects_response_with_null_content():
+    response = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=None))], usage=None)
+    with _client(response):
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+            with pytest.raises(ValueError, match="no content"):
+                client.complete([])
+
+
+def test_openrouter_client_rejects_response_with_non_text_content():
+    response = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=42))], usage=None)
+    with _client(response):
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+            with pytest.raises(ValueError, match="content is not text"):
+                client.complete([])
 
 
 def test_openrouter_client_fails_after_client_is_closed():

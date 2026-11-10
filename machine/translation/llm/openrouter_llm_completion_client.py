@@ -14,10 +14,12 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         temperature: float = 0.0,
         max_tokens: Optional[int] = None,
         api_key: Optional[str] = None,
+        **default_kwargs: Any,
     ) -> None:
         self._model = model
         self._temperature = temperature
         self._max_tokens = max_tokens
+        self._default_kwargs = default_kwargs
         self._logprobs_supported: Optional[bool] = None
         self._closed = False
         try:
@@ -28,7 +30,7 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
             ) from error
         self._client = OpenRouter(api_key=api_key)
 
-    def complete(self, messages: List[Dict[str, str]], logprobs: bool = False) -> Completion:
+    def complete(self, messages: List[Dict[str, str]], logprobs: bool = False, **kwargs: Any) -> Completion:
         if self._closed:
             raise RuntimeError("OpenRouter completion client is closed.")
         try:
@@ -43,27 +45,43 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
             raise ImportError(
                 "OpenRouter completions require the 'openrouter' package. Install it with `uv sync --extra llm`."
             ) from error
-        request = {
-            "model": self._model,
-            "messages": messages,
-            "temperature": self._temperature,
-            "logprobs": logprobs,
-            "stream": False,
-        }
+        request = dict(self._default_kwargs)
+        request.update(kwargs)
+        request.update(
+            {
+                "model": self._model,
+                "messages": messages,
+                "temperature": self._temperature,
+                "logprobs": logprobs,
+                "stream": False,
+            }
+        )
         if self._max_tokens is not None:
             request["max_completion_tokens"] = self._max_tokens
         response: ChatResult = self._client.chat.send(**request)
-        choice = response.choices[0] if response.choices else None
-        if choice is not None and getattr(choice, "finish_reason", None) == "length" and self._max_tokens is not None:
+        choices = getattr(response, "choices", None)
+        if not choices:
+            raise ValueError("Malformed OpenRouter completion response: No choices were returned.")
+        choice = choices[0]
+        if choice is None:
+            raise ValueError("Malformed OpenRouter completion response: The first choice is null.")
+        if getattr(choice, "finish_reason", None) == "length" and self._max_tokens is not None:
             logger.warning("Completion was finished because the max tokens ceiling %d was hit", self._max_tokens)
         message: Optional[ChatAssistantMessage] = getattr(choice, "message", None)
+        if message is None:
+            raise ValueError("Malformed OpenRouter completion response: The first choice has no message.")
         content: Optional[ChatAssistantMessageContent] = getattr(message, "content", None)
+        if content is None:
+            raise ValueError("Malformed OpenRouter completion response: The message has no content.")
         if isinstance(content, str):
             text = content
         elif isinstance(content, list):
-            text = "".join(p.text for p in content if isinstance(p, ChatContentText))
+            text_parts = [p.text for p in content if isinstance(p, ChatContentText) and isinstance(p.text, str)]
+            if not text_parts:
+                raise ValueError("Malformed OpenRouter completion response: The message has no text content.")
+            text = "".join(text_parts)
         else:
-            text = ""
+            raise ValueError("Malformed OpenRouter completion response: The message content is not text.")
         token_logprobs = self._get_logprobs(choice) if logprobs else []
         usage: Optional[ChatUsage] = getattr(response, "usage", None)
         cost: Optional[float] = getattr(usage, "cost", None)
