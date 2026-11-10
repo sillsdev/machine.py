@@ -67,7 +67,6 @@ def test_openrouter_client_sends_chat_request_and_maps_completion_fields():
         {
             "model": "openai/gpt-4o",
             "messages": [{"role": "user", "content": "hello"}],
-            "temperature": 0.2,
             "max_completion_tokens": 50,
             "logprobs": False,
             "stream": False,
@@ -87,7 +86,6 @@ def test_openrouter_client_max_tokens_is_none():
         {
             "model": "openai/gpt-4o",
             "messages": [],
-            "temperature": 0.0,
             "logprobs": False,
             "stream": False,
         }
@@ -108,7 +106,6 @@ def test_openrouter_client_merges_default_and_per_call_kwargs_without_changing_m
     assert sdk_client.chat.calls[0] == {
         "model": "openai/gpt-4o",
         "messages": [],
-        "temperature": 0.0,
         "logprobs": False,
         "stream": False,
         "seed": 42,
