@@ -21,19 +21,19 @@ def test_tfidf_retriever_respects_k():
 def test_tfidf_retriever_excludes_its_own_position():
     examples = [Example("the cat sat", "0"), Example("the cat sat", "1"), Example("totally different words", "2")]
 
-    assert TfidfExampleRetriever(examples).rank("the cat sat", 2, exclude_example=examples[0]) == [
+    assert TfidfExampleRetriever(examples).rank("the cat sat", 2, exclude_index=0) == [
         examples[1],
         examples[2],
     ]
 
 
-def test_tfidf_retriever_excludes_duplicate_copies_of_an_example():
+def test_tfidf_retriever_keeps_duplicate_copies_at_other_indices():
     excluded_example = Example("apple pie", "tarte")
     other_example = Example("banana split", "banane")
     another_example = Example("cherry tart", "cerise")
     retriever = TfidfExampleRetriever([excluded_example, excluded_example, other_example, another_example])
 
-    assert excluded_example not in retriever.rank("apple pie", 1, exclude_example=excluded_example)
+    assert retriever.rank("apple pie", 1, exclude_index=0) == [excluded_example]
 
 
 def test_tfidf_retriever_k_larger_than_the_corpus_returns_every_example():
