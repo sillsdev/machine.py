@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from machine.translation.llm import OpenRouterLlmCompletionClient, ContentBlockError
+from machine.translation.llm import ContentBlockError, OpenRouterLlmCompletionClient
 from machine.translation.llm.llm_completion_client import Completion, TokenLogprob
 
 
