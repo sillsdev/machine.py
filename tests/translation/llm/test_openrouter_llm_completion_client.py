@@ -223,5 +223,5 @@ def test_openrouter_client_raises_content_block_error():
     with _client(response):
         with OpenRouterLlmCompletionClient("gpt-4o", api_key="test-key") as client:
             messages = [{"role": "user", "content": "hello"}]
-            with pytest.raises(ContentBlockError, match=str(messages)):
+            with pytest.raises(ContentBlockError, check=lambda e: e.messages == messages):
                 client.complete(messages)
