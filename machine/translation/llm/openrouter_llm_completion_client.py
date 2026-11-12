@@ -7,6 +7,12 @@ from .llm_completion_client import Completion, LlmCompletionClient, TokenLogprob
 logger = logging.getLogger(__name__)
 
 
+class ContentBlockError(Exception):
+    """This exception is raised when the completion was terminated due to a content block."""
+
+    pass
+
+
 class OpenRouterLlmCompletionClient(LlmCompletionClient):
     def __init__(
         self,
@@ -35,6 +41,7 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
             from openrouter.components import (
                 ChatAssistantMessage,
                 ChatAssistantMessageContent,
+                ChatChoice,
                 ChatContentText,
                 ChatResult,
                 ChatUsage,
@@ -59,11 +66,13 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         choices = getattr(response, "choices", None)
         if not choices:
             raise ValueError("Malformed OpenRouter completion response: No choices were returned.")
-        choice = choices[0]
+        choice: Optional[ChatChoice] = choices[0]
         if choice is None:
             raise ValueError("Malformed OpenRouter completion response: The first choice is null.")
         if getattr(choice, "finish_reason", None) == "length" and self._max_tokens is not None:
             logger.warning("Completion was finished because the max tokens ceiling %d was hit", self._max_tokens)
+        elif getattr(choice, "finish_reason", None) == "content_filter":
+            raise ContentBlockError(f"Completion response terminated because of content filtering. Context: {messages}")
         message: Optional[ChatAssistantMessage] = getattr(choice, "message", None)
         if message is None:
             raise ValueError("Malformed OpenRouter completion response: The first choice has no message.")

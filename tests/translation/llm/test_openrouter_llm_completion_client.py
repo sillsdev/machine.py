@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from machine.translation.llm import OpenRouterLlmCompletionClient
+from machine.translation.llm import OpenRouterLlmCompletionClient, ContentBlockError
 from machine.translation.llm.llm_completion_client import Completion, TokenLogprob
 
 
@@ -216,3 +216,12 @@ def test_openrouter_client_reports_logprobs_unsupported_for_unqualified_model_id
         with OpenRouterLlmCompletionClient("gpt-4o", api_key="test-key") as client:
             assert not client.supports_logprobs()
             assert sdk_client.models.calls == []
+
+
+def test_openrouter_client_raises_content_block_error():
+    response = SimpleNamespace(choices=[SimpleNamespace(finish_reason="content_filter")])
+    with _client(response):
+        with OpenRouterLlmCompletionClient("gpt-4o", api_key="test-key") as client:
+            messages = [{"role": "user", "content": "hello"}]
+            with pytest.raises(ContentBlockError, match=str(messages)):
+                client.complete(messages)
