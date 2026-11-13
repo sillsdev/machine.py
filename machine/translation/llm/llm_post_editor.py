@@ -6,8 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from .completion_finish_reason import CompletionFinishReason
 from .example import Example
 from .example_retriever import ExampleRetriever
-from .llm_completion_client import LlmCompletionClient
-from .openrouter_llm_completion_client import ContentBlockError, RefusalError
+from .llm_completion_client import ContentBlockError, LlmCompletionClient, RefusalError
 from .post_edit_result import PostEditResult
 from .post_edit_segment import PostEditSegment
 
@@ -63,6 +62,11 @@ _RESPONSE_SCHEMA: Dict[str, Any] = {
 }
 
 
+def _to_single_line(text: str) -> str:
+    lines = (line.strip() for line in text.splitlines())
+    return " ".join(line for line in lines if line != "")
+
+
 def _format_examples(examples: Sequence[Example], source_language: str, target_language: str) -> str:
     lines = ["<translation_memory>"]
     for example in examples:
@@ -114,7 +118,7 @@ def _format_draft(draft: str, target_language: str) -> str:
     return f'<draft_translation lang="{target_language}">\n  {draft}\n</draft_translation>'
 
 
-def _try_parse_response(text: str) -> Optional[PostEditResult]:
+def _try_parse_response(text: str, draft: str) -> Optional[PostEditResult]:
     if not text:
         return None
     try:
@@ -123,14 +127,15 @@ def _try_parse_response(text: str) -> Optional[PostEditResult]:
         return None
     if not isinstance(data, dict):
         return None
-    single_line_translation = " ".join(str(data.get("translation", "")).split())
-    if not single_line_translation:
+    translation = _to_single_line(str(data.get("translation", "")))
+    if not translation:
         return None
+    changed = translation != draft
     return PostEditResult(
-        translation=single_line_translation,
+        translation=translation,
         succeeded=True,
-        changed=bool(data.get("changed", False)),
-        justification=str(data.get("justification", "")).strip(),
+        changed=changed,
+        justification=str(data.get("justification", "")).strip() if changed else "",
     )
 
 
@@ -159,12 +164,9 @@ class LlmPostEditor:
         )
 
     def post_edit(self, segment: PostEditSegment) -> PostEditResult:
-        """Returns the draft unchanged rather than raising when no attempt produced a translation, so one verse
-        cannot end a batch. A prompt that is blocked or refused is not resent. finish_reason is None when no
-        completion was requested.
-        """
+        draft = _to_single_line(segment.draft)
         if not segment.source.strip():
-            return PostEditResult(translation=segment.draft)
+            return PostEditResult(translation=draft)
         prompt = self._build_prompt(segment)
         total_cost = 0.0
         total_input_token_count = 0
@@ -194,7 +196,7 @@ class LlmPostEditor:
             total_input_token_count += completion.input_token_count
             total_output_token_count += completion.output_token_count
             finish_reason = completion.finish_reason
-            result = _try_parse_response(completion.text)
+            result = _try_parse_response(completion.text, draft)
             if result is not None:
                 return replace(
                     result,
@@ -210,7 +212,7 @@ class LlmPostEditor:
                 finish_reason.name,
             )
         return PostEditResult(
-            translation=segment.draft,
+            translation=draft,
             total_cost=total_cost,
             total_input_token_count=total_input_token_count,
             total_output_token_count=total_output_token_count,
@@ -229,5 +231,5 @@ class LlmPostEditor:
             f"{_format_draft(segment.draft, self._target_language)}\n\n"
             f'Post-edit the draft above for the verse marked role="to_translate".\n'
             f"Source ({self._source_language}):\n"
-            f"{segment.source}"
+            f"{segment.source.strip()}"
         )

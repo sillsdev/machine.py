@@ -10,9 +10,9 @@ from .example import Example
 from .example_retriever import ExampleRetriever
 from .example_retriever_factory import ExampleRetrieverFactory
 from .example_retriever_method import ExampleRetrievalMethod
-from .llm_completion_client import Completion, LlmCompletionClient, TokenLogprob
+from .llm_completion_client import Completion, ContentBlockError, LlmCompletionClient, RefusalError, TokenLogprob
 from .llm_post_editor import LlmPostEditor
-from .openrouter_llm_completion_client import ContentBlockError, OpenRouterLlmCompletionClient, RefusalError
+from .openrouter_llm_completion_client import OpenRouterLlmCompletionClient
 from .post_edit_result import PostEditResult
 from .post_edit_segment import PostEditSegment
 from .tfidf_example_retriever import TfidfExampleRetriever

@@ -3,7 +3,7 @@ from types import TracebackType
 from typing import Any, Dict, List, Optional, Type
 
 from .completion_finish_reason import CompletionFinishReason
-from .llm_completion_client import Completion, LlmCompletionClient, TokenLogprob
+from .llm_completion_client import Completion, ContentBlockError, LlmCompletionClient, RefusalError, TokenLogprob
 
 logger = logging.getLogger(__name__)
 
@@ -11,18 +11,6 @@ _FINISH_REASONS: Dict[Optional[str], CompletionFinishReason] = {
     "stop": CompletionFinishReason.STOP,
     "length": CompletionFinishReason.LENGTH,
 }
-
-
-class ContentBlockError(Exception):
-    def __init__(self, messages: List[Dict[str, str]]) -> None:
-        super().__init__("Completion response terminated because of content filtering.")
-        self.messages = messages
-
-
-class RefusalError(Exception):
-    def __init__(self, messages: List[Dict[str, str]]) -> None:
-        super().__init__("Completion response was a refusal from the model.")
-        self.messages = messages
 
 
 class OpenRouterLlmCompletionClient(LlmCompletionClient):

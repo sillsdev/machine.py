@@ -8,6 +8,18 @@ from typing import Any, Dict, List, Optional, Type
 from .completion_finish_reason import CompletionFinishReason
 
 
+class ContentBlockError(Exception):
+    def __init__(self, messages: List[Dict[str, str]]) -> None:
+        super().__init__("Completion response terminated because of content filtering.")
+        self.messages = messages
+
+
+class RefusalError(Exception):
+    def __init__(self, messages: List[Dict[str, str]]) -> None:
+        super().__init__("Completion response was a refusal from the model.")
+        self.messages = messages
+
+
 @dataclass(frozen=True)
 class TokenLogprob:
     token: str

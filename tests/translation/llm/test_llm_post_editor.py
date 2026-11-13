@@ -60,6 +60,39 @@ def test_post_edit_no_change() -> None:
     assert not result.changed
 
 
+def test_post_edit_changed_reported_false() -> None:
+    client = MockLlmCompletionClient([_create_answer(translation="el perro", changed=False, justification="")])
+
+    result = _create_post_editor(client).post_edit(PostEditSegment("the dog", "la perro"))
+
+    assert result.changed
+
+
+def test_post_edit_unchanged_reported_true() -> None:
+    client = MockLlmCompletionClient([_create_answer(translation="el perro", changed=True)])
+
+    result = _create_post_editor(client).post_edit(PostEditSegment("the dog", "el perro"))
+
+    assert not result.changed
+    assert result.justification == ""
+
+
+def test_post_edit_unchanged_draft_line_break() -> None:
+    client = MockLlmCompletionClient([_create_answer(translation="el perro", changed=False, justification="")])
+
+    result = _create_post_editor(client).post_edit(PostEditSegment("the dog", "el perro\n"))
+
+    assert not result.changed
+
+
+def test_post_edit_changed_only_whitespace_within_line() -> None:
+    client = MockLlmCompletionClient([_create_answer(translation="¿el perro ?", changed=False, justification="")])
+
+    result = _create_post_editor(client).post_edit(PostEditSegment("the dog", "¿el perro ?"))
+
+    assert result.changed
+
+
 @pytest.mark.parametrize("source", ["", "   "])
 def test_post_edit_empty_source(source: str) -> None:
     client = MockLlmCompletionClient([_create_answer()])
@@ -235,6 +268,30 @@ def test_post_edit_max_attempts() -> None:
     assert len(client.requests) == 2
 
 
+def test_post_edit_failure_returns_single_line_draft() -> None:
+    client = MockLlmCompletionClient([ContentBlockError([])])
+
+    result = _create_post_editor(client).post_edit(PostEditSegment("the dog sleeps", " la perro\n duerme \n"))
+
+    assert result.translation == "la perro duerme"
+
+
+def test_post_edit_empty_source_returns_single_line_draft() -> None:
+    client = MockLlmCompletionClient([])
+
+    result = _create_post_editor(client).post_edit(PostEditSegment("  ", " la perro\n duerme \n"))
+
+    assert result.translation == "la perro duerme"
+
+
+def test_post_edit_prompt_source_stripped() -> None:
+    client = MockLlmCompletionClient([_create_answer()])
+
+    _create_post_editor(client).post_edit(PostEditSegment(" the dog\n", "la perro"))
+
+    assert _get_prompt(client).endswith("Source (English):\nthe dog")
+
+
 def test_post_edit_max_attempts_zero() -> None:
     with pytest.raises(ValueError, match="max_attempts"):
         _create_post_editor(MockLlmCompletionClient([_create_answer()]), max_attempts=0)
@@ -273,12 +330,25 @@ def test_post_edit_refusal_not_retried() -> None:
     assert len(client.requests) == 1
 
 
-def test_post_edit_newline_in_translation() -> None:
-    client = MockLlmCompletionClient([_create_answer(translation="el perro\nduerme")])
+@pytest.mark.parametrize(
+    "translation",
+    ["el perro\nduerme", "el perro\r\nduerme", "el perro \n\n duerme", "el perro duerme", "\nel perro\nduerme\n"],
+)
+def test_post_edit_line_breaks_in_translation(translation: str) -> None:
+    client = MockLlmCompletionClient([_create_answer(translation=translation)])
 
     result = _create_post_editor(client).post_edit(PostEditSegment("the dog sleeps", "la perro duerme"))
 
     assert result.translation == "el perro duerme"
+
+
+@pytest.mark.parametrize("translation", ["¿el perro ?", "el perro duerme", "el  perro\tduerme"])
+def test_post_edit_whitespace_within_line_preserved(translation: str) -> None:
+    client = MockLlmCompletionClient([_create_answer(translation=translation)])
+
+    result = _create_post_editor(client).post_edit(PostEditSegment("the dog sleeps", "la perro duerme"))
+
+    assert result.translation == translation
 
 
 def test_post_edit_batch() -> None:
