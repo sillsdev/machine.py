@@ -1,10 +1,11 @@
 from contextlib import contextmanager
 from types import SimpleNamespace
+from typing import Optional
 from unittest.mock import patch
 
 import pytest
 
-from machine.translation.llm import ContentBlockError, OpenRouterLlmCompletionClient
+from machine.translation.llm import CompletionFinishReason, ContentBlockError, OpenRouterLlmCompletionClient
 from machine.translation.llm.llm_completion_client import Completion, TokenLogprob
 
 
@@ -225,3 +226,38 @@ def test_openrouter_client_raises_content_block_error():
             messages = [{"role": "user", "content": "hello"}]
             with pytest.raises(ContentBlockError, check=lambda e: e.messages == messages):
                 client.complete(messages)
+
+
+def test_complete_response_schema():
+    response = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="{}"))], usage=None)
+    with _client(response) as sdk_client:
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+            client.complete([], response_schema={"type": "object", "properties": {}})
+
+    assert sdk_client.chat.calls[0]["response_format"] == {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "response",
+            "strict": True,
+            "schema": {"type": "object", "properties": {}, "additionalProperties": False},
+        },
+    }
+
+
+@pytest.mark.parametrize(
+    "reported,expected",
+    [
+        ("stop", CompletionFinishReason.STOP),
+        ("length", CompletionFinishReason.LENGTH),
+        ("error", CompletionFinishReason.UNKNOWN),
+        (None, CompletionFinishReason.UNKNOWN),
+    ],
+)
+def test_complete_finish_reason(reported: Optional[str], expected: CompletionFinishReason):
+    response = SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content="hola"), finish_reason=reported)],
+        usage=None,
+    )
+    with _client(response):
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+            assert client.complete([]).finish_reason is expected

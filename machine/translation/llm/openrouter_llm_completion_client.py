@@ -2,9 +2,15 @@ import logging
 from types import TracebackType
 from typing import Any, Dict, List, Optional, Type
 
+from .completion_finish_reason import CompletionFinishReason
 from .llm_completion_client import Completion, LlmCompletionClient, TokenLogprob
 
 logger = logging.getLogger(__name__)
+
+_FINISH_REASONS: Dict[Optional[str], CompletionFinishReason] = {
+    "stop": CompletionFinishReason.STOP,
+    "length": CompletionFinishReason.LENGTH,
+}
 
 
 class ContentBlockError(Exception):
@@ -36,7 +42,13 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
             ) from error
         self._client = OpenRouter(api_key=api_key)
 
-    def complete(self, messages: List[Dict[str, str]], logprobs: bool = False, **kwargs: Any) -> Completion:
+    def complete(
+        self,
+        messages: List[Dict[str, str]],
+        logprobs: bool = False,
+        response_schema: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> Completion:
         if self._closed:
             raise RuntimeError("OpenRouter completion client is closed.")
         try:
@@ -64,6 +76,15 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         )
         if self._max_tokens is not None:
             request["max_completion_tokens"] = self._max_tokens
+        if response_schema is not None:
+            request["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "response",
+                    "strict": True,
+                    "schema": {**response_schema, "additionalProperties": False},
+                },
+            }
         response: ChatResult = self._client.chat.send(**request)
         choices = getattr(response, "choices", None)
         if not choices:
@@ -101,6 +122,7 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
             token_logprobs=token_logprobs,
             input_token_count=prompt_tokens,
             output_token_count=completion_tokens,
+            finish_reason=_FINISH_REASONS.get(getattr(choice, "finish_reason", None), CompletionFinishReason.UNKNOWN),
         )
 
     def supports_logprobs(self) -> bool:
