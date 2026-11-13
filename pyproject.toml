@@ -41,7 +41,7 @@ dependencies = [
 Repository = "https://github.com/sillsdev/machine.py"
 
 [project.optional-dependencies]
-sentencepiece = ["sentencepiece~=0.2"]
+sentencepiece = ["sentencepiece==0.2.3"]
 thot = ["sil-thot~=3.5.2"]
 huggingface = [
     "transformers==5.14.1",
@@ -54,7 +54,7 @@ jobs = [
     "dynaconf>=3.2.5,<4.0",
     "pydantic>=2.13.4,<3.0",
 ]
-llm = ["scikit-learn>=1.6,<2.0"]
+llm = ["openrouter>=1.3.95", "scikit-learn>=1.6,<2.0"]
 
 [build-system]
 requires = ["uv_build>=0.12.17,<0.13"]

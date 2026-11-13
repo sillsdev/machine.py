@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from types import TracebackType
 from typing import Optional, Sequence, Type, Union
 
 from .translation_result import TranslationResult
 
 
-class TranslationEngine:
+class TranslationEngine(ABC):
     @abstractmethod
     def translate(self, segment: Union[str, Sequence[str]]) -> TranslationResult: ...
 
