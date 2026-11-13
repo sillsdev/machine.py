@@ -6,7 +6,8 @@ from typing import Any, Dict, List, Optional, Sequence
 from .completion_finish_reason import CompletionFinishReason
 from .example import Example
 from .example_retriever import ExampleRetriever
-from .llm_completion_client import ContentBlockError, LlmCompletionClient, RefusalError
+from .llm_completion_client import LlmCompletionClient
+from .openrouter_llm_completion_client import ContentBlockError, RefusalError
 from .post_edit_result import PostEditResult
 from .post_edit_segment import PostEditSegment
 

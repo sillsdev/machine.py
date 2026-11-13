@@ -3,9 +3,24 @@ from types import TracebackType
 from typing import Any, Dict, List, Optional, Type
 
 from .completion_finish_reason import CompletionFinishReason
-from .llm_completion_client import Completion, ContentBlockError, LlmCompletionClient, RefusalError, TokenLogprob
+from .llm_completion_client import Completion, LlmCompletionClient, TokenLogprob
 
 logger = logging.getLogger(__name__)
+
+
+class ContentBlockError(Exception):
+    """This exception is raised when the completion was terminated due to a content block."""
+
+    def __init__(self, messages: List[Dict[str, str]]) -> None:
+        super().__init__("Completion response terminated because of content filtering.")
+        self.messages = messages
+
+
+class RefusalError(Exception):
+    def __init__(self, messages: List[Dict[str, str]]) -> None:
+        super().__init__("Completion response was a refusal from the model.")
+        self.messages = messages
+
 
 _FINISH_REASONS: Dict[Optional[str], CompletionFinishReason] = {
     "stop": CompletionFinishReason.STOP,
