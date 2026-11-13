@@ -39,7 +39,7 @@ but without mistakes.
 
 Translate the verse marked role="to_translate" and nothing else.
 
-NEVER output any language other than {target_language}.
+NEVER write the "translation" in any language other than {target_language}.
 
 OUTPUT — one JSON object:
 - "changed": true if your text differs from the draft. false otherwise.
