@@ -153,6 +153,8 @@ def update_settings(
             settings.update({"thot_align": build_options["thot_align"]})
         if "thot_mt" in build_options:
             settings.update({"thot_mt": build_options["thot_mt"]})
+        if "remote_llm" in build_options:
+            settings.update({"remote_llm": build_options["remote_llm"]})
         if task is not None and "tags" in build_options:
             tags = build_options["tags"]
             if isinstance(tags, str) or (isinstance(tags, list) and all(isinstance(tag, str) for tag in tags)):

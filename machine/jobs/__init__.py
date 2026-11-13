@@ -1,6 +1,6 @@
 from .clearml_shared_file_service import ClearMLSharedFileService
+from .hugging_face_nmt_engine_build_job import HuggingFaceNmtEngineBuildJob
 from .local_shared_file_service import LocalSharedFileService
-from .nmt_engine_build_job import NmtEngineBuildJob
 from .nmt_model_factory import NmtModelFactory
 from .shared_file_service_base import DictToJsonWriter, SharedFileServiceBase
 from .smt_engine_build_job import SmtEngineBuildJob
@@ -15,7 +15,7 @@ from .word_alignment_model_factory import WordAlignmentModelFactory
 __all__ = [
     "ClearMLSharedFileService",
     "LocalSharedFileService",
-    "NmtEngineBuildJob",
+    "HuggingFaceNmtEngineBuildJob",
     "NmtModelFactory",
     "DictToJsonWriter",
     "SharedFileServiceBase",

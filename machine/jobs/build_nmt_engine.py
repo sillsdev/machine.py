@@ -8,8 +8,8 @@ from ..utils.canceled_error import CanceledError
 from ..utils.progress_status import ProgressStatus
 from .build_clearml_helper import report_clearml_progress, update_settings
 from .config import SETTINGS
+from .hugging_face_nmt_engine_build_job import HuggingFaceNmtEngineBuildJob
 from .nmt_build_options import NmtBuildOptions
-from .nmt_engine_build_job import NmtEngineBuildJob
 from .nmt_model_factory import NmtModelFactory
 from .shared_file_service_factory import SharedFileServiceType
 from .thot.thot_word_alignment_model_factory import ThotWordAlignmentModelFactory
@@ -58,7 +58,7 @@ def run(args: dict) -> None:
         else:
             raise RuntimeError("The model type is invalid.")
 
-        job = NmtEngineBuildJob(
+        job = HuggingFaceNmtEngineBuildJob(
             SETTINGS, nmt_model_factory, translation_file_service, ThotWordAlignmentModelFactory(SETTINGS)
         )
         train_corpus_size, _ = job.run(progress, check_canceled)

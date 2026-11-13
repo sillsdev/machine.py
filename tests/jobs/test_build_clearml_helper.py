@@ -5,6 +5,7 @@ from pytest import raises
 from testutils.mock_settings import MockSettings
 
 from machine.jobs.build_clearml_helper import update_settings
+from machine.jobs.build_remote_llm_engine import RemoteLlmBuildOptions
 from machine.jobs.nmt_build_options import NmtBuildOptions
 from machine.jobs.smt_build_options import SmtBuildOptions
 from machine.jobs.word_alignment_build_options import WordAlignmentBuildOptions
@@ -73,3 +74,37 @@ def test_update_settings_valid_word_alignment_build_options() -> None:
         settings, {"build_options": '{"thot_align":{"model_type":"hmm"}}'}, None, logger, WordAlignmentBuildOptions
     )
     assert settings.thot_align.model_type == "hmm"
+
+
+def test_update_settings_valid_remote_llm_build_options() -> None:
+    settings = MockSettings({"model_type": "remote_llm", "data_dir": "/tmp"})
+
+    update_settings(
+        settings,
+        {"build_options": '{"model":"openai/gpt-4o","batch_size":2,"num_workers":3}'},
+        None,
+        logger,
+        RemoteLlmBuildOptions,
+    )
+
+    assert settings.remote_llm.model == "openai/gpt-4o"
+    assert settings.remote_llm.batch_size == 2
+    assert settings.remote_llm.num_workers == 3
+
+
+def test_remote_llm_build_options_accept_custom_prompt() -> None:
+    settings = MockSettings({"model_type": "remote_llm", "data_dir": "/tmp"})
+    update_settings(
+        settings,
+        {
+            "build_options": '{"model":"test","prompt":{"instruction_template":"{source}",'
+            '"batch_instruction_template":"{num_segments}: {source}","example_format":{"type":"text",'
+            '"template":"{source} => {target}"}}}'
+        },
+        None,
+        logger,
+        RemoteLlmBuildOptions,
+    )
+
+    assert settings.remote_llm.prompt.instruction_template == "{source}"
+    assert settings.remote_llm.prompt.example_format.template == "{source} => {target}"

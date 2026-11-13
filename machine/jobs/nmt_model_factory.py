@@ -25,6 +25,9 @@ class NmtModelFactory(ABC):
     def create_model_trainer(self, corpus: ParallelTextCorpus) -> Trainer: ...
 
     @abstractmethod
+    def init_example_retriever(self, corpus: ParallelTextCorpus) -> None: ...
+
+    @abstractmethod
     def create_engine(self) -> TranslationEngine: ...
 
     @abstractmethod

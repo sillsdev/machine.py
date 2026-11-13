@@ -12,7 +12,7 @@ from machine.annotations import Range
 from machine.corpora import DictionaryTextCorpus
 from machine.jobs import (
     DictToJsonWriter,
-    NmtEngineBuildJob,
+    HuggingFaceNmtEngineBuildJob,
     NmtModelFactory,
     PretranslationInfo,
     TranslationFileService,
@@ -295,7 +295,7 @@ class _TestEnvironment:
         decoy.when(self.word_alignment_model_factory.create_alignment_model()).then_return(self.model)
         decoy.when(self.word_alignment_model_factory.save_model()).then_return(Path("model.zip"))
 
-        self.job = NmtEngineBuildJob(
+        self.job = HuggingFaceNmtEngineBuildJob(
             MockSettings(
                 {
                     "src_lang": "es",

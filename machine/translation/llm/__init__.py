@@ -23,8 +23,12 @@ from .llm_completion_client import (
 from .llm_post_editor import LlmPostEditor
 from .openrouter_llm_completion_client import OpenRouterLlmCompletionClient
 from .post_edit_batch_error import PostEditBatchError
+from .llm_completion_client import Completion, LlmCompletionClient, TokenLogprob
 from .post_edit_result import PostEditResult
 from .post_edit_segment import PostEditSegment
+from .llm_completion_client import Completion, LlmCompletionClient, LlmUsageSummary, LlmUsageTotals, TokenLogprob
+from .openrouter_llm_completion_client import ContentBlockError, OpenRouterLlmCompletionClient, RefusalError
+from .remote_llm_engine import RemoteLlmEngine
 from .tfidf_example_retriever import TfidfExampleRetriever
 from .top_k_example_retriever import TopKExampleRetriever
 
@@ -42,10 +46,14 @@ __all__ = [
     "LlmCompletionClient",
     "LlmPostEditor",
     "MalformedCompletionError",
+    "LlmUsageSummary",
+    "LlmUsageTotals",
     "OpenRouterLlmCompletionClient",
     "PostEditBatchError",
     "PostEditResult",
     "PostEditSegment",
+    "OpenRouterLlmCompletionClient",
+    "RemoteLlmEngine",
     "RefusalError",
     "TokenLogprob",
     "TfidfExampleRetriever",
