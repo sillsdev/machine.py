@@ -7,7 +7,7 @@ from .completion_finish_reason import CompletionFinishReason
 from .example import Example
 from .example_retriever import ExampleRetriever
 from .llm_completion_client import LlmCompletionClient
-from .openrouter_llm_completion_client import ContentBlockError
+from .openrouter_llm_completion_client import ContentBlockError, RefusalError
 from .post_edit_result import PostEditResult
 from .post_edit_segment import PostEditSegment
 
@@ -128,6 +128,7 @@ def _try_parse_response(text: str) -> Optional[PostEditResult]:
         return None
     return PostEditResult(
         translation=single_line_translation,
+        succeeded=True,
         changed=bool(data.get("changed", False)),
         justification=str(data.get("justification", "")).strip(),
     )
@@ -158,12 +159,12 @@ class LlmPostEditor:
         )
 
     def post_edit(self, segment: PostEditSegment) -> PostEditResult:
-        """Returns an empty translation rather than raising when no attempt produced one, so one verse cannot end a
-        batch. A prompt blocked by content filtering is not resent. finish_reason is None when no completion was
-        requested.
+        """Returns the draft unchanged rather than raising when no attempt produced a translation, so one verse
+        cannot end a batch. A prompt that is blocked or refused is not resent. finish_reason is None when no
+        completion was requested.
         """
         if not segment.source.strip():
-            return PostEditResult(translation="")
+            return PostEditResult(translation=segment.draft)
         prompt = self._build_prompt(segment)
         total_cost = 0.0
         total_input_token_count = 0
@@ -179,6 +180,10 @@ class LlmPostEditor:
             except ContentBlockError:
                 logger.warning("Post-edit attempt %d/%d was blocked by content filtering.", attempt, self._max_attempts)
                 finish_reason = CompletionFinishReason.CONTENT_FILTER
+                break
+            except RefusalError:
+                logger.warning("Post-edit attempt %d/%d was refused by the model.", attempt, self._max_attempts)
+                finish_reason = CompletionFinishReason.REFUSAL
                 break
             except ValueError:
                 logger.warning(
@@ -205,7 +210,7 @@ class LlmPostEditor:
                 finish_reason.name,
             )
         return PostEditResult(
-            translation="",
+            translation=segment.draft,
             total_cost=total_cost,
             total_input_token_count=total_input_token_count,
             total_output_token_count=total_output_token_count,

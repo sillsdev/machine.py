@@ -12,6 +12,7 @@ from machine.translation.llm import (
     Example,
     LlmPostEditor,
     PostEditSegment,
+    RefusalError,
     TfidfExampleRetriever,
 )
 
@@ -43,9 +44,20 @@ def test_post_edit() -> None:
     result = _create_post_editor(client).post_edit(PostEditSegment("the dog", "la perro"))
 
     assert result.translation == "el perro"
+    assert result.succeeded
     assert result.changed
     assert result.justification == "fixed the article's gender"
     assert result.finish_reason is CompletionFinishReason.STOP
+
+
+def test_post_edit_no_change() -> None:
+    client = MockLlmCompletionClient([_create_answer(translation="el perro", changed=False, justification="")])
+
+    result = _create_post_editor(client).post_edit(PostEditSegment("the dog", "el perro"))
+
+    assert result.translation == "el perro"
+    assert result.succeeded
+    assert not result.changed
 
 
 @pytest.mark.parametrize("source", ["", "   "])
@@ -54,7 +66,9 @@ def test_post_edit_empty_source(source: str) -> None:
 
     result = _create_post_editor(client).post_edit(PostEditSegment(source, "la perro"))
 
-    assert result.translation == ""
+    assert result.translation == "la perro"
+    assert not result.succeeded
+    assert not result.changed
     assert result.finish_reason is None
     assert result.total_cost == 0.0
     assert client.requests == []
@@ -213,7 +227,9 @@ def test_post_edit_max_attempts() -> None:
 
     result = _create_post_editor(client, max_attempts=2).post_edit(PostEditSegment("the dog", "la perro"))
 
-    assert result.translation == ""
+    assert result.translation == "la perro"
+    assert not result.succeeded
+    assert not result.changed
     assert result.total_cost == 0.5
     assert result.finish_reason is CompletionFinishReason.STOP
     assert len(client.requests) == 2
@@ -238,8 +254,22 @@ def test_post_edit_content_block_not_retried() -> None:
 
     result = _create_post_editor(client).post_edit(PostEditSegment("the dog", "la perro"))
 
-    assert result.translation == ""
+    assert result.translation == "la perro"
+    assert not result.succeeded
+    assert not result.changed
     assert result.finish_reason is CompletionFinishReason.CONTENT_FILTER
+    assert len(client.requests) == 1
+
+
+def test_post_edit_refusal_not_retried() -> None:
+    client = MockLlmCompletionClient([RefusalError([])])
+
+    result = _create_post_editor(client).post_edit(PostEditSegment("the dog", "la perro"))
+
+    assert result.translation == "la perro"
+    assert not result.succeeded
+    assert not result.changed
+    assert result.finish_reason is CompletionFinishReason.REFUSAL
     assert len(client.requests) == 1
 
 

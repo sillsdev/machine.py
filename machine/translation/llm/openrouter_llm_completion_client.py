@@ -14,10 +14,14 @@ _FINISH_REASONS: Dict[Optional[str], CompletionFinishReason] = {
 
 
 class ContentBlockError(Exception):
-    """This exception is raised when the completion was terminated due to a content block."""
-
     def __init__(self, messages: List[Dict[str, str]]) -> None:
         super().__init__("Completion response terminated because of content filtering.")
+        self.messages = messages
+
+
+class RefusalError(Exception):
+    def __init__(self, messages: List[Dict[str, str]]) -> None:
+        super().__init__("Completion response was a refusal from the model.")
         self.messages = messages
 
 
@@ -99,6 +103,8 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         message: Optional[ChatAssistantMessage] = getattr(choice, "message", None)
         if message is None:
             raise ValueError("Malformed OpenRouter completion response: The first choice has no message.")
+        if getattr(message, "refusal", None):
+            raise RefusalError(messages)
         content: Optional[ChatAssistantMessageContent] = getattr(message, "content", None)
         if content is None:
             raise ValueError("Malformed OpenRouter completion response: The message has no content.")

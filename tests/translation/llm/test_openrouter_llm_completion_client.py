@@ -5,7 +5,12 @@ from unittest.mock import patch
 
 import pytest
 
-from machine.translation.llm import CompletionFinishReason, ContentBlockError, OpenRouterLlmCompletionClient
+from machine.translation.llm import (
+    CompletionFinishReason,
+    ContentBlockError,
+    OpenRouterLlmCompletionClient,
+    RefusalError,
+)
 from machine.translation.llm.llm_completion_client import Completion, TokenLogprob
 
 
@@ -225,6 +230,20 @@ def test_openrouter_client_raises_content_block_error():
         with OpenRouterLlmCompletionClient("gpt-4o", api_key="test-key") as client:
             messages = [{"role": "user", "content": "hello"}]
             with pytest.raises(ContentBlockError, check=lambda e: e.messages == messages):
+                client.complete(messages)
+
+
+@pytest.mark.parametrize("content", [None, ""])
+def test_openrouter_client_raises_refusal_error(content):
+    response = SimpleNamespace(
+        choices=[
+            SimpleNamespace(message=SimpleNamespace(content=content, refusal="I can't help"), finish_reason="stop")
+        ]
+    )
+    with _client(response):
+        with OpenRouterLlmCompletionClient("gpt-4o", api_key="test-key") as client:
+            messages = [{"role": "user", "content": "hello"}]
+            with pytest.raises(RefusalError, check=lambda e: e.messages == messages):
                 client.complete(messages)
 
 

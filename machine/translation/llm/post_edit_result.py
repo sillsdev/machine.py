@@ -7,6 +7,7 @@ from .completion_finish_reason import CompletionFinishReason
 @dataclass(frozen=True)
 class PostEditResult:
     translation: str
+    succeeded: bool = False
     changed: bool = False
     justification: str = ""
     total_cost: float = 0.0
