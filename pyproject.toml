@@ -41,7 +41,7 @@ dependencies = [
 Repository = "https://github.com/sillsdev/machine.py"
 
 [project.optional-dependencies]
-sentencepiece = ["sentencepiece~=0.2"]
+sentencepiece = ["sentencepiece==0.2.3"]
 thot = ["sil-thot~=3.5.2"]
 huggingface = [
     "transformers==5.14.1",
