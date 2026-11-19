@@ -63,10 +63,6 @@ def run(args: dict) -> None:
     try:
         logger.info("Remote LLM Engine Build Job started")
         update_settings(SETTINGS, args, task, logger, RemoteLlmBuildOptions)
-        if not isinstance(SETTINGS, RemoteLlmBuildOptions):
-            raise ValueError("Remote LLM build options are required.")
-        if SETTINGS.model_type != "remote_llm":
-            raise RuntimeError("The model type is invalid.")
         api_key = os.getenv("OPENROUTER_API_KEY")
         if not api_key:
             raise RuntimeError("OPENROUTER_API_KEY is not set.")
@@ -83,9 +79,6 @@ def run(args: dict) -> None:
                 translation_file_service,
                 ThotWordAlignmentModelFactory(SETTINGS),
                 retrieval_method,
-                SETTINGS.num_examples,
-                SETTINGS.batch_size,
-                SETTINGS.num_workers,
             )
             train_corpus_size, _ = job.run(progress, check_canceled)
         if task is not None:

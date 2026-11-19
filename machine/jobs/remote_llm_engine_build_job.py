@@ -45,17 +45,12 @@ class RemoteLlmEngineBuildJob(TranslationEngineBuildJob):
         translation_file_service: TranslationFileService,
         word_alignment_model_factory: WordAlignmentModelFactory,
         retrieval_method: ExampleRetrievalMethod = ExampleRetrievalMethod.TFIDF,
-        num_examples: int = 100,
-        batch_size: int = 15,
-        num_workers: int = 4,
     ) -> None:
-        if num_examples < 0:
-            raise ValueError("num_examples must be non-negative.")
         self._completion_client = completion_client
         self._retrieval_method = retrieval_method
-        self._num_examples = num_examples
-        self._batch_size = batch_size
-        self._num_workers = num_workers
+        self._num_examples = config.remote_llm.num_examples
+        self._batch_size = config.remote_llm.batch_size
+        self._num_workers = config.remote_llm.num_workers
         self.usage_totals = LlmUsageTotals()
         self.untranslated_verses: List[UntranslatedVerse] = []
         self._example_retriever: Optional[ExampleRetriever] = None
@@ -171,7 +166,7 @@ class RemoteLlmEngineBuildJob(TranslationEngineBuildJob):
         for pt_batch in batch(src_pretranslations, batch_size):
             if check_canceled is not None:
                 check_canceled()
-            source_segments = [pt_info["translation"] for pt_info in pt_batch]
+            source_segments = [_join_surrogate_pairs_if_needed(pt_info["translation"]) for pt_info in pt_batch]
             results = engine.translate_batch(source_segments)
             failed_indices = set(engine.failed_segment_indices)
             for index, (pt_info, result) in enumerate(zip(pt_batch, results, strict=True)):
@@ -275,6 +270,14 @@ class RemoteLlmEngineBuildJob(TranslationEngineBuildJob):
 
     def _save_model(self) -> None:
         return
+
+
+def _join_surrogate_pairs_if_needed(text: str) -> str:
+    # Check if any characters are in the UTF-16 surrogate range, and join pairs and drop unpaired halves if needed.
+    # These are not supported unjoined by UTF-8 encoding or the MBartTokenizer's Rust implementation.
+    if any(0xD800 <= ord(char) <= 0xDFFF for char in text):
+        return text.encode("utf-16", "surrogatepass").decode("utf-16", "ignore")
+    return text
 
 
 def _read_pretranslations(path: Path) -> Generator[PretranslationInfo, None, None]:
