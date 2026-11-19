@@ -11,6 +11,7 @@ from machine.translation.llm import (
     MalformedCompletionError,
     OpenRouterLlmCompletionClient,
     RefusalError,
+    TruncatedCompletionError,
 )
 from machine.translation.llm.llm_completion_client import Completion, TokenLogprob
 
@@ -342,3 +343,29 @@ def test_complete_errors_carry_billed_usage(choice, expected_error):
                 client.complete([])
 
     assert (error.value.cost, error.value.input_token_count, error.value.output_token_count) == (0.5, 10, 2)
+
+
+@pytest.mark.parametrize("content", ['{"translation": "ho', None, ""])
+def test_complete_raises_truncated_error_with_schema(content: Optional[str]):
+    response = SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content=content), finish_reason="length")],
+        usage=SimpleNamespace(cost=0.5, prompt_tokens=10, completion_tokens=2),
+    )
+    with _client(response):
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", max_tokens=2, api_key="test-key") as client:
+            with pytest.raises(TruncatedCompletionError) as error:
+                client.complete([], response_schema=_SCHEMA)
+
+    assert (error.value.cost, error.value.input_token_count, error.value.output_token_count) == (0.5, 10, 2)
+
+
+def test_complete_returns_truncated_reply_without_schema():
+    response = SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content="hol"), finish_reason="length")], usage=None
+    )
+    with _client(response):
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", max_tokens=2, api_key="test-key") as client:
+            result = client.complete([])
+
+    assert result.text == "hol"
+    assert result.finish_reason is CompletionFinishReason.LENGTH

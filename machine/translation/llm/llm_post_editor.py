@@ -7,7 +7,13 @@ from xml.sax.saxutils import escape, quoteattr, unescape
 from .completion_finish_reason import CompletionFinishReason
 from .example import Example
 from .example_retriever import ExampleRetriever
-from .llm_completion_client import ContentBlockError, LlmCompletionClient, MalformedCompletionError, RefusalError
+from .llm_completion_client import (
+    ContentBlockError,
+    LlmCompletionClient,
+    MalformedCompletionError,
+    RefusalError,
+    TruncatedCompletionError,
+)
 from .post_edit_result import PostEditResult
 from .post_edit_segment import PostEditSegment
 
@@ -178,7 +184,7 @@ class LlmPostEditor:
             ]
             try:
                 completion = self._completion_client.complete(messages, response_schema=_RESPONSE_SCHEMA)
-            except (ContentBlockError, RefusalError, MalformedCompletionError) as error:
+            except (ContentBlockError, RefusalError, TruncatedCompletionError, MalformedCompletionError) as error:
                 total_cost += error.cost
                 total_input_token_count += error.input_token_count
                 total_output_token_count += error.output_token_count
@@ -186,13 +192,14 @@ class LlmPostEditor:
                     logger.warning("Post-edit attempt %d/%d failed: %s", attempt, self._max_attempts, error)
                     continue
                 if isinstance(error, ContentBlockError):
-                    logger.warning(
-                        "Post-edit attempt %d/%d was blocked by content filtering.", attempt, self._max_attempts
-                    )
                     finish_reason = CompletionFinishReason.CONTENT_FILTER
-                else:
-                    logger.warning("Post-edit attempt %d/%d was refused by the model.", attempt, self._max_attempts)
+                elif isinstance(error, RefusalError):
                     finish_reason = CompletionFinishReason.REFUSAL
+                else:
+                    finish_reason = CompletionFinishReason.LENGTH
+                logger.warning(
+                    "Post-edit attempt %d/%d stopped without retrying: %s", attempt, self._max_attempts, error
+                )
                 break
             total_cost += completion.cost
             total_input_token_count += completion.input_token_count

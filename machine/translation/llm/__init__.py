@@ -18,6 +18,7 @@ from .llm_completion_client import (
     MalformedCompletionError,
     RefusalError,
     TokenLogprob,
+    TruncatedCompletionError,
 )
 from .llm_post_editor import LlmPostEditor
 from .openrouter_llm_completion_client import OpenRouterLlmCompletionClient
@@ -47,4 +48,5 @@ __all__ = [
     "TokenLogprob",
     "TfidfExampleRetriever",
     "TopKExampleRetriever",
+    "TruncatedCompletionError",
 ]

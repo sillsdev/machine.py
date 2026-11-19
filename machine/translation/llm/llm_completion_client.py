@@ -56,13 +56,21 @@ class MalformedCompletionError(CompletionError):
     pass
 
 
+class TruncatedCompletionError(CompletionError):
+    pass
+
+
 class LlmCompletionClient(ABC):
     @abstractmethod
     def complete(
         self, messages: List[Dict[str, str]], logprobs: bool = False, response_schema: Optional[Dict[str, Any]] = None
     ) -> Completion:
         """Raises ContentBlockError or RefusalError when the provider declines the request, and
-        MalformedCompletionError when the reply has no text or, given a response_schema, is not JSON matching it.
+        MalformedCompletionError when the reply has no text.
+
+        Given a response_schema, raises TruncatedCompletionError when the reply hit the output token limit, and
+        MalformedCompletionError when it is not JSON matching the schema. Without one, a truncated reply is returned
+        with finish_reason LENGTH.
         """
 
     def supports_logprobs(self) -> bool:

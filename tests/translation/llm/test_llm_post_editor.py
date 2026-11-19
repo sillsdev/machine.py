@@ -15,6 +15,7 @@ from machine.translation.llm import (
     PostEditSegment,
     RefusalError,
     TfidfExampleRetriever,
+    TruncatedCompletionError,
 )
 
 _EXAMPLES = [
@@ -352,7 +353,7 @@ def test_post_edit_invalid_request_not_retried() -> None:
     assert len(client.requests) == 1
 
 
-@pytest.mark.parametrize("declined", [ContentBlockError, RefusalError])
+@pytest.mark.parametrize("declined", [ContentBlockError, RefusalError, TruncatedCompletionError])
 def test_post_edit_totals_include_failed_attempts(declined) -> None:
     client = MockLlmCompletionClient(
         [
@@ -388,6 +389,18 @@ def test_post_edit_refusal_not_retried() -> None:
     assert not result.succeeded
     assert not result.changed
     assert result.finish_reason is CompletionFinishReason.REFUSAL
+    assert len(client.requests) == 1
+
+
+def test_post_edit_truncation_not_retried() -> None:
+    client = MockLlmCompletionClient([TruncatedCompletionError([], "cut off"), _create_answer()])
+
+    result = _create_post_editor(client).post_edit(PostEditSegment("the dog", "la perro"))
+
+    assert result.translation == "la perro"
+    assert not result.succeeded
+    assert not result.changed
+    assert result.finish_reason is CompletionFinishReason.LENGTH
     assert len(client.requests) == 1
 
 

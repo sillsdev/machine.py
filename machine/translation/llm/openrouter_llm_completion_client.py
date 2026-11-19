@@ -13,6 +13,7 @@ from .llm_completion_client import (
     MalformedCompletionError,
     RefusalError,
     TokenLogprob,
+    TruncatedCompletionError,
 )
 
 logger = logging.getLogger(__name__)
@@ -105,12 +106,18 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         choice: Optional[ChatChoice] = choices[0]
         if choice is None:
             raise malformed("The first choice is null.")
-        if getattr(choice, "finish_reason", None) == "length" and self._max_tokens is not None:
-            logger.warning("Completion was finished because the max tokens ceiling %d was hit", self._max_tokens)
-        elif getattr(choice, "finish_reason", None) == "content_filter":
+        reported_finish_reason = getattr(choice, "finish_reason", None)
+        if reported_finish_reason == "content_filter":
             raise ContentBlockError(
                 messages, "Completion response terminated because of content filtering.", **usage_fields
             )
+        if reported_finish_reason == "length":
+            if schema is not None:
+                raise TruncatedCompletionError(
+                    messages, "Completion response was cut off by the output token limit.", **usage_fields
+                )
+            if self._max_tokens is not None:
+                logger.warning("Completion was finished because the max tokens ceiling %d was hit", self._max_tokens)
         message: Optional[ChatAssistantMessage] = getattr(choice, "message", None)
         if message is None:
             raise malformed("The first choice has no message.")
@@ -143,7 +150,7 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
             token_logprobs=token_logprobs,
             input_token_count=prompt_tokens,
             output_token_count=completion_tokens,
-            finish_reason=_FINISH_REASONS.get(getattr(choice, "finish_reason", None), CompletionFinishReason.UNKNOWN),
+            finish_reason=_FINISH_REASONS.get(reported_finish_reason, CompletionFinishReason.UNKNOWN),
         )
 
     def supports_logprobs(self) -> bool:
