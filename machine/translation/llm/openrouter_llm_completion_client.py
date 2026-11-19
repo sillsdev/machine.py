@@ -1,5 +1,7 @@
 import json
 import logging
+import random
+import time
 from types import TracebackType
 from typing import Any, Dict, List, Optional, Type
 
@@ -19,6 +21,9 @@ from .llm_completion_client import (
 logger = logging.getLogger(__name__)
 
 
+_RATE_LIMIT_INITIAL_DELAY = 1.0
+_RATE_LIMIT_MAX_DELAY = 60.0
+
 _FINISH_REASONS: Dict[Optional[str], CompletionFinishReason] = {
     "stop": CompletionFinishReason.STOP,
     "length": CompletionFinishReason.LENGTH,
@@ -31,10 +36,14 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         model: str,
         max_tokens: Optional[int] = None,
         api_key: Optional[str] = None,
+        max_rate_limit_retries: int = 5,
         **default_kwargs: Any,
     ) -> None:
         super().__init__()
+        if max_rate_limit_retries < 0:
+            raise ValueError("max_rate_limit_retries cannot be negative.")
         self._model = model
+        self._max_rate_limit_retries = max_rate_limit_retries
         self._max_tokens = max_tokens
         self._default_kwargs = default_kwargs
         self._logprobs_supported: Optional[bool] = None
@@ -88,7 +97,7 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
                 "type": "json_schema",
                 "json_schema": {"name": "response", "strict": True, "schema": schema},
             }
-        response: ChatResult = self._client.chat.send(**request)
+        response: ChatResult = self._send(request)
         usage: Optional[ChatUsage] = getattr(response, "usage", None)
         cost: float = getattr(usage, "cost", None) or 0.0
         prompt_tokens: int = getattr(usage, "prompt_tokens", 0)
@@ -155,6 +164,28 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
             finish_reason=_FINISH_REASONS.get(reported_finish_reason, CompletionFinishReason.UNKNOWN),
         )
 
+    def _send(self, request: Dict[str, Any]) -> Any:
+        from openrouter.errors import OpenRouterError
+
+        retry = 0
+        while True:
+            try:
+                return self._client.chat.send(**request)
+            except OpenRouterError as error:
+                if error.status_code != 429 or retry == self._max_rate_limit_retries:
+                    raise
+                delay = _retry_after_seconds(error.headers)
+                if delay is None:
+                    delay = min(_RATE_LIMIT_MAX_DELAY, _RATE_LIMIT_INITIAL_DELAY * 2**retry) * random.uniform(0.5, 1.0)
+                retry += 1
+                logger.warning(
+                    "OpenRouter rate limited the request; retry %d/%d in %.1f s.",
+                    retry,
+                    self._max_rate_limit_retries,
+                    delay,
+                )
+                time.sleep(delay)
+
     def supports_logprobs(self) -> bool:
         if self._closed:
             raise RuntimeError("OpenRouter completion client is closed.")
@@ -190,3 +221,10 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         logprobs = getattr(choice, "logprobs", None)
         entries = getattr(logprobs, "content", None) or []
         return [TokenLogprob(str(entry.token), float(entry.logprob)) for entry in entries]
+
+
+def _retry_after_seconds(headers: Any) -> Optional[float]:
+    try:
+        return min(max(float(headers.get("retry-after")), 0.0), _RATE_LIMIT_MAX_DELAY)
+    except (TypeError, ValueError):
+        return None

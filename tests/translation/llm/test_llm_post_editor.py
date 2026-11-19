@@ -1,4 +1,6 @@
 import json
+import threading
+from typing import Any, Dict, List, Optional
 
 import pytest
 from testutils.mock_example_retriever import MockExampleRetriever
@@ -10,6 +12,7 @@ from machine.translation.llm import (
     ContentBlockError,
     ContextVerse,
     Example,
+    LlmCompletionClient,
     LlmPostEditor,
     MalformedCompletionError,
     PostEditBatchError,
@@ -33,7 +36,7 @@ def _create_answer(
     return Completion(text, 0.0, finish_reason=CompletionFinishReason.STOP)
 
 
-def _create_post_editor(client: MockLlmCompletionClient, **kwargs) -> LlmPostEditor:
+def _create_post_editor(client: LlmCompletionClient, **kwargs) -> LlmPostEditor:
     return LlmPostEditor(client, MockExampleRetriever(_EXAMPLES), "English", "Spanish", **kwargs)
 
 
@@ -495,3 +498,48 @@ def test_post_edit_batch_keeps_results_after_failure() -> None:
     assert [result.succeeded for result in error.value.results] == [True, False, True]
     assert error.value.errors == {1: failure}
     assert error.value.__cause__ is failure
+
+
+class _UppercasingClient(LlmCompletionClient):
+    """Answers each prompt with its source in upper case, failing for the source "fail".
+
+    Each call waits at a barrier, so a test hangs into a BrokenBarrierError unless the calls overlap.
+    """
+
+    def __init__(self, parties: int) -> None:
+        super().__init__()
+        self._barrier = threading.Barrier(parties, timeout=5)
+
+    def complete(
+        self, messages: List[Dict[str, str]], logprobs: bool = False, response_schema: Optional[Dict[str, Any]] = None
+    ) -> Completion:
+        self._barrier.wait()
+        source = messages[1]["content"].rsplit("\n", 1)[1]
+        if source == "fail":
+            raise RuntimeError("connection reset")
+        return Completion(json.dumps({"translation": source.upper()}), 0.0, finish_reason=CompletionFinishReason.STOP)
+
+
+def test_post_edit_batch_in_parallel_keeps_segment_order() -> None:
+    sources = ["one", "two", "three", "four"]
+    post_editor = _create_post_editor(_UppercasingClient(parties=4))
+
+    results = post_editor.post_edit_batch([PostEditSegment(source, "draft") for source in sources], max_workers=4)
+
+    assert [result.translation for result in results] == ["ONE", "TWO", "THREE", "FOUR"]
+
+
+def test_post_edit_batch_in_parallel_keeps_results_after_failure() -> None:
+    sources = ["one", "fail", "three"]
+    post_editor = _create_post_editor(_UppercasingClient(parties=3))
+
+    with pytest.raises(PostEditBatchError) as error:
+        post_editor.post_edit_batch([PostEditSegment(source, "draft") for source in sources], max_workers=3)
+
+    assert [result.translation for result in error.value.results] == ["ONE", "draft", "THREE"]
+    assert list(error.value.errors) == [1]
+
+
+def test_post_edit_batch_max_workers_zero() -> None:
+    with pytest.raises(ValueError, match="max_workers"):
+        _create_post_editor(MockLlmCompletionClient([])).post_edit_batch([], max_workers=0)

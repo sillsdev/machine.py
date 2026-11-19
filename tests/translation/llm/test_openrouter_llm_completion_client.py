@@ -3,7 +3,10 @@ from types import SimpleNamespace
 from typing import Optional
 from unittest.mock import patch
 
+import httpx
 import pytest
+from openrouter import errors
+from openrouter.components import TooManyRequestsResponseErrorData
 
 from machine.translation.llm import (
     CompletionFinishReason,
@@ -23,6 +26,11 @@ class _FakeChat:
 
     def send(self, **kwargs):
         self.calls.append(kwargs)
+        if isinstance(self.response, list):
+            response = self.response[len(self.calls) - 1]
+            if isinstance(response, Exception):
+                raise response
+            return response
         return self.response
 
 
@@ -384,3 +392,66 @@ def test_complete_running_totals_include_failed_responses():
                 client.complete([], response_schema=_SCHEMA)
 
     assert (client.total_cost, client.total_input_token_count, client.total_output_token_count) == (1.0, 20, 4)
+
+
+def _rate_limit_error(headers=None):
+    raw_response = httpx.Response(429, headers=headers, request=httpx.Request("POST", "https://openrouter.ai"))
+    data = errors.TooManyRequestsResponseErrorData(
+        error=TooManyRequestsResponseErrorData(code=429, message="slow down")
+    )
+    return errors.TooManyRequestsResponseError(data, raw_response)
+
+
+_HOLA = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="hola"))], usage=None)
+
+
+def test_complete_retries_rate_limit_with_backoff():
+    with _client([_rate_limit_error(), _rate_limit_error(), _HOLA]) as sdk_client:
+        with patch("time.sleep") as sleep:
+            with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+                assert client.complete([]).text == "hola"
+
+    assert len(sdk_client.chat.calls) == 3
+    first, second = (call.args[0] for call in sleep.call_args_list)
+    assert 0.5 <= first <= 1.0
+    assert 1.0 <= second <= 2.0
+
+
+@pytest.mark.parametrize("retry_after,expected", [("3", 3.0), ("600", 60.0), ("-1", 0.0)])
+def test_complete_rate_limit_honors_retry_after(retry_after: str, expected: float):
+    with _client([_rate_limit_error({"Retry-After": retry_after}), _HOLA]):
+        with patch("time.sleep") as sleep:
+            with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+                client.complete([])
+
+    sleep.assert_called_once_with(expected)
+
+
+def test_complete_rate_limit_gives_up_after_max_retries():
+    with _client([_rate_limit_error(), _rate_limit_error(), _rate_limit_error()]) as sdk_client:
+        with patch("time.sleep"):
+            with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key", max_rate_limit_retries=2) as client:
+                with pytest.raises(errors.TooManyRequestsResponseError):
+                    client.complete([])
+
+    assert len(sdk_client.chat.calls) == 3
+
+
+def test_complete_does_not_retry_other_http_errors():
+    server_error = errors.OpenRouterError(
+        "bad request", httpx.Response(400, request=httpx.Request("POST", "https://openrouter.ai"))
+    )
+    with _client([server_error, _HOLA]) as sdk_client:
+        with patch("time.sleep") as sleep:
+            with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+                with pytest.raises(errors.OpenRouterError, match="bad request"):
+                    client.complete([])
+
+    assert len(sdk_client.chat.calls) == 1
+    sleep.assert_not_called()
+
+
+def test_client_rejects_negative_max_rate_limit_retries():
+    with _client(_HOLA):
+        with pytest.raises(ValueError, match="max_rate_limit_retries"):
+            OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key", max_rate_limit_retries=-1)

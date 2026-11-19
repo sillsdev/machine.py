@@ -1,5 +1,6 @@
 import json
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from typing import Any, Dict, List, Optional, Sequence
 from xml.sax.saxutils import escape, quoteattr, unescape
@@ -248,21 +249,30 @@ class LlmPostEditor:
             finish_reason=finish_reason,
         )
 
-    def post_edit_batch(self, segments: Sequence[PostEditSegment]) -> Sequence[PostEditResult]:
+    def post_edit_batch(self, segments: Sequence[PostEditSegment], max_workers: int = 1) -> Sequence[PostEditResult]:
         """Post-edits every segment even when some fail, then raises PostEditBatchError if any did.
 
         The error holds a result for every segment, with the draft unchanged for each failed one, and the exception
-        of each failed segment by index.
+        of each failed segment by index. Up to max_workers segments are post-edited at once, sharing the completion
+        client; results are in segment order either way.
         """
+        if max_workers < 1:
+            raise ValueError("max_workers must be at least 1.")
         results: List[PostEditResult] = []
         errors: Dict[int, Exception] = {}
-        for index, segment in enumerate(segments):
-            try:
-                results.append(self.post_edit(segment))
-            except Exception as error:
-                logger.error("Post-edit of segment %d failed.", index, exc_info=True)
-                errors[index] = error
-                results.append(PostEditResult(translation=_to_single_line(segment.draft)))
+        executor = ThreadPoolExecutor(max_workers=max_workers)
+        try:
+            futures = [executor.submit(self.post_edit, segment) for segment in segments]
+            for index, (segment, future) in enumerate(zip(segments, futures)):
+                try:
+                    results.append(future.result())
+                except Exception as error:
+                    logger.error("Post-edit of segment %d failed.", index, exc_info=error)
+                    errors[index] = error
+                    results.append(PostEditResult(translation=_to_single_line(segment.draft)))
+        finally:
+            # Stops queued segments from starting, and so from being billed, when the wait is interrupted.
+            executor.shutdown(wait=True, cancel_futures=True)
         if errors:
             raise PostEditBatchError(results, errors) from next(iter(errors.values()))
         return results

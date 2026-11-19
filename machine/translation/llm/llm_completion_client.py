@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from types import TracebackType
@@ -62,6 +63,7 @@ class TruncatedCompletionError(CompletionError):
 
 class LlmCompletionClient(ABC):
     def __init__(self) -> None:
+        self._usage_lock = threading.Lock()
         self._total_cost = 0.0
         self._total_input_token_count = 0
         self._total_output_token_count = 0
@@ -97,9 +99,10 @@ class LlmCompletionClient(ABC):
         return False
 
     def _record_usage(self, cost: float, input_token_count: int, output_token_count: int) -> None:
-        self._total_cost += cost
-        self._total_input_token_count += input_token_count
-        self._total_output_token_count += output_token_count
+        with self._usage_lock:
+            self._total_cost += cost
+            self._total_input_token_count += input_token_count
+            self._total_output_token_count += output_token_count
 
     def count_tokens(self, text: str) -> Optional[int]:
         return None
