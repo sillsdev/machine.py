@@ -36,7 +36,7 @@ Three blocks, all selected for this one verse:
   status="not_available" means there is none — translate from scratch instead.
 
 YOUR JOB. You are post-editing the draft translation to improve it by fixing clear
-errors and omissions and providing your justification for the fix. Read the translation
+errors and omissions{justification_task}. Read the translation
 memory, passage context, and source text; use them as context for post-editing. The
 draft is a dynamic translation that has learned the translator's style, so it's
 intentionally not a literal translation; don't post-edit it to be one, and go with the
@@ -48,17 +48,27 @@ Translate the verse marked role="to_translate" and nothing else.
 NEVER write the "translation" in any language other than {target_language}.
 
 OUTPUT — one JSON object:
-- "changed": true if your text differs from the draft. false otherwise.
+{justification_fields}- "translation": your {target_language} text for the verse marked role="to_translate"."""
+
+_JUSTIFICATION_TASK = " and providing your justification for the fix"
+
+_JUSTIFICATION_FIELDS = """- "changed": true if your text differs from the draft. false otherwise.
 - "justification": if your text differs from the draft, one sentence in English — what
   you fixed and why. Otherwise an empty string.
-- "translation": your {target_language} text for the verse marked role="to_translate"."""
+"""
 
-_RETRY_REMINDER = (
+_RETRY_REMINDER_TEMPLATE = (
     "\n\nYour previous answer could not be parsed. Reply with a single JSON object and nothing else "
-    '(no markdown fence), with exactly the keys "changed", "justification", "translation".'
+    "(no markdown fence), with exactly the keys {keys}."
 )
 
 _RESPONSE_SCHEMA: Dict[str, Any] = {
+    "type": "object",
+    "properties": {"translation": {"type": "string"}},
+    "required": ["translation"],
+}
+
+_JUSTIFIED_RESPONSE_SCHEMA: Dict[str, Any] = {
     "type": "object",
     "properties": {
         "changed": {"type": "boolean"},
@@ -130,7 +140,7 @@ def _format_draft(draft: str, target_language: str) -> str:
     return f"<draft_translation lang={target_lang}>\n  {escape(draft)}\n</draft_translation>"
 
 
-def _try_parse_response(text: str, draft: str) -> Optional[PostEditResult]:
+def _try_parse_response(text: str, draft: str, include_justification: bool) -> Optional[PostEditResult]:
     data = json.loads(text)
     translation = unescape(_to_single_line(data["translation"]))
     if not translation:
@@ -140,7 +150,7 @@ def _try_parse_response(text: str, draft: str) -> Optional[PostEditResult]:
         translation=translation,
         succeeded=True,
         changed=changed,
-        justification=unescape(data["justification"].strip()) if changed else "",
+        justification=unescape(data["justification"].strip()) if changed and include_justification else "",
     )
 
 
@@ -155,6 +165,7 @@ class LlmPostEditor:
         target_language: str,
         num_examples: int = DEFAULT_NUM_EXAMPLES,
         max_attempts: int = DEFAULT_MAX_ATTEMPTS,
+        include_justification: bool = False,
     ) -> None:
         if max_attempts < 1:
             raise ValueError("max_attempts must be at least 1.")
@@ -164,8 +175,16 @@ class LlmPostEditor:
         self._target_language = target_language
         self._num_examples = num_examples
         self._max_attempts = max_attempts
+        self._include_justification = include_justification
         self._system_instruction = _SYSTEM_INSTRUCTION_TEMPLATE.format(
-            source_language=source_language, target_language=target_language
+            source_language=source_language,
+            target_language=target_language,
+            justification_task=_JUSTIFICATION_TASK if include_justification else "",
+            justification_fields=_JUSTIFICATION_FIELDS if include_justification else "",
+        )
+        self._response_schema = _JUSTIFIED_RESPONSE_SCHEMA if include_justification else _RESPONSE_SCHEMA
+        self._retry_reminder = _RETRY_REMINDER_TEMPLATE.format(
+            keys=", ".join(f'"{key}"' for key in self._response_schema["required"])
         )
 
     def post_edit(self, segment: PostEditSegment) -> PostEditResult:
@@ -180,10 +199,10 @@ class LlmPostEditor:
         for attempt in range(1, self._max_attempts + 1):
             messages = [
                 {"role": "system", "content": self._system_instruction},
-                {"role": "user", "content": prompt if attempt == 1 else prompt + _RETRY_REMINDER},
+                {"role": "user", "content": prompt if attempt == 1 else prompt + self._retry_reminder},
             ]
             try:
-                completion = self._completion_client.complete(messages, response_schema=_RESPONSE_SCHEMA)
+                completion = self._completion_client.complete(messages, response_schema=self._response_schema)
             except (ContentBlockError, RefusalError, TruncatedCompletionError, MalformedCompletionError) as error:
                 total_cost += error.cost
                 total_input_token_count += error.input_token_count
@@ -205,7 +224,7 @@ class LlmPostEditor:
             total_input_token_count += completion.input_token_count
             total_output_token_count += completion.output_token_count
             finish_reason = completion.finish_reason
-            result = _try_parse_response(completion.text, draft)
+            result = _try_parse_response(completion.text, draft, self._include_justification)
             if result is not None:
                 return replace(
                     result,

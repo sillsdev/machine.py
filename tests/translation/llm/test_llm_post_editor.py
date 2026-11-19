@@ -43,7 +43,7 @@ def _get_prompt(client: MockLlmCompletionClient, request: int = 0) -> str:
 def test_post_edit() -> None:
     client = MockLlmCompletionClient([_create_answer()])
 
-    result = _create_post_editor(client).post_edit(PostEditSegment("the dog", "la perro"))
+    result = _create_post_editor(client, include_justification=True).post_edit(PostEditSegment("the dog", "la perro"))
 
     assert result.translation == "el perro"
     assert result.succeeded
@@ -73,7 +73,7 @@ def test_post_edit_changed_reported_false() -> None:
 def test_post_edit_unchanged_reported_true() -> None:
     client = MockLlmCompletionClient([_create_answer(translation="el perro", changed=True)])
 
-    result = _create_post_editor(client).post_edit(PostEditSegment("the dog", "el perro"))
+    result = _create_post_editor(client, include_justification=True).post_edit(PostEditSegment("the dog", "el perro"))
 
     assert not result.changed
     assert result.justification == ""
@@ -238,7 +238,9 @@ def test_post_edit_prompt_escapes_markup() -> None:
 def test_post_edit_answer_unescaped() -> None:
     client = MockLlmCompletionClient([_create_answer(translation="el &amp; perro", justification="&lt;fixed&gt;")])
 
-    result = _create_post_editor(client).post_edit(PostEditSegment("the & dog", "la & perro"))
+    result = _create_post_editor(client, include_justification=True).post_edit(
+        PostEditSegment("the & dog", "la & perro")
+    )
 
     assert result.translation == "el & perro"
     assert result.justification == "<fixed>"
@@ -261,14 +263,55 @@ def test_post_edit_system_instruction_languages() -> None:
     assert "from English to Spanish" in client.requests[0]["messages"][0]["content"]
 
 
-def test_post_edit_response_schema() -> None:
+@pytest.mark.parametrize(
+    "include_justification,keys",
+    [(False, ["translation"]), (True, ["changed", "justification", "translation"])],
+)
+def test_post_edit_response_schema(include_justification: bool, keys: list) -> None:
     client = MockLlmCompletionClient([_create_answer()])
 
-    _create_post_editor(client).post_edit(PostEditSegment("the dog", "la perro"))
+    post_editor = _create_post_editor(client, include_justification=include_justification)
+    post_editor.post_edit(PostEditSegment("the dog", "la perro"))
 
     schema = client.requests[0]["response_schema"]
-    assert list(schema["properties"]) == ["changed", "justification", "translation"]
-    assert schema["required"] == ["changed", "justification", "translation"]
+    assert list(schema["properties"]) == keys
+    assert schema["required"] == keys
+
+
+@pytest.mark.parametrize(
+    "include_justification,keys",
+    [(False, '"translation"'), (True, '"changed", "justification", "translation"')],
+)
+def test_post_edit_retry_reminder_keys(include_justification: bool, keys: str) -> None:
+    client = MockLlmCompletionClient([MalformedCompletionError([], "not json"), _create_answer()])
+
+    post_editor = _create_post_editor(client, include_justification=include_justification)
+    post_editor.post_edit(PostEditSegment("the dog", "la perro"))
+
+    assert _get_prompt(client, 1).endswith(f"with exactly the keys {keys}.")
+
+
+def test_post_edit_justification_omitted_by_default() -> None:
+    client = MockLlmCompletionClient([_create_answer()])
+
+    result = _create_post_editor(client).post_edit(PostEditSegment("the dog", "la perro"))
+
+    system_instruction = client.requests[0]["messages"][0]["content"]
+    assert "justification" not in system_instruction
+    assert '"changed"' not in system_instruction
+    assert result.changed
+    assert result.justification == ""
+
+
+def test_post_edit_justification_requested() -> None:
+    client = MockLlmCompletionClient([_create_answer()])
+
+    _create_post_editor(client, include_justification=True).post_edit(PostEditSegment("the dog", "la perro"))
+
+    system_instruction = client.requests[0]["messages"][0]["content"]
+    assert "providing your justification for the fix" in system_instruction
+    assert '- "justification":' in system_instruction
+    assert '- "changed":' in system_instruction
 
 
 def test_post_edit_retry_unparseable_answer() -> None:
