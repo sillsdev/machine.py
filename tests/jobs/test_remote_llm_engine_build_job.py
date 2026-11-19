@@ -21,7 +21,9 @@ def test_build_job_uses_only_nonempty_segment_pairs_as_examples() -> None:
     ]
     parallel_corpus = ParallelTextCorpus.from_parallel_rows(rows)
     job = RemoteLlmEngineBuildJob(
-        SimpleNamespace(src_lang="English", trg_lang="Spanish"),
+        SimpleNamespace(
+            src_lang="eng", trg_lang="spa", remote_llm=SimpleNamespace(num_workers=4, batch_size=15, num_examples=100)
+        ),
         completion_client=None,  # type: ignore[arg-type]
         translation_file_service=None,  # type: ignore[arg-type]
         word_alignment_model_factory=ThotWordAlignmentModelFactory(SimpleNamespace()),
@@ -52,7 +54,16 @@ class _AlwaysRefusingClient(LlmCompletionClient):
 
 
 def test_build_job_tracks_verse_refs_when_translation_retries_are_exhausted() -> None:
-    config = {"src_lang": "eng", "trg_lang": "spa", "inference_batch_size": 4}
+    class _SubscriptableSimpleNamespace(SimpleNamespace):
+        def __getitem__(self, key):
+            return getattr(self, key)
+
+    config = _SubscriptableSimpleNamespace(
+        src_lang="eng",
+        trg_lang="spa",
+        inference_batch_size=15,
+        remote_llm=SimpleNamespace(num_workers=4, batch_size=15, num_examples=100),
+    )
     client = _AlwaysRefusingClient()
     job = RemoteLlmEngineBuildJob(
         config,
@@ -63,8 +74,8 @@ def test_build_job_tracks_verse_refs_when_translation_retries_are_exhausted() ->
     engine = RemoteLlmEngine(
         client,
         ExampleRetrieverFactory.create_example_retriever(ExampleRetrievalMethod.TFIDF, []),
-        "English",
-        "Spanish",
+        "eng",
+        "spa",
         num_workers=1,
     )
     pretranslation: PretranslationInfo = {
