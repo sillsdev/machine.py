@@ -2,12 +2,12 @@ import json
 import logging
 from dataclasses import replace
 from typing import Any, Dict, List, Optional, Sequence
+from xml.sax.saxutils import escape, quoteattr, unescape
 
 from .completion_finish_reason import CompletionFinishReason
 from .example import Example
 from .example_retriever import ExampleRetriever
-from .llm_completion_client import LlmCompletionClient
-from .openrouter_llm_completion_client import ContentBlockError, RefusalError
+from .llm_completion_client import ContentBlockError, LlmCompletionClient, MalformedCompletionError, RefusalError
 from .post_edit_result import PostEditResult
 from .post_edit_segment import PostEditSegment
 
@@ -69,12 +69,14 @@ def _to_single_line(text: str) -> str:
 
 
 def _format_examples(examples: Sequence[Example], source_language: str, target_language: str) -> str:
+    source_lang = quoteattr(source_language)
+    target_lang = quoteattr(target_language)
     lines = ["<translation_memory>"]
     for example in examples:
         lines.append(
             f"  <example>\n"
-            f'    <source lang="{source_language}">{example.source.strip()}</source>\n'
-            f'    <target lang="{target_language}">{example.target.strip()}</target>\n'
+            f"    <source lang={source_lang}>{escape(example.source.strip())}</source>\n"
+            f"    <target lang={target_lang}>{escape(example.target.strip())}</target>\n"
             f"  </example>"
         )
     lines.append("</translation_memory>")
@@ -84,25 +86,27 @@ def _format_examples(examples: Sequence[Example], source_language: str, target_l
 def _format_passage(segment: PostEditSegment, source_language: str, target_language: str) -> str:
     context_by_offset = {verse.offset_from_segment: verse for verse in segment.context_verses if verse.source.strip()}
     offsets = sorted(context_by_offset) + [0]
+    source_lang = quoteattr(source_language)
+    target_lang = quoteattr(target_language)
     lines = ["<passage_context>"]
     for offset in range(min(offsets), max(offsets) + 1):
         if offset == 0:
             lines.append(
                 f'  <verse offset="0" role="to_translate">\n'
-                f'    <source lang="{source_language}">{segment.source.strip()}</source>\n'
+                f"    <source lang={source_lang}>{escape(segment.source.strip())}</source>\n"
                 f"  </verse>"
             )
         elif offset in context_by_offset:
             verse = context_by_offset[offset]
             target = verse.target.strip()
             rendered_target = (
-                f'<target lang="{target_language}">{target}</target>'
+                f"<target lang={target_lang}>{escape(target)}</target>"
                 if target
-                else f'<target lang="{target_language}" status="not_available"/>'
+                else f'<target lang={target_lang} status="not_available"/>'
             )
             lines.append(
                 f'  <verse offset="{offset}">\n'
-                f'    <source lang="{source_language}">{verse.source.strip()}</source>\n'
+                f"    <source lang={source_lang}>{escape(verse.source.strip())}</source>\n"
                 f"    {rendered_target}\n"
                 f"  </verse>"
             )
@@ -114,21 +118,15 @@ def _format_passage(segment: PostEditSegment, source_language: str, target_langu
 
 def _format_draft(draft: str, target_language: str) -> str:
     draft = draft.strip()
+    target_lang = quoteattr(target_language)
     if not draft:
-        return f'<draft_translation lang="{target_language}" status="not_available"/>'
-    return f'<draft_translation lang="{target_language}">\n  {draft}\n</draft_translation>'
+        return f'<draft_translation lang={target_lang} status="not_available"/>'
+    return f"<draft_translation lang={target_lang}>\n  {escape(draft)}\n</draft_translation>"
 
 
 def _try_parse_response(text: str, draft: str) -> Optional[PostEditResult]:
-    if not text:
-        return None
-    try:
-        data = json.loads(text)
-    except json.JSONDecodeError:
-        return None
-    if not isinstance(data, dict):
-        return None
-    translation = _to_single_line(str(data.get("translation", "")))
+    data = json.loads(text)
+    translation = unescape(_to_single_line(data["translation"]))
     if not translation:
         return None
     changed = translation != draft
@@ -136,7 +134,7 @@ def _try_parse_response(text: str, draft: str) -> Optional[PostEditResult]:
         translation=translation,
         succeeded=True,
         changed=changed,
-        justification=str(data.get("justification", "")).strip() if changed else "",
+        justification=unescape(data["justification"].strip()) if changed else "",
     )
 
 
@@ -180,19 +178,22 @@ class LlmPostEditor:
             ]
             try:
                 completion = self._completion_client.complete(messages, response_schema=_RESPONSE_SCHEMA)
-            except ContentBlockError:
-                logger.warning("Post-edit attempt %d/%d was blocked by content filtering.", attempt, self._max_attempts)
-                finish_reason = CompletionFinishReason.CONTENT_FILTER
+            except (ContentBlockError, RefusalError, MalformedCompletionError) as error:
+                total_cost += error.cost
+                total_input_token_count += error.input_token_count
+                total_output_token_count += error.output_token_count
+                if isinstance(error, MalformedCompletionError):
+                    logger.warning("Post-edit attempt %d/%d failed: %s", attempt, self._max_attempts, error)
+                    continue
+                if isinstance(error, ContentBlockError):
+                    logger.warning(
+                        "Post-edit attempt %d/%d was blocked by content filtering.", attempt, self._max_attempts
+                    )
+                    finish_reason = CompletionFinishReason.CONTENT_FILTER
+                else:
+                    logger.warning("Post-edit attempt %d/%d was refused by the model.", attempt, self._max_attempts)
+                    finish_reason = CompletionFinishReason.REFUSAL
                 break
-            except RefusalError:
-                logger.warning("Post-edit attempt %d/%d was refused by the model.", attempt, self._max_attempts)
-                finish_reason = CompletionFinishReason.REFUSAL
-                break
-            except ValueError:
-                logger.warning(
-                    "Post-edit attempt %d/%d got a malformed response.", attempt, self._max_attempts, exc_info=True
-                )
-                continue
             total_cost += completion.cost
             total_input_token_count += completion.input_token_count
             total_output_token_count += completion.output_token_count
@@ -232,5 +233,5 @@ class LlmPostEditor:
             f"{_format_draft(segment.draft, self._target_language)}\n\n"
             f'Post-edit the draft above for the verse marked role="to_translate".\n'
             f"Source ({self._source_language}):\n"
-            f"{segment.source.strip()}"
+            f"{escape(segment.source.strip())}"
         )

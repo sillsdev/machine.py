@@ -8,6 +8,7 @@ import pytest
 from machine.translation.llm import (
     CompletionFinishReason,
     ContentBlockError,
+    MalformedCompletionError,
     OpenRouterLlmCompletionClient,
     RefusalError,
 )
@@ -124,7 +125,7 @@ def test_openrouter_client_rejects_response_without_choices():
     response = SimpleNamespace(choices=[], usage=None)
     with _client(response):
         with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
-            with pytest.raises(ValueError, match="No choices"):
+            with pytest.raises(MalformedCompletionError, match="No choices"):
                 client.complete([])
 
 
@@ -132,7 +133,7 @@ def test_openrouter_client_rejects_null_choice():
     response = SimpleNamespace(choices=[None], usage=None)
     with _client(response):
         with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
-            with pytest.raises(ValueError, match="first choice is null"):
+            with pytest.raises(MalformedCompletionError, match="first choice is null"):
                 client.complete([])
 
 
@@ -140,7 +141,7 @@ def test_openrouter_client_rejects_null_message():
     response = SimpleNamespace(choices=[SimpleNamespace(message=None)], usage=None)
     with _client(response):
         with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
-            with pytest.raises(ValueError, match="no message"):
+            with pytest.raises(MalformedCompletionError, match="no message"):
                 client.complete([])
 
 
@@ -148,7 +149,7 @@ def test_openrouter_client_rejects_response_with_null_content():
     response = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=None))], usage=None)
     with _client(response):
         with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
-            with pytest.raises(ValueError, match="no content"):
+            with pytest.raises(MalformedCompletionError, match="no content"):
                 client.complete([])
 
 
@@ -156,7 +157,7 @@ def test_openrouter_client_rejects_response_with_non_text_content():
     response = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=42))], usage=None)
     with _client(response):
         with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
-            with pytest.raises(ValueError, match="content is not text"):
+            with pytest.raises(MalformedCompletionError, match="content is not text"):
                 client.complete([])
 
 
@@ -243,7 +244,7 @@ def test_openrouter_client_raises_refusal_error(content):
     with _client(response):
         with OpenRouterLlmCompletionClient("gpt-4o", api_key="test-key") as client:
             messages = [{"role": "user", "content": "hello"}]
-            with pytest.raises(RefusalError, check=lambda e: e.messages == messages):
+            with pytest.raises(RefusalError, match="I can't help", check=lambda e: e.messages == messages):
                 client.complete(messages)
 
 
@@ -280,3 +281,64 @@ def test_complete_finish_reason(reported: Optional[str], expected: CompletionFin
     with _client(response):
         with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
             assert client.complete([]).finish_reason is expected
+
+
+def _schema_response(content):
+    return SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content=content), finish_reason="stop")],
+        usage=SimpleNamespace(cost=0.5, prompt_tokens=10, completion_tokens=2),
+    )
+
+
+_SCHEMA = {"type": "object", "properties": {"translation": {"type": "string"}}, "required": ["translation"]}
+
+
+@pytest.mark.parametrize(
+    "content,match",
+    [
+        ("Sure! Here you go", "not JSON"),
+        ('{"translation": null}', "does not match"),
+        ("{}", "does not match"),
+        ('{"translation": "hola", "extra": 1}', "does not match"),
+        ('["hola"]', "does not match"),
+    ],
+)
+def test_complete_rejects_response_not_matching_schema(content: str, match: str):
+    with _client(_schema_response(content)):
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+            with pytest.raises(MalformedCompletionError, match=match) as error:
+                client.complete([], response_schema=_SCHEMA)
+
+    assert (error.value.cost, error.value.input_token_count, error.value.output_token_count) == (0.5, 10, 2)
+
+
+def test_complete_accepts_response_matching_schema():
+    with _client(_schema_response('{"translation": "hola"}')):
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+            result = client.complete([], response_schema=_SCHEMA)
+
+    assert result.text == '{"translation": "hola"}'
+
+
+def test_complete_does_not_validate_without_schema():
+    with _client(_schema_response("Sure! Here you go")):
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+            assert client.complete([]).text == "Sure! Here you go"
+
+
+@pytest.mark.parametrize(
+    "choice,expected_error",
+    [
+        (SimpleNamespace(finish_reason="content_filter"), ContentBlockError),
+        (SimpleNamespace(message=SimpleNamespace(content=None, refusal="I can't help")), RefusalError),
+        (None, MalformedCompletionError),
+    ],
+)
+def test_complete_errors_carry_billed_usage(choice, expected_error):
+    response = SimpleNamespace(choices=[choice], usage=SimpleNamespace(cost=0.5, prompt_tokens=10, completion_tokens=2))
+    with _client(response):
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+            with pytest.raises(expected_error) as error:
+                client.complete([])
+
+    assert (error.value.cost, error.value.input_token_count, error.value.output_token_count) == (0.5, 10, 2)

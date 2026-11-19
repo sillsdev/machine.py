@@ -26,11 +26,44 @@ class Completion:
     finish_reason: CompletionFinishReason = CompletionFinishReason.UNKNOWN
 
 
+# Not a ValueError, so that callers retrying on these do not also swallow invalid request arguments.
+class CompletionError(Exception):
+    def __init__(
+        self,
+        messages: List[Dict[str, str]],
+        reason: str,
+        *,
+        cost: float = 0.0,
+        input_token_count: int = 0,
+        output_token_count: int = 0,
+    ) -> None:
+        super().__init__(reason)
+        self.messages = messages
+        self.cost = cost
+        self.input_token_count = input_token_count
+        self.output_token_count = output_token_count
+
+
+class ContentBlockError(CompletionError):
+    pass
+
+
+class RefusalError(CompletionError):
+    pass
+
+
+class MalformedCompletionError(CompletionError):
+    pass
+
+
 class LlmCompletionClient(ABC):
     @abstractmethod
     def complete(
         self, messages: List[Dict[str, str]], logprobs: bool = False, response_schema: Optional[Dict[str, Any]] = None
-    ) -> Completion: ...
+    ) -> Completion:
+        """Raises ContentBlockError or RefusalError when the provider declines the request, and
+        MalformedCompletionError when the reply has no text or, given a response_schema, is not JSON matching it.
+        """
 
     def supports_logprobs(self) -> bool:
         return False

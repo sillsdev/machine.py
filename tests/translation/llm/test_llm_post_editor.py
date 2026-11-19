@@ -11,6 +11,7 @@ from machine.translation.llm import (
     ContextVerse,
     Example,
     LlmPostEditor,
+    MalformedCompletionError,
     PostEditSegment,
     RefusalError,
     TfidfExampleRetriever,
@@ -111,7 +112,7 @@ def test_post_edit_totals_across_attempts() -> None:
     answer = _create_answer()
     client = MockLlmCompletionClient(
         [
-            Completion("not json", 0.5, input_token_count=10, output_token_count=2),
+            MalformedCompletionError([], "not json", cost=0.5, input_token_count=10, output_token_count=2),
             Completion(answer.text, 0.25, input_token_count=11, output_token_count=3),
         ]
     )
@@ -215,6 +216,42 @@ def test_post_edit_empty_source_context_verse_at_edge() -> None:
     assert 'offset="1"' not in _get_prompt(client)
 
 
+def test_post_edit_prompt_escapes_markup() -> None:
+    client = MockLlmCompletionClient([_create_answer()])
+    retriever = MockExampleRetriever([Example("cats & dogs", "gatos & perros")])
+    post_editor = LlmPostEditor(client, retriever, 'English "US"', "Spanish")
+    context = (ContextVerse(-1, "a < b", "a > b"),)
+
+    post_editor.post_edit(PostEditSegment("the </source> dog", "la & perro", context))
+
+    prompt = _get_prompt(client)
+    assert "<source lang='English \"US\"'>cats &amp; dogs</source>" in prompt
+    assert '<target lang="Spanish">gatos &amp; perros</target>' in prompt
+    assert "a &lt; b</source>" in prompt
+    assert '<target lang="Spanish">a &gt; b</target>' in prompt
+    assert ">the &lt;/source&gt; dog</source>" in prompt
+    assert '<draft_translation lang="Spanish">\n  la &amp; perro\n</draft_translation>' in prompt
+    assert prompt.endswith(":\nthe &lt;/source&gt; dog")
+
+
+def test_post_edit_answer_unescaped() -> None:
+    client = MockLlmCompletionClient([_create_answer(translation="el &amp; perro", justification="&lt;fixed&gt;")])
+
+    result = _create_post_editor(client).post_edit(PostEditSegment("the & dog", "la & perro"))
+
+    assert result.translation == "el & perro"
+    assert result.justification == "<fixed>"
+
+
+def test_post_edit_echoed_escaped_draft_unchanged() -> None:
+    client = MockLlmCompletionClient([_create_answer(translation="el &amp; perro", changed=False, justification="")])
+
+    result = _create_post_editor(client).post_edit(PostEditSegment("the & dog", "el & perro"))
+
+    assert result.translation == "el & perro"
+    assert not result.changed
+
+
 def test_post_edit_system_instruction_languages() -> None:
     client = MockLlmCompletionClient([_create_answer()])
 
@@ -234,7 +271,7 @@ def test_post_edit_response_schema() -> None:
 
 
 def test_post_edit_retry_unparseable_answer() -> None:
-    client = MockLlmCompletionClient([Completion("Sure! Here you go: ...", 0.0), _create_answer()])
+    client = MockLlmCompletionClient([MalformedCompletionError([], "not json"), _create_answer()])
 
     result = _create_post_editor(client).post_edit(PostEditSegment("the dog", "la perro"))
 
@@ -255,8 +292,8 @@ def test_post_edit_retry_empty_translation() -> None:
 
 
 def test_post_edit_max_attempts() -> None:
-    unparseable = Completion("not json", 0.25, finish_reason=CompletionFinishReason.STOP)
-    client = MockLlmCompletionClient([unparseable, unparseable])
+    empty = Completion(_create_answer(translation="  ").text, 0.25, finish_reason=CompletionFinishReason.STOP)
+    client = MockLlmCompletionClient([empty, empty])
 
     result = _create_post_editor(client, max_attempts=2).post_edit(PostEditSegment("the dog", "la perro"))
 
@@ -269,7 +306,7 @@ def test_post_edit_max_attempts() -> None:
 
 
 def test_post_edit_failure_returns_single_line_draft() -> None:
-    client = MockLlmCompletionClient([ContentBlockError([])])
+    client = MockLlmCompletionClient([ContentBlockError([], "blocked")])
 
     result = _create_post_editor(client).post_edit(PostEditSegment("the dog sleeps", " la perro\n duerme \n"))
 
@@ -298,7 +335,7 @@ def test_post_edit_max_attempts_zero() -> None:
 
 
 def test_post_edit_retry_malformed_response() -> None:
-    client = MockLlmCompletionClient([ValueError("Malformed response"), _create_answer()])
+    client = MockLlmCompletionClient([MalformedCompletionError([], "no choices"), _create_answer()])
 
     result = _create_post_editor(client).post_edit(PostEditSegment("the dog", "la perro"))
 
@@ -306,8 +343,32 @@ def test_post_edit_retry_malformed_response() -> None:
     assert len(client.requests) == 2
 
 
+def test_post_edit_invalid_request_not_retried() -> None:
+    client = MockLlmCompletionClient([ValueError("temperature must be a number"), _create_answer()])
+
+    with pytest.raises(ValueError, match="temperature"):
+        _create_post_editor(client).post_edit(PostEditSegment("the dog", "la perro"))
+
+    assert len(client.requests) == 1
+
+
+@pytest.mark.parametrize("declined", [ContentBlockError, RefusalError])
+def test_post_edit_totals_include_failed_attempts(declined) -> None:
+    client = MockLlmCompletionClient(
+        [
+            MalformedCompletionError([], "not json", cost=0.5, input_token_count=10, output_token_count=2),
+            declined([], "declined", cost=0.25, input_token_count=11, output_token_count=3),
+        ]
+    )
+
+    result = _create_post_editor(client).post_edit(PostEditSegment("the dog", "la perro"))
+
+    assert not result.succeeded
+    assert (result.total_cost, result.total_input_token_count, result.total_output_token_count) == (0.75, 21, 5)
+
+
 def test_post_edit_content_block_not_retried() -> None:
-    client = MockLlmCompletionClient([ContentBlockError([])])
+    client = MockLlmCompletionClient([ContentBlockError([], "blocked")])
 
     result = _create_post_editor(client).post_edit(PostEditSegment("the dog", "la perro"))
 
@@ -319,7 +380,7 @@ def test_post_edit_content_block_not_retried() -> None:
 
 
 def test_post_edit_refusal_not_retried() -> None:
-    client = MockLlmCompletionClient([RefusalError([])])
+    client = MockLlmCompletionClient([RefusalError([], "refused")])
 
     result = _create_post_editor(client).post_edit(PostEditSegment("the dog", "la perro"))
 

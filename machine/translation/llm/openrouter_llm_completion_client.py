@@ -1,25 +1,21 @@
+import json
 import logging
 from types import TracebackType
 from typing import Any, Dict, List, Optional, Type
 
+import jsonschema
+
 from .completion_finish_reason import CompletionFinishReason
-from .llm_completion_client import Completion, LlmCompletionClient, TokenLogprob
+from .llm_completion_client import (
+    Completion,
+    ContentBlockError,
+    LlmCompletionClient,
+    MalformedCompletionError,
+    RefusalError,
+    TokenLogprob,
+)
 
 logger = logging.getLogger(__name__)
-
-
-class ContentBlockError(Exception):
-    """This exception is raised when the completion was terminated due to a content block."""
-
-    def __init__(self, messages: List[Dict[str, str]]) -> None:
-        super().__init__("Completion response terminated because of content filtering.")
-        self.messages = messages
-
-
-class RefusalError(Exception):
-    def __init__(self, messages: List[Dict[str, str]]) -> None:
-        super().__init__("Completion response was a refusal from the model.")
-        self.messages = messages
 
 
 _FINISH_REASONS: Dict[Optional[str], CompletionFinishReason] = {
@@ -83,51 +79,67 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         )
         if self._max_tokens is not None:
             request["max_completion_tokens"] = self._max_tokens
+        schema: Optional[Dict[str, Any]] = None
         if response_schema is not None:
+            schema = {**response_schema, "additionalProperties": False}
             request["response_format"] = {
                 "type": "json_schema",
-                "json_schema": {
-                    "name": "response",
-                    "strict": True,
-                    "schema": {**response_schema, "additionalProperties": False},
-                },
+                "json_schema": {"name": "response", "strict": True, "schema": schema},
             }
         response: ChatResult = self._client.chat.send(**request)
+        usage: Optional[ChatUsage] = getattr(response, "usage", None)
+        cost: float = getattr(usage, "cost", None) or 0.0
+        prompt_tokens: int = getattr(usage, "prompt_tokens", 0)
+        completion_tokens: int = getattr(usage, "completion_tokens", 0)
+
+        usage_fields = {"cost": cost, "input_token_count": prompt_tokens, "output_token_count": completion_tokens}
+
+        def malformed(reason: str) -> MalformedCompletionError:
+            return MalformedCompletionError(
+                messages, f"Malformed OpenRouter completion response: {reason}", **usage_fields
+            )
+
         choices = getattr(response, "choices", None)
         if not choices:
-            raise ValueError("Malformed OpenRouter completion response: No choices were returned.")
+            raise malformed("No choices were returned.")
         choice: Optional[ChatChoice] = choices[0]
         if choice is None:
-            raise ValueError("Malformed OpenRouter completion response: The first choice is null.")
+            raise malformed("The first choice is null.")
         if getattr(choice, "finish_reason", None) == "length" and self._max_tokens is not None:
             logger.warning("Completion was finished because the max tokens ceiling %d was hit", self._max_tokens)
         elif getattr(choice, "finish_reason", None) == "content_filter":
-            raise ContentBlockError(messages)
+            raise ContentBlockError(
+                messages, "Completion response terminated because of content filtering.", **usage_fields
+            )
         message: Optional[ChatAssistantMessage] = getattr(choice, "message", None)
         if message is None:
-            raise ValueError("Malformed OpenRouter completion response: The first choice has no message.")
-        if getattr(message, "refusal", None):
-            raise RefusalError(messages)
+            raise malformed("The first choice has no message.")
+        refusal = getattr(message, "refusal", None)
+        if refusal:
+            raise RefusalError(messages, f"Completion response was a refusal from the model: {refusal}", **usage_fields)
         content: Optional[ChatAssistantMessageContent] = getattr(message, "content", None)
         if content is None:
-            raise ValueError("Malformed OpenRouter completion response: The message has no content.")
+            raise malformed("The message has no content.")
         if isinstance(content, str):
             text = content
         elif isinstance(content, list):
             text_parts = [p.text for p in content if isinstance(p, ChatContentText) and isinstance(p.text, str)]
             if not text_parts:
-                raise ValueError("Malformed OpenRouter completion response: The message has no text content.")
+                raise malformed("The message has no text content.")
             text = "".join(text_parts)
         else:
-            raise ValueError("Malformed OpenRouter completion response: The message content is not text.")
+            raise malformed("The message content is not text.")
+        if schema is not None:
+            try:
+                jsonschema.validate(json.loads(text), schema)
+            except json.JSONDecodeError as error:
+                raise malformed(f"The message is not JSON: {error}") from error
+            except jsonschema.ValidationError as error:
+                raise malformed(f"The message does not match the response schema: {error.message}") from error
         token_logprobs = self._get_logprobs(choice) if logprobs else []
-        usage: Optional[ChatUsage] = getattr(response, "usage", None)
-        cost: Optional[float] = getattr(usage, "cost", None)
-        prompt_tokens: int = getattr(usage, "prompt_tokens", 0)
-        completion_tokens: int = getattr(usage, "completion_tokens", 0)
         return Completion(
             text=text,
-            cost=cost or 0.0,
+            cost=cost,
             token_logprobs=token_logprobs,
             input_token_count=prompt_tokens,
             output_token_count=completion_tokens,
