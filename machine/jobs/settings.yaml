@@ -4,6 +4,13 @@ default:
   shared_file_folder: production
   inference_batch_size: 1024
   align_pretranslations: true
+  remote_llm:
+    model: openai/gpt-4o
+    max_tokens:
+    num_examples: 100
+    retrieval_method: coverage
+    batch_size: 15
+    num_workers: 4
   huggingface:
     parent_model_name: facebook/nllb-200-distilled-1.3B
     train_params:

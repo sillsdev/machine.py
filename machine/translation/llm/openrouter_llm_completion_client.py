@@ -2,6 +2,7 @@ import logging
 from types import TracebackType
 from typing import Any, Dict, List, Optional, Type
 
+from .completion_finish_reason import CompletionFinishReason
 from .llm_completion_client import Completion, LlmCompletionClient, TokenLogprob
 
 logger = logging.getLogger(__name__)
@@ -15,12 +16,24 @@ class ContentBlockError(Exception):
         self.messages = messages
 
 
+class RefusalError(Exception):
+    def __init__(self, messages: List[Dict[str, str]]) -> None:
+        super().__init__("Completion response was a refusal from the model.")
+        self.messages = messages
+
+
+_FINISH_REASONS: Dict[Optional[str], CompletionFinishReason] = {
+    "stop": CompletionFinishReason.STOP,
+    "length": CompletionFinishReason.LENGTH,
+}
+
+
 class OpenRouterLlmCompletionClient(LlmCompletionClient):
     def __init__(
         self,
         model: str,
+        api_key: str,
         max_tokens: Optional[int] = None,
-        api_key: Optional[str] = None,
         **default_kwargs: Any,
     ) -> None:
         self._model = model
@@ -36,7 +49,13 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
             ) from error
         self._client = OpenRouter(api_key=api_key)
 
-    def complete(self, messages: List[Dict[str, str]], logprobs: bool = False, **kwargs: Any) -> Completion:
+    def complete(
+        self,
+        messages: List[Dict[str, str]],
+        logprobs: bool = False,
+        response_schema: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> Completion:
         if self._closed:
             raise RuntimeError("OpenRouter completion client is closed.")
         try:
@@ -64,6 +83,15 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         )
         if self._max_tokens is not None:
             request["max_completion_tokens"] = self._max_tokens
+        if response_schema is not None:
+            request["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "response",
+                    "strict": True,
+                    "schema": {**response_schema, "additionalProperties": False},
+                },
+            }
         response: ChatResult = self._client.chat.send(**request)
         choices = getattr(response, "choices", None)
         if not choices:
@@ -78,6 +106,8 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         message: Optional[ChatAssistantMessage] = getattr(choice, "message", None)
         if message is None:
             raise ValueError("Malformed OpenRouter completion response: The first choice has no message.")
+        if getattr(message, "refusal", None):
+            raise RefusalError(messages)
         content: Optional[ChatAssistantMessageContent] = getattr(message, "content", None)
         if content is None:
             raise ValueError("Malformed OpenRouter completion response: The message has no content.")
@@ -93,14 +123,15 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         token_logprobs = self._get_logprobs(choice) if logprobs else []
         usage: Optional[ChatUsage] = getattr(response, "usage", None)
         cost: Optional[float] = getattr(usage, "cost", None)
-        prompt_tokens: int = getattr(usage, "prompt_tokens", 0)
-        completion_tokens: int = getattr(usage, "completion_tokens", 0)
+        prompt_tokens = getattr(usage, "prompt_tokens", None)
+        completion_tokens = getattr(usage, "completion_tokens", None)
         return Completion(
             text=text,
-            cost=cost or 0.0,
+            cost=None if cost is None else float(cost),
             token_logprobs=token_logprobs,
-            input_token_count=prompt_tokens,
-            output_token_count=completion_tokens,
+            input_token_count=None if prompt_tokens is None else int(prompt_tokens),
+            output_token_count=None if completion_tokens is None else int(completion_tokens),
+            finish_reason=_FINISH_REASONS.get(getattr(choice, "finish_reason", None), CompletionFinishReason.UNKNOWN),
         )
 
     def supports_logprobs(self) -> bool:
