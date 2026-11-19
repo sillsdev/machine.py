@@ -10,11 +10,9 @@ from .example import Example
 from .example_retriever import ExampleRetriever
 from .example_retriever_factory import ExampleRetrieverFactory
 from .example_retriever_method import ExampleRetrievalMethod
-from .llm_completion_client import Completion, LlmCompletionClient, TokenLogprob
-from .llm_post_editor import LlmPostEditor
+from .llm_completion_client import Completion, LlmCompletionClient, LlmUsageSummary, LlmUsageTotals, TokenLogprob
 from .openrouter_llm_completion_client import ContentBlockError, OpenRouterLlmCompletionClient, RefusalError
-from .post_edit_result import PostEditResult
-from .post_edit_segment import PostEditSegment
+from .remote_llm_engine import RemoteLlmEngine
 from .tfidf_example_retriever import TfidfExampleRetriever
 from .top_k_example_retriever import TopKExampleRetriever
 
@@ -29,10 +27,10 @@ __all__ = [
     "CompletionFinishReason",
     "ContextVerse",
     "LlmCompletionClient",
-    "LlmPostEditor",
+    "LlmUsageSummary",
+    "LlmUsageTotals",
     "OpenRouterLlmCompletionClient",
-    "PostEditResult",
-    "PostEditSegment",
+    "RemoteLlmEngine",
     "RefusalError",
     "TokenLogprob",
     "TfidfExampleRetriever",

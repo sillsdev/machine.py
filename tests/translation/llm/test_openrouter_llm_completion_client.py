@@ -189,7 +189,7 @@ def test_openrouter_client_maps_requested_token_logprobs():
         with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
             result = client.complete([], logprobs=True)
 
-    assert result == Completion("hola", 0.0, [TokenLogprob("hola", -0.2)])
+    assert result == Completion("hola", None, [TokenLogprob("hola", -0.2)])
 
 
 def test_openrouter_client_reports_logprobs_supported_by_its_model_and_caches_lookup():

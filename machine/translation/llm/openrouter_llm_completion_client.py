@@ -32,8 +32,8 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
     def __init__(
         self,
         model: str,
+        api_key: str,
         max_tokens: Optional[int] = None,
-        api_key: Optional[str] = None,
         **default_kwargs: Any,
     ) -> None:
         self._model = model
@@ -123,14 +123,14 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         token_logprobs = self._get_logprobs(choice) if logprobs else []
         usage: Optional[ChatUsage] = getattr(response, "usage", None)
         cost: Optional[float] = getattr(usage, "cost", None)
-        prompt_tokens: int = getattr(usage, "prompt_tokens", 0)
-        completion_tokens: int = getattr(usage, "completion_tokens", 0)
+        prompt_tokens = getattr(usage, "prompt_tokens", None)
+        completion_tokens = getattr(usage, "completion_tokens", None)
         return Completion(
             text=text,
-            cost=cost or 0.0,
+            cost=None if cost is None else float(cost),
             token_logprobs=token_logprobs,
-            input_token_count=prompt_tokens,
-            output_token_count=completion_tokens,
+            input_token_count=None if prompt_tokens is None else int(prompt_tokens),
+            output_token_count=None if completion_tokens is None else int(completion_tokens),
             finish_reason=_FINISH_REASONS.get(getattr(choice, "finish_reason", None), CompletionFinishReason.UNKNOWN),
         )
 
