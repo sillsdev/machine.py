@@ -12,6 +12,7 @@ from machine.translation.llm import (
     Example,
     LlmPostEditor,
     MalformedCompletionError,
+    PostEditBatchError,
     PostEditSegment,
     RefusalError,
     TfidfExampleRetriever,
@@ -476,3 +477,21 @@ def test_post_edit_batch() -> None:
     )
 
     assert [result.translation for result in results] == ["el perro", "la casa"]
+
+
+def test_post_edit_batch_keeps_results_after_failure() -> None:
+    failure = RuntimeError("connection reset")
+    client = MockLlmCompletionClient([_create_answer(), failure, _create_answer(translation="la casa")])
+    segments = [
+        PostEditSegment("the dog", "la perro"),
+        PostEditSegment("the cat", " el gato\n negro "),
+        PostEditSegment("the house", "el casa"),
+    ]
+
+    with pytest.raises(PostEditBatchError, match="1 of 3") as error:
+        _create_post_editor(client).post_edit_batch(segments)
+
+    assert [result.translation for result in error.value.results] == ["el perro", "el gato negro", "la casa"]
+    assert [result.succeeded for result in error.value.results] == [True, False, True]
+    assert error.value.errors == {1: failure}
+    assert error.value.__cause__ is failure

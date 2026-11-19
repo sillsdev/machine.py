@@ -14,6 +14,7 @@ from .llm_completion_client import (
     RefusalError,
     TruncatedCompletionError,
 )
+from .post_edit_batch_error import PostEditBatchError
 from .post_edit_result import PostEditResult
 from .post_edit_segment import PostEditSegment
 
@@ -248,7 +249,23 @@ class LlmPostEditor:
         )
 
     def post_edit_batch(self, segments: Sequence[PostEditSegment]) -> Sequence[PostEditResult]:
-        return [self.post_edit(segment) for segment in segments]
+        """Post-edits every segment even when some fail, then raises PostEditBatchError if any did.
+
+        The error holds a result for every segment, with the draft unchanged for each failed one, and the exception
+        of each failed segment by index.
+        """
+        results: List[PostEditResult] = []
+        errors: Dict[int, Exception] = {}
+        for index, segment in enumerate(segments):
+            try:
+                results.append(self.post_edit(segment))
+            except Exception as error:
+                logger.error("Post-edit of segment %d failed.", index, exc_info=True)
+                errors[index] = error
+                results.append(PostEditResult(translation=_to_single_line(segment.draft)))
+        if errors:
+            raise PostEditBatchError(results, errors) from next(iter(errors.values()))
+        return results
 
     def _build_prompt(self, segment: PostEditSegment) -> str:
         most_similar_first = self._example_retriever.rank(segment.source, self._num_examples)

@@ -61,6 +61,23 @@ class TruncatedCompletionError(CompletionError):
 
 
 class LlmCompletionClient(ABC):
+    def __init__(self) -> None:
+        self._total_cost = 0.0
+        self._total_input_token_count = 0
+        self._total_output_token_count = 0
+
+    @property
+    def total_cost(self) -> float:
+        return self._total_cost
+
+    @property
+    def total_input_token_count(self) -> int:
+        return self._total_input_token_count
+
+    @property
+    def total_output_token_count(self) -> int:
+        return self._total_output_token_count
+
     @abstractmethod
     def complete(
         self, messages: List[Dict[str, str]], logprobs: bool = False, response_schema: Optional[Dict[str, Any]] = None
@@ -71,10 +88,18 @@ class LlmCompletionClient(ABC):
         Given a response_schema, raises TruncatedCompletionError when the reply hit the output token limit, and
         MalformedCompletionError when it is not JSON matching the schema. Without one, a truncated reply is returned
         with finish_reason LENGTH.
+
+        Every billed response, including one that then raises, is added to the client's running totals through
+        _record_usage. The totals span all callers sharing the client.
         """
 
     def supports_logprobs(self) -> bool:
         return False
+
+    def _record_usage(self, cost: float, input_token_count: int, output_token_count: int) -> None:
+        self._total_cost += cost
+        self._total_input_token_count += input_token_count
+        self._total_output_token_count += output_token_count
 
     def count_tokens(self, text: str) -> Optional[int]:
         return None

@@ -33,6 +33,7 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         api_key: Optional[str] = None,
         **default_kwargs: Any,
     ) -> None:
+        super().__init__()
         self._model = model
         self._max_tokens = max_tokens
         self._default_kwargs = default_kwargs
@@ -92,6 +93,7 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         cost: float = getattr(usage, "cost", None) or 0.0
         prompt_tokens: int = getattr(usage, "prompt_tokens", 0)
         completion_tokens: int = getattr(usage, "completion_tokens", 0)
+        self._record_usage(cost, prompt_tokens, completion_tokens)
 
         usage_fields = {"cost": cost, "input_token_count": prompt_tokens, "output_token_count": completion_tokens}
 

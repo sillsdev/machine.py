@@ -22,6 +22,7 @@ from .llm_completion_client import (
 )
 from .llm_post_editor import LlmPostEditor
 from .openrouter_llm_completion_client import OpenRouterLlmCompletionClient
+from .post_edit_batch_error import PostEditBatchError
 from .post_edit_result import PostEditResult
 from .post_edit_segment import PostEditSegment
 from .tfidf_example_retriever import TfidfExampleRetriever
@@ -42,6 +43,7 @@ __all__ = [
     "LlmPostEditor",
     "MalformedCompletionError",
     "OpenRouterLlmCompletionClient",
+    "PostEditBatchError",
     "PostEditResult",
     "PostEditSegment",
     "RefusalError",

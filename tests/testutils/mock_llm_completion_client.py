@@ -10,6 +10,7 @@ class MockLlmCompletionClient(LlmCompletionClient):
     """
 
     def __init__(self, completions: Sequence[Union[Completion, Exception]]) -> None:
+        super().__init__()
         self._completions = list(completions)
         self.requests: List[Dict[str, Any]] = []
 

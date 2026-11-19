@@ -369,3 +369,18 @@ def test_complete_returns_truncated_reply_without_schema():
 
     assert result.text == "hol"
     assert result.finish_reason is CompletionFinishReason.LENGTH
+
+
+def test_complete_running_totals_include_failed_responses():
+    response = SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content="Sure!"), finish_reason="stop")],
+        usage=SimpleNamespace(cost=0.5, prompt_tokens=10, completion_tokens=2),
+    )
+    with _client(response):
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+            assert (client.total_cost, client.total_input_token_count, client.total_output_token_count) == (0.0, 0, 0)
+            client.complete([])
+            with pytest.raises(MalformedCompletionError):
+                client.complete([], response_schema=_SCHEMA)
+
+    assert (client.total_cost, client.total_input_token_count, client.total_output_token_count) == (1.0, 20, 4)
