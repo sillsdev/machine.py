@@ -1,8 +1,9 @@
 import subprocess
 import sys
+import threading
 from contextlib import contextmanager
 from types import SimpleNamespace
-from typing import Optional
+from typing import List, Optional
 from unittest.mock import patch
 
 import httpx
@@ -407,60 +408,87 @@ def _rate_limit_error(headers=None):
 _HOLA = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="hola"))], usage=None)
 
 
+class _InstantEvent(threading.Event):
+    """Returns from each wait at once, recording its timeout, so that backoff is checked without waiting."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.timeouts: List[Optional[float]] = []
+
+    def wait(self, timeout: Optional[float] = None) -> bool:
+        self.timeouts.append(timeout)
+        return self.is_set()
+
+
 def test_complete_retries_rate_limit_with_backoff():
+    stop_event = _InstantEvent()
     with _client([_rate_limit_error(), _rate_limit_error(), _HOLA]) as sdk_client:
-        with patch("time.sleep") as sleep:
-            with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
-                assert client.complete([]).text == "hola"
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key", stop_event=stop_event) as client:
+            assert client.complete([]).text == "hola"
 
     assert len(sdk_client.chat.calls) == 3
-    first, second = (call.args[0] for call in sleep.call_args_list)
-    assert 0.5 <= first <= 1.0
-    assert 1.0 <= second <= 2.0
+    first, second = stop_event.timeouts
+    assert first is not None and 0.5 <= first <= 1.0
+    assert second is not None and 1.0 <= second <= 2.0
 
 
 @pytest.mark.parametrize("retry_after,expected", [("3", 3.0), ("600", 60.0), ("-1", 0.0)])
 def test_complete_rate_limit_honors_retry_after(retry_after: str, expected: float):
+    stop_event = _InstantEvent()
     with _client([_rate_limit_error({"Retry-After": retry_after}), _HOLA]):
-        with patch("time.sleep") as sleep:
-            with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
-                client.complete([])
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key", stop_event=stop_event) as client:
+            client.complete([])
 
-    sleep.assert_called_once_with(expected)
+    assert stop_event.timeouts == [expected]
 
 
 @pytest.mark.parametrize("retry_after", ["nan", "inf", "-inf"])
 def test_complete_rate_limit_backs_off_for_non_finite_retry_after(retry_after: str):
+    stop_event = _InstantEvent()
     with _client([_rate_limit_error({"Retry-After": retry_after}), _HOLA]):
-        with patch("time.sleep") as sleep:
-            with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
-                assert client.complete([]).text == "hola"
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key", stop_event=stop_event) as client:
+            assert client.complete([]).text == "hola"
 
-    assert 0.5 <= sleep.call_args.args[0] <= 1.0
+    (timeout,) = stop_event.timeouts
+    assert timeout is not None and 0.5 <= timeout <= 1.0
 
 
 def test_complete_rate_limit_gives_up_after_max_retries():
+    stop_event = _InstantEvent()
     with _client([_rate_limit_error(), _rate_limit_error(), _rate_limit_error()]) as sdk_client:
-        with patch("time.sleep"):
-            with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key", max_rate_limit_retries=2) as client:
-                with pytest.raises(errors.TooManyRequestsResponseError):
-                    client.complete([])
+        with OpenRouterLlmCompletionClient(
+            "openai/gpt-4o", api_key="test-key", max_rate_limit_retries=2, stop_event=stop_event
+        ) as client:
+            with pytest.raises(errors.TooManyRequestsResponseError):
+                client.complete([])
 
     assert len(sdk_client.chat.calls) == 3
+    assert len(stop_event.timeouts) == 2
+
+
+def test_complete_rate_limit_stops_when_stop_event_is_set():
+    stop_event = threading.Event()
+    stop_event.set()
+    with _client([_rate_limit_error(), _HOLA]) as sdk_client:
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key", stop_event=stop_event) as client:
+            with pytest.raises(errors.TooManyRequestsResponseError):
+                client.complete([])
+
+    assert len(sdk_client.chat.calls) == 1
 
 
 def test_complete_does_not_retry_other_http_errors():
+    stop_event = _InstantEvent()
     server_error = errors.OpenRouterError(
         "bad request", httpx.Response(400, request=httpx.Request("POST", "https://openrouter.ai"))
     )
     with _client([server_error, _HOLA]) as sdk_client:
-        with patch("time.sleep") as sleep:
-            with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
-                with pytest.raises(errors.OpenRouterError, match="bad request"):
-                    client.complete([])
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key", stop_event=stop_event) as client:
+            with pytest.raises(errors.OpenRouterError, match="bad request"):
+                client.complete([])
 
     assert len(sdk_client.chat.calls) == 1
-    sleep.assert_not_called()
+    assert stop_event.timeouts == []
 
 
 def test_client_rejects_negative_max_rate_limit_retries():
