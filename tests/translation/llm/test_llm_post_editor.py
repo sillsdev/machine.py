@@ -543,3 +543,303 @@ def test_post_edit_batch_in_parallel_keeps_results_after_failure() -> None:
 def test_post_edit_batch_max_workers_zero() -> None:
     with pytest.raises(ValueError, match="max_workers"):
         _create_post_editor(MockLlmCompletionClient([])).post_edit_batch([], max_workers=0)
+
+
+def _create_passage_answer(
+    *translations: str, cost: float = 0.0, input_token_count: int = 0, output_token_count: int = 0
+) -> Completion:
+    verses = [{"number": number, "translation": translation} for number, translation in enumerate(translations, 1)]
+    return Completion(
+        json.dumps({"verses": verses}),
+        cost,
+        input_token_count=input_token_count,
+        output_token_count=output_token_count,
+        finish_reason=CompletionFinishReason.STOP,
+    )
+
+
+def test_post_edit_batch_segments_per_request() -> None:
+    client = MockLlmCompletionClient(
+        [_create_passage_answer("el perro", "la casa"), _create_answer(translation="el gato")]
+    )
+    segments = [
+        PostEditSegment("the dog", "la perro"),
+        PostEditSegment("the house", "el casa"),
+        PostEditSegment("the cat", "la gato"),
+    ]
+
+    results = _create_post_editor(client).post_edit_batch(segments, segments_per_request=2)
+
+    assert [result.translation for result in results] == ["el perro", "la casa", "el gato"]
+    assert all(result.succeeded and result.changed for result in results)
+    assert results[0].finish_reason is CompletionFinishReason.STOP
+    assert len(client.requests) == 2
+    assert "verses" in client.requests[0]["response_schema"]["properties"]
+    assert "translation" in client.requests[1]["response_schema"]["properties"]
+
+
+def test_post_edit_batch_passage_prompt() -> None:
+    client = MockLlmCompletionClient([_create_passage_answer("uno", "dos", "tres")])
+    segments = [
+        PostEditSegment("one", "un", (ContextVerse(-1, "zero", "cero"), ContextVerse(1, "stale two", "dos"))),
+        PostEditSegment("two & <b>", "  "),
+        PostEditSegment("three", "tres", (ContextVerse(-1, "stale two"), ContextVerse(2, "five", "cinco"))),
+    ]
+
+    _create_post_editor(client).post_edit_batch(segments, segments_per_request=3)
+
+    prompt = _get_prompt(client)
+    assert (
+        "<passage_context>\n"
+        '  <verse offset="-1">\n'
+        '    <source lang="English">zero</source>\n'
+        '    <target lang="Spanish">cero</target>\n'
+        "  </verse>\n"
+        '  <verse offset="0" role="to_translate" number="1">\n'
+        '    <source lang="English">one</source>\n'
+        "  </verse>\n"
+        '  <verse offset="1" role="to_translate" number="2">\n'
+        '    <source lang="English">two &amp; &lt;b&gt;</source>\n'
+        "  </verse>\n"
+        '  <verse offset="2" role="to_translate" number="3">\n'
+        '    <source lang="English">three</source>\n'
+        "  </verse>\n"
+        '  <missing_verse offset="3"/>\n'
+        '  <verse offset="4">\n'
+        '    <source lang="English">five</source>\n'
+        '    <target lang="Spanish">cinco</target>\n'
+        "  </verse>\n"
+        "</passage_context>"
+    ) in prompt
+    assert (
+        '<draft_translation lang="Spanish">\n'
+        '  <draft number="1">un</draft>\n'
+        '  <draft number="2" status="not_available"/>\n'
+        '  <draft number="3">tres</draft>\n'
+        "</draft_translation>"
+    ) in prompt
+    assert prompt.endswith("Source (English):\n1. one\n2. two &amp; &lt;b&gt;\n3. three")
+    system_instruction = client.requests[0]["messages"][0]["content"]
+    assert "one entry per numbered verse" in system_instruction
+    assert "Read the numbered verses together" in system_instruction
+
+
+def test_post_edit_batch_passage_examples_for_whole_run() -> None:
+    client = MockLlmCompletionClient([_create_passage_answer("el perro", "la casa")])
+    examples = [Example("the dog", "el perro"), Example("the house", "la casa"), Example("a red car", "un coche rojo")]
+    post_editor = LlmPostEditor(client, TfidfExampleRetriever(examples), "English", "Spanish", num_examples=2)
+
+    post_editor.post_edit_batch(
+        [PostEditSegment("the dog", "la perro"), PostEditSegment("the house", "el casa")], segments_per_request=2
+    )
+
+    prompt = _get_prompt(client)
+    assert '<target lang="Spanish">el perro</target>' in prompt
+    assert '<target lang="Spanish">la casa</target>' in prompt
+    assert "un coche rojo" not in prompt
+
+
+@pytest.mark.parametrize(
+    "include_justification, keys",
+    [(False, ["number", "translation"]), (True, ["number", "changed", "justification", "translation"])],
+)
+def test_post_edit_batch_passage_response_schema(include_justification: bool, keys: list) -> None:
+    client = MockLlmCompletionClient([_create_passage_answer("el perro", "la casa")])
+
+    _create_post_editor(client, include_justification=include_justification).post_edit_batch(
+        [PostEditSegment("the dog", "el perro"), PostEditSegment("the house", "la casa")], segments_per_request=2
+    )
+
+    verse_schema = client.requests[0]["response_schema"]["properties"]["verses"]["items"]
+    assert verse_schema["required"] == keys
+    assert verse_schema["additionalProperties"] is False
+
+
+def test_post_edit_batch_passage_justification() -> None:
+    verses = [
+        {"number": 1, "changed": True, "justification": "fixed the article", "translation": "el perro"},
+        {"number": 2, "changed": False, "justification": "", "translation": "la casa"},
+    ]
+    client = MockLlmCompletionClient([Completion(json.dumps({"verses": verses}), 0.0)])
+
+    results = _create_post_editor(client, include_justification=True).post_edit_batch(
+        [PostEditSegment("the dog", "la perro"), PostEditSegment("the house", "la casa")], segments_per_request=2
+    )
+
+    assert [(result.changed, result.justification) for result in results] == [
+        (True, "fixed the article"),
+        (False, ""),
+    ]
+
+
+def test_post_edit_batch_passage_shares_usage() -> None:
+    client = MockLlmCompletionClient(
+        [_create_passage_answer("el perro", "la casa", cost=0.3, input_token_count=101, output_token_count=7)]
+    )
+
+    results = _create_post_editor(client).post_edit_batch(
+        [PostEditSegment("the dog", "la perro"), PostEditSegment("the house", "el casa")], segments_per_request=2
+    )
+
+    assert [result.total_cost for result in results] == pytest.approx([0.15, 0.15])
+    assert [(result.total_input_token_count, result.total_output_token_count) for result in results] == [
+        (51, 4),
+        (50, 3),
+    ]
+
+
+_FAILED_USAGE: Dict[str, Any] = {"cost": 0.5, "input_token_count": 10, "output_token_count": 2}
+
+
+@pytest.mark.parametrize(
+    "failure",
+    [
+        Completion(json.dumps({"verses": [{"number": 1, "translation": "el perro"}]}), **_FAILED_USAGE),
+        Completion(
+            json.dumps({"verses": [{"number": 2, "translation": "la casa"}, {"number": 1, "translation": "el perro"}]}),
+            **_FAILED_USAGE,
+        ),
+        Completion(
+            json.dumps({"verses": [{"number": 1, "translation": "el perro"}, {"number": 2, "translation": " "}]}),
+            **_FAILED_USAGE,
+        ),
+        MalformedCompletionError([], "not json", **_FAILED_USAGE),
+        TruncatedCompletionError([], "cut off", **_FAILED_USAGE),
+        ContentBlockError([], "blocked", **_FAILED_USAGE),
+    ],
+    ids=["too few", "out of order", "empty translation", "malformed", "truncated", "blocked"],
+)
+def test_post_edit_batch_passage_unusable_reply_halved(failure) -> None:
+    single_answer = Completion(
+        _create_answer(translation="la casa").text, 0.25, input_token_count=20, output_token_count=4
+    )
+    client = MockLlmCompletionClient([failure, _create_answer(), single_answer])
+
+    results = _create_post_editor(client).post_edit_batch(
+        [PostEditSegment("the dog", "la perro"), PostEditSegment("the house", "el casa")], segments_per_request=2
+    )
+
+    assert [result.translation for result in results] == ["el perro", "la casa"]
+    assert len(client.requests) == 3
+    assert [result.total_cost for result in results] == pytest.approx([0.25, 0.5])
+    assert [(result.total_input_token_count, result.total_output_token_count) for result in results] == [
+        (5, 1),
+        (25, 5),
+    ]
+
+
+def test_post_edit_batch_passage_halved_recursively() -> None:
+    client = MockLlmCompletionClient(
+        [
+            MalformedCompletionError([], "not json"),
+            _create_passage_answer("uno", "dos"),
+            _create_passage_answer("tres", "cuatro"),
+        ]
+    )
+    sources = ["one", "two", "three", "four"]
+
+    results = _create_post_editor(client).post_edit_batch(
+        [PostEditSegment(source, "draft") for source in sources], segments_per_request=4
+    )
+
+    assert [result.translation for result in results] == ["uno", "dos", "tres", "cuatro"]
+    assert _get_prompt(client, 1).endswith("Source (English):\n1. one\n2. two")
+    assert _get_prompt(client, 2).endswith("Source (English):\n1. three\n2. four")
+    assert '<verse offset="0" role="to_translate" number="1">' in _get_prompt(client, 2)
+
+
+def test_post_edit_batch_passage_skips_empty_source() -> None:
+    client = MockLlmCompletionClient([_create_passage_answer("el perro", "la casa")])
+    segments = [
+        PostEditSegment("the dog", "la perro"),
+        PostEditSegment(" ", " el gato\n negro "),
+        PostEditSegment("the house", "el casa"),
+    ]
+
+    results = _create_post_editor(client).post_edit_batch(segments, segments_per_request=3)
+
+    assert [result.translation for result in results] == ["el perro", "el gato negro", "la casa"]
+    assert [result.succeeded for result in results] == [True, False, True]
+    assert '<missing_verse offset="1"/>' in _get_prompt(client)
+    assert '<verse offset="2" role="to_translate" number="2">' in _get_prompt(client)
+
+
+def test_post_edit_batch_passage_failure_fails_run() -> None:
+    failure = RuntimeError("connection reset")
+    client = MockLlmCompletionClient([failure, _create_answer(translation="el gato")])
+    segments = [
+        PostEditSegment("the dog", "la perro"),
+        PostEditSegment("the house", "el casa"),
+        PostEditSegment("the cat", "la gato"),
+    ]
+
+    with pytest.raises(PostEditBatchError, match="2 of 3") as error:
+        _create_post_editor(client).post_edit_batch(segments, segments_per_request=2)
+
+    assert [result.translation for result in error.value.results] == ["la perro", "el casa", "el gato"]
+    assert error.value.errors == {0: failure, 1: failure}
+
+
+def test_post_edit_batch_segments_per_request_zero() -> None:
+    with pytest.raises(ValueError, match="segments_per_request"):
+        _create_post_editor(MockLlmCompletionClient([])).post_edit_batch([], segments_per_request=0)
+
+
+def test_post_edit_batch_unrelated_prompt() -> None:
+    client = MockLlmCompletionClient([_create_passage_answer("uno", "dos")])
+    segments = [
+        PostEditSegment("one", "un", (ContextVerse(-1, "zero", "cero"), ContextVerse(1, "after one", "tras uno"))),
+        PostEditSegment("forty", "cuarenta", (ContextVerse(-1, "thirty-nine"),)),
+    ]
+
+    _create_post_editor(client).post_edit_batch(segments, segments_per_request=2, consecutive=False)
+
+    prompt = _get_prompt(client)
+    assert (
+        "<passage_context>\n"
+        '  <verse offset="-1">\n'
+        '    <source lang="English">zero</source>\n'
+        '    <target lang="Spanish">cero</target>\n'
+        "  </verse>\n"
+        '  <verse offset="0" role="to_translate" number="1">\n'
+        '    <source lang="English">one</source>\n'
+        "  </verse>\n"
+        '  <verse offset="1">\n'
+        '    <source lang="English">after one</source>\n'
+        '    <target lang="Spanish">tras uno</target>\n'
+        "  </verse>\n"
+        "</passage_context>\n"
+        "\n"
+        "<passage_context>\n"
+        '  <verse offset="-1">\n'
+        '    <source lang="English">thirty-nine</source>\n'
+        '    <target lang="Spanish" status="not_available"/>\n'
+        "  </verse>\n"
+        '  <verse offset="0" role="to_translate" number="2">\n'
+        '    <source lang="English">forty</source>\n'
+        "  </verse>\n"
+        "</passage_context>"
+    ) in prompt
+    assert prompt.endswith("Source (English):\n1. one\n2. forty")
+    system_instruction = client.requests[0]["messages"][0]["content"]
+    assert "unrelated parts of the text" in system_instruction
+    assert "Read the numbered verses together" not in system_instruction
+
+
+def test_post_edit_batch_unrelated_halved() -> None:
+    client = MockLlmCompletionClient(
+        [
+            MalformedCompletionError([], "not json"),
+            _create_passage_answer("uno", "dos"),
+            _create_passage_answer("tres", "cuatro"),
+        ]
+    )
+    sources = ["one", "two", "three", "four"]
+
+    results = _create_post_editor(client).post_edit_batch(
+        [PostEditSegment(source, "draft") for source in sources], segments_per_request=4, consecutive=False
+    )
+
+    assert [result.translation for result in results] == ["uno", "dos", "tres", "cuatro"]
+    assert all("unrelated parts of the text" in request["messages"][0]["content"] for request in client.requests)
+    assert _get_prompt(client, 2).count("<passage_context>") == 2
