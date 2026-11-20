@@ -292,7 +292,7 @@ def test_post_edit_retry_reminder_keys(include_justification: bool, keys: str) -
     post_editor = _create_post_editor(client, include_justification=include_justification)
     post_editor.post_edit(PostEditSegment("the dog", "la perro"))
 
-    assert _get_prompt(client, 1).endswith(f"with exactly the keys {keys}.")
+    assert _get_prompt(client, 1).endswith(f'with exactly the keys {keys}, and a non-empty "translation".')
 
 
 def test_post_edit_justification_omitted_by_default() -> None:
@@ -325,9 +325,9 @@ def test_post_edit_retry_unparseable_answer() -> None:
 
     assert result.translation == "el perro"
     assert len(client.requests) == 2
-    assert "could not be parsed" not in _get_prompt(client, 0)
+    assert "Reply with a single JSON object" not in _get_prompt(client, 0)
     assert _get_prompt(client, 1).startswith(_get_prompt(client, 0))
-    assert "could not be parsed" in _get_prompt(client, 1)
+    assert "Reply with a single JSON object" in _get_prompt(client, 1)
 
 
 def test_post_edit_retry_empty_translation() -> None:
@@ -337,6 +337,7 @@ def test_post_edit_retry_empty_translation() -> None:
 
     assert result.translation == "el perro"
     assert len(client.requests) == 2
+    assert _get_prompt(client, 1).endswith('a non-empty "translation".')
 
 
 def test_post_edit_max_attempts() -> None:

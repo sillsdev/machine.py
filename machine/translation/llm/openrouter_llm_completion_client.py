@@ -1,11 +1,10 @@
 import json
 import logging
+import math
 import random
 import time
 from types import TracebackType
 from typing import Any, Dict, List, Optional, Type
-
-import jsonschema
 
 from .completion_finish_reason import CompletionFinishReason
 from .llm_completion_client import (
@@ -91,7 +90,9 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         if self._max_tokens is not None:
             request["max_completion_tokens"] = self._max_tokens
         schema: Optional[Dict[str, Any]] = None
+        jsonschema: Any = None
         if response_schema is not None:
+            jsonschema = _import_jsonschema()
             schema = {**response_schema, "additionalProperties": False}
             request["response_format"] = {
                 "type": "json_schema",
@@ -223,8 +224,21 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         return [TokenLogprob(str(entry.token), float(entry.logprob)) for entry in entries]
 
 
+def _import_jsonschema() -> Any:
+    try:
+        import jsonschema
+    except ImportError as error:
+        raise ImportError(
+            "Validating a response schema requires the 'jsonschema' package. Install it with `uv sync --extra llm`."
+        ) from error
+    return jsonschema
+
+
 def _retry_after_seconds(headers: Any) -> Optional[float]:
     try:
-        return min(max(float(headers.get("retry-after")), 0.0), _RATE_LIMIT_MAX_DELAY)
+        seconds = float(headers.get("retry-after"))
     except (TypeError, ValueError):
         return None
+    if not math.isfinite(seconds):
+        return None
+    return min(max(seconds, 0.0), _RATE_LIMIT_MAX_DELAY)

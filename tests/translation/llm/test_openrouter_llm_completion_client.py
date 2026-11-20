@@ -1,3 +1,5 @@
+import subprocess
+import sys
 from contextlib import contextmanager
 from types import SimpleNamespace
 from typing import Optional
@@ -427,6 +429,16 @@ def test_complete_rate_limit_honors_retry_after(retry_after: str, expected: floa
     sleep.assert_called_once_with(expected)
 
 
+@pytest.mark.parametrize("retry_after", ["nan", "inf", "-inf"])
+def test_complete_rate_limit_backs_off_for_non_finite_retry_after(retry_after: str):
+    with _client([_rate_limit_error({"Retry-After": retry_after}), _HOLA]):
+        with patch("time.sleep") as sleep:
+            with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+                assert client.complete([]).text == "hola"
+
+    assert 0.5 <= sleep.call_args.args[0] <= 1.0
+
+
 def test_complete_rate_limit_gives_up_after_max_retries():
     with _client([_rate_limit_error(), _rate_limit_error(), _rate_limit_error()]) as sdk_client:
         with patch("time.sleep"):
@@ -455,3 +467,21 @@ def test_client_rejects_negative_max_rate_limit_retries():
     with _client(_HOLA):
         with pytest.raises(ValueError, match="max_rate_limit_retries"):
             OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key", max_rate_limit_retries=-1)
+
+
+def test_package_imports_without_jsonschema():
+    # A fresh interpreter, so that the package's modules are imported with jsonschema blocked.
+    code = "import sys; sys.modules['jsonschema'] = None; from machine.translation.llm import TfidfExampleRetriever"
+
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_complete_with_schema_requires_jsonschema_before_sending(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setitem(sys.modules, "jsonschema", None)
+    with _client(_HOLA) as sdk_client:
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+            assert client.complete([]).text == "hola"
+            with pytest.raises(ImportError, match="jsonschema"):
+                client.complete([], response_schema={"type": "object"})
+
+    assert len(sdk_client.chat.calls) == 1

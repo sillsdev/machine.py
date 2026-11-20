@@ -112,8 +112,8 @@ _JUSTIFICATION_FIELDS = """- "changed": true if your text differs from the draft
 """
 
 _RETRY_REMINDER_TEMPLATE = (
-    "\n\nYour previous answer could not be parsed. Reply with a single JSON object and nothing else "
-    "(no markdown fence), with exactly the keys {keys}."
+    "\n\nReply with a single JSON object and nothing else (no markdown fence), with exactly the keys {keys}, "
+    'and a non-empty "translation".'
 )
 
 _RESPONSE_SCHEMA: Dict[str, Any] = {
