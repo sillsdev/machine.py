@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import threading
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from types import TracebackType
-from typing import Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type
+
+from .completion_finish_reason import CompletionFinishReason
 
 
 @dataclass(frozen=True)
@@ -21,14 +24,85 @@ class Completion:
     token_logprobs: List[TokenLogprob] = field(default_factory=list)
     input_token_count: int = 0
     output_token_count: int = 0
+    finish_reason: CompletionFinishReason = CompletionFinishReason.UNKNOWN
+
+
+# Not a ValueError, so that callers retrying on these do not also swallow invalid request arguments.
+class CompletionError(Exception):
+    def __init__(
+        self,
+        messages: List[Dict[str, str]],
+        reason: str,
+        *,
+        cost: float = 0.0,
+        input_token_count: int = 0,
+        output_token_count: int = 0,
+    ) -> None:
+        super().__init__(reason)
+        self.messages = messages
+        self.cost = cost
+        self.input_token_count = input_token_count
+        self.output_token_count = output_token_count
+
+
+class ContentBlockError(CompletionError):
+    pass
+
+
+class RefusalError(CompletionError):
+    pass
+
+
+class MalformedCompletionError(CompletionError):
+    pass
+
+
+class TruncatedCompletionError(CompletionError):
+    pass
 
 
 class LlmCompletionClient(ABC):
+    def __init__(self) -> None:
+        self._usage_lock = threading.Lock()
+        self._total_cost = 0.0
+        self._total_input_token_count = 0
+        self._total_output_token_count = 0
+
+    @property
+    def total_cost(self) -> float:
+        return self._total_cost
+
+    @property
+    def total_input_token_count(self) -> int:
+        return self._total_input_token_count
+
+    @property
+    def total_output_token_count(self) -> int:
+        return self._total_output_token_count
+
     @abstractmethod
-    def complete(self, messages: List[Dict[str, str]], logprobs: bool = False) -> Completion: ...
+    def complete(
+        self, messages: List[Dict[str, str]], logprobs: bool = False, response_schema: Optional[Dict[str, Any]] = None
+    ) -> Completion:
+        """Raises ContentBlockError or RefusalError when the provider declines the request, and
+        MalformedCompletionError when the reply has no text.
+
+        Given a response_schema, raises TruncatedCompletionError when the reply hit the output token limit, and
+        MalformedCompletionError when it is not JSON matching the schema. Without one, a truncated reply is returned
+        with finish_reason LENGTH.
+
+        Every billed response, including one that then raises, is added to the client's running totals through
+        _record_usage. The totals span all callers sharing the client.
+        """
 
     def supports_logprobs(self) -> bool:
         return False
+
+    def _record_usage(self, cost: float, input_token_count: int, output_token_count: int) -> None:
+        with self._usage_lock:
+            self._total_cost += cost
+            self._total_input_token_count += input_token_count
+            self._total_output_token_count += output_token_count
 
     def count_tokens(self, text: str) -> Optional[int]:
         return None
