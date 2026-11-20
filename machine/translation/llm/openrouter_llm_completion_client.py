@@ -36,17 +36,17 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         max_tokens: Optional[int] = None,
         api_key: Optional[str] = None,
         max_rate_limit_retries: int = 5,
-        stop_event: Optional[threading.Event] = None,
+        rate_limit_wait_event: Optional[threading.Event] = None,
         **default_kwargs: Any,
     ) -> None:
-        """Waits between rate-limited retries on stop_event. Setting it ends the wait, and the request then raises
-        the rate-limit error."""
+        """Waits between rate-limited retries on rate_limit_wait_event. Setting it ends such a wait, and the request
+        then raises the rate-limit error. It does not stop requests that are not waiting on a rate limit."""
         super().__init__()
         if max_rate_limit_retries < 0:
             raise ValueError("max_rate_limit_retries cannot be negative.")
         self._model = model
         self._max_rate_limit_retries = max_rate_limit_retries
-        self._stop_event = stop_event if stop_event is not None else threading.Event()
+        self._rate_limit_wait_event = rate_limit_wait_event if rate_limit_wait_event is not None else threading.Event()
         self._max_tokens = max_tokens
         self._default_kwargs = default_kwargs
         self._logprobs_supported: Optional[bool] = None
@@ -189,7 +189,7 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
                     self._max_rate_limit_retries,
                     delay,
                 )
-                if self._stop_event.wait(delay):
+                if self._rate_limit_wait_event.wait(delay):
                     raise
 
     def supports_logprobs(self) -> bool:
