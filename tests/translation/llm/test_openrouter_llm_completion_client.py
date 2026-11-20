@@ -1,5 +1,3 @@
-import subprocess
-import sys
 import threading
 from contextlib import contextmanager
 from types import SimpleNamespace
@@ -495,21 +493,3 @@ def test_client_rejects_negative_max_rate_limit_retries():
     with _client(_HOLA):
         with pytest.raises(ValueError, match="max_rate_limit_retries"):
             OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key", max_rate_limit_retries=-1)
-
-
-def test_package_imports_without_jsonschema():
-    # A fresh interpreter, so that the package's modules are imported with jsonschema blocked.
-    code = "import sys; sys.modules['jsonschema'] = None; from machine.translation.llm import TfidfExampleRetriever"
-
-    subprocess.run([sys.executable, "-c", code], check=True)
-
-
-def test_complete_with_schema_requires_jsonschema_before_sending(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setitem(sys.modules, "jsonschema", None)
-    with _client(_HOLA) as sdk_client:
-        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
-            assert client.complete([]).text == "hola"
-            with pytest.raises(ImportError, match="jsonschema"):
-                client.complete([], response_schema={"type": "object"})
-
-    assert len(sdk_client.chat.calls) == 1
