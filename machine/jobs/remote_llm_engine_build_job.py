@@ -9,7 +9,7 @@ from ..translation.llm.llm_completion_client import LlmUsageTotals
 from ..translation.llm.remote_llm_engine import RemoteLlmEngine
 from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
 from ..utils.progress_status import ProgressStatus
-from .nmt_engine_build_job import NmtEngineBuildJob, join_surrogate_pairs_if_needed
+from .nmt_engine_build_job_base import NmtEngineBuildJobBase, join_surrogate_pairs_if_needed
 from .nmt_model_factory import NmtModelFactory
 from .translation_file_service import PretranslationInfo, TranslationFileService
 from .word_alignment_model_factory import WordAlignmentModelFactory
@@ -23,7 +23,7 @@ class UntranslatedVerse:
     source_refs: Tuple[str, ...]
 
 
-class RemoteLlmEngineBuildJob(NmtEngineBuildJob):
+class RemoteLlmEngineBuildJob(NmtEngineBuildJobBase):
 
     def __init__(
         self,
@@ -49,6 +49,7 @@ class RemoteLlmEngineBuildJob(NmtEngineBuildJob):
 
     def _respond_to_no_training_corpus(self) -> Tuple[int, float]:
         logger.info("No matching entries in the source and target corpus - drafting without examples")
+        self._nmt_model_factory.init_example_retriever(ParallelTextCorpus.from_parallel_rows([]))
         return 0, float("nan")
 
     def _train_model(

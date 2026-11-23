@@ -26,7 +26,7 @@ from .word_alignment_model_factory import WordAlignmentModelFactory
 logger = logging.getLogger(__name__)
 
 
-class NmtEngineBuildJob(TranslationEngineBuildJob, ABC):
+class NmtEngineBuildJobBase(TranslationEngineBuildJob, ABC):
 
     def __init__(
         self,

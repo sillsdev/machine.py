@@ -7,7 +7,7 @@ from ..corpora.text_corpus import TextCorpus
 from ..translation.translation_engine import TranslationEngine
 from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
 from ..utils.progress_status import ProgressStatus
-from .nmt_engine_build_job import NmtEngineBuildJob, join_surrogate_pairs_if_needed
+from .nmt_engine_build_job_base import NmtEngineBuildJobBase, join_surrogate_pairs_if_needed
 from .nmt_model_factory import NmtModelFactory
 from .translation_file_service import PretranslationInfo, TranslationFileService
 from .word_alignment_model_factory import WordAlignmentModelFactory
@@ -15,7 +15,7 @@ from .word_alignment_model_factory import WordAlignmentModelFactory
 logger = logging.getLogger(__name__)
 
 
-class HuggingFaceNmtEngineBuildJob(NmtEngineBuildJob):
+class HuggingFaceNmtEngineBuildJob(NmtEngineBuildJobBase):
     def __init__(
         self,
         config: Any,

@@ -1,10 +1,8 @@
 from pathlib import Path
 from typing import Any, List
 
-from transformers import Trainer
-
-from machine.translation.translation_engine import TranslationEngine
-
+from ..translation.translation_engine import TranslationEngine
+from ..translation import Trainer
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from ..corpora.text_corpus import TextCorpus
 from ..translation.llm.example import Example

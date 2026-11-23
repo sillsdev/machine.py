@@ -118,7 +118,7 @@ class HuggingFaceNmtModelFactory(NmtModelFactory):
                     tar.add(path, arcname=path.name)
         return tar_file_path
 
-    def init_example_retriever(self) -> None:
+    def init_example_retriever(self, corpus: ParallelTextCorpus) -> None:
         raise TypeError("Unable to create example retrieval for HuggingFace NMT models.")
 
     @property

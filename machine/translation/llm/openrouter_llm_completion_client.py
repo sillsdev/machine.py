@@ -2,6 +2,9 @@ import logging
 from types import TracebackType
 from typing import Any, Dict, List, Optional, Type
 
+from openrouter import RetryConfig
+from openrouter.utils import BackoffStrategy
+
 from .completion_finish_reason import CompletionFinishReason
 from .llm_completion_client import Completion, LlmCompletionClient, TokenLogprob
 
@@ -47,7 +50,16 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
             raise ImportError(
                 "OpenRouter completions require the 'openrouter' package. Install it with `uv sync --extra llm`."
             ) from error
-        self._client = OpenRouter(api_key=api_key)
+        # Retry-After takes precedence over backoff natively, so no need to handle that here
+        self._client = OpenRouter(
+            api_key=api_key,
+            retry_config=RetryConfig(
+                strategy="backoff",
+                backoff=BackoffStrategy(500, 60000, 1.5, 3600000),
+                status_codes_override=["5XX", "429"],
+                retry_connection_errors=True,
+            ),
+        )
 
     def complete(
         self,
