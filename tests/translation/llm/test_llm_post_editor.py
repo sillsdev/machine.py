@@ -21,6 +21,7 @@ from machine.translation.llm import (
     TfidfExampleRetriever,
     TruncatedCompletionError,
 )
+from machine.utils import ProgressStatus
 
 _EXAMPLES = [
     Example("the cat", "el gato"),
@@ -454,7 +455,7 @@ def test_post_edit_truncation_not_retried() -> None:
 
 @pytest.mark.parametrize(
     "translation",
-    ["el perro\nduerme", "el perro\r\nduerme", "el perro \n\n duerme", "el perro duerme", "\nel perro\nduerme\n"],
+    ["el perro\nduerme", "el perro\r\nduerme", "el perro \n\n duerme", "el perro\u2028duerme", "\nel perro\nduerme\n"],
 )
 def test_post_edit_line_breaks_in_translation(translation: str) -> None:
     client = MockLlmCompletionClient([_create_answer(translation=translation)])
@@ -539,6 +540,75 @@ def test_post_edit_batch_in_parallel_keeps_results_after_failure() -> None:
 
     assert [result.translation for result in error.value.results] == ["ONE", "draft", "THREE"]
     assert list(error.value.errors) == [1]
+
+
+class _OutOfOrderClient(LlmCompletionClient):
+    """Answers each prompt with its source in upper case, or raises when fail is set.
+
+    The request for the source "first" is held until the test sets released.
+    """
+
+    def __init__(self, fail: bool = False) -> None:
+        super().__init__()
+        self.released = threading.Event()
+        self._fail = fail
+
+    def complete(
+        self, messages: List[Dict[str, str]], logprobs: bool = False, response_schema: Optional[Dict[str, Any]] = None
+    ) -> Completion:
+        source = messages[1]["content"].rsplit("\n", 1)[1]
+        if source == "first" and not self.released.wait(timeout=5):
+            raise TimeoutError("progress was not reported before the first run finished")
+        if self._fail:
+            raise RuntimeError(f"{source} failed")
+        return Completion(json.dumps({"translation": source.upper()}), 0.0, finish_reason=CompletionFinishReason.STOP)
+
+
+def test_post_edit_batch_progress_reported_as_runs_finish() -> None:
+    client = _OutOfOrderClient()
+    statuses: List[ProgressStatus] = []
+
+    def on_progress(status: ProgressStatus) -> None:
+        statuses.append(status)
+        client.released.set()
+
+    results = _create_post_editor(client).post_edit_batch(
+        [PostEditSegment("first", "draft"), PostEditSegment("second", "draft")], max_workers=2, progress=on_progress
+    )
+
+    assert [result.translation for result in results] == ["FIRST", "SECOND"]
+    assert [(status.step, status.step_count) for status in statuses] == [(1, 2), (2, 2)]
+    assert statuses[-1].percent_completed == 1.0
+
+
+def test_post_edit_batch_progress_counts_segments_of_failed_runs() -> None:
+    client = MockLlmCompletionClient([_create_passage_answer("el perro", "la casa"), RuntimeError("connection reset")])
+    segments = [
+        PostEditSegment("the dog", "la perro"),
+        PostEditSegment("the house", "el casa"),
+        PostEditSegment("the cat", "la gato"),
+    ]
+    statuses: List[ProgressStatus] = []
+
+    with pytest.raises(PostEditBatchError):
+        _create_post_editor(client).post_edit_batch(segments, segments_per_request=2, progress=statuses.append)
+
+    assert [(status.step, status.step_count) for status in statuses] == [(2, 3), (3, 3)]
+
+
+def test_post_edit_batch_errors_in_segment_order_when_runs_fail_out_of_order() -> None:
+    client = _OutOfOrderClient(fail=True)
+
+    with pytest.raises(PostEditBatchError) as error:
+        _create_post_editor(client).post_edit_batch(
+            [PostEditSegment("first", "draft"), PostEditSegment("second", "draft")],
+            max_workers=2,
+            progress=lambda _: client.released.set(),
+        )
+
+    assert list(error.value.errors) == [0, 1]
+    assert str(error.value.errors[0]) == "first failed"
+    assert error.value.__cause__ is error.value.errors[0]
 
 
 def test_post_edit_batch_max_workers_zero() -> None:

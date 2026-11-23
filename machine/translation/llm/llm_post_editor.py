@@ -1,10 +1,11 @@
 import json
 import logging
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from dataclasses import replace
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from xml.sax.saxutils import escape, quoteattr, unescape
 
+from ...utils.progress_status import ProgressStatus
 from .completion_finish_reason import CompletionFinishReason
 from .context_verse import ContextVerse
 from .example import Example
@@ -26,7 +27,8 @@ logger = logging.getLogger(__name__)
 DEFAULT_NUM_EXAMPLES = 50
 DEFAULT_MAX_ATTEMPTS = 3
 
-_SYSTEM_INSTRUCTION_TEMPLATE = """You are an expert translator and post-editor from {source_language} to {target_language}.
+_SYSTEM_INSTRUCTION_TEMPLATE = """\
+You are an expert translator and post-editor from {source_language} to {target_language}.
 
 Three blocks, all selected for this one verse:
 
@@ -402,20 +404,18 @@ class LlmPostEditor:
         max_workers: int = 1,
         segments_per_request: int = 1,
         consecutive: bool = True,
+        progress: Optional[Callable[[ProgressStatus], None]] = None,
     ) -> Sequence[PostEditResult]:
-        """Post-edits every segment even when some fail, then raises PostEditBatchError if any did.
+        """Returns a result per segment, in order, or raises PostEditBatchError after all finish if any failed.
 
-        The error holds a result for every segment, with the draft unchanged for each failed one, and the exception
-        of each failed segment by index. Results are in segment order.
+        The error holds a result for every segment, with the draft unchanged for each failed one, and each failure's
+        exception by segment index.
 
-        Each run of segments_per_request segments is post-edited in one request. When consecutive, a run must be
-        consecutive verses in order, and is shown as one passage. Otherwise each segment is shown in a passage of its
-        own context verses. A run's examples are retrieved for the run as a whole, and each of its results carries an
-        even share of the run's cost and tokens. When a reply for several segments is unusable, they are halved and
-        each half sent again, down to single segments, which get max_attempts each. A run that raises fails all of
-        its segments.
+        Segments are sent segments_per_request at a time, and a failed request fails all of its segments. Each result
+        carries an even share of its request's cost and tokens. When consecutive, each request's segments must be
+        consecutive verses in order and are shown as one passage; otherwise each is shown with its own context.
 
-        Up to max_workers runs are post-edited at once, sharing the completion client.
+        Up to max_workers requests run at once. progress is called on the calling thread as segments finish.
         """
         if max_workers < 1:
             raise ValueError("max_workers must be at least 1.")
@@ -424,23 +424,35 @@ class LlmPostEditor:
         runs = [
             segments[start : start + segments_per_request] for start in range(0, len(segments), segments_per_request)
         ]
-        results: List[PostEditResult] = []
+        run_results: List[List[PostEditResult]] = [[] for _ in runs]
         errors: Dict[int, Exception] = {}
+        finished_count = 0
         executor = ThreadPoolExecutor(max_workers=max_workers)
         try:
-            futures = [executor.submit(self._post_edit_run, run, consecutive) for run in runs]
-            for run, future in zip(runs, futures):
+            futures: Dict[Future, int] = {
+                executor.submit(self._post_edit_run, run, consecutive): run_index for run_index, run in enumerate(runs)
+            }
+            for future in as_completed(futures):
+                run_index = futures[future]
+                run = runs[run_index]
                 try:
-                    results.extend(future.result())
+                    run_results[run_index] = future.result()
                 except Exception as error:
-                    first = len(results)
+                    first = run_index * segments_per_request
                     logger.error("Post-edit of segments %d-%d failed.", first, first + len(run) - 1, exc_info=error)
                     errors.update((index, error) for index in range(first, first + len(run)))
-                    results.extend(PostEditResult(translation=_to_single_line(segment.draft)) for segment in run)
+                    run_results[run_index] = [
+                        PostEditResult(translation=_to_single_line(segment.draft)) for segment in run
+                    ]
+                finished_count += len(run)
+                if progress is not None:
+                    progress(ProgressStatus.from_step(finished_count, len(segments)))
         finally:
             # Stops queued runs from starting, and so from being billed, when the wait is interrupted.
             executor.shutdown(wait=True, cancel_futures=True)
+        results = [result for run_result in run_results for result in run_result]
         if errors:
+            errors = dict(sorted(errors.items()))
             raise PostEditBatchError(results, errors) from next(iter(errors.values()))
         return results
 
