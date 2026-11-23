@@ -1,8 +1,5 @@
 import json
 import logging
-import math
-import random
-import threading
 from types import TracebackType
 from typing import Any, Dict, List, Optional, Type
 
@@ -20,9 +17,6 @@ from .llm_completion_client import (
 logger = logging.getLogger(__name__)
 
 
-_RATE_LIMIT_INITIAL_DELAY = 1.0
-_RATE_LIMIT_MAX_DELAY = 60.0
-
 _FINISH_REASONS: Dict[Optional[str], CompletionFinishReason] = {
     "stop": CompletionFinishReason.STOP,
     "length": CompletionFinishReason.LENGTH,
@@ -35,29 +29,28 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         model: str,
         max_tokens: Optional[int] = None,
         api_key: Optional[str] = None,
-        max_rate_limit_retries: int = 5,
-        rate_limit_wait_event: Optional[threading.Event] = None,
         **default_kwargs: Any,
     ) -> None:
-        """Waits between rate-limited retries on rate_limit_wait_event. Setting it ends such a wait, and the request
-        then raises the rate-limit error. It does not stop requests that are not waiting on a rate limit."""
         super().__init__()
-        if max_rate_limit_retries < 0:
-            raise ValueError("max_rate_limit_retries cannot be negative.")
         self._model = model
-        self._max_rate_limit_retries = max_rate_limit_retries
-        self._rate_limit_wait_event = rate_limit_wait_event if rate_limit_wait_event is not None else threading.Event()
         self._max_tokens = max_tokens
         self._default_kwargs = default_kwargs
         self._logprobs_supported: Optional[bool] = None
         self._closed = False
         try:
             from openrouter import OpenRouter
+            from openrouter.utils import BackoffStrategy, RetryConfig
         except ImportError as error:
             raise ImportError(
                 "OpenRouter completions require the 'openrouter' package. Install it with `uv sync --extra llm`."
             ) from error
-        self._client = OpenRouter(api_key=api_key)
+        retry_config = RetryConfig(
+            "backoff",
+            BackoffStrategy(initial_interval=500, max_interval=60000, exponent=1.5, max_elapsed_time=600000),
+            retry_connection_errors=True,
+            status_codes_override=["429", "5XX"],
+        )
+        self._client = OpenRouter(api_key=api_key, retry_config=retry_config)
 
     def complete(
         self,
@@ -102,7 +95,7 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
                 "type": "json_schema",
                 "json_schema": {"name": "response", "strict": True, "schema": schema},
             }
-        response: ChatResult = self._send(request)
+        response: ChatResult = self._client.chat.send(**request)
         usage: Optional[ChatUsage] = getattr(response, "usage", None)
         cost: float = getattr(usage, "cost", None) or 0.0
         prompt_tokens: int = getattr(usage, "prompt_tokens", 0)
@@ -169,29 +162,6 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
             finish_reason=_FINISH_REASONS.get(reported_finish_reason, CompletionFinishReason.UNKNOWN),
         )
 
-    def _send(self, request: Dict[str, Any]) -> Any:
-        from openrouter.errors import OpenRouterError
-
-        retry = 0
-        while True:
-            try:
-                return self._client.chat.send(**request)
-            except OpenRouterError as error:
-                if error.status_code != 429 or retry == self._max_rate_limit_retries:
-                    raise
-                delay = _retry_after_seconds(error.headers)
-                if delay is None:
-                    delay = min(_RATE_LIMIT_MAX_DELAY, _RATE_LIMIT_INITIAL_DELAY * 2**retry) * random.uniform(0.5, 1.0)
-                retry += 1
-                logger.warning(
-                    "OpenRouter rate limited the request; retry %d/%d in %.1f s.",
-                    retry,
-                    self._max_rate_limit_retries,
-                    delay,
-                )
-                if self._rate_limit_wait_event.wait(delay):
-                    raise
-
     def supports_logprobs(self) -> bool:
         if self._closed:
             raise RuntimeError("OpenRouter completion client is closed.")
@@ -237,13 +207,3 @@ def _import_jsonschema() -> Any:
             "Validating a response schema requires the 'jsonschema' package. Install it with `uv sync --extra llm`."
         ) from error
     return jsonschema
-
-
-def _retry_after_seconds(headers: Any) -> Optional[float]:
-    try:
-        seconds = float(headers.get("retry-after"))
-    except (TypeError, ValueError):
-        return None
-    if not math.isfinite(seconds):
-        return None
-    return min(max(seconds, 0.0), _RATE_LIMIT_MAX_DELAY)
