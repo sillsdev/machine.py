@@ -7,12 +7,14 @@ from clearml import Task
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..translation.llm.example_retriever_method import ExampleRetrievalMethod
+from ..translation.llm.llm_completion_client import LlmUsageTotals
 from ..translation.llm.openrouter_llm_completion_client import OpenRouterLlmCompletionClient
 from ..utils.canceled_error import CanceledError
 from ..utils.progress_status import ProgressStatus
 from .build_clearml_helper import report_clearml_progress, update_settings
 from .config import SETTINGS
 from .remote_llm_engine_build_job import RemoteLlmEngineBuildJob
+from .remote_llm_model_factory import RemoteLlmModelFactory
 from .shared_file_service_factory import SharedFileServiceType
 from .thot.thot_word_alignment_model_factory import ThotWordAlignmentModelFactory
 from .translation_file_service import TranslationFileService
@@ -62,23 +64,27 @@ def run(args: dict) -> None:
 
     try:
         logger.info("Remote LLM Engine Build Job started")
+        args["model_type"] = "remote_llm"
         update_settings(SETTINGS, args, task, logger, RemoteLlmBuildOptions)
         api_key = os.getenv("OPENROUTER_API_KEY")
         if not api_key:
             raise RuntimeError("OPENROUTER_API_KEY is not set.")
         translation_file_service = TranslationFileService(SharedFileServiceType.CLEARML, SETTINGS)
         retrieval_method = (
-            ExampleRetrievalMethod.TFIDF if SETTINGS.retrieval_method == "tfidf" else ExampleRetrievalMethod.COVERAGE
+            ExampleRetrievalMethod.TFIDF
+            if SETTINGS.remote_llm.retrieval_method == "tfidf"
+            else ExampleRetrievalMethod.COVERAGE
         )
+        usage_totals = LlmUsageTotals()
         with OpenRouterLlmCompletionClient(
-            model=SETTINGS.model, api_key=api_key, max_tokens=SETTINGS.max_tokens
+            model=SETTINGS.remote_llm.model, api_key=api_key, max_tokens=SETTINGS.remote_llm.max_tokens
         ) as completion_client:
             job = RemoteLlmEngineBuildJob(
                 SETTINGS,
-                completion_client,
+                RemoteLlmModelFactory(SETTINGS, completion_client, retrieval_method, usage_totals),
                 translation_file_service,
                 ThotWordAlignmentModelFactory(SETTINGS),
-                retrieval_method,
+                usage_totals,
             )
             train_corpus_size, _ = job.run(progress, check_canceled)
         if task is not None:

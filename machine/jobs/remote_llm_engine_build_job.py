@@ -1,29 +1,16 @@
-import json
 import logging
-from contextlib import ExitStack
 from dataclasses import dataclass
-from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import Any, Callable, Generator, Iterable, List, Optional, Tuple
 
-from ..corpora.aligned_word_pair import AlignedWordPair
 from ..corpora.corpora_utils import batch
-from ..corpora.flatten import flatten
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from ..corpora.text_corpus import TextCorpus
-from ..corpora.text_file_text_corpus import TextFileTextCorpus
-from ..corpora.token_processors import lowercase
-from ..tokenization.tokenizer_factory import create_tokenizer
-from ..translation.llm.example import Example
-from ..translation.llm.example_retriever import ExampleRetriever
-from ..translation.llm.example_retriever_factory import ExampleRetrieverFactory
-from ..translation.llm.example_retriever_method import ExampleRetrievalMethod
-from ..translation.llm.llm_completion_client import LlmCompletionClient, LlmUsageTotals
+from ..translation.llm.llm_completion_client import LlmUsageTotals
 from ..translation.llm.remote_llm_engine import RemoteLlmEngine
-from ..translation.transductive_word_alignment_model import TransductiveWordAlignmentModel
 from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
 from ..utils.progress_status import ProgressStatus
-from .translation_engine_build_job import TranslationEngineBuildJob
+from .nmt_engine_build_job import NmtEngineBuildJob, join_surrogate_pairs_if_needed
+from .nmt_model_factory import NmtModelFactory
 from .translation_file_service import PretranslationInfo, TranslationFileService
 from .word_alignment_model_factory import WordAlignmentModelFactory
 
@@ -36,27 +23,19 @@ class UntranslatedVerse:
     source_refs: Tuple[str, ...]
 
 
-class RemoteLlmEngineBuildJob(TranslationEngineBuildJob):
+class RemoteLlmEngineBuildJob(NmtEngineBuildJob):
 
     def __init__(
         self,
         config: Any,
-        completion_client: LlmCompletionClient,
+        nmt_model_factory: NmtModelFactory,
         translation_file_service: TranslationFileService,
         word_alignment_model_factory: WordAlignmentModelFactory,
-        retrieval_method: ExampleRetrievalMethod = ExampleRetrievalMethod.TFIDF,
+        usage_totals: LlmUsageTotals,
     ) -> None:
-        self._completion_client = completion_client
-        self._retrieval_method = retrieval_method
-        self._num_examples = config.remote_llm.num_examples
-        self._batch_size = config.remote_llm.batch_size
-        self._num_workers = config.remote_llm.num_workers
-        self.usage_totals = LlmUsageTotals()
+        self.usage_totals = usage_totals
         self.untranslated_verses: List[UntranslatedVerse] = []
-        self._example_retriever: Optional[ExampleRetriever] = None
-        self._alignment_model_factory = word_alignment_model_factory
-        self._alignment_model_factory.init()
-        super().__init__(config, translation_file_service)
+        super().__init__(config, nmt_model_factory, translation_file_service, word_alignment_model_factory)
 
     def _get_progress_reporter(
         self, progress: Optional[Callable[[ProgressStatus], None]], corpus_size: int
@@ -70,7 +49,6 @@ class RemoteLlmEngineBuildJob(TranslationEngineBuildJob):
 
     def _respond_to_no_training_corpus(self) -> Tuple[int, float]:
         logger.info("No matching entries in the source and target corpus - drafting without examples")
-        self._example_retriever = ExampleRetrieverFactory.create_example_retriever(self._retrieval_method, [])
         return 0, float("nan")
 
     def _train_model(
@@ -83,14 +61,10 @@ class RemoteLlmEngineBuildJob(TranslationEngineBuildJob):
     ) -> Tuple[int, float]:
         if check_canceled is not None:
             check_canceled()
-        examples: List[Example] = []
-        with parallel_corpus.get_rows() as rows:
-            for row in rows:
-                if not row.is_empty:
-                    examples.append(Example(row.source_text, row.target_text))
-        self._example_retriever = ExampleRetrieverFactory.create_example_retriever(self._retrieval_method, examples)
-        logger.info("Loaded %d in-context examples", len(examples))
-        return len(examples), float("nan")
+        self._nmt_model_factory.init_example_retriever(parallel_corpus)
+        num_examples = parallel_corpus.count(False)
+        logger.info("Loaded %d in-context examples", num_examples)
+        return num_examples, float("nan")
 
     def _batch_inference(
         self,
@@ -99,41 +73,7 @@ class RemoteLlmEngineBuildJob(TranslationEngineBuildJob):
         check_canceled: Optional[Callable[[], None]],
     ) -> None:
         self.untranslated_verses.clear()
-        if self._example_retriever is None:
-            self._example_retriever = ExampleRetrieverFactory.create_example_retriever(self._retrieval_method, [])
-        with self._translation_file_service.get_source_pretranslations() as src_pretranslations:
-            inference_step_count = sum(1 for _ in src_pretranslations)
-
-        with ExitStack() as stack:
-            phase_progress = stack.enter_context(progress_reporter.start_next_phase())
-            engine = RemoteLlmEngine(
-                self._completion_client,
-                self._example_retriever,
-                self._config.src_lang,
-                self._config.trg_lang,
-                self._num_examples,
-                self._batch_size,
-                self._num_workers,
-                self.usage_totals,
-            )
-            stack.enter_context(engine)
-            src_pretranslations = stack.enter_context(self._translation_file_service.get_source_pretranslations())
-            pretranslations = self._translate(
-                engine, src_pretranslations, inference_step_count, phase_progress, check_canceled
-            )
-            if self._config.get("align_pretranslations", False):
-                if self._alignment_model_factory is None:
-                    raise ValueError(
-                        "A word alignment model factory is required when align_pretranslations is enabled."
-                    )
-                results: Iterable[PretranslationInfo] = self._align(
-                    pretranslations, parallel_training_corpus, progress_reporter, check_canceled
-                )
-            else:
-                results = (pt_info for _, pt_info in pretranslations)
-            writer = stack.enter_context(self._translation_file_service.open_target_pretranslation_writer())
-            for pt_info in results:
-                writer.write(pt_info)
+        super()._batch_inference(parallel_training_corpus, progress_reporter, check_canceled)
         usage = self.usage_totals.summary
         logger.info(
             "Remote LLM usage: %d requests, %d prompt tokens, %d completion tokens, "
@@ -166,7 +106,7 @@ class RemoteLlmEngineBuildJob(TranslationEngineBuildJob):
         for pt_batch in batch(src_pretranslations, batch_size):
             if check_canceled is not None:
                 check_canceled()
-            source_segments = [_join_surrogate_pairs_if_needed(pt_info["translation"]) for pt_info in pt_batch]
+            source_segments = [join_surrogate_pairs_if_needed(pt_info["translation"]) for pt_info in pt_batch]
             results = engine.translate_batch(source_segments)
             failed_indices = set(engine.failed_segment_indices)
             for index, (pt_info, result) in enumerate(zip(pt_batch, results, strict=True)):
@@ -179,108 +119,5 @@ class RemoteLlmEngineBuildJob(TranslationEngineBuildJob):
             phase_progress(ProgressStatus.from_step(current_step, inference_step_count))
             yield from zip(source_segments, pt_batch, strict=True)
 
-    def _align(
-        self,
-        pretranslations: Iterable[Tuple[str, PretranslationInfo]],
-        parallel_training_corpus: ParallelTextCorpus,
-        progress_reporter: PhasedProgressReporter,
-        check_canceled: Optional[Callable[[], None]],
-    ) -> Generator[PretranslationInfo, None, None]:
-        if check_canceled is not None:
-            check_canceled()
-
-        tokenizer = create_tokenizer(self._config.thot_align.tokenizer)
-        with TemporaryDirectory() as temp_dir:
-            # Spool the translated pretranslations to disk so that the aligner can make multiple
-            # passes over them without keeping the entire corpus in memory.
-            logger.info("Aligning source to pretranslations")
-            source_path = Path(temp_dir) / "pretranslations.src.txt"
-            translation_path = Path(temp_dir) / "pretranslations.trg.txt"
-            pretranslations_path = Path(temp_dir) / "pretranslations.json"
-            with (
-                source_path.open("w", encoding="utf-8", newline="\n") as source_file,
-                translation_path.open("w", encoding="utf-8", newline="\n") as translation_file,
-                pretranslations_path.open("w", encoding="utf-8", newline="\n") as pretranslations_file,
-            ):
-                for source_segment, pt_info in pretranslations:
-                    source_file.write(source_segment + "\n")
-                    translation_file.write(pt_info["translation"] + "\n")
-                    pretranslations_file.write(json.dumps(pt_info, ensure_ascii=False) + "\n")
-
-            if check_canceled is not None:
-                check_canceled()
-
-            parallel_pretranslation_corpus = TextFileTextCorpus(source_path).align_rows(
-                TextFileTextCorpus(translation_path)
-            )
-
-            # The pretranslations are placed at the beginning of the training corpus so that a
-            # transductive model's training alignments can be matched back to them by index.
-            alignment_parallel_corpus = flatten([parallel_pretranslation_corpus, parallel_training_corpus])
-
-            logger.info("Training aligner")
-            with (
-                progress_reporter.start_next_phase() as phase_progress,
-                self._alignment_model_factory.create_model_trainer(tokenizer, alignment_parallel_corpus) as trainer,
-            ):
-                trainer.train(progress=phase_progress, check_canceled=check_canceled)
-                trainer.save()
-
-            if check_canceled is not None:
-                check_canceled()
-
-            logger.info("Aligning pretranslations")
-            batch_size = self._config["inference_batch_size"]
-            with (
-                self._alignment_model_factory.create_alignment_model() as alignment_model,
-                parallel_pretranslation_corpus.tokenize(tokenizer).get_rows() as rows,
-            ):
-                transductive_model: Optional[TransductiveWordAlignmentModel] = None
-                if isinstance(alignment_model, TransductiveWordAlignmentModel):
-                    transductive_model = alignment_model
-                index = 0
-                rows_with_pretranslations = zip(_read_pretranslations(pretranslations_path), rows, strict=True)
-                for pt_batch in batch(rows_with_pretranslations, batch_size):
-                    if check_canceled is not None:
-                        check_canceled()
-                        # The aligner is trained on lowercased tokens, so it must also be given
-                    # lowercased tokens when aligning and scoring; the original-cased tokens are
-                    # written to the pretranslations.
-
-                    segments = [(lowercase(row.source_segment), lowercase(row.target_segment)) for _, row in pt_batch]
-                    if transductive_model is not None:
-                        # The pretranslations are the first rows of the training corpus, so their
-                        # alignments were already computed during training.
-
-                        alignments = [
-                            transductive_model.get_training_alignment(index + i) for i in range(len(pt_batch))
-                        ]
-                    else:
-                        alignments = alignment_model.align_batch(segments)
-                    for (pt_info, row), (source_segment, target_segment), alignment in zip(
-                        pt_batch, segments, alignments, strict=True
-                    ):
-                        word_pairs = alignment.to_aligned_word_pairs(include_null=True)
-                        alignment_model.compute_aligned_word_pair_scores(source_segment, target_segment, word_pairs)
-                        pt_info["sourceTokens"] = list(row.source_segment)
-                        pt_info["translationTokens"] = list(row.target_segment)
-                        pt_info["alignment"] = AlignedWordPair.to_string(word_pairs, include_scores=True)
-                        yield pt_info
-                    index += len(pt_batch)
-
     def _save_model(self) -> None:
         return
-
-
-def _join_surrogate_pairs_if_needed(text: str) -> str:
-    # Check if any characters are in the UTF-16 surrogate range, and join pairs and drop unpaired halves if needed.
-    # These are not supported unjoined by UTF-8 encoding or the MBartTokenizer's Rust implementation.
-    if any(0xD800 <= ord(char) <= 0xDFFF for char in text):
-        return text.encode("utf-16", "surrogatepass").decode("utf-16", "ignore")
-    return text
-
-
-def _read_pretranslations(path: Path) -> Generator[PretranslationInfo, None, None]:
-    with path.open("r", encoding="utf-8") as file:
-        for line in file:
-            yield json.loads(line)

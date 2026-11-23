@@ -3,12 +3,13 @@ from types import SimpleNamespace
 from machine.corpora.parallel_text_corpus import ParallelTextCorpus
 from machine.corpora.parallel_text_row import ParallelTextRow
 from machine.jobs.remote_llm_engine_build_job import RemoteLlmEngineBuildJob
+from machine.jobs.remote_llm_model_factory import RemoteLlmModelFactory
 from machine.jobs.thot.thot_word_alignment_model_factory import ThotWordAlignmentModelFactory
 from machine.jobs.translation_file_service import PretranslationInfo
 from machine.translation.llm.example import Example
 from machine.translation.llm.example_retriever_factory import ExampleRetrieverFactory
 from machine.translation.llm.example_retriever_method import ExampleRetrievalMethod
-from machine.translation.llm.llm_completion_client import LlmCompletionClient
+from machine.translation.llm.llm_completion_client import LlmCompletionClient, LlmUsageTotals
 from machine.translation.llm.openrouter_llm_completion_client import RefusalError
 from machine.translation.llm.remote_llm_engine import RemoteLlmEngine
 from machine.utils.phased_progress_reporter import PhasedProgressReporter
@@ -20,14 +21,16 @@ def test_build_job_uses_only_nonempty_segment_pairs_as_examples() -> None:
         ParallelTextRow("text", [3], [3], [], ["empty source"]),
     ]
     parallel_corpus = ParallelTextCorpus.from_parallel_rows(rows)
+    config = SimpleNamespace(
+        src_lang="eng", trg_lang="spa", remote_llm=SimpleNamespace(num_workers=4, batch_size=15, num_examples=100)
+    )
+    model_factory = RemoteLlmModelFactory(config, None, ExampleRetrievalMethod.TFIDF, None)  # type: ignore[arg-type]
     job = RemoteLlmEngineBuildJob(
-        SimpleNamespace(
-            src_lang="eng", trg_lang="spa", remote_llm=SimpleNamespace(num_workers=4, batch_size=15, num_examples=100)
-        ),
-        completion_client=None,  # type: ignore[arg-type]
+        config,
+        model_factory,
         translation_file_service=None,  # type: ignore[arg-type]
         word_alignment_model_factory=ThotWordAlignmentModelFactory(SimpleNamespace()),
-        retrieval_method=ExampleRetrievalMethod.TFIDF,
+        usage_totals=LlmUsageTotals(),
     )
 
     example_count, confidence = job._train_model(
@@ -40,8 +43,8 @@ def test_build_job_uses_only_nonempty_segment_pairs_as_examples() -> None:
 
     assert example_count == 1
     assert confidence != confidence
-    assert job._example_retriever is not None
-    assert job._example_retriever.examples == [Example("hello", "hola")]
+    assert model_factory._example_retriever is not None
+    assert model_factory._example_retriever.examples == [Example("hello", "hola")]
 
 
 class _AlwaysRefusingClient(LlmCompletionClient):
@@ -65,11 +68,13 @@ def test_build_job_tracks_verse_refs_when_translation_retries_are_exhausted() ->
         remote_llm=SimpleNamespace(num_workers=4, batch_size=15, num_examples=100),
     )
     client = _AlwaysRefusingClient()
+    usage_totals = LlmUsageTotals()
     job = RemoteLlmEngineBuildJob(
         config,
-        client,
+        RemoteLlmModelFactory(config, client, ExampleRetrievalMethod.TFIDF, usage_totals),
         None,  # type: ignore[arg-type]
         ThotWordAlignmentModelFactory(config),
+        usage_totals=LlmUsageTotals(),
     )
     engine = RemoteLlmEngine(
         client,

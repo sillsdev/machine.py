@@ -5,7 +5,7 @@ default:
   inference_batch_size: 1024
   align_pretranslations: true
   remote_llm:
-    model: openai/gpt-4o
+    model: openai/gpt-6.1-terra
     max_tokens:
     num_examples: 100
     retrieval_method: coverage
