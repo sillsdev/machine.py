@@ -2,9 +2,6 @@ import logging
 from types import TracebackType
 from typing import Any, Dict, List, Optional, Type
 
-from openrouter import RetryConfig
-from openrouter.utils import BackoffStrategy
-
 from .completion_finish_reason import CompletionFinishReason
 from .llm_completion_client import Completion, LlmCompletionClient, TokenLogprob
 
@@ -45,7 +42,8 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         self._logprobs_supported: Optional[bool] = None
         self._closed = False
         try:
-            from openrouter import OpenRouter
+            from openrouter import OpenRouter, RetryConfig
+            from openrouter.utils import BackoffStrategy
         except ImportError as error:
             raise ImportError(
                 "OpenRouter completions require the 'openrouter' package. Install it with `uv sync --extra llm`."
