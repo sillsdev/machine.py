@@ -133,8 +133,12 @@ def test_translate_non_eager_caller_model_without_output_attentions() -> None:
 
 def test_engines_share_caller_model() -> None:
     model = AutoModelForSeq2SeqLM.from_pretrained("stas/tiny-m2m_100", attn_implementation="eager")
-    engine1 = HuggingFaceNmtEngine(model, src_lang="en", tgt_lang="es", max_length=10, output_attentions=True)
-    with HuggingFaceNmtEngine(model, src_lang="en", tgt_lang="es", max_length=10, output_attentions=True) as engine2:
+    engine1 = HuggingFaceNmtEngine(
+        model, src_lang="en", tgt_lang="es", max_length=10, device="cpu", output_attentions=True
+    )
+    with HuggingFaceNmtEngine(
+        model, src_lang="en", tgt_lang="es", max_length=10, device="cpu", output_attentions=True
+    ) as engine2:
         engine1.close()
         assert str(engine2.translate("This is a test string").alignment) == "0-2 2-0 2-1 2-3 4-4 4-5 4-6 4-7"
 
