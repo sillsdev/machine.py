@@ -109,11 +109,10 @@ class RemoteLlmEngineBuildJob(NmtEngineBuildJobBase):
                 check_canceled()
             source_segments = [join_surrogate_pairs_if_needed(pt_info["translation"]) for pt_info in pt_batch]
             results = engine.translate_batch(source_segments)
-            failed_indices = set(engine.failed_segment_indices)
-            for index, (pt_info, result) in enumerate(zip(pt_batch, results, strict=True)):
+            for pt_info, result in zip(pt_batch, results, strict=True):
                 pt_info["translation"] = result.translation
                 pt_info["sequenceConfidence"] = result.sequence_confidence
-                if index in failed_indices:
+                if result.error is not None:
                     self.untranslated_verses.append(UntranslatedVerse(pt_info["textId"], tuple(pt_info["sourceRefs"])))
 
             current_step += len(pt_batch)

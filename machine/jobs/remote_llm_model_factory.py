@@ -40,6 +40,7 @@ class RemoteLlmModelFactory(NmtModelFactory):
             self._batch_size,
             self._num_workers,
             self._usage_totals,
+            getattr(self._config.remote_llm, "prompt", None),
         )
 
     def init_example_retriever(self, corpus: ParallelTextCorpus) -> None:

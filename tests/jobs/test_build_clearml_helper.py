@@ -90,3 +90,21 @@ def test_update_settings_valid_remote_llm_build_options() -> None:
     assert settings.remote_llm.model == "openai/gpt-4o"
     assert settings.remote_llm.batch_size == 2
     assert settings.remote_llm.num_workers == 3
+
+
+def test_remote_llm_build_options_accept_custom_prompt() -> None:
+    settings = MockSettings({"model_type": "remote_llm", "data_dir": "/tmp"})
+    update_settings(
+        settings,
+        {
+            "build_options": '{"model":"test","prompt":{"instruction_template":"{source}",'
+            '"batch_instruction_template":"{num_segments}: {source}","example_format":{"type":"text",'
+            '"template":"{source} => {target}"}}}'
+        },
+        None,
+        logger,
+        RemoteLlmBuildOptions,
+    )
+
+    assert settings.remote_llm.prompt.instruction_template == "{source}"
+    assert settings.remote_llm.prompt.example_format.template == "{source} => {target}"

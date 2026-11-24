@@ -1,4 +1,4 @@
-from typing import Iterable, Sequence
+from typing import Iterable, Optional, Sequence
 
 from .phrase import Phrase
 from .translation_sources import TranslationSources
@@ -16,6 +16,7 @@ class TranslationResult:
         sources: Iterable[TranslationSources],
         alignment: WordAlignmentMatrix,
         phrases: Iterable[Phrase],
+        error: Optional[str] = None,
     ) -> None:
         self._translation = translation
         self._source_tokens = list(source_tokens)
@@ -25,6 +26,7 @@ class TranslationResult:
         self._sources = list(sources)
         self._alignment = alignment
         self._phrases = list(phrases)
+        self._error = error
 
         if len(self._confidences) != len(self._target_tokens):
             raise ValueError("The confidences must the same length as the target segment.")
@@ -38,6 +40,10 @@ class TranslationResult:
     @property
     def translation(self) -> str:
         return self._translation
+
+    @property
+    def error(self) -> Optional[str]:
+        return self._error
 
     @property
     def source_tokens(self) -> Sequence[str]:

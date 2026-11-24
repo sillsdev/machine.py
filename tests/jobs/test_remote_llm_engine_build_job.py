@@ -9,7 +9,7 @@ from machine.jobs.translation_file_service import PretranslationInfo
 from machine.translation.llm.example import Example
 from machine.translation.llm.example_retriever_factory import ExampleRetrieverFactory
 from machine.translation.llm.example_retriever_method import ExampleRetrievalMethod
-from machine.translation.llm.llm_completion_client import LlmCompletionClient, LlmUsageTotals
+from machine.translation.llm.llm_completion_client import Completion, LlmCompletionClient, LlmUsageTotals
 from machine.translation.llm.openrouter_llm_completion_client import RefusalError
 from machine.translation.llm.remote_llm_engine import RemoteLlmEngine
 from machine.utils.phased_progress_reporter import PhasedProgressReporter
@@ -54,6 +54,34 @@ class _AlwaysRefusingClient(LlmCompletionClient):
     def complete(self, messages, logprobs=False, response_schema=None):
         self.request_count += 1
         raise RefusalError(messages)
+
+
+def test_model_factory_passes_custom_prompt_to_engine() -> None:
+    class RecordingClient(LlmCompletionClient):
+        def __init__(self):
+            self.messages = []
+
+        def complete(self, messages, logprobs=False):
+            self.messages = messages
+            return Completion("hola")
+
+    config = SimpleNamespace(
+        src_lang="eng",
+        trg_lang="spa",
+        remote_llm=SimpleNamespace(
+            num_workers=1,
+            batch_size=1,
+            num_examples=0,
+            prompt={"system_message": "", "instruction_template": "custom {src_lang}: {source}"},
+        ),
+    )
+    client = RecordingClient()
+    factory = RemoteLlmModelFactory(config, client, ExampleRetrievalMethod.TFIDF, LlmUsageTotals())
+    factory.init_example_retriever(ParallelTextCorpus.from_parallel_rows([]))
+
+    factory.create_engine().translate("hello")
+
+    assert client.messages == [{"role": "user", "content": "custom eng: hello"}]
 
 
 def test_build_job_tracks_verse_refs_when_translation_retries_are_exhausted() -> None:

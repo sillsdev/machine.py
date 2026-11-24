@@ -20,6 +20,26 @@ from .thot.thot_word_alignment_model_factory import ThotWordAlignmentModelFactor
 from .translation_file_service import TranslationFileService
 
 
+class RemoteLlmExampleFormat(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    type: Literal["text", "json", "xml"] = "text"
+    template: str | None = None
+    separator: str | None = None
+    escape: bool | None = None
+
+
+class RemoteLlmPromptOptions(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    system_message: str | None = None
+    instruction_template: str | None = None
+    batch_system_message: str | None = None
+    batch_instruction_template: str | None = None
+    example_format: Literal["text", "json", "xml"] | RemoteLlmExampleFormat | None = None
+    back_translation: bool = False
+
+
 class RemoteLlmBuildOptions(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
@@ -29,6 +49,7 @@ class RemoteLlmBuildOptions(BaseModel):
     retrieval_method: Literal["tfidf", "coverage"] = "coverage"
     batch_size: int = Field(default=15, ge=1)
     num_workers: int = Field(default=4, ge=1)
+    prompt: RemoteLlmPromptOptions | None = None
     align_pretranslations: bool | None = None
     tags: list[str] | str | None = None
 
