@@ -369,13 +369,13 @@ def test_malformed_batch_is_corrected_then_split():
 def test_batch_refusal_retries_segments_and_reports_failures():
     client = _BatchClient(
         [
-            ContentBlockError([]),
-            ContentBlockError([]),
-            ContentBlockError([]),
+            ContentBlockError([], "blocked"),
+            ContentBlockError([], "blocked"),
+            ContentBlockError([], "blocked"),
             Completion("hola"),
-            RefusalError([]),
-            RefusalError([]),
-            RefusalError([]),
+            RefusalError([], "refused"),
+            RefusalError([], "refused"),
+            RefusalError([], "refused"),
             Completion("later"),
         ]
     )
@@ -386,9 +386,9 @@ def test_batch_refusal_retries_segments_and_reports_failures():
     assert [result.translation for result in results] == ["hola", ""]
     assert len(client.calls) == 7
     assert results[0].error is None
-    assert results[1].error == "Completion response was a refusal from the model."
+    assert results[1].error == "refused"
     assert engine.translate("next").error is None
-    assert results[1].error == "Completion response was a refusal from the model."
+    assert results[1].error == "refused"
 
 
 def test_empty_source_is_skipped_and_empty_reply_is_retried():
@@ -407,7 +407,12 @@ def test_empty_source_is_skipped_and_empty_reply_is_retried():
 
 def test_segment_errors_stay_with_results_across_batches():
     client = _BatchClient(
-        [ContentBlockError([]), ContentBlockError([]), ContentBlockError([]), Completion("translated")]
+        [
+            ContentBlockError([], "blocked"),
+            ContentBlockError([], "blocked"),
+            ContentBlockError([], "blocked"),
+            Completion("translated"),
+        ]
     )
     engine = RemoteLlmEngine(client, _Retriever([]), "spa", "eng", batch_size=1, num_workers=1)
 
@@ -416,24 +421,31 @@ def test_segment_errors_stay_with_results_across_batches():
     assert [result.translation for result in results] == ["", "", "translated"]
     assert [result.error for result in results] == [
         None,
-        "Completion response terminated because of content filtering.",
+        "blocked",
         None,
     ]
 
 
 def test_translation_drafts_keep_separate_error_states():
-    client = _BatchClient([RefusalError([]), RefusalError([]), RefusalError([]), Completion("translated")])
+    client = _BatchClient(
+        [
+            RefusalError([], "refused"),
+            RefusalError([], "refused"),
+            RefusalError([], "refused"),
+            Completion("translated"),
+        ]
+    )
     engine = RemoteLlmEngine(client, _Retriever([]), "spa", "eng", num_workers=1)
 
     results = engine.translate_n(2, "source")
 
     assert [result.translation for result in results] == ["", "translated"]
-    assert [result.error for result in results] == ["Completion response was a refusal from the model.", None]
+    assert [result.error for result in results] == ["refused", None]
 
 
 def test_usage_totals_count_reported_tokens_and_unpriced_requests():
     totals = LlmUsageTotals()
-    totals.add(Completion("hola", cost=None, input_token_count=None, output_token_count=3))
+    totals.add(Completion("hola", cost=None, input_token_count=0, output_token_count=3))
 
     summary = totals.summary
 

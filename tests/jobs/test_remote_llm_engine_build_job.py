@@ -53,7 +53,7 @@ class _AlwaysRefusingClient(LlmCompletionClient):
 
     def complete(self, messages, logprobs=False, response_schema=None):
         self.request_count += 1
-        raise RefusalError(messages)
+        raise RefusalError(messages, "refused")
 
 
 def test_model_factory_passes_custom_prompt_to_engine() -> None:
