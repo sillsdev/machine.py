@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum, IntEnum, auto
 from io import TextIOWrapper
+from itertools import zip_longest
 from pathlib import Path, PurePath
 from typing import BinaryIO, Dict, Generator, Iterable, List, Optional, Set, TextIO, Tuple, Union, cast
 
@@ -909,6 +910,21 @@ class Versification:
             if verse_ref.book_num != standard_ref.book_num:
                 return True
         return False
+
+    def is_equivalent_to(self, other: Versification) -> bool:
+        if self == other:
+            return True
+
+        original_versification = Versification.get_builtin(VersificationType.ORIGINAL)
+        for this_verse, other_verse in zip_longest(self.all_included_verses(), other.all_included_verses()):
+            if this_verse is None or other_verse is None:
+                return False
+
+            this_verse_original = this_verse.to_versification(original_versification)
+            other_verse_original = other_verse.to_versification(original_versification)
+            if this_verse_original != other_verse_original or this_verse.bbbcccvvvs != other_verse.bbbcccvvvs:
+                return False
+        return True
 
     def __eq__(self, other: Versification) -> bool:
         if self is other:
