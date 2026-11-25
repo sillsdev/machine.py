@@ -67,7 +67,7 @@ class ParatextProjectTextUpdaterBase(ABC):
 
             rows_versification = get_rows_versification(rows)
             parse_versification = self._settings.versification
-            if rows_versification != self._settings.versification:
+            if not rows_versification.is_equivalent_to(self._settings.versification):
                 converter = ConvertUsfmVersificationHandler(rows_versification)
                 parse_usfm(tokens, converter, self._settings.stylesheet, self._settings.versification)
                 tokens = converter.tokens

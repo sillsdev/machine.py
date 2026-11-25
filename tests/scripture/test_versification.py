@@ -123,3 +123,31 @@ def test_has_cross_book_mappings() -> None:
     assert not RUSSIAN_PROTESTANT_VERSIFICATION.has_cross_book_mappings()
     assert VULGATE_VERSIFICATION.has_cross_book_mappings()
     assert VULGATE_VERSIFICATION.has_cross_book_mappings(ENGLISH_VERSIFICATION)
+
+
+def test_is_equivalent_to() -> None:
+    def create_custom_versification(src: str, name: str) -> Versification:
+        versification = Versification(name, "vers.txt", ENGLISH_VERSIFICATION)
+        return Versification.parse(StringIO(src), "vers.txt", versification, name)
+
+    custom_vrs1 = create_custom_versification("MAT 1:2 = MAT 1:1\nMAT 1:1 = MAT 1:2\n-EXO 25:6\n-EXO 28:23", "custom1")
+    custom_vrs2 = create_custom_versification("MAT 1:1 = MAT 1:2\nMAT 1:2 = MAT 1:1\n-EXO 28:23\n-EXO 25:6", "custom2")
+    custom_vrs3 = create_custom_versification(
+        "MAT 1:1 = MAT 1:2\n# This is a comment\nMAT 1:2 = MAT 1:1\nMAT 1:2 = MAT 1:1\n-EXO 25:6\n-EXO 28:23",
+        "custom3",
+    )
+    custom_vrs4 = create_custom_versification(
+        "&MAT 1:2-3 = MAT 1:2\nMAT 1:4 = MAT 1:3\n-EXO 25:6\n-EXO 28:23", "custom4"
+    )
+    custom_vrs5 = create_custom_versification("", "custom5")
+
+    assert ENGLISH_VERSIFICATION.is_equivalent_to(ENGLISH_VERSIFICATION)
+    assert not ENGLISH_VERSIFICATION.is_equivalent_to(ORIGINAL_VERSIFICATION)
+    assert ORIGINAL_VERSIFICATION.is_equivalent_to(ORIGINAL_VERSIFICATION)
+    assert not ORIGINAL_VERSIFICATION.is_equivalent_to(ENGLISH_VERSIFICATION)
+    assert custom_vrs1.is_equivalent_to(custom_vrs1)
+    assert custom_vrs1.is_equivalent_to(custom_vrs2)
+    assert custom_vrs1.is_equivalent_to(custom_vrs3)
+    assert not custom_vrs1.is_equivalent_to(custom_vrs4)
+    assert not custom_vrs1.is_equivalent_to(custom_vrs5)
+    assert custom_vrs5.is_equivalent_to(ENGLISH_VERSIFICATION)
