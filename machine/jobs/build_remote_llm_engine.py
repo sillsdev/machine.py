@@ -7,7 +7,6 @@ from clearml import Task
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..translation.llm.example_retriever_method import ExampleRetrievalMethod
-from ..translation.llm.llm_completion_client import LlmUsageTotals
 from ..translation.llm.openrouter_llm_completion_client import OpenRouterLlmCompletionClient
 from ..utils.canceled_error import CanceledError
 from ..utils.progress_status import ProgressStatus
@@ -51,6 +50,7 @@ class RemoteLlmBuildOptions(BaseModel):
     num_workers: int = Field(default=4, ge=1)
     prompt: RemoteLlmPromptOptions | None = None
     align_pretranslations: bool | None = None
+    post_edit_model: str | None = Field(default=None, min_length=1)
     tags: list[str] | str | None = None
 
 
@@ -96,21 +96,20 @@ def run(args: dict) -> None:
             if SETTINGS.remote_llm.retrieval_method == "tfidf"
             else ExampleRetrievalMethod.COVERAGE
         )
-        usage_totals = LlmUsageTotals()
         with OpenRouterLlmCompletionClient(
             model=SETTINGS.remote_llm.model, api_key=api_key, max_tokens=SETTINGS.remote_llm.max_tokens
         ) as completion_client:
             job = RemoteLlmEngineBuildJob(
                 SETTINGS,
-                RemoteLlmModelFactory(SETTINGS, completion_client, retrieval_method, usage_totals),
+                RemoteLlmModelFactory(SETTINGS, completion_client, retrieval_method),
                 translation_file_service,
                 ThotWordAlignmentModelFactory(SETTINGS),
-                usage_totals,
+                completion_client,
             )
             train_corpus_size, _ = job.run(progress, check_canceled)
         if task is not None:
             task.get_logger().report_single_value(name="example_corpus_size", value=train_corpus_size)
-            usage = job.usage_totals.summary
+            usage = completion_client.usage_summary
             task.get_logger().report_single_value(name="llm_request_count", value=usage.request_count)
             task.get_logger().report_single_value(name="llm_prompt_tokens", value=usage.input_token_count)
             task.get_logger().report_single_value(name="llm_completion_tokens", value=usage.output_token_count)

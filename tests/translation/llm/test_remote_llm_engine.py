@@ -5,7 +5,7 @@ from time import sleep
 
 from machine.translation.llm.example import Example
 from machine.translation.llm.example_retriever import ExampleRetriever
-from machine.translation.llm.llm_completion_client import Completion, LlmCompletionClient, LlmUsageTotals, TokenLogprob
+from machine.translation.llm.llm_completion_client import Completion, CompletionError, LlmCompletionClient, TokenLogprob
 from machine.translation.llm.openrouter_llm_completion_client import ContentBlockError, RefusalError
 from machine.translation.llm.remote_llm_engine import RemoteLlmEngine
 from machine.translation.translation_sources import TranslationSources
@@ -40,6 +40,7 @@ class _Client(LlmCompletionClient):
 
 class _BatchClient(LlmCompletionClient):
     def __init__(self, replies, delay=0):
+        super().__init__()
         self.replies = iter(replies)
         self.calls = []
         self.delay = delay
@@ -52,12 +53,16 @@ class _BatchClient(LlmCompletionClient):
             self.calls.append(messages)
             reply = next(self.replies)
         if isinstance(reply, BaseException):
+            if isinstance(reply, CompletionError):
+                self._record_usage(reply.cost, reply.input_token_count, reply.output_token_count)
             raise reply
+        self._record_usage(reply.cost, reply.input_token_count, reply.output_token_count)
         return reply
 
 
 class _EchoBatchClient(LlmCompletionClient):
     def __init__(self):
+        super().__init__()
         self.calls = []
         self.lock = Lock()
         self.active_calls = 0
@@ -78,6 +83,7 @@ class _EchoBatchClient(LlmCompletionClient):
         else:
             source = re.search(r"<source_to_translate>\nsource (\d+)\n</source_to_translate>", content)
             reply = "" if source is None else f"target {source.group(1)}"
+        self._record_usage(0.1, 100, 20)
         return Completion(reply, 0.1, input_token_count=100, output_token_count=20)
 
 
@@ -117,11 +123,11 @@ def test_batches_limit_request_size_preserve_order_and_track_usage():
     ]
     assert sorted(batch_sizes) == [1, 15, 15]
     assert client.max_active_calls > 1
-    assert engine.usage_totals.summary.request_count == 3
-    assert engine.usage_totals.summary.input_token_count == 300
-    assert engine.usage_totals.summary.output_token_count == 60
-    assert round(engine.usage_totals.summary.reported_cost, 6) == 0.3
-    assert engine.usage_totals.summary.unpriced_request_count == 0
+    assert client.usage_summary.request_count == 3
+    assert client.usage_summary.input_token_count == 300
+    assert client.usage_summary.output_token_count == 60
+    assert round(client.usage_summary.reported_cost, 6) == 0.3
+    assert client.usage_summary.unpriced_request_count == 0
 
 
 def test_default_single_prompt_matches_expected_messages():
@@ -362,8 +368,8 @@ def test_malformed_batch_is_corrected_then_split():
             ),
         },
     ]
-    assert engine.usage_totals.summary.request_count == 4
-    assert engine.usage_totals.summary.reported_cost == 0.1
+    assert client.usage_summary.request_count == 4
+    assert client.usage_summary.reported_cost == 0.1
 
 
 def test_batch_refusal_retries_segments_and_reports_failures():
@@ -401,8 +407,8 @@ def test_empty_source_is_skipped_and_empty_reply_is_retried():
     assert [result.error for result in results] == [None, None]
     assert len(client.calls) == 2
     assert client.calls[1] == client.calls[0]
-    assert engine.usage_totals.summary.request_count == 2
-    assert engine.usage_totals.summary.reported_cost == 0.03
+    assert client.usage_summary.request_count == 2
+    assert client.usage_summary.reported_cost == 0.03
 
 
 def test_segment_errors_stay_with_results_across_batches():
@@ -444,10 +450,10 @@ def test_translation_drafts_keep_separate_error_states():
 
 
 def test_usage_totals_count_reported_tokens_and_unpriced_requests():
-    totals = LlmUsageTotals()
-    totals.add(Completion("hola", cost=None, input_token_count=0, output_token_count=3))
+    client = _BatchClient([Completion("hola", cost=None, input_token_count=0, output_token_count=3)])
+    RemoteLlmEngine(client, _Retriever([]), "eng", "spa").translate("hello")
 
-    summary = totals.summary
+    summary = client.usage_summary
 
     assert summary.request_count == 1
     assert summary.input_token_count == 0

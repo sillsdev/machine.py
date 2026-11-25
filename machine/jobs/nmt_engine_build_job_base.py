@@ -1,10 +1,11 @@
 import json
 import logging
+import os
 from abc import ABC, abstractmethod
-from contextlib import ExitStack
+from contextlib import ExitStack, closing
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Callable, Generator, Iterable, Optional, Sequence, Tuple
+from typing import Any, Callable, Generator, Iterable, Optional, Sequence, Tuple, cast
 
 from ..corpora import flatten
 from ..corpora.aligned_word_pair import AlignedWordPair
@@ -20,7 +21,7 @@ from ..utils.phased_progress_reporter import PhasedProgressReporter
 from ..utils.progress_status import ProgressStatus
 from .nmt_model_factory import NmtModelFactory
 from .translation_engine_build_job import TranslationEngineBuildJob
-from .translation_file_service import PretranslationInfo, TranslationFileService
+from .translation_file_service import PretranslationInfo, TranslationFileService, _PostEditedPretranslationInfo
 from .word_alignment_model_factory import WordAlignmentModelFactory
 
 logger = logging.getLogger(__name__)
@@ -49,12 +50,41 @@ class NmtEngineBuildJobBase(TranslationEngineBuildJob, ABC):
         with self._translation_file_service.get_source_pretranslations() as src_pretranslations:
             inference_step_count = sum(1 for _ in src_pretranslations)
         with ExitStack() as stack:
-            phase_progress = stack.enter_context(progress_reporter.start_next_phase())
             engine = stack.enter_context(self._nmt_model_factory.create_engine())
             src_pretranslations = stack.enter_context(self._translation_file_service.get_source_pretranslations())
-            pretranslations = self._translate(
-                engine, src_pretranslations, inference_step_count, phase_progress, check_canceled
-            )
+            post_edit_model = self._config.get("post_edit_model")
+            if post_edit_model:
+                api_key = os.getenv("OPENROUTER_API_KEY")
+                if not api_key:
+                    raise RuntimeError("OPENROUTER_API_KEY is required for postediting.")
+                temp_dir = stack.enter_context(TemporaryDirectory())
+                drafts_path = Path(temp_dir) / "drafts.jsonl"
+                with (
+                    progress_reporter.start_next_phase() as phase_progress,
+                    drafts_path.open("w", encoding="utf-8") as drafts_file,
+                ):
+                    for source, pt_info in self._translate(
+                        engine, src_pretranslations, inference_step_count, phase_progress, check_canceled
+                    ):
+                        drafts_file.write(json.dumps([source, pt_info], ensure_ascii=False) + "\n")
+                pretranslations = stack.enter_context(
+                    closing(
+                        self._post_edit(
+                            drafts_path,
+                            parallel_training_corpus,
+                            post_edit_model,
+                            api_key,
+                            inference_step_count,
+                            progress_reporter,
+                            check_canceled,
+                        )
+                    )
+                )
+            else:
+                phase_progress = stack.enter_context(progress_reporter.start_next_phase())
+                pretranslations = self._translate(
+                    engine, src_pretranslations, inference_step_count, phase_progress, check_canceled
+                )
             if self._config.align_pretranslations:
                 results: Iterable[PretranslationInfo] = self._align(
                     pretranslations, parallel_training_corpus, progress_reporter, check_canceled
@@ -65,6 +95,63 @@ class NmtEngineBuildJobBase(TranslationEngineBuildJob, ABC):
             writer = stack.enter_context(self._translation_file_service.open_target_pretranslation_writer())
             for pt_info in results:
                 writer.write(pt_info)
+
+    def _post_edit(
+        self,
+        drafts_path: Path,
+        parallel_training_corpus: ParallelTextCorpus,
+        model: str,
+        api_key: str,
+        count: int,
+        progress_reporter: PhasedProgressReporter,
+        check_canceled: Optional[Callable[[], None]],
+    ) -> Generator[Tuple[str, PretranslationInfo], None, None]:
+        from ..translation.llm.example import Example
+        from ..translation.llm.example_retriever_factory import ExampleRetrieverFactory
+        from ..translation.llm.example_retriever_method import ExampleRetrievalMethod
+        from ..translation.llm.llm_post_editor import LlmPostEditor
+        from ..translation.llm.openrouter_llm_completion_client import OpenRouterLlmCompletionClient
+        from ..translation.llm.post_edit_segment import PostEditSegment
+
+        examples = []
+        with parallel_training_corpus.get_rows() as rows:
+            for row in rows:
+                if not row.is_empty:
+                    examples.append(Example(row.source_text, row.target_text))
+        retriever = ExampleRetrieverFactory.create_example_retriever(ExampleRetrievalMethod.TFIDF, examples)
+        with (
+            OpenRouterLlmCompletionClient(model=model, api_key=api_key) as client,
+            progress_reporter.start_next_phase() as phase_progress,
+            drafts_path.open("r", encoding="utf-8") as drafts_file,
+        ):
+            editor = LlmPostEditor(client, retriever, self._config.src_lang, self._config.trg_lang)
+            completed = 0
+            for draft_batch in batch((json.loads(line) for line in drafts_file), 64):
+                if check_canceled is not None:
+                    check_canceled()
+                segments = [PostEditSegment(source, info["translation"]) for source, info in draft_batch]
+
+                def report_progress(status: ProgressStatus) -> None:
+                    if check_canceled is not None:
+                        check_canceled()
+                    phase_progress(ProgressStatus.from_step(completed + status.step, count))
+
+                edited = editor.post_edit_batch(segments, max_workers=4, consecutive=False, progress=report_progress)
+                for (source, info), result in zip(draft_batch, edited, strict=True):
+                    if not result.succeeded and source.strip():
+                        logger.warning("Postediting failed for %s: %s", info["textId"], ", ".join(info["sourceRefs"]))
+                    edited_info = cast(
+                        _PostEditedPretranslationInfo,
+                        {**info, "postEditedTranslation": result.translation},
+                    )
+                    yield source, edited_info
+                completed += len(draft_batch)
+            logger.info(
+                "Postediting usage: %d prompt tokens, %d completion tokens, $%.6f",
+                client.total_input_token_count,
+                client.total_output_token_count,
+                client.total_cost,
+            )
 
     def _align(
         self,
@@ -92,7 +179,10 @@ class NmtEngineBuildJobBase(TranslationEngineBuildJob, ABC):
             ):
                 for source_segment, pt_info in pretranslations:
                     source_file.write(source_segment + "\n")
-                    translation_file.write(pt_info["translation"] + "\n")
+                    target_translation = pt_info.get("postEditedTranslation")
+                    if target_translation is None:
+                        target_translation = pt_info["translation"]
+                    translation_file.write(target_translation + "\n")
                     pretranslations_file.write(json.dumps(pt_info, ensure_ascii=False) + "\n")
 
             if check_canceled is not None:

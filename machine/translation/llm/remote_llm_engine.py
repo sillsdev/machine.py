@@ -19,7 +19,7 @@ from ..translation_sources import TranslationSources
 from ..word_alignment_matrix import WordAlignmentMatrix
 from .example import Example
 from .example_retriever import ExampleRetriever
-from .llm_completion_client import Completion, LlmCompletionClient, LlmUsageTotals
+from .llm_completion_client import Completion, LlmCompletionClient
 from .openrouter_llm_completion_client import ContentBlockError, RefusalError
 
 logger = logging.getLogger(__name__)
@@ -82,7 +82,6 @@ class RemoteLlmEngine(TranslationEngine):
         num_examples: int = 100,
         batch_size: int = 15,
         num_workers: int = 4,
-        usage_totals: Optional[LlmUsageTotals] = None,
         prompt: Optional[Mapping[str, Any]] = None,
     ) -> None:
         if num_examples < 0:
@@ -109,7 +108,6 @@ class RemoteLlmEngine(TranslationEngine):
             for target in [example.target.strip()]
             for i in range(len(target) - 2)
         }
-        self.usage_totals = usage_totals if usage_totals is not None else LlmUsageTotals()
 
     def translate(self, segment: Union[str, Sequence[str]]) -> TranslationResult:
         return self.translate_batch([segment])[0]
@@ -237,7 +235,6 @@ class RemoteLlmEngine(TranslationEngine):
                     raise
                 sleep(0.5 * (2**attempt))
             else:
-                self.usage_totals.add(completion)
                 return completion
         raise RuntimeError("Completion attempts ended unexpectedly.")
 

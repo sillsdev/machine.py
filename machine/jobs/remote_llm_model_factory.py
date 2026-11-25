@@ -7,7 +7,7 @@ from ..translation import Trainer
 from ..translation.llm.example import Example
 from ..translation.llm.example_retriever_factory import ExampleRetrieverFactory
 from ..translation.llm.example_retriever_method import ExampleRetrievalMethod
-from ..translation.llm.llm_completion_client import LlmCompletionClient, LlmUsageTotals
+from ..translation.llm.llm_completion_client import LlmCompletionClient
 from ..translation.llm.remote_llm_engine import RemoteLlmEngine
 from ..translation.translation_engine import TranslationEngine
 from .nmt_model_factory import NmtModelFactory
@@ -20,7 +20,6 @@ class RemoteLlmModelFactory(NmtModelFactory):
         config: Any,
         completion_client: LlmCompletionClient,
         retrieval_method: ExampleRetrievalMethod,
-        usage_totals: LlmUsageTotals,
     ) -> None:
         self._config = config
         self._num_examples = config.remote_llm.num_examples
@@ -28,7 +27,6 @@ class RemoteLlmModelFactory(NmtModelFactory):
         self._num_workers = config.remote_llm.num_workers
         self._completion_client = completion_client
         self._example_retrieval_method = retrieval_method
-        self._usage_totals = usage_totals
 
     def create_engine(self) -> TranslationEngine:
         return RemoteLlmEngine(
@@ -39,7 +37,6 @@ class RemoteLlmModelFactory(NmtModelFactory):
             self._num_examples,
             self._batch_size,
             self._num_workers,
-            self._usage_totals,
             getattr(self._config.remote_llm, "prompt", None),
         )
 

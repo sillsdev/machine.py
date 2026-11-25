@@ -60,6 +60,41 @@ def test_update_settings_valid_nmt_build_options() -> None:
     assert settings.align_pretranslations
 
 
+def test_post_edit_model_options() -> None:
+    for model_type, options, model in (
+        ("huggingface", '{"post_edit_model":"openai/gpt-4o"}', NmtBuildOptions),
+        ("remote_llm", '{"model":"test","post_edit_model":"openai/gpt-4o"}', RemoteLlmBuildOptions),
+    ):
+        settings = MockSettings({"model_type": model_type, "data_dir": "/tmp"})
+        update_settings(settings, {"build_options": options}, None, logger, model)
+        assert settings.post_edit_model == "openai/gpt-4o"
+
+
+def test_post_edit_model_rejects_blank() -> None:
+    settings = MockSettings({"model_type": "huggingface", "data_dir": "/tmp"})
+    with raises(ValueError):
+        update_settings(settings, {"build_options": '{"post_edit_model":""}'}, None, logger, NmtBuildOptions)
+
+
+def test_remote_post_edit_model_rejects_blank() -> None:
+    settings = MockSettings({"model_type": "remote_llm", "data_dir": "/tmp"})
+    with raises(ValueError):
+        update_settings(
+            settings,
+            {"build_options": '{"model":"test","post_edit_model":""}'},
+            None,
+            logger,
+            RemoteLlmBuildOptions,
+        )
+
+
+def test_post_edit_model_does_not_leak_between_builds() -> None:
+    settings = MockSettings({"model_type": "huggingface", "data_dir": "/tmp"})
+    update_settings(settings, {"build_options": '{"post_edit_model":"openai/gpt-4o"}'}, None, logger, NmtBuildOptions)
+    update_settings(settings, {"build_options": "{}"}, None, logger, NmtBuildOptions)
+    assert settings.post_edit_model is None
+
+
 def test_update_settings_valid_smt_build_options() -> None:
     settings = MockSettings({"model_type": "thot", "data_dir": "/tmp"})
     update_settings(

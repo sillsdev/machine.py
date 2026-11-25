@@ -3,7 +3,6 @@ from __future__ import annotations
 import threading
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from threading import Lock
 from types import TracebackType
 from typing import Any, Dict, List, Optional, Type
 
@@ -35,39 +34,6 @@ class LlmUsageSummary:
     output_token_count: int
     reported_cost: float
     unpriced_request_count: int
-
-
-class LlmUsageTotals:
-    def __init__(self) -> None:
-        self._lock = Lock()
-        self._request_count = 0
-        self._input_token_count = 0
-        self._output_token_count = 0
-        self._reported_cost = 0.0
-        self._unpriced_request_count = 0
-
-    def add(self, completion: Completion) -> None:
-        with self._lock:
-            self._request_count += 1
-            if completion.input_token_count is not None:
-                self._input_token_count += completion.input_token_count
-            if completion.output_token_count is not None:
-                self._output_token_count += completion.output_token_count
-            if completion.cost is None:
-                self._unpriced_request_count += 1
-            else:
-                self._reported_cost += completion.cost
-
-    @property
-    def summary(self) -> LlmUsageSummary:
-        with self._lock:
-            return LlmUsageSummary(
-                self._request_count,
-                self._input_token_count,
-                self._output_token_count,
-                self._reported_cost,
-                self._unpriced_request_count,
-            )
 
 
 class CompletionError(Exception):
@@ -109,6 +75,19 @@ class LlmCompletionClient(ABC):
         self._total_cost = 0.0
         self._total_input_token_count = 0
         self._total_output_token_count = 0
+        self._request_count = 0
+        self._unpriced_request_count = 0
+
+    @property
+    def usage_summary(self) -> LlmUsageSummary:
+        with self._usage_lock:
+            return LlmUsageSummary(
+                self._request_count,
+                self._total_input_token_count,
+                self._total_output_token_count,
+                self._total_cost,
+                self._unpriced_request_count,
+            )
 
     @property
     def total_cost(self) -> float:
@@ -140,11 +119,17 @@ class LlmCompletionClient(ABC):
     def supports_logprobs(self) -> bool:
         return False
 
-    def _record_usage(self, cost: float, input_token_count: int, output_token_count: int) -> None:
+    def _record_usage(
+        self, cost: Optional[float], input_token_count: Optional[int], output_token_count: Optional[int]
+    ) -> None:
         with self._usage_lock:
-            self._total_cost += cost
-            self._total_input_token_count += input_token_count
-            self._total_output_token_count += output_token_count
+            self._request_count += 1
+            if cost is None:
+                self._unpriced_request_count += 1
+            else:
+                self._total_cost += cost
+            self._total_input_token_count += input_token_count or 0
+            self._total_output_token_count += output_token_count or 0
 
     def count_tokens(self, text: str) -> Optional[int]:
         return None

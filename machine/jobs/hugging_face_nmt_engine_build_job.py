@@ -50,6 +50,10 @@ class HuggingFaceNmtEngineBuildJob(NmtEngineBuildJobBase):
                 ]
             else:
                 phases = [Phase(message="Pretranslating segments", percentage=1.0, stage="inference")]
+        if self._config.get("post_edit_model"):
+            phases = [Phase(p.message, p.percentage * 0.9, p.report_steps, p.stage) for p in phases]
+            index = next(i for i, phase in enumerate(phases) if phase.stage == "inference") + 1
+            phases.insert(index, Phase(message="Postediting pretranslations", percentage=0.1, stage="post_edit"))
         return PhasedProgressReporter(progress, phases)
 
     def _respond_to_no_training_corpus(self) -> Tuple[int, float]:

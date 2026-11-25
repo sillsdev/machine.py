@@ -49,7 +49,7 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
             api_key=api_key,
             retry_config=RetryConfig(
                 strategy="backoff",
-                backoff=BackoffStrategy(500, 60000, 1.5, 3600000),
+                backoff=BackoffStrategy(500, 60000, 1.5, 600000),
                 status_codes_override=["5XX", "429"],
                 retry_connection_errors=True,
             ),
@@ -100,12 +100,19 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
             }
         response: ChatResult = self._client.chat.send(**request)
         usage: Optional[ChatUsage] = getattr(response, "usage", None)
-        cost: float = getattr(usage, "cost", None) or 0.0
-        prompt_tokens: int = getattr(usage, "prompt_tokens", 0)
-        completion_tokens: int = getattr(usage, "completion_tokens", 0)
+        cost: Optional[float] = getattr(usage, "cost", None)
+        prompt_tokens: Optional[int] = getattr(usage, "prompt_tokens", None)
+        completion_tokens: Optional[int] = getattr(usage, "completion_tokens", None)
+        billed_cost = cost or 0.0
+        billed_prompt_tokens = prompt_tokens or 0
+        billed_completion_tokens = completion_tokens or 0
         self._record_usage(cost, prompt_tokens, completion_tokens)
 
-        usage_fields = {"cost": cost, "input_token_count": prompt_tokens, "output_token_count": completion_tokens}
+        usage_fields = {
+            "cost": billed_cost,
+            "input_token_count": billed_prompt_tokens,
+            "output_token_count": billed_completion_tokens,
+        }
 
         def malformed(reason: str) -> MalformedCompletionError:
             return MalformedCompletionError(
@@ -156,10 +163,6 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
             except jsonschema.ValidationError as error:
                 raise malformed(f"The message does not match the response schema: {error.message}") from error
         token_logprobs = self._get_logprobs(choice) if logprobs else []
-        usage: Optional[ChatUsage] = getattr(response, "usage", None)
-        cost: Optional[float] = getattr(usage, "cost", None)
-        prompt_tokens = getattr(usage, "prompt_tokens", None)
-        completion_tokens = getattr(usage, "completion_tokens", None)
         return Completion(
             text=text,
             cost=None if cost is None else float(cost),

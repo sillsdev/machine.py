@@ -24,6 +24,10 @@ class PretranslationInfo(TypedDict):
     sequenceConfidence: float  # noqa: N815
 
 
+class _PostEditedPretranslationInfo(PretranslationInfo, total=False):
+    postEditedTranslation: str  # noqa: N815
+
+
 class TranslationFileService:
     def __init__(
         self,

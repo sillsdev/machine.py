@@ -5,7 +5,7 @@ from typing import Any, Callable, Generator, Iterable, List, Optional, Tuple
 from ..corpora.corpora_utils import batch
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from ..corpora.text_corpus import TextCorpus
-from ..translation.llm.llm_completion_client import LlmUsageTotals
+from ..translation.llm.llm_completion_client import LlmCompletionClient
 from ..translation.llm.remote_llm_engine import RemoteLlmEngine
 from ..utils.phased_progress_reporter import Phase, PhasedProgressReporter
 from ..utils.progress_status import ProgressStatus
@@ -31,9 +31,9 @@ class RemoteLlmEngineBuildJob(NmtEngineBuildJobBase):
         nmt_model_factory: NmtModelFactory,
         translation_file_service: TranslationFileService,
         word_alignment_model_factory: WordAlignmentModelFactory,
-        usage_totals: LlmUsageTotals,
+        completion_client: LlmCompletionClient,
     ) -> None:
-        self.usage_totals = usage_totals
+        self._completion_client = completion_client
         self.untranslated_verses: List[UntranslatedVerse] = []
         super().__init__(config, nmt_model_factory, translation_file_service, word_alignment_model_factory)
 
@@ -45,6 +45,9 @@ class RemoteLlmEngineBuildJob(NmtEngineBuildJobBase):
             phases.append(Phase(message="Aligning pretranslations", percentage=0.1, stage="align"))
         else:
             phases[0] = Phase(message="Drafting pretranslations", percentage=1.0, stage="inference")
+        if self._config.get("post_edit_model"):
+            phases = [Phase(p.message, p.percentage * 0.9, p.report_steps, p.stage) for p in phases]
+            phases.insert(1, Phase(message="Postediting pretranslations", percentage=0.1, stage="post_edit"))
         return PhasedProgressReporter(progress, phases)
 
     def _respond_to_no_training_corpus(self) -> Tuple[int, float]:
@@ -75,7 +78,7 @@ class RemoteLlmEngineBuildJob(NmtEngineBuildJobBase):
     ) -> None:
         self.untranslated_verses.clear()
         super()._batch_inference(parallel_training_corpus, progress_reporter, check_canceled)
-        usage = self.usage_totals.summary
+        usage = self._completion_client.usage_summary
         logger.info(
             "Remote LLM usage: %d requests, %d prompt tokens, %d completion tokens, "
             "$%.6f reported cost (%d unpriced requests)",
