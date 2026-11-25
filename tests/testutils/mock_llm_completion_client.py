@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-from machine.translation.llm.llm_completion_client import Completion, LlmCompletionClient
+from machine.translation.llm.llm_completion_client import Completion, CompletionError, LlmCompletionClient
 
 
 class MockLlmCompletionClient(LlmCompletionClient):
@@ -20,5 +20,8 @@ class MockLlmCompletionClient(LlmCompletionClient):
         self.requests.append({"messages": messages, "logprobs": logprobs, "response_schema": response_schema})
         completion = self._completions[len(self.requests) - 1]
         if isinstance(completion, Exception):
+            if isinstance(completion, CompletionError):
+                self._record_usage(completion.cost, completion.input_token_count, completion.output_token_count)
             raise completion
+        self._record_usage(completion.cost, completion.input_token_count, completion.output_token_count)
         return completion

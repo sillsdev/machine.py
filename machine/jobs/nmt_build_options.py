@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TrainParams(BaseModel):
@@ -53,6 +53,7 @@ class NmtBuildOptions(BaseModel):
     )
 
     align_pretranslations: bool | None = None
+    post_edit_model: str | None = Field(default=None, min_length=1)
     tags: list[str] | str | None = None
     use_key_terms: bool | None = None
     parent_model_name: (

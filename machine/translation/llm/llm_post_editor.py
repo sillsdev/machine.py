@@ -371,9 +371,9 @@ class LlmPostEditor:
                     "Post-edit attempt %d/%d stopped without retrying: %s", attempt, self._max_attempts, error
                 )
                 break
-            total_cost += completion.cost
-            total_input_token_count += completion.input_token_count
-            total_output_token_count += completion.output_token_count
+            total_cost += completion.cost or 0
+            total_input_token_count += completion.input_token_count or 0
+            total_output_token_count += completion.output_token_count or 0
             finish_reason = completion.finish_reason
             result = _parse_verse(json.loads(completion.text), draft, self._include_justification)
             if result is not None:
@@ -482,9 +482,9 @@ class LlmPostEditor:
             logger.warning("Post-edit of %d verses in one request failed: %s", len(members), error)
             cost, input_token_count, output_token_count = error.cost, error.input_token_count, error.output_token_count
         else:
-            cost = completion.cost
-            input_token_count = completion.input_token_count
-            output_token_count = completion.output_token_count
+            cost = completion.cost or 0
+            input_token_count = completion.input_token_count or 0
+            output_token_count = completion.output_token_count or 0
             results = _try_parse_passage_response(completion.text, drafts, self._include_justification)
             if results is None:
                 logger.warning("Post-edit of %d verses in one request produced no usable translations.", len(members))

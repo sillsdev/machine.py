@@ -127,6 +127,8 @@ def update_settings(
 ):
     settings.update(args)
     settings.model_type = cast(str, settings.model_type).lower()
+    if "post_edit_model" in model.model_fields:
+        settings.update({"post_edit_model": None})
     if "build_options" in settings:
         # If build_options are base64 encoded, decode them
         build_options_str = cast(str, settings.build_options)
@@ -143,16 +145,20 @@ def update_settings(
         except TypeError as e:
             raise TypeError(f"Build options could not be parsed: {e}") from e
         try:
-            model.model_validate(build_options)
+            validated_build_options = model.model_validate(build_options)
         except ValidationError as e:
             raise ValueError(f"Invalid build options: {e}") from e
         settings.update({settings.model_type: build_options})
         if "align_pretranslations" in build_options:
             settings.update({"align_pretranslations": build_options["align_pretranslations"]})
+        if "post_edit_model" in model.model_fields:
+            settings.update({"post_edit_model": getattr(validated_build_options, "post_edit_model")})
         if "thot_align" in build_options:
             settings.update({"thot_align": build_options["thot_align"]})
         if "thot_mt" in build_options:
             settings.update({"thot_mt": build_options["thot_mt"]})
+        if "remote_llm" in build_options:
+            settings.update({"remote_llm": build_options["remote_llm"]})
         if task is not None and "tags" in build_options:
             tags = build_options["tags"]
             if isinstance(tags, str) or (isinstance(tags, list) and all(isinstance(tag, str) for tag in tags)):

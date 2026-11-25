@@ -13,6 +13,8 @@ from machine.translation.llm import (
     MalformedCompletionError,
     OpenRouterLlmCompletionClient,
     RefusalError,
+    RemoteLlmEngine,
+    TfidfExampleRetriever,
     TruncatedCompletionError,
 )
 from machine.translation.llm.llm_completion_client import Completion, TokenLogprob
@@ -107,6 +109,13 @@ def test_openrouter_client_max_tokens_is_none():
     ]
 
 
+def test_openrouter_client_retry_budget():
+    with patch("openrouter.OpenRouter") as sdk:
+        OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key")
+
+    assert sdk.call_args.kwargs["retry_config"].backoff.max_elapsed_time == 600000
+
+
 def test_openrouter_client_merges_default_and_per_call_kwargs_without_changing_model():
     response = SimpleNamespace(
         choices=[SimpleNamespace(message=SimpleNamespace(content="hola"))],
@@ -198,7 +207,7 @@ def test_openrouter_client_maps_requested_token_logprobs():
         with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
             result = client.complete([], logprobs=True)
 
-    assert result == Completion("hola", 0.0, [TokenLogprob("hola", -0.2)])
+    assert result == Completion("hola", None, [TokenLogprob("hola", -0.2)])
 
 
 def test_openrouter_client_reports_logprobs_supported_by_its_model_and_caches_lookup():
@@ -391,6 +400,39 @@ def test_complete_running_totals_include_failed_responses():
                 client.complete([], response_schema=_SCHEMA)
 
     assert (client.total_cost, client.total_input_token_count, client.total_output_token_count) == (1.0, 20, 4)
+
+
+def test_retry_usage_includes_billed_blocked_response():
+    blocked = SimpleNamespace(
+        choices=[SimpleNamespace(finish_reason="content_filter")],
+        usage=SimpleNamespace(cost=0.2, prompt_tokens=100, completion_tokens=5),
+    )
+    success = SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content="hola"), finish_reason="stop")],
+        usage=SimpleNamespace(cost=0.1, prompt_tokens=50, completion_tokens=3),
+    )
+    with _client([blocked, success]), patch("machine.translation.llm.remote_llm_engine.sleep"):
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+            engine = RemoteLlmEngine(client, TfidfExampleRetriever([]), "English", "Spanish")
+            assert engine.translate("hello").translation == "hola"
+
+    summary = client.usage_summary
+    assert summary.request_count == 2
+    assert summary.reported_cost == pytest.approx(0.3)
+    assert (summary.input_token_count, summary.output_token_count) == (150, 8)
+    assert summary.unpriced_request_count == 0
+
+
+def test_usage_summary_counts_missing_price():
+    response = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="hola"))], usage=None)
+    with _client(response):
+        with OpenRouterLlmCompletionClient("openai/gpt-4o", api_key="test-key") as client:
+            completion = client.complete([])
+
+    assert completion.cost is None
+    assert client.usage_summary.request_count == 1
+    assert client.usage_summary.unpriced_request_count == 1
+    assert client.usage_summary.reported_cost == 0
 
 
 @contextmanager

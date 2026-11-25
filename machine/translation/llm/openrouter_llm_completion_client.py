@@ -27,8 +27,8 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
     def __init__(
         self,
         model: str,
+        api_key: str,
         max_tokens: Optional[int] = None,
-        api_key: Optional[str] = None,
         **default_kwargs: Any,
     ) -> None:
         super().__init__()
@@ -38,19 +38,22 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         self._logprobs_supported: Optional[bool] = None
         self._closed = False
         try:
-            from openrouter import OpenRouter
-            from openrouter.utils import BackoffStrategy, RetryConfig
+            from openrouter import OpenRouter, RetryConfig
+            from openrouter.utils import BackoffStrategy
         except ImportError as error:
             raise ImportError(
                 "OpenRouter completions require the 'openrouter' package. Install it with `uv sync --extra llm`."
             ) from error
-        retry_config = RetryConfig(
-            "backoff",
-            BackoffStrategy(initial_interval=500, max_interval=60000, exponent=1.5, max_elapsed_time=600000),
-            retry_connection_errors=True,
-            status_codes_override=["429", "5XX"],
+        # Retry-After takes precedence over backoff natively, so no need to handle that here
+        self._client = OpenRouter(
+            api_key=api_key,
+            retry_config=RetryConfig(
+                strategy="backoff",
+                backoff=BackoffStrategy(500, 60000, 1.5, 600000),
+                status_codes_override=["5XX", "429"],
+                retry_connection_errors=True,
+            ),
         )
-        self._client = OpenRouter(api_key=api_key, retry_config=retry_config)
 
     def complete(
         self,
@@ -97,12 +100,19 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
             }
         response: ChatResult = self._client.chat.send(**request)
         usage: Optional[ChatUsage] = getattr(response, "usage", None)
-        cost: float = getattr(usage, "cost", None) or 0.0
-        prompt_tokens: int = getattr(usage, "prompt_tokens", 0)
-        completion_tokens: int = getattr(usage, "completion_tokens", 0)
+        cost: Optional[float] = getattr(usage, "cost", None)
+        prompt_tokens: Optional[int] = getattr(usage, "prompt_tokens", None)
+        completion_tokens: Optional[int] = getattr(usage, "completion_tokens", None)
+        billed_cost = cost or 0.0
+        billed_prompt_tokens = prompt_tokens or 0
+        billed_completion_tokens = completion_tokens or 0
         self._record_usage(cost, prompt_tokens, completion_tokens)
 
-        usage_fields = {"cost": cost, "input_token_count": prompt_tokens, "output_token_count": completion_tokens}
+        usage_fields = {
+            "cost": billed_cost,
+            "input_token_count": billed_prompt_tokens,
+            "output_token_count": billed_completion_tokens,
+        }
 
         def malformed(reason: str) -> MalformedCompletionError:
             return MalformedCompletionError(
@@ -155,11 +165,11 @@ class OpenRouterLlmCompletionClient(LlmCompletionClient):
         token_logprobs = self._get_logprobs(choice) if logprobs else []
         return Completion(
             text=text,
-            cost=cost,
+            cost=None if cost is None else float(cost),
             token_logprobs=token_logprobs,
-            input_token_count=prompt_tokens,
-            output_token_count=completion_tokens,
-            finish_reason=_FINISH_REASONS.get(reported_finish_reason, CompletionFinishReason.UNKNOWN),
+            input_token_count=None if prompt_tokens is None else int(prompt_tokens),
+            output_token_count=None if completion_tokens is None else int(completion_tokens),
+            finish_reason=_FINISH_REASONS.get(getattr(choice, "finish_reason", None), CompletionFinishReason.UNKNOWN),
         )
 
     def supports_logprobs(self) -> bool:

@@ -20,14 +20,22 @@ class Completion:
     """A reply from the model, with whatever the provider reported alongside it."""
 
     text: str
-    cost: float
+    cost: Optional[float] = None
     token_logprobs: List[TokenLogprob] = field(default_factory=list)
-    input_token_count: int = 0
-    output_token_count: int = 0
+    input_token_count: Optional[int] = None
+    output_token_count: Optional[int] = None
     finish_reason: CompletionFinishReason = CompletionFinishReason.UNKNOWN
 
 
-# Not a ValueError, so that callers retrying on these do not also swallow invalid request arguments.
+@dataclass(frozen=True)
+class LlmUsageSummary:
+    request_count: int
+    input_token_count: int
+    output_token_count: int
+    reported_cost: float
+    unpriced_request_count: int
+
+
 class CompletionError(Exception):
     def __init__(
         self,
@@ -67,6 +75,19 @@ class LlmCompletionClient(ABC):
         self._total_cost = 0.0
         self._total_input_token_count = 0
         self._total_output_token_count = 0
+        self._request_count = 0
+        self._unpriced_request_count = 0
+
+    @property
+    def usage_summary(self) -> LlmUsageSummary:
+        with self._usage_lock:
+            return LlmUsageSummary(
+                self._request_count,
+                self._total_input_token_count,
+                self._total_output_token_count,
+                self._total_cost,
+                self._unpriced_request_count,
+            )
 
     @property
     def total_cost(self) -> float:
@@ -98,11 +119,17 @@ class LlmCompletionClient(ABC):
     def supports_logprobs(self) -> bool:
         return False
 
-    def _record_usage(self, cost: float, input_token_count: int, output_token_count: int) -> None:
+    def _record_usage(
+        self, cost: Optional[float], input_token_count: Optional[int], output_token_count: Optional[int]
+    ) -> None:
         with self._usage_lock:
-            self._total_cost += cost
-            self._total_input_token_count += input_token_count
-            self._total_output_token_count += output_token_count
+            self._request_count += 1
+            if cost is None:
+                self._unpriced_request_count += 1
+            else:
+                self._total_cost += cost
+            self._total_input_token_count += input_token_count or 0
+            self._total_output_token_count += output_token_count or 0
 
     def count_tokens(self, text: str) -> Optional[int]:
         return None

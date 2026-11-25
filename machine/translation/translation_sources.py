@@ -7,3 +7,4 @@ class TranslationSources(Flag):
     TRANSFER = auto()
     PREFIX = auto()
     NMT = auto()
+    LLM = auto()

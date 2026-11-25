@@ -149,7 +149,7 @@ class TranslationResultBuilder:
         self._sources.clear()
         self._phrases.clear()
 
-    def to_result(self, translation: Optional[str] = None) -> TranslationResult:
+    def to_result(self, translation: Optional[str] = None, error: Optional[str] = None) -> TranslationResult:
         sources = [TranslationSources.NONE] * len(self._target_tokens)
         alignment = WordAlignmentMatrix.from_word_pairs(len(self._source_tokens), len(self._target_tokens))
         phrases: List[Phrase] = []
@@ -177,6 +177,7 @@ class TranslationResultBuilder:
             sources,
             alignment,
             phrases,
+            error,
         )
 
     def _resize_alignment(self, phrase_index: int, cols_to_copy: List[int]) -> None:
