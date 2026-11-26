@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from math import exp
 from pathlib import Path
-from typing import Collection, Iterable, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import Collection, Iterable, Iterator, List, Optional, Sequence, Tuple, Union, cast
 
 import thot.alignment as ta
 
@@ -98,9 +98,16 @@ class ThotWordAlignmentModel(Ibm1WordAlignmentModel, TransductiveWordAlignmentMo
 
     @property
     def training_alignment_count(self) -> int:
-        return self._model.num_sentence_pairs
+        # TODO: Fix broken binding in thot
+        # return self._model.num_training_alignments
+        return cast(int, getattr(self._model, "num_training_alignments"))
 
     def get_training_alignment(self, n: int) -> WordAlignmentMatrix:
+        if n < 0 or n >= self.training_alignment_count:
+            raise IndexError(
+                f"Training alignment index {n} is out of range; the model has "
+                f"{self.training_alignment_count} retained training alignments."
+            )
         _, matrix = self._model.get_training_alignment(n)
         return WordAlignmentMatrix(matrix.to_numpy())
 
