@@ -68,11 +68,33 @@ class ThotSymmetrizedWordAlignmentModel(SymmetrizedWordAlignmentModel, Transduct
 
     @property
     def training_alignment_count(self) -> int:
-        return self._aligner.num_sentence_pairs
+        return min(
+            self.direct_word_alignment_model.training_alignment_count,
+            self.inverse_word_alignment_model.training_alignment_count,
+        )
 
     def get_training_alignment(self, n: int) -> WordAlignmentMatrix:
-        _, matrix = self._aligner.get_training_alignment(n)
-        return WordAlignmentMatrix(matrix.to_numpy())
+        if n < 0 or n >= self.training_alignment_count:
+            raise IndexError(
+                f"Training alignment index {n} is out of range; the model has "
+                f"{self.training_alignment_count} retained training alignments."
+            )
+        direct_alignment = self.direct_word_alignment_model.get_training_alignment(n)
+        if self.heuristic is SymmetrizationHeuristic.NONE:
+            return direct_alignment
+
+        inverse_alignment = self.inverse_word_alignment_model.get_training_alignment(n)
+        inverse_alignment.transpose()
+        if (
+            direct_alignment.row_count == 0
+            or direct_alignment.column_count == 0
+            or inverse_alignment.row_count != direct_alignment.row_count
+            or inverse_alignment.column_count != direct_alignment.column_count
+        ):
+            return direct_alignment
+
+        direct_alignment.symmetrize_with(inverse_alignment, self.heuristic)
+        return direct_alignment
 
     def create_trainer(self, corpus: ParallelTextCorpus) -> Trainer:
         direct_trainer = self.direct_word_alignment_model.create_trainer(corpus)

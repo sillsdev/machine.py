@@ -81,6 +81,42 @@ def test_word_align_corpus_transductive_text_ids_keep_index_in_sync() -> None:
     assert text2_actual == text2_expected
 
 
+def test_word_align_corpus_falls_back_to_inference_when_alignments_not_retained() -> None:
+    parallel_corpus = _create_two_text_parallel_corpus()
+    model = create_thot_symmetrized_word_alignment_model("fast_align")
+    with model.create_trainer(parallel_corpus) as trainer:
+        trainer.train()
+        trainer.save()
+
+    expected = [
+        AlignedWordPair.to_string(
+            model.align(row.source_segment, row.target_segment).to_aligned_word_pairs(), include_scores=False
+        )
+        for row in parallel_corpus.get_rows()
+    ]
+    actual = _alignment_strings(word_align_corpus(parallel_corpus, aligner=model))
+    assert actual == expected
+
+
+def test_word_align_corpus_tokenizes_rows_before_training() -> None:
+    source = DictionaryTextCorpus(
+        MemoryText(
+            "text1",
+            [TextRow("text1", 1, ["this is a test"]), TextRow("text1", 2, ["this is another test"])],
+        )
+    )
+    target = DictionaryTextCorpus(
+        MemoryText(
+            "text1",
+            [TextRow("text1", 1, ["esto es una prueba"]), TextRow("text1", 2, ["esto es otra prueba"])],
+        )
+    )
+    rows = list(word_align_corpus(StandardParallelTextCorpus(source, target)).get_rows())
+
+    assert rows[0].source_segment == ["this", "is", "a", "test"]
+    assert rows[0].target_segment == ["esto", "es", "una", "prueba"]
+
+
 def test_word_align_corpus_transductive_eflomal() -> None:
     rows = list(word_align_corpus(create_test_parallel_corpus(), aligner="eflomal").get_rows())
     assert len(rows) == 8
@@ -90,6 +126,7 @@ def test_word_align_corpus_transductive_eflomal() -> None:
 def _create_mock_model(decoy: Decoy) -> ThotSymmetrizedWordAlignmentModel:
     model = decoy.mock(cls=ThotSymmetrizedWordAlignmentModel)
     decoy.when(model.__enter__()).then_return(model)
+    decoy.when(model.training_alignment_count).then_return(1)
     decoy.when(model.get_training_alignment(_ANY)).then_return(
         WordAlignmentMatrix.from_word_pairs(row_count=2, column_count=2, set_values=[(0, 0), (1, 1)])
     )

@@ -3,6 +3,7 @@ from typing import Callable, Generator, Iterable, Optional, Union
 from ..corpora.corpora_utils import batch
 from ..corpora.parallel_text_corpus import ParallelTextCorpus
 from ..corpora.parallel_text_row import ParallelTextRow
+from ..tokenization.whitespace_tokenizer import WHITESPACE_TOKENIZER
 from ..utils.progress_status import ProgressStatus
 from .symmetrization_heuristic import SymmetrizationHeuristic
 from .transductive_word_alignment_model import TransductiveWordAlignmentModel
@@ -23,7 +24,9 @@ def word_align_corpus(
         return _TrainedWordAlignParallelTextCorpus(corpus, aligner, symmetrization_heuristic, progress)
 
     if isinstance(aligner, TransductiveWordAlignmentModel):
-        return _TransductiveWordAlignParallelTextCorpus(corpus, aligner)
+        if aligner.training_alignment_count > 0:
+            return _TransductiveWordAlignParallelTextCorpus(corpus, aligner)
+        return _WordAlignParallelTextCorpus(corpus, aligner, batch_size)
     return _WordAlignParallelTextCorpus(corpus, aligner, batch_size)
 
 
@@ -100,7 +103,7 @@ class _TrainedWordAlignParallelTextCorpus(_WordAlignParallelTextCorpusBase):
         from .thot import create_thot_symmetrized_word_alignment_model
 
         # Training on only the requested texts keeps the training-alignment index in sync with the rows.
-        corpus = self._corpus.filter_texts(text_ids)
+        corpus = self._corpus.filter_texts(text_ids).tokenize(WHITESPACE_TOKENIZER)
         # Training in the generator ties the model's lifetime to reading the rows, at the cost of
         # training a new model on each iteration.
         with create_thot_symmetrized_word_alignment_model(self._aligner) as model:
